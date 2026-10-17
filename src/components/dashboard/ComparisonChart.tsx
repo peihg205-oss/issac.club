@@ -98,21 +98,23 @@ export function ComparisonChart({
   periodId: propPeriodId,
   periodName: propPeriodName,
 }: ComparisonChartProps = {}) {
-  const { members, periods, customPeriodScores, currentActivePeriodId } = useClub()
+  const { members, periods, customPeriodScores, currentActivePeriodId, setCurrentActivePeriodId } = useClub()
   const [mode, setMode] = useState<ComparisonMode>('dept_score')
   const [sortBy, setSortBy] = useState<SortOption>('default')
   const [hoveredDept, setHoveredDept] = useState<string | null>(null)
 
   // Quản lý chu kỳ được chọn: Ưu tiên propPeriodId từ trang cha, fallback chu kỳ hiện tại
   const [internalPeriodId, setInternalPeriodId] = useState<string>(() => {
-    return propPeriodId || currentActivePeriodId || periods.find((p) => p.isCurrent)?.id || periods[0]?.id || 'month-2025-10'
+    return propPeriodId || currentActivePeriodId || periods.find((p) => p.isCurrent)?.id || periods[0]?.id || 'month-2026-10'
   })
 
   useEffect(() => {
     if (propPeriodId) {
       setInternalPeriodId(propPeriodId)
+    } else if (currentActivePeriodId) {
+      setInternalPeriodId(currentActivePeriodId)
     }
-  }, [propPeriodId])
+  }, [propPeriodId, currentActivePeriodId])
 
   const activePeriodId = propPeriodId || internalPeriodId
   const activePeriod = periods.find((p) => p.id === activePeriodId) || periods[0]
@@ -415,12 +417,15 @@ export function ComparisonChart({
           ) : (
             <select
               value={internalPeriodId}
-              onChange={(e) => setInternalPeriodId(e.target.value)}
+              onChange={(e) => {
+                setInternalPeriodId(e.target.value)
+                setCurrentActivePeriodId(e.target.value)
+              }}
               className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2563EB] shadow-2xs transition cursor-pointer"
             >
               {periods.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} {p.status === 'locked' ? '(Đã khóa)' : p.isCurrent ? '(Hiện tại)' : ''}
+                  {p.name} {p.status === 'locked' ? '(Đã khóa)' : p.id === activePeriodId ? '(Hiện tại)' : ''}
                 </option>
               ))}
             </select>

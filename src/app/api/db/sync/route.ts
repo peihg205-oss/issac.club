@@ -6,6 +6,9 @@ let cachedEvents: any[] | null = null
 let cachedProposals: any[] | null = null
 let cachedMembers: any[] | null = null
 let cachedDisputes: any[] | null = null
+let cachedPeriods: any[] | null = null
+let cachedActivePeriodId: string | null = null
+let cachedPeriodScores: Record<string, any> | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET() {
@@ -21,6 +24,9 @@ export async function GET() {
         'issac_proposals_cloud',
         'issac_members_cloud',
         'issac_disputes_cloud',
+        'issac_periods_cloud',
+        'issac_active_period_id',
+        'issac_custom_period_scores',
       ])
 
     if (!error && data && data.length > 0) {
@@ -28,11 +34,17 @@ export async function GET() {
       const proposalsRow = data.find((r) => r.key === 'issac_proposals_cloud')
       const membersRow = data.find((r) => r.key === 'issac_members_cloud')
       const disputesRow = data.find((r) => r.key === 'issac_disputes_cloud')
+      const periodsRow = data.find((r) => r.key === 'issac_periods_cloud')
+      const activePeriodRow = data.find((r) => r.key === 'issac_active_period_id')
+      const scoresRow = data.find((r) => r.key === 'issac_custom_period_scores')
 
       let eventsFromDb = null
       let proposalsFromDb = null
       let membersFromDb = null
       let disputesFromDb = null
+      let periodsFromDb = null
+      let activePeriodFromDb = null
+      let scoresFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -70,12 +82,38 @@ export async function GET() {
         }
       }
 
+      if (periodsRow?.value) {
+        try {
+          periodsFromDb = JSON.parse(periodsRow.value)
+          cachedPeriods = periodsFromDb
+        } catch (e) {
+          console.error('Error parsing periods JSON:', e)
+        }
+      }
+
+      if (activePeriodRow?.value) {
+        activePeriodFromDb = activePeriodRow.value
+        cachedActivePeriodId = activePeriodFromDb
+      }
+
+      if (scoresRow?.value) {
+        try {
+          scoresFromDb = JSON.parse(scoresRow.value)
+          cachedPeriodScores = scoresFromDb
+        } catch (e) {
+          console.error('Error parsing period scores JSON:', e)
+        }
+      }
+
       return NextResponse.json({
         success: true,
         events: eventsFromDb || cachedEvents,
         proposals: proposalsFromDb || cachedProposals,
         members: membersFromDb || cachedMembers,
         disputes: disputesFromDb || cachedDisputes,
+        periods: periodsFromDb || cachedPeriods,
+        activePeriodId: activePeriodFromDb || cachedActivePeriodId,
+        customPeriodScores: scoresFromDb || cachedPeriodScores,
         source: 'supabase_cloud',
       })
     }
@@ -86,6 +124,9 @@ export async function GET() {
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
+      periods: cachedPeriods,
+      activePeriodId: cachedActivePeriodId,
+      customPeriodScores: cachedPeriodScores,
       source: 'cache_memory',
     })
   } catch (err: unknown) {
@@ -96,6 +137,9 @@ export async function GET() {
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
+      periods: cachedPeriods,
+      activePeriodId: cachedActivePeriodId,
+      customPeriodScores: cachedPeriodScores,
       error: msg,
       source: 'fallback',
     })
@@ -106,7 +150,21 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { action, event, events, eventId, memberCode, status, note, proposals, members, disputes } = body
+    const {
+      action,
+      event,
+      events,
+      eventId,
+      memberCode,
+      status,
+      note,
+      proposals,
+      members,
+      disputes,
+      periods,
+      activePeriodId,
+      customPeriodScores,
+    } = body
     const supabase = createAdminClient()
 
     let dbSuccess = false
@@ -266,12 +324,72 @@ export async function POST(request: Request) {
       }
     }
 
+    if (periods !== undefined) {
+      cachedPeriods = periods
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_periods_cloud',
+              value: JSON.stringify(periods),
+              description: 'Cloud synchronized periods for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (perErr) {
+        console.warn('Supabase periods upsert notice:', perErr)
+      }
+    }
+
+    if (activePeriodId !== undefined) {
+      cachedActivePeriodId = String(activePeriodId)
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_active_period_id',
+              value: String(activePeriodId),
+              description: 'Cloud synchronized active period ID for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (actErr) {
+        console.warn('Supabase active period upsert notice:', actErr)
+      }
+    }
+
+    if (customPeriodScores !== undefined) {
+      cachedPeriodScores = customPeriodScores
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_custom_period_scores',
+              value: JSON.stringify(customPeriodScores),
+              description: 'Cloud synchronized period scores for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (scoreErr) {
+        console.warn('Supabase period scores upsert notice:', scoreErr)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       events: cachedEvents,
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
+      periods: cachedPeriods,
+      activePeriodId: cachedActivePeriodId,
+      customPeriodScores: cachedPeriodScores,
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'

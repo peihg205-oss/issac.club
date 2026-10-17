@@ -34,15 +34,29 @@ export interface PeriodItem {
 export const AVAILABLE_PERIODS: PeriodItem[] = [
   // Theo Tháng
   {
+    id: 'month-2026-10',
+    scope: 'month',
+    name: 'Tháng 10/2026',
+    shortLabel: 'T10/2026',
+    description: 'Chu kỳ thi đua cao điểm Chào tân sinh viên QH-2026 & Phát động phong trào Đại sứ',
+    timeRange: '01/10/2026 - 31/10/2026',
+    status: 'active', // Đang mở cổng chấm điểm
+    isCurrent: true,
+    isFinalized: false,
+    createdAt: '01/10/2026 00:00',
+  },
+  {
     id: 'month-2025-10',
     scope: 'month',
     name: 'Tháng 10/2025',
     shortLabel: 'T10/2025',
     description: 'Chu kỳ thi đua cao điểm Chào tân sinh viên QH-2025 & Gala Chào mừng',
     timeRange: '01/10/2025 - 31/10/2025',
-    status: 'active', // Đang mở cổng chấm điểm
-    isCurrent: true,
-    isFinalized: false,
+    status: 'locked', // Đã được BCN khóa sổ
+    isCurrent: false,
+    isFinalized: true,
+    lockedAt: '31/10/2025 23:59',
+    lockedBy: 'Nguyễn Thị Hồng Hân (Chủ nhiệm)',
     createdAt: '01/10/2025 00:00',
   },
   {
@@ -74,15 +88,26 @@ export const AVAILABLE_PERIODS: PeriodItem[] = [
 
   // Theo Quý
   {
+    id: 'quarter-2026-q4',
+    scope: 'quarter',
+    name: 'Quý 4/2026 (Tháng 10 - 12)',
+    shortLabel: 'Quý 4/2026',
+    description: 'Tổng kết thi đua Quý 4: Chuỗi hoạt động Chào tân & Ngày hội Hướng nghiệp',
+    timeRange: '01/10/2026 - 31/12/2026',
+    status: 'active',
+    isCurrent: true,
+    isFinalized: false,
+  },
+  {
     id: 'quarter-2025-q4',
     scope: 'quarter',
     name: 'Quý 4/2025 (Tháng 10 - 12)',
     shortLabel: 'Quý 4/2025',
     description: 'Tổng kết thi đua Quý 4: Chuỗi hoạt động Chào tân & Ngày hội Hướng nghiệp',
     timeRange: '01/10/2025 - 31/12/2025',
-    status: 'active',
-    isCurrent: true,
-    isFinalized: false,
+    status: 'locked',
+    isCurrent: false,
+    isFinalized: true,
   },
   {
     id: 'quarter-2025-q3',
@@ -100,15 +125,26 @@ export const AVAILABLE_PERIODS: PeriodItem[] = [
 
   // Theo Năm / Toàn nhiệm kỳ
   {
+    id: 'year-2026-2027',
+    scope: 'year',
+    name: 'Nhiệm kỳ 2026 - 2027 (Cả năm)',
+    shortLabel: 'Năm 2026-2027',
+    description: 'Toàn bộ năm hoạt động: Xét khen thưởng Đoàn - Hội & Danh hiệu Đại sứ tiêu biểu',
+    timeRange: '01/08/2026 - 31/07/2027',
+    status: 'active',
+    isCurrent: true,
+    isFinalized: false,
+  },
+  {
     id: 'year-2025-2026',
     scope: 'year',
     name: 'Nhiệm kỳ 2025 - 2026 (Cả năm)',
     shortLabel: 'Năm 2025-2026',
     description: 'Toàn bộ năm hoạt động: Xét khen thưởng Đoàn - Hội & Danh hiệu Đại sứ tiêu biểu',
     timeRange: '01/08/2025 - 31/07/2026',
-    status: 'active',
-    isCurrent: true,
-    isFinalized: false,
+    status: 'locked',
+    isCurrent: false,
+    isFinalized: true,
   },
 ]
 
@@ -295,9 +331,45 @@ export function calculatePeriodLeaderboard(
   const currentPeriod = periods.find((p) => p.id === periodId) || periods[0]
   const isLocked = currentPeriod?.status === 'locked'
 
-  // 1. Chu kỳ Tháng 10/2025 (Tháng hiện tại mặc định)
-  if (periodId === 'month-2025-10' || periodId === 'quarter-2025-q4') {
-    const sorted = [...activeMembers].sort((a, b) => b.current_score - a.current_score)
+  // 1. Nếu chu kỳ có lưu delta tùy chỉnh trong sổ cái customPeriodDeltas
+  const periodCustomDeltas = customPeriodDeltas[periodId]
+  const hasCustomDeltas = periodCustomDeltas && Object.keys(periodCustomDeltas).length > 0
+
+  if (hasCustomDeltas) {
+    const list = activeMembers.map((m) => {
+      const delta = periodCustomDeltas[m.member_code] ?? (m.current_score - STANDARD_MONTHLY_BASELINE)
+      const finalScore = STANDARD_MONTHLY_BASELINE + delta
+      return {
+        member: m,
+        baseScore: STANDARD_MONTHLY_BASELINE,
+        earnedDelta: delta,
+        finalScore,
+      }
+    })
+
+    list.sort((a, b) => b.finalScore - a.finalScore || a.member.source_stt - b.member.source_stt)
+
+    const deptMap: Record<string, number> = {}
+    return list.map((item, idx) => {
+      deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
+      const rating = getRatingLevel(item.finalScore).level_name as RatingLevelName
+      return {
+        ...item,
+        rankInPeriod: idx + 1,
+        rankInDepartment: deptMap[item.member.department_slug],
+        deltaRank: item.member.delta_rank || 0,
+        ratingLevel: rating,
+        periodId,
+        periodName: currentPeriod?.name || 'Tháng 10/2026',
+        isLocked,
+        note: isLocked ? 'Đã khóa sổ bởi BCN' : 'Đang mở chấm điểm',
+      }
+    })
+  }
+
+  // 2. Chu kỳ đang mở (active/current): phản ánh trực tiếp điểm số thực tế của activeMembers
+  if (!isLocked && (currentPeriod?.isCurrent || periodId.startsWith('month-2026') || periodId.startsWith('quarter-2026') || periodId === 'month-2026-10')) {
+    const sorted = [...activeMembers].sort((a, b) => b.current_score - a.current_score || a.source_stt - b.source_stt)
     const deptMap: Record<string, number> = {}
 
     return sorted.map((m, idx) => {
@@ -315,9 +387,9 @@ export function calculatePeriodLeaderboard(
         deltaRank: m.delta_rank || 0,
         ratingLevel: rating,
         periodId,
-        periodName: currentPeriod?.name || 'Tháng 10/2025',
-        isLocked,
-        note: isLocked ? 'Đã khóa sổ bởi BCN' : 'Đang mở chấm điểm',
+        periodName: currentPeriod?.name || 'Tháng 10/2026',
+        isLocked: false,
+        note: 'Đang mở chấm điểm',
       }
     })
   }

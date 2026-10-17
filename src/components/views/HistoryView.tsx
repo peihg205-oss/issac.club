@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
 import { ScoreModal } from '@/components/admin/ScoreModal'
@@ -48,10 +48,20 @@ export function HistoryView() {
     createDispute,
     resolveDisputeByBCN,
     periods,
+    currentActivePeriodId,
   } = useClub()
 
   const monthPeriods = periods.filter((p) => p.scope === 'month')
-  const [selectedPeriodId, setSelectedPeriodId] = useState(monthPeriods[0]?.id || 'month-2025-10')
+  const [selectedPeriodId, setSelectedPeriodId] = useState(
+    () => currentActivePeriodId || monthPeriods.find((p) => p.isCurrent)?.id || monthPeriods[0]?.id || 'month-2026-10'
+  )
+
+  useEffect(() => {
+    if (currentActivePeriodId) {
+      setSelectedPeriodId(currentActivePeriodId)
+    }
+  }, [currentActivePeriodId])
+
   const selectedPeriodObj = monthPeriods.find((p) => p.id === selectedPeriodId) || monthPeriods[0]
 
   const [activeTab, setActiveTab] = useState<'all' | 'add' | 'deduct' | 'disputes'>('all')

@@ -933,7 +933,7 @@ export function SettingsView() {
                     Khởi Tạo Tháng Thi Đua Mới (Mốc Xuất Phát 60 Điểm)
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Tạo chu kỳ tháng độc lập theo lịch thực tế - Không reset dữ liệu cũ
+                    Thiết lập chu kỳ thi đua mới - Khởi tạo mốc xuất phát chuẩn 60 điểm cho toàn CLB &amp; lưu vĩnh viễn trên Cloud
                   </p>
                 </div>
               </div>

@@ -19,7 +19,7 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
   const { members, createProposal, periods, currentActivePeriodId, customRules } = useClub()
 
   const [selectedPeriodId, setSelectedPeriodId] = useState(
-    initialPeriodId || currentActivePeriodId || 'month-2025-10'
+    initialPeriodId || currentActivePeriodId || 'month-2026-10'
   )
   const [memberCode, setMemberCode] = useState(members[0]?.member_code || '')
   const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07

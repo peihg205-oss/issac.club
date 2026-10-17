@@ -247,13 +247,32 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = useState<MeetingEvent[]>(INITIAL_EVENTS)
   const [activeEventId, setActiveEventId] = useState<string>('')
   const [disputes, setDisputes] = useState<DisputeItem[]>(INITIAL_DISPUTES)
-  const [currentActiveMonth, setCurrentActiveMonth] = useState<string>('Tháng 10/2025')
+  const [currentActiveMonth, setCurrentActiveMonth] = useState<string>('Tháng 10/2026')
   const [periods, setPeriods] = useState<PeriodItem[]>(AVAILABLE_PERIODS)
   const [customPeriodScores, setCustomPeriodScores] = useState<Record<string, Record<string, number>>>({})
-  const [currentActivePeriodId, setCurrentActivePeriodId] = useState<string>('month-2025-10')
+  const [currentActivePeriodId, _setCurrentActivePeriodId] = useState<string>('month-2026-10')
   const [customRules, setCustomRules] = useState<CustomRuleItem[]>(INITIAL_CUSTOM_RULES)
 
   const isHydratedRef = useRef(false)
+
+  // Đổi chu kỳ hoạt động và đồng bộ lập tức đa nền tảng
+  const setCurrentActivePeriodId = (newId: string) => {
+    _setCurrentActivePeriodId(newId)
+    const target = periods.find((p) => p.id === newId)
+    if (target?.name) {
+      setCurrentActiveMonth(target.name)
+    }
+    const updated = periods.map((p) => ({
+      ...p,
+      isCurrent: p.id === newId,
+    }))
+    setPeriods(updated)
+    try {
+      localStorage.setItem('issac_active_period_id', newId)
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updated))
+    } catch (e) {}
+    syncToCloud({ activePeriodId: newId, periods: updated })
+  }
 
   // Safe client-side hydration from localStorage to prevent SSR mismatch
   useEffect(() => {
@@ -309,6 +328,38 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       console.error('Error reading proposals from localStorage:', e)
     }
 
+    try {
+      const savedPeriods = localStorage.getItem('issac_periods_clean_v1')
+      if (savedPeriods) {
+        const parsed = JSON.parse(savedPeriods)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPeriods(parsed)
+        }
+      }
+    } catch (e) {
+      console.error('Error reading periods from localStorage:', e)
+    }
+
+    try {
+      const savedActivePeriod = localStorage.getItem('issac_active_period_id')
+      if (savedActivePeriod) {
+        _setCurrentActivePeriodId(savedActivePeriod)
+        const savedPeriods = localStorage.getItem('issac_periods_clean_v1')
+        const pList = savedPeriods ? JSON.parse(savedPeriods) : AVAILABLE_PERIODS
+        const target = pList.find((p: any) => p.id === savedActivePeriod)
+        if (target?.name) {
+          setCurrentActiveMonth(target.name)
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const savedPeriodScores = localStorage.getItem('issac_custom_period_scores')
+      if (savedPeriodScores) {
+        setCustomPeriodScores(JSON.parse(savedPeriodScores))
+      }
+    } catch (e) {}
+
     isHydratedRef.current = true
     // Đồng bộ tức thì từ Supabase Cloud khi vừa tải trang
     fetchCloudSync()
@@ -320,6 +371,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     proposals?: ProposalItem[]
     members?: RosterMember[]
     disputes?: DisputeItem[]
+    periods?: PeriodItem[]
+    activePeriodId?: string
+    customPeriodScores?: Record<string, Record<string, number>>
     action?: string
     [key: string]: any
   }) => {
@@ -365,6 +419,32 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(data.disputes))
           } catch (e) {}
         }
+        if (data.periods && Array.isArray(data.periods) && data.periods.length > 0) {
+          setPeriods(data.periods)
+          try {
+            localStorage.setItem('issac_periods_clean_v1', JSON.stringify(data.periods))
+          } catch (e) {}
+        }
+        if (data.activePeriodId) {
+          _setCurrentActivePeriodId(data.activePeriodId)
+          const allPeriods =
+            data.periods && Array.isArray(data.periods) && data.periods.length > 0
+              ? data.periods
+              : periods
+          const found = allPeriods.find((p: any) => p.id === data.activePeriodId)
+          if (found?.name) {
+            setCurrentActiveMonth(found.name)
+          }
+          try {
+            localStorage.setItem('issac_active_period_id', data.activePeriodId)
+          } catch (e) {}
+        }
+        if (data.customPeriodScores) {
+          setCustomPeriodScores(data.customPeriodScores)
+          try {
+            localStorage.setItem('issac_custom_period_scores', JSON.stringify(data.customPeriodScores))
+          } catch (e) {}
+        }
       }
     } catch (err) {
       // Offline fallback
@@ -406,6 +486,27 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       console.error('Error saving proposals:', e)
     }
   }, [proposals])
+
+  useEffect(() => {
+    if (!isHydratedRef.current || typeof window === 'undefined') return
+    try {
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(periods))
+    } catch (e) {}
+  }, [periods])
+
+  useEffect(() => {
+    if (!isHydratedRef.current || typeof window === 'undefined') return
+    try {
+      localStorage.setItem('issac_active_period_id', currentActivePeriodId)
+    } catch (e) {}
+  }, [currentActivePeriodId])
+
+  useEffect(() => {
+    if (!isHydratedRef.current || typeof window === 'undefined') return
+    try {
+      localStorage.setItem('issac_custom_period_scores', JSON.stringify(customPeriodScores))
+    } catch (e) {}
+  }, [customPeriodScores])
 
   const addCustomRule = (rule: CustomRuleItem) => {
     const trimmedCode = rule.code.trim().toUpperCase()
@@ -648,8 +749,10 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     // Nếu Ban Chủ nhiệm chọn áp dụng trực tiếp:
     if (data.directApply) {
       let updatedMembers = members
-      // 1. Nếu là chu kỳ mặc định 'month-2025-10', cập nhật vào mảng members
-      if (targetPeriodId === 'month-2025-10') {
+      const isCurrentActive =
+        targetPeriodId === currentActivePeriodId ||
+        Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+      if (isCurrentActive) {
         updatedMembers = getRankedMembers(
           members.map((m) => {
             if (m.member_code === data.memberCode) {
@@ -699,7 +802,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       setProposals(updatedProps)
       syncToCloud({
         proposals: updatedProps,
-        ...(targetPeriodId === 'month-2025-10' ? { members: updatedMembers } : {}),
+        ...(isCurrentActive ? { members: updatedMembers } : {}),
       })
 
       return {
@@ -742,7 +845,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const prop = proposals.find((p) => p.id === proposalId)
     if (!prop || prop.status !== 'pending_bcn') return
 
-    const targetPeriodId = prop.periodId || 'month-2025-10'
+    const targetPeriodId = prop.periodId || currentActivePeriodId || 'month-2026-10'
     const targetPeriod = periods.find((p) => p.id === targetPeriodId)
     if (targetPeriod?.status === 'locked') {
       alert(`Chu kỳ "${targetPeriod.name}" đã được Ban Chủ nhiệm KHÓA SỔ. Không thể duyệt điểm!`)
@@ -750,8 +853,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     let updatedMembers = members
-    // Cập nhật điểm thành viên nếu là chu kỳ mặc định
-    if (targetPeriodId === 'month-2025-10') {
+    const isCurrentActive =
+      targetPeriodId === currentActivePeriodId ||
+      Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+    // Cập nhật điểm thành viên nếu là chu kỳ đang hoạt động
+    if (isCurrentActive) {
       updatedMembers = getRankedMembers(
         members.map((m) => {
           if (m.member_code === prop.memberCode) {
@@ -796,7 +902,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     setProposals(updatedProps)
     syncToCloud({
       proposals: updatedProps,
-      ...(targetPeriodId === 'month-2025-10' ? { members: updatedMembers } : {}),
+      ...(isCurrentActive ? { members: updatedMembers } : {}),
     })
   }
 
@@ -1265,35 +1371,62 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const monthStr = String(data.month).padStart(2, '0')
     const targetId = `month-${data.year}-${monthStr}`
+    const periodName = data.name?.trim() || `Tháng ${monthStr}/${data.year}`
 
-    // Kiểm tra xem chu kỳ đã tồn tại chưa
-    const existing = periods.find((p) => p.id === targetId)
-    if (existing) {
-      return {
-        success: false,
-        message: `Chu kỳ Tháng ${monthStr}/${data.year} đã tồn tại trong danh mục thi đua!`,
+    // 1. Reset toàn bộ 48 thành viên về mốc xuất phát chuẩn 60 điểm cho chu kỳ mới
+    const resetMembers = getRankedMembers(
+      members.map((m) => ({
+        ...m,
+        current_score: 60,
+        absent_count_t02: 0,
+        delta_rank: 0,
+      }))
+    )
+    setMembers(resetMembers)
+
+    // 2. Cập nhật danh sách chu kỳ (nếu đã có thì kích hoạt lại, chưa có thì tạo mới)
+    const existingIndex = periods.findIndex((p) => p.id === targetId)
+    let activeItem: PeriodItem
+    let updatedPeriods: PeriodItem[]
+
+    if (existingIndex >= 0) {
+      activeItem = {
+        ...periods[existingIndex],
+        name: periodName,
+        status: 'active',
+        isCurrent: true,
+        isFinalized: false,
+        description: data.description?.trim() || periods[existingIndex].description,
       }
+      updatedPeriods = periods.map((p, idx) => {
+        if (idx === existingIndex) return activeItem
+        if (p.scope === 'month') return { ...p, isCurrent: false }
+        return p
+      })
+    } else {
+      activeItem = createMonthlyPeriodItem(
+        data.month,
+        data.year,
+        data.name,
+        data.description,
+        data.actorName
+      )
+      activeItem.isCurrent = true
+      updatedPeriods = [
+        activeItem,
+        ...periods.map((p) => (p.scope === 'month' ? { ...p, isCurrent: false } : p)),
+      ]
     }
 
-    const newPeriod = createMonthlyPeriodItem(
-      data.month,
-      data.year,
-      data.name,
-      data.description,
-      data.actorName
-    )
+    setPeriods(updatedPeriods)
+    _setCurrentActivePeriodId(activeItem.id)
+    setCurrentActiveMonth(activeItem.name)
 
-    // Thêm chu kỳ mới vào danh sách (đưa lên đầu)
-    setPeriods((prev) => [newPeriod, ...prev])
-
-    // Khởi tạo sổ cái điểm chu kỳ mới: toàn bộ 48 thành viên bắt đầu từ mức 60đ chuẩn
-    setCustomPeriodScores((prev) => ({
-      ...prev,
-      [newPeriod.id]: {},
-    }))
-
-    setCurrentActivePeriodId(newPeriod.id)
-    setCurrentActiveMonth(newPeriod.name)
+    const updatedPeriodScores = {
+      ...customPeriodScores,
+      [activeItem.id]: {},
+    }
+    setCustomPeriodScores(updatedPeriodScores)
 
     // Thêm bản ghi thông báo hệ thống
     const logItem: ProposalItem = {
@@ -1303,22 +1436,43 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       memberDept: 'Toàn Câu Lạc bộ',
       isCore: false,
       criterionCode: 'C01',
-      criterionName: `Khởi tạo chu kỳ: ${newPeriod.name}`,
+      criterionName: `Khởi tạo chu kỳ: ${activeItem.name}`,
       points: 0,
-      periodId: newPeriod.id,
-      periodName: newPeriod.name,
-      reason: `Ban Chủ nhiệm (${data.actorName}) đã khởi tạo chu kỳ thi đua ${newPeriod.name} theo thời gian thực (${newPeriod.timeRange}). Tất cả 48 thành viên bắt đầu từ mốc 60 điểm chuẩn thi đua.`,
+      periodId: activeItem.id,
+      periodName: activeItem.name,
+      reason: `Ban Chủ nhiệm (${data.actorName}) đã khởi tạo chu kỳ thi đua ${activeItem.name} theo thời gian thực (${activeItem.timeRange}). Tất cả 48 thành viên được reset về mốc 60 điểm chuẩn thi đua.`,
       proposedBy: data.actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
       createdAt: 'Vừa xong',
     }
-    setProposals((prev) => [logItem, ...prev])
+    const updatedProps = [logItem, ...proposals]
+    setProposals(updatedProps)
+
+    // 3. Lưu tức thì vào localStorage
+    try {
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updatedPeriods))
+      localStorage.setItem('issac_active_period_id', activeItem.id)
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(resetMembers))
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      localStorage.setItem('issac_custom_period_scores', JSON.stringify(updatedPeriodScores))
+    } catch (e) {
+      console.error('Error saving period to localStorage:', e)
+    }
+
+    // 4. Lưu vĩnh viễn lên Supabase Cloud
+    syncToCloud({
+      periods: updatedPeriods,
+      activePeriodId: activeItem.id,
+      members: resetMembers,
+      proposals: updatedProps,
+      customPeriodScores: updatedPeriodScores,
+    })
 
     return {
       success: true,
-      message: `Đã khởi tạo thành công chu kỳ thi đua "${newPeriod.name}" theo thời gian thực! Mốc xuất phát 60 điểm toàn CLB.`,
-      period: newPeriod,
+      message: `Đã khởi tạo thành công chu kỳ thi đua "${activeItem.name}" theo thời gian thực! Tất cả 48 thành viên đã reset về mốc chuẩn 60 điểm và được lưu vĩnh viễn lên hệ thống Cloud.`,
+      period: activeItem,
     }
   }
 
@@ -1330,19 +1484,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const now = new Date()
     const lockedAt = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
-    setPeriods((prev) =>
-      prev.map((p) =>
-        p.id === periodId
-          ? {
-              ...p,
-              status: 'locked',
-              isFinalized: true,
-              lockedAt,
-              lockedBy: actorName,
-            }
-          : p
-      )
+    const updatedPeriods = periods.map((p) =>
+      p.id === periodId
+        ? {
+            ...p,
+            status: 'locked' as const,
+            isFinalized: true,
+            lockedAt,
+            lockedBy: actorName,
+          }
+        : p
     )
+    setPeriods(updatedPeriods)
 
     const logItem: ProposalItem = {
       id: `sys-lock-${Date.now()}`,
@@ -1361,7 +1514,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       status: 'approved',
       createdAt: 'Vừa xong',
     }
-    setProposals((prev) => [logItem, ...prev])
+    const updatedProps = [logItem, ...proposals]
+    setProposals(updatedProps)
+
+    try {
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updatedPeriods))
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+    } catch (e) {}
+
+    syncToCloud({
+      periods: updatedPeriods,
+      proposals: updatedProps,
+    })
 
     return {
       success: true,
@@ -1374,19 +1538,26 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const target = periods.find((p) => p.id === periodId)
     if (!target) return { success: false, message: 'Không tìm thấy chu kỳ!' }
 
-    setPeriods((prev) =>
-      prev.map((p) =>
-        p.id === periodId
-          ? {
-              ...p,
-              status: 'active',
-              isFinalized: false,
-              lockedAt: undefined,
-              lockedBy: undefined,
-            }
-          : p
-      )
+    const updatedPeriods = periods.map((p) =>
+      p.id === periodId
+        ? {
+            ...p,
+            status: 'active' as const,
+            isFinalized: false,
+            lockedAt: undefined,
+            lockedBy: undefined,
+          }
+        : p
     )
+    setPeriods(updatedPeriods)
+
+    try {
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updatedPeriods))
+    } catch (e) {}
+
+    syncToCloud({
+      periods: updatedPeriods,
+    })
 
     return {
       success: true,

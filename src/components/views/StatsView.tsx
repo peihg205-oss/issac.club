@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
 import type { RosterMember } from '@/lib/clubData'
@@ -52,6 +52,8 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
     members,
     currentActiveMonth,
     periods,
+    currentActivePeriodId,
+    setCurrentActivePeriodId,
     customPeriodScores,
     lockMonthPeriod,
     unlockMonthPeriod,
@@ -64,7 +66,16 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
 
   // 2. Tra cứu điểm theo chu kỳ (Tháng / Quý / Năm)
   const [selectedScope, setSelectedScope] = useState<PeriodScope>('month')
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string>('month-2025-10')
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string>(
+    () => currentActivePeriodId || 'month-2026-10'
+  )
+
+  // Tự động đồng bộ kỳ được chọn khi chu kỳ kích hoạt hiện tại thay đổi
+  useEffect(() => {
+    if (currentActivePeriodId && selectedScope === 'month') {
+      setSelectedPeriodId(currentActivePeriodId)
+    }
+  }, [currentActivePeriodId, selectedScope])
 
   // 3. Search & Filter states
   const [searchQuery, setSearchQuery] = useState('')
@@ -313,7 +324,7 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
               type="button"
               onClick={() => {
                 setSelectedScope('month')
-                setSelectedPeriodId(periods.find((p) => p.scope === 'month')?.id || 'month-2025-10')
+                setSelectedPeriodId(currentActivePeriodId || periods.find((p) => p.scope === 'month' && p.isCurrent)?.id || 'month-2026-10')
                 setCurrentPage(1)
               }}
               className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -331,7 +342,7 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
               type="button"
               onClick={() => {
                 setSelectedScope('quarter')
-                setSelectedPeriodId(periods.find((p) => p.scope === 'quarter')?.id || 'quarter-2025-q4')
+                setSelectedPeriodId(periods.find((p) => p.scope === 'quarter' && p.isCurrent)?.id || 'quarter-2026-q4')
                 setCurrentPage(1)
               }}
               className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -349,7 +360,7 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
               type="button"
               onClick={() => {
                 setSelectedScope('year')
-                setSelectedPeriodId(periods.find((p) => p.scope === 'year')?.id || 'year-2025-2026')
+                setSelectedPeriodId(periods.find((p) => p.scope === 'year' && p.isCurrent)?.id || 'year-2026-2027')
                 setCurrentPage(1)
               }}
               className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -370,14 +381,18 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
               <select
                 value={selectedPeriodId}
                 onChange={(e) => {
-                  setSelectedPeriodId(e.target.value)
+                  const newId = e.target.value
+                  setSelectedPeriodId(newId)
+                  if (selectedScope === 'month') {
+                    setCurrentActivePeriodId(newId)
+                  }
                   setCurrentPage(1)
                 }}
                 className="w-full pl-3.5 pr-8 py-2 bg-slate-50 hover:bg-white border border-slate-200/90 focus:border-[#1351D8] rounded-xl text-xs font-bold text-slate-800 focus:outline-none transition shadow-2xs cursor-pointer appearance-none"
               >
                 {availablePeriodsInScope.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} {p.status === 'locked' ? '(Đã khóa)' : p.isCurrent ? '(Hiện tại)' : ''}
+                    {p.name} {p.status === 'locked' ? '(Đã khóa)' : (p.id === currentActivePeriodId || p.isCurrent) ? '(Hiện tại)' : ''}
                   </option>
                 ))}
               </select>
