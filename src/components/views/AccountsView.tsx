@@ -269,8 +269,119 @@ export function AccountsView() {
           </div>
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
+        {/* Mobile View for Phones (< md) */}
+        <div className="block md:hidden p-3 space-y-3">
+          {filteredAccounts.map((account) => {
+            const isPasswordRevealed = revealedPasswords[account.id] || false
+            return (
+              <div
+                key={account.id}
+                className="p-3.5 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-extrabold text-slate-900 text-sm">
+                        {account.fullName}
+                      </span>
+                      {account.isFixed && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                          Cố định
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
+                      {account.roleTitle}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono block">
+                      {account.email}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] border shrink-0 ${getDeptBadgeStyle(
+                      account.departmentSlug
+                    )}`}
+                  >
+                    {account.departmentName}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-xs font-bold text-slate-800 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                      {isPasswordRevealed ? account.passwordPlain : '••••••••'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordReveal(account.id)}
+                      className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
+                    >
+                      {isPasswordRevealed ? (
+                        <EyeOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyText(account.passwordPlain, `pass-${account.id}`)}
+                      className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
+                    >
+                      {copiedId === `pass-${account.id}` ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {account.status === 'active' ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span>Hoạt động</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                      <span>Tạm khóa</span>
+                    </span>
+                  )}
+                </div>
+
+                {!account.isFixed && (
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingAccount(account)
+                        setEditPassword(account.passwordPlain)
+                        setEditRoleTitle(account.roleTitle)
+                        setEditStatus(account.status)
+                        setEditFeedback(null)
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 font-bold text-xs transition flex items-center gap-1 shadow-2xs"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Sửa thông tin</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(account.id, account.fullName)}
+                      className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                      title="Xóa tài khoản"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Table Content (Desktop >= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200/90 text-slate-600 font-bold uppercase tracking-wider text-[11px]">

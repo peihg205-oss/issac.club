@@ -24,7 +24,14 @@ export default function AppHome() {
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('dashboard')
   const [selectedMember, setSelectedMember] = useState<RosterMember | null>(null)
   const [globalSearch, setGlobalSearch] = useState<string>('')
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
+  // Mặc định đóng trên màn hình điện thoại (< 1024px) để không che khuất nội dung
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setIsSidebarOpen(true)
+    }
+  }, [])
 
   const pendingCount = isBCN ? proposals.filter((p) => p.status === 'pending_bcn').length : 0
 
@@ -72,7 +79,7 @@ export default function AppHome() {
         />
 
         {/* Main Content Area - Căn đều hai bên đồng bộ với Header 100% */}
-        <main className="flex-1 py-6 sm:py-8 px-6 sm:px-12 lg:px-16 xl:px-20 w-full min-w-0">
+        <main className="flex-1 py-4 sm:py-8 px-3 sm:px-6 md:px-10 lg:px-16 xl:px-20 w-full min-w-0">
           {selectedMember ? (
             <MemberProfileView member={selectedMember} onBack={handleBackFromMember} />
           ) : activeTab === 'dashboard' ? (

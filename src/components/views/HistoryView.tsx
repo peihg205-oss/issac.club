@@ -398,7 +398,7 @@ export function HistoryView() {
         </div>
 
         {/* Period & Month Controls */}
-        <div className="flex items-center gap-2.5 shrink-0 flex-nowrap">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
           {/* Semester selector */}
           <select
             value={selectedSemester}
@@ -569,9 +569,74 @@ export function HistoryView() {
           </div>
         </div>
       ) : (
-        /* Regular Table: Signature iSSAC Deep Navy Header */
-        <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
-          <div className="overflow-x-auto">
+        <>
+          {/* Mobile Card List for phones (< md) */}
+          <div className="block md:hidden space-y-3">
+            {filteredHistory.length === 0 ? (
+              <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center text-slate-400">
+                <p className="font-semibold text-xs">Không có dữ liệu lịch sử điểm</p>
+              </div>
+            ) : (
+              filteredHistory.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1351D8] border border-blue-200/80 font-bold flex items-center justify-center text-xs shrink-0">
+                        {item.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium block truncate">
+                          {item.dept} • {item.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
+                          item.points > 0
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}
+                      >
+                        {item.points > 0 ? `+${item.points}` : item.points}đ
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-200/60 text-xs text-slate-700 flex items-start gap-1.5">
+                    <span className="font-mono font-bold text-[10px] text-[#1351D8] bg-white px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
+                      {item.code}
+                    </span>
+                    <span className="leading-snug">{item.title}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                    <span>
+                      Người chấm: <strong className="text-slate-700">{item.scorer}</strong>
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        item.type === 'Cộng' ? 'text-emerald-700' : 'text-rose-700'
+                      }`}
+                    >
+                      {item.type} điểm
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Regular Table: Signature iSSAC Deep Navy Header (Desktop >= md) */}
+          <div className="hidden md:block bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
               <thead className="bg-[#0B1E48] text-xs font-bold text-white uppercase tracking-wider border-b border-[#071533] select-none">
                 <tr className="divide-x divide-white/10">
@@ -689,7 +754,8 @@ export function HistoryView() {
             </div>
           </div>
         </div>
-      )}
+      </>
+    )}
 
       {/* Modal nộp khiếu nại điểm Q06 */}
       {disputeModalOpen && (

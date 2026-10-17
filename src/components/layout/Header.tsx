@@ -41,7 +41,7 @@ export function Header({
   const badgeDisplay = pendingCount > 0 ? pendingCount : 297
 
   return (
-    <header className="h-14 sm:h-15 bg-white border-b border-slate-200/90 px-6 sm:px-12 lg:px-16 xl:px-20 flex items-center justify-between sticky top-0 z-30 select-none shadow-2xs">
+    <header className="h-14 sm:h-15 bg-white border-b border-slate-200/90 px-3 sm:px-6 md:px-10 lg:px-16 xl:px-20 flex items-center justify-between sticky top-0 z-30 select-none shadow-2xs">
       {/* LEFT: Logo + Pill Search Bar (Clean without launcher) */}
       <div className="flex items-center gap-3 sm:gap-6 min-w-0">
         {/* Câu Lạc Bộ Đại Sứ Sinh Viên Logo */}
@@ -164,7 +164,7 @@ export function Header({
             </div>
 
             {/* Username in UPPERCASE */}
-            <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight uppercase">
+            <span className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight uppercase truncate max-w-[85px] sm:max-w-none">
               {currentUser.name}
             </span>
 

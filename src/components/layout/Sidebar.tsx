@@ -239,7 +239,7 @@ export function Sidebar({
     <>
       {/* Click-outside backdrop to dismiss */}
       <div
-        className="fixed inset-0 z-30 bg-transparent"
+        className="fixed inset-0 z-30 bg-black/40 backdrop-blur-2xs sm:bg-transparent"
         onClick={onToggle}
         aria-hidden="true"
       />
@@ -247,22 +247,22 @@ export function Sidebar({
       {/* Floating Menu Drawer: Flush against left edge (left-0), Fixed with 18px gap below Header (top-[74px]) */}
       <div
         ref={menuRef}
-        className="fixed left-0 top-[74px] z-40 select-none animate-fadeIn"
+        className="fixed left-0 top-[70px] sm:top-[74px] z-40 select-none animate-fadeIn max-h-[calc(100vh-80px)]"
       >
         <div className="relative">
           {/* Launcher button attached to top-right of the menu drawer: rounded-xl */}
           <button
             type="button"
             onClick={onToggle}
-            className="absolute -right-12 top-2 w-10 h-10 rounded-xl bg-[#EFF6FF] border border-blue-200/90 hover:bg-[#DBEAFE] hover:border-blue-300 shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 z-50 group text-slate-600 hover:text-blue-600"
+            className="absolute -right-11 sm:-right-12 top-2 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EFF6FF] border border-blue-200/90 hover:bg-[#DBEAFE] hover:border-blue-300 shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 z-50 group text-slate-600 hover:text-blue-600"
             title="Thu gọn thanh điều hướng (Menu 9 chấm)"
           >
-            <NineDotsIcon className="w-5 h-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
+            <NineDotsIcon className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
           </button>
 
           {/* Main Container: Khung tổng hơi hơi tròn xíu tổng thể vẫn vuông (rounded-r-2xl), shadow-2xl, border-r border-b */}
           <div
-            className="w-64 sm:w-72 rounded-r-2xl shadow-2xl overflow-hidden border-r border-b border-black/15 transition-colors duration-200 flex flex-col justify-between"
+            className="w-[260px] sm:w-72 rounded-r-2xl shadow-2xl overflow-y-auto max-h-[calc(100vh-85px)] border-r border-b border-black/15 transition-colors duration-200 flex flex-col justify-between"
             style={{ backgroundColor: currentTheme.headerBg }}
           >
             {/* Navigation Items: Cỡ chữ chuẩn ảnh 1, các thẻ con bo tròn mềm mại */}

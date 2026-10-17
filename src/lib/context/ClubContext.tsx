@@ -505,6 +505,40 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     isHydratedRef.current = true
+    // Đồng bộ tức thì từ Supabase Cloud khi vừa tải trang
+    fetchCloudSync()
+  }, [])
+
+  // Đồng bộ đám mây Supabase (PC <-> Điện thoại)
+  const fetchCloudSync = async () => {
+    try {
+      const res = await fetch('/api/db/sync')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+          setEvents(data.events)
+          try {
+            localStorage.setItem('issac_events_v4', JSON.stringify(data.events))
+          } catch (e) {}
+        }
+        if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
+          setProposals(data.proposals)
+          try {
+            localStorage.setItem('issac_proposals_v1', JSON.stringify(data.proposals))
+          } catch (e) {}
+        }
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+  }
+
+  // Polling định kỳ mỗi 4 giây để điện thoại nhận ngay sự kiện khi máy tính tạo
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchCloudSync()
+    }, 4000)
+    return () => clearInterval(timer)
   }, [])
 
   // Auto-sync state changes to localStorage after initial hydration
@@ -951,6 +985,14 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
       })
     )
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'checkin', eventId, memberCode, status, note }),
+      }).catch((e) => console.error('Cloud sync error on checkin:', e))
+    }
   }
 
   // Thành viên tự check-in qua cổng Kiosk hoặc Mobile (Tích hợp cơ chế Chống Điểm Danh Hộ)
@@ -1151,7 +1193,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       )
     )
 
-    return {
+    const result = {
       success: true,
       message: `Đã chốt sổ điểm danh và tự động cập nhật điểm cho ${totalApplied} thành viên Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế!`,
       summary: {
@@ -1162,6 +1204,21 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         totalApplied,
       },
     }
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'finalize',
+          eventId,
+          finalizedBy: finalizedByName,
+          proposals: newLedgerRecords,
+        }),
+      }).catch((e) => console.error('Cloud sync error on finalize:', e))
+    }
+
+    return result
   }
 
   // Thành viên nộp đơn khiếu nại điểm (Q06)
@@ -1516,6 +1573,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.error('Error saving events:', e)
       }
+
+      // Đẩy ngay lên Supabase Cloud API để điện thoại nhận được tức thì!
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create_event', event: newEvt, events: updated }),
+      }).catch((e) => console.error('Cloud sync error on create_event:', e))
     }
 
     return {
@@ -1556,6 +1620,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error(err)
       }
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync_all', events: updated }),
+      }).catch((e) => console.error('Cloud sync error on registerForEvent:', e))
     }
 
     const memberName = members.find((m) => m.member_code === memberCode)?.full_name || memberCode
@@ -1587,6 +1656,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error(err)
       }
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync_all', events: updated }),
+      }).catch((e) => console.error('Cloud sync error on unregisterFromEvent:', e))
     }
 
     return {
@@ -1608,6 +1682,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error(err)
       }
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync_all', events: updated }),
+      }).catch((e) => console.error('Cloud sync error on deleteEvent:', e))
     }
     return { success: true, message: 'Đã xóa sự kiện khỏi hệ thống.' }
   }

@@ -700,8 +700,172 @@ export function CheckinView() {
             </div>
           </div>
 
-          {/* Bảng Danh Sách Điểm Danh Với Header Navy Sang Trọng Đồng Bộ */}
-          <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
+          {/* Mobile Card List for phones (< md): Dễ dàng bấm bằng 1 ngón tay cái */}
+          <div className="block md:hidden space-y-3">
+            {filteredMembers.length === 0 ? (
+              <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center text-slate-400 space-y-2">
+                <Search className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="font-semibold text-xs">Không tìm thấy thành viên nào phù hợp</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('')
+                    setDeptFilter('ALL')
+                    setStatusFilter('ALL')
+                  }}
+                  className="text-xs text-[#1351D8] font-bold hover:underline"
+                >
+                  Xóa bộ lọc
+                </button>
+              </div>
+            ) : (
+              filteredMembers.map((m, idx) => {
+                const rec = records[m.member_code] || {
+                  memberCode: m.member_code,
+                  status: 'unexcused',
+                }
+                const status = rec.status
+
+                return (
+                  <div
+                    key={m.member_code}
+                    className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3"
+                  >
+                    {/* Top: Avatar, Tên, MSSV, Ban, Huy hiệu trạng thái */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {m.avatar_url || m.full_name === 'Trần Đức Thắng' ? (
+                          <img
+                            src={m.avatar_url || '/avatars/duc-thang.jpg'}
+                            alt={m.full_name}
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-50 text-[#1351D8] font-bold flex items-center justify-center text-sm shrink-0 border border-blue-200/60">
+                            {m.full_name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-bold text-[#0F172A] text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
+                            <span className="truncate">{m.full_name}</span>
+                            {m.is_core && (
+                              <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 text-[9px] font-bold rounded border border-amber-200/80">
+                                CORE
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 flex-wrap mt-0.5">
+                            <span>{m.student_id || m.member_code}</span>
+                            <span>•</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${getDeptBadgeStyle(m.department_slug)}`}>
+                              {m.department_name}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Trạng thái hiện tại */}
+                      <div className="shrink-0">
+                        {status === 'present_on_time' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-[#059669]" />
+                            <span>Đúng giờ (+1)</span>
+                          </span>
+                        )}
+                        {status === 'late' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            <span>Muộn (-1)</span>
+                          </span>
+                        )}
+                        {status === 'excused' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 inline-flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-blue-600" />
+                            <span>Phép (-2)</span>
+                          </span>
+                        )}
+                        {status === 'unexcused' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 inline-flex items-center gap-1">
+                            <XCircle className="w-3 h-3 text-rose-600" />
+                            <span>Vắng (-5)</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 4 Nút điểm danh 1 chạm to rõ trải đều màn hình điện thoại */}
+                    <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/70">
+                      <button
+                        type="button"
+                        onClick={() => updateCheckinRecord(currentEvt.id, m.member_code, 'present_on_time')}
+                        className={`py-2 text-[11px] font-bold rounded-lg transition-all text-center cursor-pointer ${
+                          status === 'present_on_time'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-slate-700 hover:bg-white hover:text-emerald-700'
+                        }`}
+                      >
+                        Đúng giờ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateCheckinRecord(currentEvt.id, m.member_code, 'late')}
+                        className={`py-2 text-[11px] font-bold rounded-lg transition-all text-center cursor-pointer ${
+                          status === 'late'
+                            ? 'bg-amber-600 text-white shadow-xs'
+                            : 'text-slate-700 hover:bg-white hover:text-amber-700'
+                        }`}
+                      >
+                        Muộn
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateCheckinRecord(currentEvt.id, m.member_code, 'excused')}
+                        className={`py-2 text-[11px] font-bold rounded-lg transition-all text-center cursor-pointer ${
+                          status === 'excused'
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'text-slate-700 hover:bg-white hover:text-blue-700'
+                        }`}
+                      >
+                        Phép
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateCheckinRecord(currentEvt.id, m.member_code, 'unexcused')}
+                        className={`py-2 text-[11px] font-bold rounded-lg transition-all text-center cursor-pointer ${
+                          status === 'unexcused'
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'text-slate-700 hover:bg-white hover:text-rose-700'
+                        }`}
+                      >
+                        Vắng
+                      </button>
+                    </div>
+
+                    {/* Dòng ghi chú & giờ điểm danh */}
+                    <div className="flex items-center gap-2 pt-1 text-xs">
+                      {rec.checkinTime && (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-2 py-1 rounded-lg shrink-0 text-[10px]">
+                          <Clock className="w-3 h-3 text-emerald-600" />
+                          <span>{rec.checkinTime}</span>
+                        </span>
+                      )}
+                      <input
+                        type="text"
+                        placeholder="Ghi chú (lý do muộn/vắng)..."
+                        defaultValue={rec.note || ''}
+                        onBlur={(e) =>
+                          updateCheckinRecord(currentEvt.id, m.member_code, status, e.target.value)
+                        }
+                        className="flex-1 text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Bảng Danh Sách Điểm Danh Desktop (Ẩn trên điện thoại, hiển thị từ màn hình md trở lên) */}
+          <div className="hidden md:block bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm text-slate-700 border-collapse">
                 {/* Header Navy sang trọng của dự án */}
