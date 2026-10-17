@@ -24,6 +24,7 @@ import {
   Check,
   Zap,
 } from 'lucide-react'
+import jsQR from 'jsqr'
 import type { MeetingEvent, CheckinRecord, CheckinStatus } from '@/lib/context/ClubContext'
 import type { RosterMember } from '@/lib/clubData'
 
@@ -49,6 +50,8 @@ export function AdminQrScannerModal({
   const [activeCamera, setActiveCamera] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const lastScannedPayloadRef = useRef<string>('')
+  const lastScannedTimeRef = useRef<number>(0)
 
   // Feedback state for current scan
   const [scanResult, setScanResult] = useState<{
@@ -107,29 +110,79 @@ export function AdminQrScannerModal({
     }
   }
 
-  // Camera video stream handling
+  // Camera video stream handling & continuous frame scan with jsQR
   useEffect(() => {
     let stream: MediaStream | null = null
+    let animationFrameId: number
+    let isRunning = true
 
     if (isOpen && activeCamera && typeof navigator !== 'undefined' && navigator.mediaDevices) {
       navigator.mediaDevices
-        .getUserMedia({ video: { facingMode: 'environment' } })
+        .getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        })
         .then((s) => {
           stream = s
           if (videoRef.current) {
             videoRef.current.srcObject = s
+            videoRef.current.setAttribute('playsinline', 'true')
             videoRef.current.play().catch(() => {})
           }
           setCameraError(null)
+
+          // Continuous Frame Scanning loop with jsQR
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
+          const tick = () => {
+            if (!isRunning) return
+
+            const video = videoRef.current
+            if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+              canvas.width = video.videoWidth
+              canvas.height = video.videoHeight
+              if (ctx) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                  inversionAttempts: 'dontInvert',
+                })
+
+                if (code && code.data && code.data.trim()) {
+                  const now = Date.now()
+                  const isSame = code.data === lastScannedPayloadRef.current
+                  const cooldown = isSame ? 2500 : 1000
+
+                  if (now - lastScannedTimeRef.current > cooldown) {
+                    lastScannedPayloadRef.current = code.data
+                    lastScannedTimeRef.current = now
+                    processScan(code.data)
+                  }
+                }
+              }
+            }
+
+            animationFrameId = requestAnimationFrame(tick)
+          }
+
+          animationFrameId = requestAnimationFrame(tick)
         })
         .catch((err) => {
           console.warn('Camera access error:', err)
-          setCameraError('Không thể truy cập camera. Bạn có thể dùng chế độ Quét Mô Phỏng 1-Click hoặc nhập mã.')
+          setCameraError('Không thể mở camera. Bạn có thể cho phép quyền Camera trên trình duyệt hoặc dùng phím Quét Nhanh.')
           setActiveCamera(false)
         })
     }
 
     return () => {
+      isRunning = false
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
       if (stream) {
         stream.getTracks().forEach((track) => track.stop())
       }
@@ -142,19 +195,33 @@ export function AdminQrScannerModal({
 
     let memberCode = rawPayload.trim()
 
-    // Nếu là chuỗi JSON từ QR Ticket
+    // 1. Nếu là chuỗi JSON từ QR Ticket
     try {
       if (rawPayload.includes('{') && rawPayload.includes('}')) {
         const parsed = JSON.parse(rawPayload)
         if (parsed.memberCode) {
           memberCode = parsed.memberCode
+        } else if (parsed.studentId) {
+          memberCode = parsed.studentId
         }
       }
     } catch {
       // Not JSON, use raw
     }
 
-    // Nếu là mã vé token TKT-XXX-MEMBERCODE
+    // 2. Nếu là URL dạng https://.../checkin?member=... hoặc ?code=...
+    if (memberCode.includes('http://') || memberCode.includes('https://') || memberCode.includes('?')) {
+      try {
+        const queryStr = memberCode.includes('?') ? memberCode.split('?')[1] : ''
+        const params = new URLSearchParams(queryStr)
+        const code = params.get('member') || params.get('code') || params.get('memberCode') || params.get('studentId')
+        if (code) memberCode = code
+      } catch {
+        // ignore
+      }
+    }
+
+    // 3. Nếu là mã vé token TKT-XXX-MEMBERCODE
     if (memberCode.startsWith('TKT-')) {
       const parts = memberCode.split('-')
       if (parts.length >= 3) {
@@ -165,7 +232,8 @@ export function AdminQrScannerModal({
     const targetMember = members.find(
       (m) =>
         m.member_code.toLowerCase() === memberCode.toLowerCase() ||
-        (m.student_id && m.student_id.toLowerCase() === memberCode.toLowerCase())
+        (m.student_id && m.student_id.toLowerCase() === memberCode.toLowerCase()) ||
+        m.full_name.toLowerCase() === memberCode.toLowerCase()
     )
 
     if (!targetMember) {

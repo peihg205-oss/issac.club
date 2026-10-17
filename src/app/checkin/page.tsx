@@ -59,10 +59,10 @@ function CheckinContent() {
 
   // 3 tab dành cho thành viên không có tài khoản:
   // 'register': Đăng ký trước các sự kiện/workshop sắp tới của CLB (Ưu tiên số 1)
-  // 'live_checkin': Điểm danh trực tiếp tại hội trường bằng PIN máy chiếu
+  // 'live_checkin': Điểm danh trực tiếp tại hội trường
   // 'lookup': Tra cứu điểm thi đua và hồ sơ cá nhân nhanh bằng MSSV/Họ tên
   const [activeTab, setActiveTab] = useState<'register' | 'live_checkin' | 'lookup'>(
-    urlTab === 'live_checkin' || urlPin ? 'live_checkin' : urlTab === 'lookup' ? 'lookup' : 'register'
+    urlTab === 'live_checkin' ? 'live_checkin' : urlTab === 'lookup' ? 'lookup' : 'register'
   )
 
   // Sự kiện đang chọn để check-in hoặc đăng ký
@@ -70,9 +70,14 @@ function CheckinContent() {
     urlEventId || activeEventId || events[0]?.id || ''
   )
 
+  // Phương thức điểm danh tại hội trường:
+  // 'qr_pass': Hiện mã QR vé cá nhân để Core Team quét nhận ngay (Khuyên dùng)
+  // 'pin_form': Tự nhập mã PIN máy chiếu hội trường
+  const [checkinMethod, setCheckinMethod] = useState<'qr_pass' | 'pin_form'>('qr_pass')
+
   // Form check-in tại hội trường & Cơ chế Chống Điểm Danh Hộ
   const [checkinMemberCode, setCheckinMemberCode] = useState<string>(members[0]?.member_code || '')
-  const [pinInput, setPinInput] = useState<string>(urlPin || '')
+  const [pinInput, setPinInput] = useState<string>('')
   const [phoneLastDigits, setPhoneLastDigits] = useState<string>('')
   const [checkinResult, setCheckinResult] = useState<{
     success: boolean
@@ -265,6 +270,8 @@ function CheckinContent() {
       m.department_name.toLowerCase().includes(q)
     )
   })
+
+  const selectedCheckinMember = members.find((m) => m.member_code === checkinMemberCode) || members[0]
 
   return (
     <div className="min-h-screen bg-[#FAFBFC] text-slate-800 antialiased flex flex-col">
@@ -824,32 +831,63 @@ function CheckinContent() {
                   </div>
                 </div>
               ) : (
-                /* TRƯỜNG HỢP 3: Form nhập danh tính & PIN 3 lớp chống gian lận */
-                <form onSubmit={handleCheckinSubmit} className="space-y-4">
-                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/80 flex items-center justify-center font-bold shadow-2xs">
-                        <UserCheck className="w-4 h-4" />
+                /* TRƯỜNG HỢP 3: Lựa chọn Quét mã QR nhận ngay hoặc Tự nhập mã PIN */
+                <div className="space-y-5">
+                  {/* Card Header & Switcher */}
+                  <div className="space-y-3 pb-3.5 border-b border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/80 flex items-center justify-center font-bold shadow-2xs">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-black text-[#0B1E48]">
+                            Xác Thực Thành Viên &amp; Điểm Danh
+                          </h3>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            Đưa mã QR cho Core Team quét hoặc tự nhập mã PIN máy chiếu
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm sm:text-base font-black text-[#0B1E48]">
-                          Xác Thực Thành Viên &amp; Điểm Danh
-                        </h3>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Bảo mật 3 bước xác thực chống gian lận
-                        </p>
-                      </div>
+                      {isKioskMode ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                          <Unlock className="w-3.5 h-3.5 text-amber-700" />
+                          <span>KIOSK LỄ TÂN</span>
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                          {checkinMethod === 'qr_pass' ? 'Quét QR 1-Giây' : '3 Bước xác thực'}
+                        </span>
+                      )}
                     </div>
-                    {isKioskMode ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                        <Unlock className="w-3.5 h-3.5 text-amber-700" />
-                        <span>KIOSK LỄ TÂN (HR)</span>
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80">
-                        3 Bước xác thực
-                      </span>
-                    )}
+
+                    {/* Switcher: Mã QR vs Nhập mã PIN */}
+                    <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/90 gap-1 text-xs font-bold shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setCheckinMethod('qr_pass')}
+                        className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                          checkinMethod === 'qr_pass'
+                            ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80 font-black'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                      >
+                        <QrCode className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>🎟️ Mã QR (Core Team Quét Nhận Ngay)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCheckinMethod('pin_form')}
+                        className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                          checkinMethod === 'pin_form'
+                            ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80 font-black'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                      >
+                        <Key className="w-4 h-4 text-[#1351D8] shrink-0" />
+                        <span>🔢 Tự Nhập Mã PIN Máy Chiếu</span>
+                      </button>
+                    </div>
                   </div>
 
                   {isKioskMode && (
@@ -877,108 +915,157 @@ function CheckinContent() {
                     </div>
                   )}
 
-                  {/* Bước 1: Chọn thành viên */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-800">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
-                      Chọn Họ tên &amp; MSSV của bạn trong CLB: <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      suppressHydrationWarning
-                      value={checkinMemberCode}
-                      onChange={(e) => setCheckinMemberCode(e.target.value)}
-                      className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 transition shadow-2xs cursor-pointer"
-                    >
-                      {members.map((m) => {
-                        const isCheckedIn =
-                          currentEvent?.records?.[m.member_code]?.status === 'present_on_time' ||
-                          currentEvent?.records?.[m.member_code]?.status === 'late'
-                        return (
-                          <option
-                            key={m.member_code}
-                            value={m.member_code}
-                            suppressHydrationWarning
-                            disabled={isCheckedIn}
-                          >
-                            {isCheckedIn ? '✓ [ĐÃ ĐIỂM DANH] ' : ''}
-                            {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
-                          </option>
-                        )
-                      })}
-                    </select>
-                    <span className="block text-[11px] text-slate-400 mt-1 pl-6">
-                      (Danh sách 48 thành viên CLB. Thành viên đã điểm danh sẽ được đánh dấu và khóa).
-                    </span>
-                  </div>
+                  {/* PHƯƠNG THỨC 1: HIỆN MÃ QR VÉ ĐIỂM DANH ĐỂ CORE TEAM QUÉT NHẬN NGAY */}
+                  {checkinMethod === 'qr_pass' && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1">
+                          Chọn Họ tên &amp; MSSV của bạn để hiện mã QR cá nhân: <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          suppressHydrationWarning
+                          value={checkinMemberCode}
+                          onChange={(e) => setCheckinMemberCode(e.target.value)}
+                          className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 transition shadow-2xs cursor-pointer"
+                        >
+                          {members.map((m) => {
+                            const isCheckedIn =
+                              currentEvent?.records?.[m.member_code]?.status === 'present_on_time' ||
+                              currentEvent?.records?.[m.member_code]?.status === 'late'
+                            return (
+                              <option key={m.member_code} value={m.member_code} suppressHydrationWarning>
+                                {isCheckedIn ? '✓ [ĐÃ ĐIỂM DANH] ' : ''}
+                                {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
+                              </option>
+                            )
+                          })}
+                        </select>
+                      </div>
 
-                  {/* Bước 2: Nhập mã PIN máy chiếu */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-800">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">2</span>
-                      Nhập mã PIN máy chiếu hội trường (4 số): <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        maxLength={6}
-                        required
-                        placeholder="Ví dụ: 8899"
-                        value={pinInput}
-                        onChange={(e) => setPinInput(e.target.value)}
-                        className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-center tracking-[0.3em] font-mono text-xl font-black text-[#1351D8] transition shadow-2xs"
-                      />
-                    </div>
-                    <span className="block text-[11px] text-slate-500 mt-1 text-center">
-                      Mã PIN hiển thị trực tiếp trên màn hình máy chiếu phòng họp / hội trường.
-                    </span>
-                  </div>
+                      {/* Hiển thị Vé QR Check-in Điểm Danh Tức Thì */}
+                      {currentEvent && selectedCheckinMember && (
+                        <QrTicketPass event={currentEvent} member={selectedCheckinMember} />
+                      )}
 
-                  {/* Bước 3: Xác thực 4 số cuối Số điện thoại cá nhân (Chống điểm danh hộ) */}
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold text-slate-800">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">3</span>
-                        Xác thực 4 số cuối Số điện thoại của bạn: <span className="text-rose-500">*</span>
-                      </label>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1351D8] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200/60 shadow-2xs">
-                        <ShieldCheck className="w-3 h-3 text-[#1351D8]" />
-                        Chống điểm danh hộ
-                      </span>
+                      <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1 shadow-2xs">
+                        <div className="flex items-center gap-2 font-bold text-emerald-900">
+                          <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>⚡ Quét Phát Nhận Ngay (Khuyên dùng)</span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800/90 leading-relaxed">
+                          Bạn chỉ cần giơ màn hình mã QR này vào trước camera máy quét của Core Team / Ban Tổ chức tại bàn đón tiếp. Hệ thống sẽ nhận diện tự động trong 0.5s và ghi nhận có mặt ngay mà không cần nhập số hay mật mã!
+                        </p>
+                      </div>
                     </div>
-                    <div className="relative max-w-xs mx-auto">
-                      <input
-                        type="password"
-                        maxLength={4}
-                        required
-                        placeholder="Ví dụ: 0705"
-                        value={phoneLastDigits}
-                        onChange={(e) => setPhoneLastDigits(e.target.value.replace(/\D/g, ''))}
-                        className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2 text-center tracking-[0.35em] font-mono text-base font-black text-[#0B1E48] transition shadow-2xs"
-                      />
-                    </div>
-                    <p className="text-[11px] text-slate-500 text-center leading-relaxed">
-                      Nhập 4 số cuối SĐT đã đăng ký trong hồ sơ CLB để xác minh chính chủ. Người ở nhà không thể điểm danh hộ nếu không có thông tin xác thực này.
-                    </p>
-                  </div>
+                  )}
 
-                  <button
-                    type="submit"
-                    disabled={submittingCheckin}
-                    className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#0B1E48] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white shadow-md shadow-[#1351D8]/20 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {submittingCheckin ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Đang xác thực bảo mật &amp; điểm danh...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Xác Nhận Hiện Diện (Chống Gian Lận)</span>
-                      </>
-                    )}
-                  </button>
-                </form>
+                  {/* PHƯƠNG THỨC 2: TỰ NHẬP MÃ PIN MÁY CHIẾU (KHÔNG ĐIỀN SẴN/GỢI Ý) */}
+                  {checkinMethod === 'pin_form' && (
+                    <form onSubmit={handleCheckinSubmit} className="space-y-4 animate-in fade-in duration-200">
+                      {/* Bước 1: Chọn thành viên */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-800">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
+                          Chọn Họ tên &amp; MSSV của bạn trong CLB: <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          suppressHydrationWarning
+                          value={checkinMemberCode}
+                          onChange={(e) => setCheckinMemberCode(e.target.value)}
+                          className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 transition shadow-2xs cursor-pointer"
+                        >
+                          {members.map((m) => {
+                            const isCheckedIn =
+                              currentEvent?.records?.[m.member_code]?.status === 'present_on_time' ||
+                              currentEvent?.records?.[m.member_code]?.status === 'late'
+                            return (
+                              <option
+                                key={m.member_code}
+                                value={m.member_code}
+                                suppressHydrationWarning
+                                disabled={isCheckedIn}
+                              >
+                                {isCheckedIn ? '✓ [ĐÃ ĐIỂM DANH] ' : ''}
+                                {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
+                              </option>
+                            )
+                          })}
+                        </select>
+                        <span className="block text-[11px] text-slate-400 mt-1 pl-6">
+                          (Danh sách 48 thành viên CLB. Thành viên đã điểm danh sẽ được đánh dấu và khóa).
+                        </span>
+                      </div>
+
+                      {/* Bước 2: Nhập mã PIN máy chiếu - HOÀN TOÀN TRỐNG, KHÔNG GỢI Ý */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-800">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">2</span>
+                          Nhập mã PIN máy chiếu hội trường (4 số): <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            required
+                            placeholder="Nhập mã 4 số từ máy chiếu..."
+                            value={pinInput}
+                            onChange={(e) => setPinInput(e.target.value)}
+                            className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-center tracking-[0.3em] font-mono text-xl font-black text-[#1351D8] transition shadow-2xs placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-medium placeholder:text-slate-400"
+                          />
+                        </div>
+                        <span className="block text-[11px] text-slate-500 mt-1 text-center font-medium">
+                          Mã PIN hiển thị trực tiếp trên màn hình máy chiếu phòng họp / hội trường để xác minh bạn đang có mặt.
+                        </span>
+                      </div>
+
+                      {/* Bước 3: Xác thực 4 số cuối Số điện thoại cá nhân (Chống điểm danh hộ) */}
+                      <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-bold text-slate-800">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">3</span>
+                            Xác thực 4 số cuối Số điện thoại của bạn: <span className="text-rose-500">*</span>
+                          </label>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1351D8] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200/60 shadow-2xs">
+                            <ShieldCheck className="w-3 h-3 text-[#1351D8]" />
+                            Chống điểm danh hộ
+                          </span>
+                        </div>
+                        <div className="relative max-w-xs mx-auto">
+                          <input
+                            type="password"
+                            maxLength={4}
+                            required
+                            placeholder="Ví dụ: 0705"
+                            value={phoneLastDigits}
+                            onChange={(e) => setPhoneLastDigits(e.target.value.replace(/\D/g, ''))}
+                            className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2 text-center tracking-[0.35em] font-mono text-base font-black text-[#0B1E48] transition shadow-2xs"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+                          Nhập 4 số cuối SĐT đã đăng ký trong hồ sơ CLB để xác minh chính chủ. Người ở nhà không thể điểm danh hộ nếu không có thông tin xác thực này.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={submittingCheckin}
+                        className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#0B1E48] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white shadow-md shadow-[#1351D8]/20 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        {submittingCheckin ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Đang xác thực bảo mật &amp; điểm danh...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Xác Nhận Hiện Diện (Chống Gian Lận)</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </div>
               )}
               </>
               )}

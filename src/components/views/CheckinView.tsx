@@ -152,7 +152,7 @@ export function CheckinView() {
 
   const handleCopyCheckinLink = () => {
     if (currentEvt && typeof window !== 'undefined') {
-      const url = `${window.location.origin}/checkin?event=${currentEvt.id}&pin=${currentEvt.pinCode}`
+      const url = `${window.location.origin}/checkin?event=${currentEvt.id}`
       navigator.clipboard.writeText(url)
       setCopiedLink(true)
       setTimeout(() => setCopiedLink(false), 2000)
@@ -534,7 +534,7 @@ export function CheckinView() {
 
                       <div className="flex items-center gap-2 pt-0.5 text-[11px] font-bold">
                         <a
-                          href={`/checkin?event=${currentEvt.id}&pin=${currentEvt.pinCode}`}
+                          href={`/checkin?event=${currentEvt.id}`}
                           target="_blank"
                           rel="noreferrer"
                           className="text-amber-300 hover:text-amber-200 hover:underline flex items-center gap-1 truncate"
