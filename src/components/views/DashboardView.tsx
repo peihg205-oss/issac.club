@@ -37,15 +37,23 @@ export function DashboardView({
 
   const totalMembers = members.length
   const totalScore = members.reduce((sum, m) => sum + m.current_score, 0)
-  const avgScore = totalMembers > 0 ? (totalScore / totalMembers).toFixed(1) : '74.6'
+  const avgScore = totalMembers > 0 ? (totalScore / totalMembers).toFixed(1) : '60.0'
 
   // Thống kê đề xuất điểm
   const pendingCount = proposals.filter((p) => p.status === 'pending_bcn').length
-  const approvedCount = proposals.filter((p) => p.status === 'approved').length + 28
+  const approvedCount = proposals.filter((p) => p.status === 'approved').length
 
-  const countOnTime = 38
-  const countLate = 4
-  const countExcused = 3
+  const records = activeEvent?.records || {}
+  let countOnTime = 0
+  let countLate = 0
+  let countExcused = 0
+  if (activeEvent) {
+    Object.values(records).forEach((r) => {
+      if (r.status === 'present_on_time') countOnTime++
+      else if (r.status === 'late') countLate++
+      else if (r.status === 'excused') countExcused++
+    })
+  }
 
   // Thống kê thành viên theo Ban
   const ttMembers = members.filter((m) => m.department_code === 'B01').length || 14
@@ -84,11 +92,23 @@ export function DashboardView({
           <button
             type="button"
             onClick={onNavigateToCheckin}
-            className="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/90 text-emerald-700 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            className={`px-3.5 py-2.5 rounded-xl border text-xs sm:text-[13px] font-bold shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer ${
+              activeEvent && !activeEvent.isFinalized
+                ? 'bg-emerald-50 hover:bg-emerald-100/80 border-emerald-200/90 text-emerald-700'
+                : 'bg-slate-50 hover:bg-slate-100 border-slate-200/90 text-slate-700'
+            }`}
             title="Chuyển đến màn hình điểm danh"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Đang mở cổng điểm danh</span>
+            <span
+              className={`w-2 h-2 rounded-full ${
+                activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+              }`}
+            />
+            <span>
+              {activeEvent && !activeEvent.isFinalized
+                ? 'Đang mở cổng điểm danh'
+                : 'Cổng điểm danh CLB'}
+            </span>
           </button>
         </div>
       </div>

@@ -48,7 +48,7 @@ interface MemberProfileViewProps {
 }
 
 export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
-  const { members } = useClub()
+  const { members, proposals, events } = useClub()
   const { isBCN } = useAuth()
   // Mặc định hiển thị tab 'profile' (Giao diện y hệt Figma Prototype)
   const [activeTab, setActiveTab] = useState<'profile' | 'overview' | 'history'>('profile')
@@ -63,7 +63,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   // Xếp hạng trong CLB & trong Ban
   const { clubRank, deptRank, deptAvg, clubAvg } = useMemo(() => {
     const sortedClub = [...members].sort((a, b) => b.current_score - a.current_score)
-    const cRank = sortedClub.findIndex((m) => m.member_code === currentMember.member_code) + 1 || 4
+    const cRank = sortedClub.findIndex((m) => m.member_code === currentMember.member_code) + 1 || 1
 
     const deptMembers = members.filter((m) => m.department_slug === currentMember.department_slug)
     const sortedDept = [...deptMembers].sort((a, b) => b.current_score - a.current_score)
@@ -72,111 +72,105 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
     const dAvg =
       deptMembers.length > 0
         ? (deptMembers.reduce((acc, m) => acc + m.current_score, 0) / deptMembers.length).toFixed(1)
-        : '82.5'
+        : '60.0'
 
     const cAvg =
       members.length > 0
         ? (members.reduce((acc, m) => acc + m.current_score, 0) / members.length).toFixed(1)
-        : '74.6'
+        : '60.0'
 
     return { clubRank: cRank, deptRank: dRank, deptAvg: dAvg, clubAvg: cAvg }
   }, [members, currentMember])
 
   const octScore = currentMember.current_score
-  const changeValue = currentMember.current_score >= 85 ? 5 : currentMember.current_score >= 70 ? 3 : 0
-  const bonusTotal = 12
-  const deductTotal = 7
+  const changeValue = currentMember.current_score - 60
   const rating = getRatingLevel(octScore)
 
-  // Danh sách lịch sử điểm
-  const fullHistory = useMemo(() => [
-    {
-      id: 'rec-1',
-      time: '15/10/2025 09:24',
-      code: 'C02',
-      title: 'Tương tác kèm bình luận bài phát động Fanpage CLB',
-      category: 'Mạng xã hội & Truyền thông',
-      type: 'add' as const,
-      points: 2,
-      rawPoints: 2,
-      actor: 'Hệ thống tự động',
-      status: 'Đã phê duyệt',
-    },
-    {
-      id: 'rec-2',
-      time: '14/10/2025 16:12',
-      code: 'C05',
-      title: 'Hoàn thành đúng deadline ấn phẩm truyền thông sự kiện Gen 3',
-      category: 'Nhiệm vụ & Tiến độ',
-      type: 'add' as const,
-      points: 2,
-      rawPoints: 2,
-      actor: 'BCN / Phó chủ nhiệm',
-      status: 'Đã phê duyệt',
-    },
-    {
-      id: 'rec-3',
-      time: '10/10/2025 10:15',
-      code: 'C06',
-      title: 'Sản phẩm đầu ra đạt chất lượng xuất sắc được BCN khen thưởng',
-      category: 'Khen thưởng chuyên môn',
-      type: 'add' as const,
-      points: 4,
-      rawPoints: 4,
-      actor: 'Chủ nhiệm CLB',
-      status: 'Đã phê duyệt',
-    },
-    {
-      id: 'rec-4',
-      time: '08/10/2025 14:00',
-      code: 'C01',
-      title: 'Tương tác thả cảm xúc bài viết tuyển sinh iSSAC đúng hạn 12h',
-      category: 'Mạng xã hội & Truyền thông',
-      type: 'add' as const,
-      points: 1,
-      rawPoints: 1,
-      actor: 'Hệ thống tự động',
-      status: 'Đã phê duyệt',
-    },
-    {
-      id: 'rec-5',
-      time: '04/10/2025 11:20',
-      code: 'C08',
-      title: 'Chủ động nhận & hoàn thành nhiệm vụ phát sinh đột xuất',
-      category: 'Nhiệm vụ & Cống hiến',
-      type: 'add' as const,
-      points: 4,
-      rawPoints: 4,
-      actor: 'Trưởng ban TT',
-      status: 'Đã phê duyệt',
-    },
-    {
-      id: 'rec-6',
-      time: '02/10/2025 19:30',
-      code: 'T07',
-      title: 'Nộp muộn báo cáo tiến độ tuần dưới 24 giờ',
-      category: 'Kỷ luật & Deadline',
-      type: 'deduct' as const,
-      points: -4,
-      rawPoints: -2,
-      note: 'Core Team áp dụng chế tài phạt ×2 (P03: -2 × 2 = -4đ)',
-      actor: 'Ban Nhân sự ghi nhận',
-      status: 'Đã thi hành',
-    },
-    {
-      id: 'rec-7',
-      time: '01/10/2025 09:00',
-      code: 'T04',
-      title: 'Đi họp trễ 10 phút sinh hoạt ban đầu tháng',
-      category: 'Kỷ luật sinh hoạt',
-      type: 'deduct' as const,
-      points: -3,
-      rawPoints: -1.5,
-      note: 'Core Team áp dụng chế tài phạt ×2 (P03: -1.5 × 2 = -3đ)',
-      actor: 'Ban Nhân sự ghi nhận',
-      status: 'Đã thi hành',
-    },
-  ], [])
+  // Danh sách lịch sử điểm thực tế từ đề xuất & sự kiện
+  const fullHistory = useMemo(() => {
+    const list: Array<{
+      id: string
+      time: string
+      code: string
+      title: string
+      category: string
+      type: 'add' | 'deduct'
+      points: number
+      rawPoints: number
+      actor: string
+      status: string
+    }> = []
+
+    // 1. Lịch sử điểm từ các đề xuất đã được phê duyệt
+    proposals
+      .filter((p) => p.memberCode === currentMember.member_code && p.status === 'approved')
+      .forEach((p) => {
+        list.push({
+          id: p.id,
+          time: p.createdAt,
+          code: p.criterionCode,
+          title: `${p.criterionName} - ${p.reason}`,
+          category: p.points >= 0 ? 'Khen thưởng & Cống hiến' : 'Kỷ luật & Vi phạm',
+          type: p.points >= 0 ? 'add' : 'deduct',
+          points: p.points,
+          rawPoints: p.points,
+          actor: p.proposedBy,
+          status: 'Đã phê duyệt',
+        })
+      })
+
+    // 2. Lịch sử từ các phiên điểm danh sự kiện
+    events.forEach((evt) => {
+      const rec = evt.records?.[currentMember.member_code]
+      if (rec) {
+        if (rec.status === 'present_on_time') {
+          list.push({
+            id: `evt-rec-${evt.id}`,
+            time: `${evt.date} ${rec.checkinTime || evt.startTime}`,
+            code: 'C07',
+            title: `Tham gia đúng giờ: ${evt.title}`,
+            category: 'Chuyên cần',
+            type: 'add',
+            points: 1,
+            rawPoints: 1,
+            actor: 'Hệ thống điểm danh',
+            status: evt.isFinalized ? 'Đã chốt sổ' : 'Ghi nhận',
+          })
+        } else if (rec.status === 'late') {
+          list.push({
+            id: `evt-rec-${evt.id}`,
+            time: `${evt.date} ${rec.checkinTime || evt.startTime}`,
+            code: 'T04',
+            title: `Đi muộn: ${evt.title}`,
+            category: 'Kỷ luật & Chuyên cần',
+            type: 'deduct',
+            points: -1,
+            rawPoints: -1,
+            actor: 'Hệ thống điểm danh',
+            status: evt.isFinalized ? 'Đã chốt sổ' : 'Ghi nhận',
+          })
+        } else if (rec.status === 'excused') {
+          list.push({
+            id: `evt-rec-${evt.id}`,
+            time: `${evt.date} ${evt.startTime}`,
+            code: 'T01',
+            title: `Vắng có phép: ${evt.title}`,
+            category: 'Kỷ luật & Chuyên cần',
+            type: 'deduct',
+            points: -2,
+            rawPoints: -2,
+            actor: 'Hệ thống điểm danh',
+            status: evt.isFinalized ? 'Đã chốt sổ' : 'Ghi nhận',
+          })
+        }
+      }
+    })
+
+    return list
+  }, [proposals, events, currentMember.member_code])
+
+  const bonusTotal = fullHistory.filter((h) => h.type === 'add').reduce((sum, h) => sum + h.points, 0)
+  const deductTotal = Math.abs(fullHistory.filter((h) => h.type === 'deduct').reduce((sum, h) => sum + h.points, 0))
 
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'all') return fullHistory
@@ -689,36 +683,43 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
           </div>
 
           <div className="divide-y divide-slate-100 text-xs">
-            {filteredHistory.map((item) => (
-              <div key={item.id} className="py-3.5 flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-slate-500">{item.code}</span>
-                    <span className="font-bold text-slate-900">{item.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-400 text-[11px] flex-wrap">
-                    <span>{item.time}</span>
-                    <span className="text-slate-300">-</span>
-                    <span>{item.category}</span>
-                    <span className="text-slate-300">-</span>
-                    <span className="text-slate-600 font-medium">{item.actor}</span>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span
-                    className={`font-black text-sm ${
-                      item.type === 'add' ? 'text-emerald-600' : 'text-rose-600'
-                    }`}
-                  >
-                    {item.points > 0 ? `+${item.points}đ` : `${item.points}đ`}
-                  </span>
-                  <span className="block text-[10px] text-slate-400 font-medium">
-                    {item.status}
-                  </span>
-                </div>
+            {filteredHistory.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <p className="font-semibold text-xs">Chưa có bản ghi điểm nào cho thành viên này</p>
+                <p className="text-[11px] text-slate-400 mt-1">Mốc xuất phát chuẩn: 60 điểm (theo Quy chế P01)</p>
               </div>
-            ))}
+            ) : (
+              filteredHistory.map((item) => (
+                <div key={item.id} className="py-3.5 flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-slate-500">{item.code}</span>
+                      <span className="font-bold text-slate-900">{item.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-400 text-[11px] flex-wrap">
+                      <span>{item.time}</span>
+                      <span className="text-slate-300">-</span>
+                      <span>{item.category}</span>
+                      <span className="text-slate-300">-</span>
+                      <span className="text-slate-600 font-medium">{item.actor}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`font-black text-sm ${
+                        item.type === 'add' ? 'text-emerald-600' : 'text-rose-600'
+                      }`}
+                    >
+                      {item.points > 0 ? `+${item.points}đ` : `${item.points}đ`}
+                    </span>
+                    <span className="block text-[10px] text-slate-400 font-medium">
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

@@ -465,7 +465,7 @@ function CheckinContent() {
                 </div>
               )}
 
-              {currentEvent && (
+              {currentEvent ? (
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-base sm:text-lg font-black text-[#0B1E48] leading-snug tracking-tight">
@@ -523,11 +523,29 @@ function CheckinContent() {
                     </p>
                   </div>
                 </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400 space-y-2">
+                  <Calendar className="w-10 h-10 mx-auto text-slate-300" />
+                  <p className="font-bold text-xs text-slate-600">Hiện chưa có phiên điểm danh nào đang mở</p>
+                  <p className="text-[11px] text-slate-400">Vui lòng kiểm tra lại sau khi buổi họp hoặc sự kiện bắt đầu.</p>
+                </div>
               )}
             </div>
 
             {/* Cột phải: Form tự điểm danh & Màn hình Chống Điểm Danh Hộ */}
             <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
+              {!currentEvent ? (
+                <div className="py-12 text-center text-slate-400 space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
+                    <Clock className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-800">Cổng điểm danh đang đóng</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    Ban Tổ chức chưa phát động phiên điểm danh nào. Hãy kết nối vào máy chiếu tại hội trường khi buổi sinh hoạt bắt đầu.
+                  </p>
+                </div>
+              ) : (
+              <>
               {/* TRƯỜNG HỢP 1: Thiết bị đã điểm danh và bị khóa (Chống điểm danh hộ trên 1 điện thoại) */}
               {deviceLockedMember && !isKioskMode && !checkinResult ? (
                 <div className="text-center py-6 space-y-5 animate-in zoom-in-95 duration-200">
@@ -730,8 +748,8 @@ function CheckinContent() {
                     >
                       {members.map((m) => {
                         const isCheckedIn =
-                          currentEvent?.records[m.member_code]?.status === 'present_on_time' ||
-                          currentEvent?.records[m.member_code]?.status === 'late'
+                          currentEvent?.records?.[m.member_code]?.status === 'present_on_time' ||
+                          currentEvent?.records?.[m.member_code]?.status === 'late'
                         return (
                           <option
                             key={m.member_code}
@@ -818,6 +836,8 @@ function CheckinContent() {
                     )}
                   </button>
                 </form>
+              )}
+              </>
               )}
             </div>
           </div>
@@ -940,7 +960,14 @@ function CheckinContent() {
 
               {/* Danh sách các sự kiện đang mở đăng ký */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {events.map((evt) => {
+                {events.length === 0 ? (
+                  <div className="col-span-full py-12 text-center text-slate-400 space-y-2">
+                    <Ticket className="w-10 h-10 text-slate-300 mx-auto" />
+                    <p className="font-bold text-xs text-slate-600">Hiện chưa có sự kiện hoặc workshop nào mở đăng ký</p>
+                    <p className="text-[11px] text-slate-400">Các sự kiện sắp tới sẽ hiển thị tại đây khi Ban Tổ chức công bố.</p>
+                  </div>
+                ) : (
+                events.map((evt) => {
                   const registeredList = evt.registeredMemberCodes || []
                   const isUserRegistered = registeredList.includes(regMemberCode)
                   const remainingSeats = Math.max(0, (evt.maxAttendees || 50) - registeredList.length)
@@ -1025,7 +1052,7 @@ function CheckinContent() {
                       )}
                     </div>
                   )
-                })}
+                }))}
               </div>
             </div>
           </div>

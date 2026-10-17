@@ -23,9 +23,9 @@ function LoginContent() {
 
   const { login } = useAuth()
 
-  // Form states - prefilled with student email matching user screenshot
-  const [account, setAccount] = useState('23070691@vnu.edu.vn')
-  const [password, setPassword] = useState('issac2025')
+  // Form states - sẵn sàng đăng nhập thật
+  const [account, setAccount] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null)

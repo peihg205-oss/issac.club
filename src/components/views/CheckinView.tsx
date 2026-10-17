@@ -93,7 +93,7 @@ export function CheckinView() {
   const [copiedPin, setCopiedPin] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
 
-  const currentEvt = activeEvent || events[0]
+  const currentEvt = activeEvent || events[0] || null
 
   // Tính toán thống kê nhanh
   const records = currentEvt?.records || {}
@@ -102,13 +102,15 @@ export function CheckinView() {
   let countExcused = 0
   let countUnexcused = 0
 
-  members.forEach((m) => {
-    const rec = records[m.member_code]?.status || 'unexcused'
-    if (rec === 'present_on_time') countOnTime++
-    else if (rec === 'late') countLate++
-    else if (rec === 'excused') countExcused++
-    else countUnexcused++
-  })
+  if (currentEvt) {
+    members.forEach((m) => {
+      const rec = records[m.member_code]?.status || 'unexcused'
+      if (rec === 'present_on_time') countOnTime++
+      else if (rec === 'late') countLate++
+      else if (rec === 'excused') countExcused++
+      else countUnexcused++
+    })
+  }
 
   // Lọc thành viên
   const filteredMembers = members.filter((m) => {
@@ -209,7 +211,10 @@ export function CheckinView() {
   // Submit Kiosk
   const handleKioskSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!currentEvt) return
+    if (!currentEvt) {
+      setKioskFeedback({ type: 'error', text: 'Hiện tại chưa có phiên điểm danh nào đang mở!' })
+      return
+    }
     if (!kioskPin.trim()) {
       setKioskFeedback({ type: 'error', text: 'Vui lòng nhập mã PIN máy chiếu!' })
       return
@@ -337,7 +342,13 @@ export function CheckinView() {
           {/* Nút Kích hoạt Máy Quét QR Điểm Danh Admin */}
           <button
             type="button"
-            onClick={() => setIsScannerOpen(true)}
+            onClick={() => {
+              if (!currentEvt) {
+                alert('Vui lòng khởi tạo một phiên sự kiện trước khi mở máy quét QR!')
+                return
+              }
+              setIsScannerOpen(true)
+            }}
             className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm shadow-emerald-600/25 transition active:scale-95 cursor-pointer whitespace-nowrap flex-shrink-0"
           >
             <QrCode className="w-4 h-4 text-emerald-200" />
@@ -349,9 +360,37 @@ export function CheckinView() {
 
       {/* Sub-tab 1: Bảng Sĩ số Trực tiếp (Admin & HR) */}
       {subTab === 'admin_roster' && (
-        <div className="space-y-6">
-          {/* Card Thông tin Phiên Điểm Danh Tích Hợp Selector Hiện Đại */}
-          {currentEvt && (
+        !currentEvt ? (
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-12 text-center shadow-xs space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1351D8] border border-blue-100 flex items-center justify-center mx-auto shadow-2xs">
+              <Calendar className="w-8 h-8" />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-lg font-black text-slate-900">
+                Chưa Có Phiên Điểm Danh Nào
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
+                Toàn bộ dữ liệu điểm danh đã được làm sạch và sẵn sàng chạy thật. Ban Chủ nhiệm hoặc Ban Nhân sự hãy bấm nút bên dưới để tạo phiên điểm danh cho buổi sinh hoạt CLB.
+              </p>
+            </div>
+            {(isBCN || isHR) ? (
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tạo sự kiện mới ngay</span>
+              </button>
+            ) : (
+              <p className="text-xs text-slate-400 italic">
+                (Phiên điểm danh sẽ hiển thị tại đây khi Ban Tổ chức khởi tạo)
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Card Thông tin Phiên Điểm Danh Tích Hợp Selector Hiện Đại */}
             <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
               {/* Hàng 1: Trạng thái phiên bên trái + Dropdown chuyển phiên gọn gàng bên phải */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -518,7 +557,6 @@ export function CheckinView() {
                 </div>
               </div>
             </div>
-          )}
 
           {/* 4 Khối thống kê: Viền mỏng 1px + Màu pastel chuẩn bộ nhận diện */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -1088,10 +1126,20 @@ export function CheckinView() {
             </div>
           </div>
         </div>
+        )
       )}
 
       {/* Sub-tab: Danh Sách Người Đăng Ký Trước & Đối Soát Mã Vé QR */}
-      {subTab === 'registered_attendees' && currentEvt && (
+      {subTab === 'registered_attendees' && (
+        !currentEvt ? (
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-12 text-center shadow-xs space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center mx-auto">
+              <Ticket className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">Chưa có sự kiện nào</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">Vui lòng khởi tạo sự kiện có mở đăng ký để theo dõi danh sách vé và đối soát QR.</p>
+          </div>
+        ) : (
         <div className="space-y-6 animate-fadeIn">
           {/* Header Card đối soát */}
           <div className="bg-gradient-to-r from-[#0B1E48] via-[#103E8F] to-[#1351D8] text-white rounded-3xl p-6 sm:p-7 border border-blue-900/40 shadow-lg space-y-4">
@@ -1314,6 +1362,7 @@ export function CheckinView() {
             )}
           </div>
         </div>
+        )
       )}
 
       {/* Sub-tab 2: Cổng Check-in Thành viên (Kiosk / Mobile Portal) */}
@@ -1378,8 +1427,10 @@ export function CheckinView() {
                   <button
                     type="button"
                     onClick={() => {
-                      setKioskPin(currentEvt.pinCode)
-                      setIsSimulatingCamera(false)
+                      if (currentEvt) {
+                        setKioskPin(currentEvt.pinCode)
+                        setIsSimulatingCamera(false)
+                      }
                     }}
                     className="mt-4 px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow hover:bg-emerald-700 transition"
                   >
@@ -1418,7 +1469,7 @@ export function CheckinView() {
                       className="w-full p-3 text-center tracking-widest font-mono text-xl font-bold bg-slate-50 border border-slate-200/90 rounded-xl focus:border-[#1351D8] focus:bg-white focus:outline-none"
                     />
                     <span className="block text-[10px] text-slate-500 text-center mt-1">
-                      (Mã PIN hiện tại đang hiển thị: <strong className="text-[#1351D8] font-mono">{currentEvt.pinCode}</strong>)
+                      (Mã PIN hiện tại đang hiển thị: <strong className="text-[#1351D8] font-mono">{currentEvt ? currentEvt.pinCode : 'Chưa có'}</strong>)
                     </span>
                   </div>
 
@@ -1520,7 +1571,12 @@ export function CheckinView() {
               Các kỳ sinh hoạt CLB trong nhiệm kỳ 2025 - 2026
             </h3>
             <div className="space-y-3">
-              {events.map((evt) => (
+              {events.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <p className="font-semibold text-xs">Chưa có buổi sinh hoạt nào được lưu trong lịch sử</p>
+                </div>
+              ) : (
+                events.map((evt) => (
                 <div
                   key={evt.id}
                   className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/60 hover:bg-white hover:border-blue-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition shadow-2xs"
@@ -1555,7 +1611,7 @@ export function CheckinView() {
                     )}
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         </div>

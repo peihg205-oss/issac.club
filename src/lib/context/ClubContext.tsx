@@ -207,204 +207,14 @@ interface ClubContextType {
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined)
 
-const INITIAL_PROPOSALS: ProposalItem[] = [
-  {
-    id: 'prop-01',
-    memberCode: '25071203',
-    memberName: 'Lục Xuân Huy',
-    memberDept: 'Ban Truyền thông',
-    isCore: false,
-    criterionCode: 'C06',
-    criterionName: 'Nhiệm vụ xuất sắc / Vượt tiến độ',
-    points: 3,
-    reason: 'Hoàn thiện bộ nhận diện bài đăng tuyển sinh trước hạn 2 ngày',
-    evidenceUrl: 'https://drive.google.com/drive/folders/demo-1',
-    proposedBy: 'Trần Đức Thắng (Trưởng Ban TT)',
-    proposedByRole: 'dept_head',
-    status: 'pending_bcn',
-    createdAt: '15/10/2025 14:30',
-  },
-  {
-    id: 'prop-02',
-    memberCode: '24310108',
-    memberName: 'Hoàng Triều Xuân',
-    memberDept: 'Ban Truyền thông',
-    isCore: false,
-    criterionCode: 'T07',
-    criterionName: 'Chậm deadline nhiệm vụ (<24h)',
-    points: -2,
-    reason: 'Ban Nhân sự kiểm tra thấy nộp báo cáo muộn 8 tiếng không xin phép',
-    evidenceUrl: '',
-    proposedBy: 'Vũ Thị Minh Ngọc (Ban Nhân sự)',
-    proposedByRole: 'hr',
-    status: 'pending_bcn',
-    createdAt: '15/10/2025 16:45',
-  },
-  {
-    id: 'prop-03',
-    memberCode: '25070278',
-    memberName: 'Đinh Tấn Tài',
-    memberDept: 'Ban Truyền thông',
-    isCore: false,
-    criterionCode: 'T05',
-    criterionName: 'Không tương tác bài đăng / thông báo',
-    points: -1,
-    reason: 'Ban Nhân sự rà soát: không phản hồi thông báo khẩn trong 24h',
-    evidenceUrl: '',
-    proposedBy: 'Nguyễn Thị Hải Yến (Ban Nhân sự)',
-    proposedByRole: 'hr',
-    status: 'pending_bcn',
-    createdAt: '16/10/2025 09:15',
-  },
-]
+// Sẵn sàng vận hành thật: Danh sách đề xuất điểm rỗng
+const INITIAL_PROPOSALS: ProposalItem[] = []
 
-// Khởi tạo buổi họp mẫu với 48 thành viên có trạng thái sống
-function createInitialEventRecords(): Record<string, CheckinRecord> {
-  const records: Record<string, CheckinRecord> = {}
+// Sẵn sàng vận hành thật: Danh sách sự kiện và khiếu nại rỗng, khởi tạo theo thực tế CLB
+const INITIAL_EVENTS: MeetingEvent[] = []
 
-  INITIAL_MEMBERS.forEach((m, idx) => {
-    // 38 thành viên đúng giờ, 4 muộn, 3 có phép, 3 vắng chưa phép
-    if (idx === 7 || idx === 11 || idx === 25 || idx === 43) {
-      records[m.member_code] = {
-        memberCode: m.member_code,
-        status: 'late',
-        checkinTime: '19:48',
-        note: 'Đến muộn 18 phút do kẹt xe',
-      }
-    } else if (idx === 15 || idx === 28 || idx === 45) {
-      records[m.member_code] = {
-        memberCode: m.member_code,
-        status: 'excused',
-        note: 'Trùng lịch thi kết thúc học phần, đã gửi đơn trước 24h',
-      }
-    } else if (idx === 16 || idx === 46 || idx === 47) {
-      records[m.member_code] = {
-        memberCode: m.member_code,
-        status: 'unexcused',
-        note: 'Chưa có mặt và chưa gửi đơn xin phép',
-      }
-    } else {
-      records[m.member_code] = {
-        memberCode: m.member_code,
-        status: 'present_on_time',
-        checkinTime: '19:22',
-        note: 'Có mặt đúng giờ tại phòng họp A3-201',
-      }
-    }
-  })
+const INITIAL_DISPUTES: DisputeItem[] = []
 
-  return records
-}
-
-const INITIAL_EVENTS: MeetingEvent[] = [
-  {
-    id: 'evt-20251016',
-    title: 'Sinh hoạt định kỳ Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế tháng 10/2025',
-    description:
-      'Triển khai chiến dịch Tuyển sinh K25, phân công nhiệm vụ tuần và đánh giá xếp loại giữa kỳ.',
-    date: '16/10/2025',
-    startTime: '19:30',
-    endTime: '21:30',
-    location: 'Phòng A3-201, Cơ sở Quốc Oai & Google Meet',
-    pinCode: '8899',
-    isRequired: true,
-    isFinalized: false,
-    allowRegistration: true,
-    maxAttendees: 48,
-    pointBonus: 1,
-    category: 'meeting',
-    registeredMemberCodes: ['25071203', '24310108', '25070278', '24070608', '24070446', '24070678', '25071249', '25070267'],
-    records: createInitialEventRecords(),
-  },
-  {
-    id: 'evt-upcoming-workshop',
-    title: 'Workshop Kỹ năng Đàm phán & Thuyết trình chuyên nghiệp',
-    description:
-      'Chuyên đề nâng cao kỹ năng đàm phán, thuyết phục và ứng biến sân khấu dành riêng cho thành viên CLB cùng chuyên gia VNU.',
-    date: '24/10/2026',
-    startTime: '19:00',
-    endTime: '21:30',
-    location: 'Hội trường Tầng 5, Tòa nhà HT1 - Cơ sở Hòa Lạc & Zoom',
-    pinCode: '7788',
-    isRequired: false,
-    allowRegistration: true,
-    isFinalized: false,
-    maxAttendees: 50,
-    pointBonus: 2,
-    category: 'workshop',
-    registeredMemberCodes: ['25071203', '24310108', '25070278', '24070608', '24070446'],
-    records: {},
-  },
-  {
-    id: 'evt-upcoming-teambuilding',
-    title: 'Teambuilding Gen 3 & Gắn kết Thành viên mới',
-    description:
-      'Chuyến dã ngoại kết nối toàn CLB. Bắt buộc tham gia 100% thành viên (nhân sự có việc bận xin phép trước 48h).',
-    date: '02/11/2026',
-    startTime: '08:00',
-    endTime: '17:00',
-    location: 'Khu du lịch sinh thái Quốc Oai, Hà Nội',
-    pinCode: '2026',
-    isRequired: true,
-    allowRegistration: true,
-    isFinalized: false,
-    maxAttendees: 60,
-    pointBonus: 3,
-    category: 'teambuilding',
-    registeredMemberCodes: ['25071203', '24310108', '25070278', '24070608', '24070446', '24070678', '25071249'],
-    records: {},
-  },
-  {
-    id: 'evt-20250920',
-    title: 'Họp khởi động năm học mới 2025-2026',
-    description: 'Tổng kết hoạt động hè và ra mắt cơ cấu nhân sự mới các ban.',
-    date: '20/09/2025',
-    startTime: '19:00',
-    endTime: '21:00',
-    location: 'Hội trường B2, Cơ sở Xuân Thuỷ',
-    pinCode: '2025',
-    isRequired: true,
-    isFinalized: true,
-    finalizedAt: '20/09/2025 21:15',
-    finalizedBy: 'Nguyễn Thị Hồng Hân (Chủ nhiệm CLB)',
-    records: {},
-  },
-]
-
-const INITIAL_DISPUTES: DisputeItem[] = [
-  {
-    id: 'disp-01',
-    memberCode: '24070608',
-    memberName: 'Nguyễn Phú Cường',
-    memberDept: 'Ban Truyền thông',
-    criterionCode: 'T02',
-    pointsContested: -5,
-    reason:
-      'Em có gửi email đơn xin phép vắng buổi họp ngày 10/10 trước 24 giờ do lịch thi học phần BDA2024, nhưng hệ thống ghi nhận T02 (-5đ). Em xin được chuyển sang T01 (-2đ) theo quy chế.',
-    evidenceUrl: 'https://drive.google.com/file/d/demo-don-xin-phep',
-    createdAt: '14/10/2025 10:20',
-    status: 'pending_bcn',
-    hrNote:
-      'Ban Nhân sự đã kiểm tra hộp thư club.issac: Đã nhận được email kèm minh chứng lịch thi hợp lệ lúc 08:30 ngày 09/10 (>24h). Đề xuất BCN chấp nhận khiếu nại và hoàn trả 3 điểm.',
-  },
-  {
-    id: 'disp-02',
-    memberCode: '24310108',
-    memberName: 'Hoàng Triều Xuân',
-    memberDept: 'Ban Truyền thông',
-    criterionCode: 'T07',
-    pointsContested: -2,
-    reason:
-      'Em đã tải file thiết kế banner lên Google Drive lúc 21:55 ngày 08/10 trước hạn 22:00, nhưng do lỗi mạng link cập nhật chậm trên Zalo nhóm.',
-    evidenceUrl: 'https://drive.google.com/file/d/demo-drive-history',
-    createdAt: '11/10/2025 15:40',
-    status: 'approved_resolved',
-    hrNote: 'Đã kiểm tra lịch sử Drive: Timestamp 21:54 ngày 08/10.',
-    bcnVerdict:
-      'Ban Chủ nhiệm phê duyệt: Hồ sơ minh chứng hợp lệ. Hoàn trả lại 2 điểm cho bạn Hoàng Triều Xuân.',
-    resolvedAt: '12/10/2025 09:30',
-  },
-]
 
 const INITIAL_CUSTOM_RULES: CustomRuleItem[] = [
   {
@@ -435,7 +245,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<RosterMember[]>(() => getActiveRosterMembers(INITIAL_MEMBERS))
   const [proposals, setProposals] = useState<ProposalItem[]>(INITIAL_PROPOSALS)
   const [events, setEvents] = useState<MeetingEvent[]>(INITIAL_EVENTS)
-  const [activeEventId, setActiveEventId] = useState<string>('evt-20251016')
+  const [activeEventId, setActiveEventId] = useState<string>('')
   const [disputes, setDisputes] = useState<DisputeItem[]>(INITIAL_DISPUTES)
   const [currentActiveMonth, setCurrentActiveMonth] = useState<string>('Tháng 10/2025')
   const [periods, setPeriods] = useState<PeriodItem[]>(AVAILABLE_PERIODS)
@@ -447,31 +257,26 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Safe client-side hydration from localStorage to prevent SSR mismatch
   useEffect(() => {
+    // Dọn sạch triệt để toàn bộ dữ liệu demo cũ trong localStorage của trình duyệt
+    const oldDemoKeys = [
+      'issac_events_v4',
+      'issac_events_v3',
+      'issac_events_v2',
+      'issac_events_v1',
+      'issac_proposals_v1',
+      'issac_members_v1',
+      'issac_disputes_v1',
+    ]
+    oldDemoKeys.forEach((k) => {
+      try {
+        localStorage.removeItem(k)
+      } catch (e) {}
+    })
+
     try {
-      const savedEvents =
-        localStorage.getItem('issac_events_v4') ||
-        localStorage.getItem('issac_events_v3') ||
-        localStorage.getItem('issac_events_v2')
+      const savedEvents = localStorage.getItem('issac_events_clean_v1')
       if (savedEvents) {
-        const parsed: MeetingEvent[] = JSON.parse(savedEvents)
-        const cleaned = parsed.map((evt) => ({
-          ...evt,
-          title: evt.title
-            .replace(/Tân Sứ giả/g, 'Thành viên mới')
-            .replace(/Sứ giả/g, 'Thành viên')
-            .replace(/sứ giả/g, 'thành viên')
-            .replace(/CLB iSSAC/g, 'Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế'),
-          description: evt.description
-            .replace(/Tân Sứ giả/g, 'Thành viên mới')
-            .replace(/Sứ giả/g, 'Thành viên')
-            .replace(/sứ giả/g, 'thành viên')
-            .replace(/CLB iSSAC/g, 'Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế'),
-        }))
-        setEvents(cleaned)
-        localStorage.setItem('issac_events_v4', JSON.stringify(cleaned))
-        // Dọn sạch các key cũ để tránh xung đột
-        localStorage.removeItem('issac_events_v3')
-        localStorage.removeItem('issac_events_v2')
+        setEvents(JSON.parse(savedEvents))
       }
     } catch (e) {
       console.error('Error reading events from localStorage:', e)
@@ -487,7 +292,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const savedMembers = localStorage.getItem('issac_members_v1')
+      const savedMembers = localStorage.getItem('issac_members_clean_v1')
       if (savedMembers) {
         setMembers(JSON.parse(savedMembers))
       }
@@ -496,7 +301,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const savedProposals = localStorage.getItem('issac_proposals_v1')
+      const savedProposals = localStorage.getItem('issac_proposals_clean_v1')
       if (savedProposals) {
         setProposals(JSON.parse(savedProposals))
       }
@@ -515,16 +320,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/db/sync')
       if (res.ok) {
         const data = await res.json()
-        if (data.events && Array.isArray(data.events) && data.events.length > 0) {
+        if (data.events && Array.isArray(data.events)) {
           setEvents(data.events)
           try {
-            localStorage.setItem('issac_events_v4', JSON.stringify(data.events))
+            localStorage.setItem('issac_events_clean_v1', JSON.stringify(data.events))
           } catch (e) {}
         }
-        if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
+        if (data.proposals && Array.isArray(data.proposals)) {
           setProposals(data.proposals)
           try {
-            localStorage.setItem('issac_proposals_v1', JSON.stringify(data.proposals))
+            localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(data.proposals))
           } catch (e) {}
         }
       }
@@ -545,7 +350,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isHydratedRef.current || typeof window === 'undefined') return
     try {
-      localStorage.setItem('issac_members_v1', JSON.stringify(members))
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(members))
     } catch (e) {
       console.error('Error saving members:', e)
     }
@@ -554,7 +359,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isHydratedRef.current || typeof window === 'undefined') return
     try {
-      localStorage.setItem('issac_events_v4', JSON.stringify(events))
+      localStorage.setItem('issac_events_clean_v1', JSON.stringify(events))
     } catch (e) {
       console.error('Error saving events:', e)
     }
@@ -563,7 +368,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isHydratedRef.current || typeof window === 'undefined') return
     try {
-      localStorage.setItem('issac_proposals_v1', JSON.stringify(proposals))
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(proposals))
     } catch (e) {
       console.error('Error saving proposals:', e)
     }
@@ -673,7 +478,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     setMembers((prev) => {
       const updated = getRankedMembers([...prev, newMember])
       try {
-        localStorage.setItem('issac_members_v1', JSON.stringify(updated))
+        localStorage.setItem('issac_members_clean_v1', JSON.stringify(updated))
       } catch (e) {
         console.error('Error saving members to localStorage:', e)
       }
@@ -722,7 +527,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const reRanked = getRankedMembers(updatedList)
     setMembers(reRanked)
     try {
-      localStorage.setItem('issac_members_v1', JSON.stringify(reRanked))
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(reRanked))
     } catch (e) {
       console.error('Error saving updated members to localStorage:', e)
     }
@@ -741,7 +546,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const reRanked = getRankedMembers(updated)
     setMembers(reRanked)
     try {
-      localStorage.setItem('issac_members_v1', JSON.stringify(reRanked))
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(reRanked))
     } catch (e) {
       console.error('Error saving members after deletion:', e)
     }
@@ -1569,7 +1374,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('issac_events_v4', JSON.stringify(updated))
+        localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
       } catch (e) {
         console.error('Error saving events:', e)
       }
@@ -1616,7 +1421,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     setEvents(updated)
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('issac_events_v4', JSON.stringify(updated))
+        localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
       } catch (err) {
         console.error(err)
       }
@@ -1652,7 +1457,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     setEvents(updated)
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('issac_events_v4', JSON.stringify(updated))
+        localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
       } catch (err) {
         console.error(err)
       }
@@ -1678,7 +1483,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('issac_events_v4', JSON.stringify(updated))
+        localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
       } catch (err) {
         console.error(err)
       }

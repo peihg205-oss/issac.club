@@ -16,6 +16,7 @@ import {
   Sparkles,
   Lock,
   ArrowRight,
+  LogOut,
 } from 'lucide-react'
 
 interface HeaderProps {
@@ -33,7 +34,7 @@ export function Header({
   onNotificationClick,
   onHomeClick,
 }: HeaderProps) {
-  const { currentUser, switchUser, isBCN } = useAuth()
+  const { currentUser, isBCN, logout } = useAuth()
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
   const [language, setLanguage] = useState<'vi' | 'en'>('vi')
 
@@ -174,25 +175,32 @@ export function Header({
 
           {/* User Account Dropdown Modal */}
           {roleDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-2.5 space-y-1.5 z-50 animate-fadeIn text-xs">
-              <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/60 rounded-xl">
+            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-3 space-y-2 z-50 animate-fadeIn text-xs">
+              <div className="px-3.5 py-2.5 border border-blue-100 bg-gradient-to-br from-blue-50/70 to-slate-50/90 rounded-xl space-y-1">
                 <span className="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">
-                  Tài khoản hiện tại
+                  Tài khoản đang đăng nhập
                 </span>
-                <p className="font-extrabold text-slate-900 text-sm uppercase">
+                <p className="font-black text-slate-900 text-sm tracking-tight">
                   {currentUser.name}
                 </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                    <Crown className="w-2.5 h-2.5 text-blue-600" />
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1351D8] text-white shadow-2xs">
+                    <Crown className="w-2.5 h-2.5 text-amber-300" />
                     {currentUser.roleTitle}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">MSV: 22070101</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    MSV: {currentUser.memberCode || '23070691'}
+                  </span>
                 </div>
+                {currentUser.departmentName && (
+                  <p className="text-[10px] text-slate-500 font-medium pt-0.5">
+                    Đơn vị: <strong className="text-slate-700">{currentUser.departmentName}</strong>
+                  </p>
+                )}
               </div>
 
               {/* Quick Link to Member Portal */}
-              <div className="py-1 border-b border-slate-100">
+              <div className="py-1">
                 <a
                   href="/checkin"
                   target="_blank"
@@ -207,48 +215,33 @@ export function Header({
                 </a>
               </div>
 
-              {/* Role Switcher */}
-              <div className="py-1">
-                <span className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Chuyển đổi góc nhìn phân quyền:
-                </span>
-                {PRESET_USERS.map((user) => {
-                  const isSelected = user.id === currentUser.id
-                  return (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => {
-                        switchUser(user.id)
-                        setRoleDropdownOpen(false)
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition text-left cursor-pointer ${
-                        isSelected
-                          ? 'bg-blue-50 text-blue-600 font-bold'
-                          : 'text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold">{user.name}</p>
-                        <p className="text-[10px] text-slate-400">{user.roleTitle}</p>
-                      </div>
-                      {isSelected && <Check className="w-4 h-4 text-blue-600 stroke-[2.5]" />}
-                    </button>
-                  )
-                })}
-              </div>
-              {/* Login Page Link */}
-              <div className="pt-1.5 border-t border-slate-100">
+              {/* Actions: Đăng nhập lại & Đăng xuất */}
+              <div className="pt-1.5 border-t border-slate-100 space-y-1">
                 <a
                   href="/login"
                   className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-700 hover:text-[#1351D8] hover:bg-slate-50 font-bold transition"
                 >
                   <span className="flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Trang Đăng Nhập Hệ Thống</span>
+                    <span>Đổi tài khoản đăng nhập</span>
                   </span>
                   <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                 </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRoleDropdownOpen(false)
+                    logout()
+                    window.location.href = '/login'
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition text-left cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Đăng xuất hệ thống</span>
+                  </span>
+                </button>
               </div>
             </div>
           )}

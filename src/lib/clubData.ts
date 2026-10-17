@@ -89,56 +89,9 @@ export const INITIAL_MEMBERS: RosterMember[] = [
   { source_stt: 48, member_code: '26070772', full_name: 'Bùi Phương Linh', department_name: 'Ban Nhân sự', department_code: 'B03', department_slug: 'nhan-su', position: 'Thành viên', is_core: false, class_name: 'BEL2026', student_id: '26070772', email: 'linhbp2209@gmail.com', phone: '0868846328', current_score: 60, absent_count_t02: 0, delta_rank: -3 },
 ]
 
-export const INITIAL_ACTIVITY_DELTAS: Record<string, number> = {
-  '23070691': 36, // Giang Lê Hiệp: 96
-  'STAFF-001': 34, // Nguyễn Thị Hồng Hân: 94
-  '24310088': 32, // Trần Đức Thắng: 92
-  '22073125': 31, // Nguyễn Trịnh Minh Trang: 91
-  '24310069': 29, // Lê Trần Thuỷ Nguyên: 89
-  '23070764': 28, // Vũ Thị Minh Ngọc: 88
-  '25071203': 26, // Lục Xuân Huy: 86
-  '25070407': 25, // Vũ Đình Hải: 85
-  '25070345': 24, // Lâm Thị Bình Dương: 84
-  '24070752': 23, // Phùng Thị Thu Hiền: 83
-  '24070622': 22, // Nguyễn Ngọc Anh: 82
-  '23071317': 21, // Nguyễn Thị Hải Yến (NS): 81
-  '23071234': 19, // Nguyễn Thu Thảo: 79
-  '24070680': 18, // Phương Gia Huy: 78
-  '24310099': 18, // Lê Duy Tuấn: 78
-  '26070440': 18, // Nguyễn Khánh Linh (NS): 78
-  '24070753': 17, // Hoàng Thị Khánh Linh: 77
-  '24310072': 17, // Nguyễn Thị Nguyệt: 77
-  '25070203': 16, // Hoàng Thị Tú An: 76
-  '25071139': 16, // Hoàng Mẫn Quỳnh Chi: 76
-  '26070775': 16, // Trần Bùi Thanh Thuỷ: 76
-  '25070278': 15, // Đinh Tấn Tài: 75
-  '25071210': 15, // Nguyễn Vũ Hồng Hạnh: 75
-  '24310108': 14, // Hoàng Triều Xuân: 74
-  '23070355': 14, // Vũ Bá Quốc Hưng: 74
-  '26070773': 14, // Nguyễn Thanh Tùng: 74
-  '24310078': 13, // Nguyễn Tố Như: 73
-  '24070659': 13, // Nguyễn Thị Thuỳ Dương: 73
-  '26070162': 12, // Ngô Ánh Dương: 72
-  '24070676': 12, // Phan Thành Đạt: 72
-  '25070088': 12, // Nguyễn Nhật Ánh: 72
-  '26070774': 11, // Tô Mai Trang: 71
-  '25070097': 11, // Phạm Thị Hải Chi: 71
-  '24070608': 10, // Nguyễn Phú Cường: 70
-  '24071358': 10, // Vũ Gia Linh: 70
-  '26070437': 9,  // Lê Mai Anh: 69
-  '24070778': 9,  // Phùng Đình Thiệp: 69
-  '25070868': 8,  // Nguyễn Phương Thảo: 68
-  '24070732': 7,  // Nguyễn Thành Trung: 67
-  '25070267': 6,  // Nguyễn Thị Hải Yến: 66
-  '24070845': 5,  // Nguyễn Thị Linh Chi: 65
-  '25070014': 5,  // Lê Hoàng Anh: 65
-  '25071191': 4,  // Nguyễn Ngọc Anh Thư: 64
-  '25070860': 3,  // Hoàng Thị Thuỳ Linh: 63
-  '25070857': 2,  // Trần Mỹ Ngọc: 62
-  '25070863': 1,  // Nguyễn Duy Khánh: 61
-  '25070193': 0,  // Phạm Thị Phương Thảo: 60
-  '26070772': -2, // Bùi Phương Linh: 58
-}
+// Sẵn sàng vận hành thật: Tất cả 48 thành viên xuất phát từ điểm chuẩn 60đ theo Quy chế P01
+export const INITIAL_ACTIVITY_DELTAS: Record<string, number> = {}
+
 
 export const DEPARTMENTS_DATA = [
   { code: 'B04' as DepartmentCode, slug: 'bcn' as DepartmentSlug, name: 'Ban Chủ nhiệm', memberCount: 3, description: 'Lãnh đạo, định hướng chiến lược và quản lý chung toàn CLB' },

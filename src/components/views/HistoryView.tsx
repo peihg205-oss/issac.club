@@ -24,19 +24,18 @@ import {
   Sparkles,
 } from 'lucide-react'
 
-// Mock 10 canonical history entries matching Screen 3 in user image
-const INITIAL_HISTORY = [
-  { time: '15/10/2025 09:24', name: 'Nguyễn Thị Mai', dept: 'Truyền thông', code: 'C02', title: 'Tương tác kèm bình luận', points: 2, type: 'Cộng', scorer: 'Nguyễn Văn A' },
-  { time: '14/10/2025 16:12', name: 'Lê Minh Anh', dept: 'Sự kiện', code: 'C05', title: 'Hoàn thành đúng deadline', points: 2, type: 'Cộng', scorer: 'Trần Thị B' },
-  { time: '13/10/2025 11:33', name: 'Phạm Hoàng Nam', dept: 'Nhân sự', code: 'T07', title: 'Trễ deadline < 24 giờ', points: -2, type: 'Trừ', scorer: 'Nguyễn Văn A' },
-  { time: '12/10/2025 20:45', name: 'Trần Thu Hà', dept: 'Học thuật', code: 'C03', title: 'Xác nhận thông báo đúng hạn', points: 1, type: 'Cộng', scorer: 'Lê Thị C' },
-  { time: '11/10/2025 14:20', name: 'Đỗ Quang Huy', dept: 'Truyền thông', code: 'T04', title: 'Đi họp muộn / tự rời họp', points: -1, type: 'Trừ', scorer: 'Trần Thị B' },
-  { time: '10/10/2025 10:15', name: 'Vũ Bảo An', dept: 'Sự kiện', code: 'C06', title: 'Sản phẩm / đầu ra chất lượng', points: 3, type: 'Cộng', scorer: 'Nguyễn Văn A' },
-  { time: '09/10/2025 15:30', name: 'Ngô Minh Tâm', dept: 'Học thuật', code: 'C01', title: 'Tương tác đúng hạn', points: 1, type: 'Cộng', scorer: 'Lê Thị C' },
-  { time: '08/10/2025 09:12', name: 'Lý Khánh Linh', dept: 'Học thuật', code: 'T05', title: 'Không xác nhận thông báo', points: -1, type: 'Trừ', scorer: 'Trần Thị B' },
-  { time: '07/10/2025 16:50', name: 'Phan Đức Minh', dept: 'Đối ngoại', code: 'C08', title: 'Nhận và xử lý việc phát sinh', points: 2, type: 'Cộng', scorer: 'Nguyễn Văn A' },
-  { time: '06/10/2025 13:28', name: 'Đặng Thu Phương', dept: 'Truyền thông', code: 'T03', title: 'Mail cảnh cáo mức độ hoạt động', points: -10, type: 'Trừ', scorer: 'BCN' },
-]
+// Sẵn sàng vận hành thật: Danh sách lịch sử điểm số sạch xuất phát từ các phiên điểm danh & đề xuất thực tế
+const INITIAL_HISTORY: Array<{
+  time: string
+  name: string
+  dept: string
+  code: string
+  title: string
+  points: number
+  type: string
+  scorer: string
+}> = []
+
 
 export function HistoryView() {
   const { isBCN, isHR } = useAuth()
