@@ -120,8 +120,14 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
         })
       })
 
-    // 2. Lịch sử từ các phiên điểm danh sự kiện
+    // 2. Lịch sử từ các phiên điểm danh sự kiện (chưa chốt sổ)
     events.forEach((evt) => {
+      // Nếu sự kiện đã chốt và đã có bản ghi trong proposals thì bỏ qua để tránh trùng lặp
+      const alreadyInProposals = proposals.some(
+        (p) => p.id === `checkin-${evt.id}-${currentMember.member_code}`
+      )
+      if (alreadyInProposals) return
+
       const rec = evt.records?.[currentMember.member_code]
       if (rec) {
         if (rec.status === 'present_on_time') {

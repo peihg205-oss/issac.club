@@ -39,8 +39,9 @@ export interface ProposalItem {
   evidenceUrl?: string
   proposedBy: string
   proposedByRole: string
-  status: 'pending_bcn' | 'approved' | 'rejected'
+  status: 'pending_bcn' | 'approved' | 'rejected' | 'deleted'
   createdAt: string
+  reviewedAt?: string
   periodId?: string
   periodName?: string
 }
@@ -74,6 +75,8 @@ export interface MeetingEvent {
   pointBonus?: number
   category?: 'meeting' | 'workshop' | 'teambuilding' | 'external'
   targetDept?: string
+  periodId?: string
+  periodName?: string
 }
 
 export interface DisputeItem {
@@ -268,6 +271,87 @@ const INITIAL_CUSTOM_RULES: CustomRuleItem[] = [
   },
 ]
 
+// Thuật toán hợp nhất Proposals 2 chiều thông minh chống mất dữ liệu lịch sử điểm số
+export function mergeProposals(
+  localList: ProposalItem[],
+  incomingList: ProposalItem[],
+  deletedIds: Set<string> = new Set()
+): ProposalItem[] {
+  const map = new Map<string, ProposalItem>()
+
+  // 1. Nạp từ incoming (server hoặc cloud)
+  for (const item of incomingList) {
+    if (item?.id && !deletedIds.has(item.id) && item.status !== 'deleted') {
+      map.set(item.id, {
+        ...item,
+        createdAt: normalizeHistoryTimestamp(item.createdAt),
+      })
+    }
+  }
+
+  // 2. Hợp nhất từ local (không bỏ sót bất kỳ bản ghi nào mới tạo ở local)
+  for (const item of localList) {
+    if (item?.id && !deletedIds.has(item.id) && item.status !== 'deleted') {
+      const existing = map.get(item.id)
+      if (!existing) {
+        map.set(item.id, {
+          ...item,
+          createdAt: normalizeHistoryTimestamp(item.createdAt),
+        })
+      } else {
+        // Cả 2 đều có: nếu bản ghi local có reviewedAt mới hơn hoặc status approved thì giữ lại
+        if (item.reviewedAt && !existing.reviewedAt) {
+          map.set(item.id, { ...existing, ...item })
+        } else if (item.status === 'approved' && existing.status === 'pending_bcn') {
+          map.set(item.id, { ...existing, ...item })
+        }
+      }
+    }
+  }
+
+  return Array.from(map.values())
+}
+
+// Thuật toán hợp nhất Events 2 chiều thông minh theo ID và bản ghi điểm danh
+export function mergeEvents(
+  localList: MeetingEvent[],
+  incomingList: MeetingEvent[]
+): MeetingEvent[] {
+  const map = new Map<string, MeetingEvent>()
+
+  for (const evt of incomingList) {
+    if (evt?.id) {
+      map.set(evt.id, evt)
+    }
+  }
+
+  for (const evt of localList) {
+    if (evt?.id) {
+      const existing = map.get(evt.id)
+      if (!existing) {
+        map.set(evt.id, evt)
+      } else {
+        map.set(evt.id, {
+          ...existing,
+          ...evt,
+          isFinalized: existing.isFinalized || evt.isFinalized,
+          finalizedAt: existing.finalizedAt || evt.finalizedAt,
+          finalizedBy: existing.finalizedBy || evt.finalizedBy,
+          registeredMemberCodes: Array.from(
+            new Set([...(existing.registeredMemberCodes || []), ...(evt.registeredMemberCodes || [])])
+          ),
+          records: {
+            ...(existing.records || {}),
+            ...(evt.records || {}),
+          },
+        })
+      }
+    }
+  }
+
+  return Array.from(map.values())
+}
+
 export function ClubProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<RosterMember[]>(() => getActiveRosterMembers(INITIAL_MEMBERS))
   const [proposals, setProposals] = useState<ProposalItem[]>(INITIAL_PROPOSALS)
@@ -281,6 +365,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const [customRules, setCustomRules] = useState<CustomRuleItem[]>(INITIAL_CUSTOM_RULES)
 
   const isHydratedRef = useRef(false)
+  const deletedProposalIdsRef = useRef<Set<string>>(new Set())
 
   // Đổi chu kỳ hoạt động và đồng bộ lập tức đa nền tảng
   const setCurrentActivePeriodId = (newId: string) => {
@@ -395,6 +480,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {}
 
+    try {
+      const savedDeleted = localStorage.getItem('issac_deleted_proposal_ids')
+      if (savedDeleted) {
+        const parsed = JSON.parse(savedDeleted)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => deletedProposalIdsRef.current.add(id))
+        }
+      }
+    } catch (e) {}
+
     isHydratedRef.current = true
     // Đồng bộ tức thì từ Supabase Cloud khi vừa tải trang
     fetchCloudSync()
@@ -409,6 +504,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     periods?: PeriodItem[]
     activePeriodId?: string
     customPeriodScores?: Record<string, Record<string, number>>
+    deletedProposalIds?: string[]
     action?: string
     [key: string]: any
   }) => {
@@ -421,33 +517,73 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Đồng bộ đám mây Supabase (PC <-> Điện thoại)
+  // Đồng bộ đám mây Supabase (PC <-> Điện thoại) - Tích hợp Hợp Nhất 2 Chiều Chống Mất Dữ Liệu
   const fetchCloudSync = async () => {
     try {
       const res = await fetch('/api/db/sync')
       if (res.ok) {
         const data = await res.json()
+
+        // 1. Đồng bộ danh sách ID đã xóa
+        if (data.deletedProposalIds && Array.isArray(data.deletedProposalIds)) {
+          data.deletedProposalIds.forEach((id: string) => deletedProposalIdsRef.current.add(id))
+          try {
+            localStorage.setItem(
+              'issac_deleted_proposal_ids',
+              JSON.stringify(Array.from(deletedProposalIdsRef.current))
+            )
+          } catch (e) {}
+        }
+
+        // 2. Hợp nhất Sự kiện (Events) 2 chiều
         if (data.events && Array.isArray(data.events)) {
-          setEvents(data.events)
-          try {
-            localStorage.setItem('issac_events_clean_v1', JSON.stringify(data.events))
-          } catch (e) {}
+          setEvents((currentEvents) => {
+            const merged = mergeEvents(currentEvents, data.events)
+            try {
+              localStorage.setItem('issac_events_clean_v1', JSON.stringify(merged))
+            } catch (e) {}
+            return merged
+          })
         }
+
+        // 3. Hợp nhất Proposals 2 chiều (Chống ghi đè mất dữ liệu điểm số)
         if (data.proposals && Array.isArray(data.proposals)) {
-          const normalized = data.proposals.map((p: ProposalItem) => ({
-            ...p,
-            createdAt: normalizeHistoryTimestamp(p.createdAt),
-          }))
-          setProposals(normalized)
-          try {
-            localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(normalized))
-          } catch (e) {}
+          setProposals((currentProposals) => {
+            const merged = mergeProposals(currentProposals, data.proposals, deletedProposalIdsRef.current)
+            // Nếu local có proposals mà cloud chưa có, đẩy ngay bản hợp nhất lên cloud!
+            if (merged.length > data.proposals.length) {
+              syncToCloud({
+                proposals: merged,
+                deletedProposalIds: Array.from(deletedProposalIdsRef.current),
+              })
+            }
+            try {
+              localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(merged))
+            } catch (e) {}
+            return merged
+          })
         }
+
+        // 4. Hợp nhất Danh sách Thành viên & Điểm số
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
-          setMembers(data.members)
-          try {
-            localStorage.setItem('issac_members_clean_v1', JSON.stringify(data.members))
-          } catch (e) {}
+          setMembers((currentMembers) => {
+            const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
+            const merged = data.members.map((cloudM: RosterMember) => {
+              const localM = curMap.get(cloudM.member_code)
+              if (!localM) return cloudM
+              // Giữ điểm đã được cập nhật từ các thao tác gần đây
+              return {
+                ...cloudM,
+                current_score: localM.current_score !== undefined ? localM.current_score : cloudM.current_score,
+                absent_count_t02: localM.absent_count_t02 !== undefined ? localM.absent_count_t02 : cloudM.absent_count_t02,
+              }
+            })
+            const ranked = getRankedMembers(merged)
+            try {
+              localStorage.setItem('issac_members_clean_v1', JSON.stringify(ranked))
+            } catch (e) {}
+            return ranked
+          })
         } else if (!data.members || data.members.length === 0) {
           // Lưu 48 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
           syncToCloud({ members })
@@ -851,6 +987,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
       const updatedProps = [record, ...proposals]
       setProposals(updatedProps)
+      try {
+        localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+        if (isCurrentActive) {
+          localStorage.setItem('issac_members_clean_v1', JSON.stringify(updatedMembers))
+        }
+      } catch (e) {}
       syncToCloud({
         proposals: updatedProps,
         ...(isCurrentActive ? { members: updatedMembers } : {}),
@@ -883,6 +1025,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
     const updatedProps = [newProp, ...proposals]
     setProposals(updatedProps)
+    try {
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+    } catch (e) {}
     syncToCloud({ proposals: updatedProps })
 
     return {
@@ -948,6 +1093,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         : p
     )
     setProposals(updatedProps)
+    try {
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      if (isCurrentActive) {
+        localStorage.setItem('issac_members_clean_v1', JSON.stringify(updatedMembers))
+      }
+    } catch (e) {}
     syncToCloud({
       proposals: updatedProps,
       ...(isCurrentActive ? { members: updatedMembers } : {}),
@@ -960,6 +1111,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       p.id === proposalId ? { ...p, status: 'rejected' as const } : p
     )
     setProposals(updatedProps)
+    try {
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+    } catch (e) {}
     syncToCloud({ proposals: updatedProps })
   }
 
@@ -1108,14 +1262,22 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const updatedProps = proposals.filter((p) => p.id !== proposalId)
     setProposals(updatedProps)
 
+    deletedProposalIdsRef.current.add(proposalId)
     try {
       localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      localStorage.setItem(
+        'issac_deleted_proposal_ids',
+        JSON.stringify(Array.from(deletedProposalIdsRef.current))
+      )
       if (isCurrentActive) {
         localStorage.setItem('issac_members_clean_v1', JSON.stringify(updatedMembers))
       }
     } catch (e) {}
 
     syncToCloud({
+      action: 'delete_proposal',
+      proposalId,
+      deletedProposalIds: Array.from(deletedProposalIdsRef.current),
       proposals: updatedProps,
       ...(isCurrentActive ? { members: updatedMembers } : {}),
     })
@@ -1346,6 +1508,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         proposedByRole: 'bcn',
         status: 'approved',
         createdAt: nowStr,
+        periodId: evt.periodId || currentActivePeriodId || 'month-2026-10',
+        periodName: currentActiveMonth || 'Tháng 10/2026',
       })
 
       const newT02Count = criterion === 'T02' ? m.absent_count_t02 + 1 : m.absent_count_t02

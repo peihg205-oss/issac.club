@@ -9,6 +9,7 @@ let cachedDisputes: any[] | null = null
 let cachedPeriods: any[] | null = null
 let cachedActivePeriodId: string | null = null
 let cachedPeriodScores: Record<string, any> | null = null
+let cachedDeletedProposalIds: string[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET() {
@@ -27,6 +28,7 @@ export async function GET() {
         'issac_periods_cloud',
         'issac_active_period_id',
         'issac_custom_period_scores',
+        'issac_deleted_proposal_ids',
       ])
 
     if (!error && data && data.length > 0) {
@@ -37,6 +39,7 @@ export async function GET() {
       const periodsRow = data.find((r) => r.key === 'issac_periods_cloud')
       const activePeriodRow = data.find((r) => r.key === 'issac_active_period_id')
       const scoresRow = data.find((r) => r.key === 'issac_custom_period_scores')
+      const deletedIdsRow = data.find((r) => r.key === 'issac_deleted_proposal_ids')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -45,6 +48,7 @@ export async function GET() {
       let periodsFromDb = null
       let activePeriodFromDb = null
       let scoresFromDb = null
+      let deletedIdsFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -105,6 +109,15 @@ export async function GET() {
         }
       }
 
+      if (deletedIdsRow?.value) {
+        try {
+          deletedIdsFromDb = JSON.parse(deletedIdsRow.value)
+          cachedDeletedProposalIds = deletedIdsFromDb
+        } catch (e) {
+          console.error('Error parsing deleted IDs JSON:', e)
+        }
+      }
+
       return NextResponse.json({
         success: true,
         events: eventsFromDb || cachedEvents,
@@ -114,6 +127,7 @@ export async function GET() {
         periods: periodsFromDb || cachedPeriods,
         activePeriodId: activePeriodFromDb || cachedActivePeriodId,
         customPeriodScores: scoresFromDb || cachedPeriodScores,
+        deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
         source: 'supabase_cloud',
       })
     }
@@ -127,6 +141,7 @@ export async function GET() {
       periods: cachedPeriods,
       activePeriodId: cachedActivePeriodId,
       customPeriodScores: cachedPeriodScores,
+      deletedProposalIds: cachedDeletedProposalIds || [],
       source: 'cache_memory',
     })
   } catch (err: unknown) {
@@ -140,6 +155,7 @@ export async function GET() {
       periods: cachedPeriods,
       activePeriodId: cachedActivePeriodId,
       customPeriodScores: cachedPeriodScores,
+      deletedProposalIds: cachedDeletedProposalIds || [],
       error: msg,
       source: 'fallback',
     })
@@ -159,6 +175,8 @@ export async function POST(request: Request) {
       status,
       note,
       proposals,
+      proposalId,
+      deletedProposalIds,
       members,
       disputes,
       periods,
@@ -170,11 +188,40 @@ export async function POST(request: Request) {
     let dbSuccess = false
     let dbErrorMsg = null
 
+    // 0. Quản lý danh sách ID bản ghi đã xóa (Tombstones để chống hồi sinh khi sync từ máy khác)
+    if (deletedProposalIds !== undefined || (action === 'delete_proposal' && proposalId)) {
+      const incomingDel = Array.isArray(deletedProposalIds) ? deletedProposalIds : []
+      if (action === 'delete_proposal' && proposalId && !incomingDel.includes(proposalId)) {
+        incomingDel.push(proposalId)
+      }
+      const combinedDelSet = new Set([
+        ...(cachedDeletedProposalIds || []),
+        ...incomingDel,
+      ])
+      cachedDeletedProposalIds = Array.from(combinedDelSet)
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_proposal_ids',
+              value: JSON.stringify(cachedDeletedProposalIds),
+              description: 'Cloud synchronized deleted proposal IDs for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (delErr) {
+        console.warn('Supabase deleted proposals upsert notice:', delErr)
+      }
+    }
+
     const shouldUpdateEvents = events !== undefined || action !== undefined
 
     if (shouldUpdateEvents) {
       // Nếu chưa có cachedEvents trong bộ nhớ server, tải từ Supabase trước
-      if (!events && !cachedEvents) {
+      if (!cachedEvents) {
         try {
           const { data: currentDbRow } = await supabase
             .from('settings')
@@ -189,10 +236,10 @@ export async function POST(request: Request) {
         }
       }
 
-      let updatedEvents = events || cachedEvents || []
+      let updatedEvents = cachedEvents || []
 
       if (action === 'create_event' && event) {
-        // Đẩy sự kiện mới lên đầu danh sách
+        // Đẩy sự kiện mới lên đầu danh sách và giữ nguyên các sự kiện cũ
         updatedEvents = [event, ...updatedEvents.filter((e: any) => e.id !== event.id)]
       } else if (action === 'checkin' && eventId && memberCode) {
         // Cập nhật điểm danh 1 thành viên
@@ -237,8 +284,34 @@ export async function POST(request: Request) {
           }
           return evt
         })
-      } else if (action === 'sync_all' && events) {
-        updatedEvents = events
+      } else if (events && Array.isArray(events)) {
+        // Hợp nhất events 2 chiều thông minh theo ID (tránh ghi đè mất sự kiện hoặc mất record điểm danh)
+        const evtMap = new Map<string, any>()
+        for (const e of updatedEvents) {
+          if (e?.id) evtMap.set(e.id, e)
+        }
+        for (const e of events) {
+          if (e?.id) {
+            const existing = evtMap.get(e.id)
+            if (!existing) {
+              evtMap.set(e.id, e)
+            } else {
+              evtMap.set(e.id, {
+                ...existing,
+                ...e,
+                isFinalized: existing.isFinalized || e.isFinalized,
+                registeredMemberCodes: Array.from(
+                  new Set([...(existing.registeredMemberCodes || []), ...(e.registeredMemberCodes || [])])
+                ),
+                records: {
+                  ...(existing.records || {}),
+                  ...(e.records || {}),
+                },
+              })
+            }
+          }
+        }
+        updatedEvents = Array.from(evtMap.values())
       }
 
       cachedEvents = updatedEvents
@@ -269,15 +342,55 @@ export async function POST(request: Request) {
       }
     }
 
-    if (proposals !== undefined) {
-      cachedProposals = proposals
+    // 2. Đồng bộ & Hợp nhất Proposals 2 chiều (Chống mất dữ liệu lịch sử điểm số)
+    if (proposals !== undefined || (action === 'delete_proposal' && proposalId)) {
+      if (!cachedProposals) {
+        try {
+          const { data: curRow } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'issac_proposals_cloud')
+            .maybeSingle()
+          if (curRow?.value) {
+            cachedProposals = JSON.parse(curRow.value)
+          }
+        } catch (e) {
+          console.warn('Error reading current proposals before update:', e)
+        }
+      }
+
+      const existingProps = cachedProposals || []
+      const incomingProps = Array.isArray(proposals) ? proposals : []
+      const deletedSet = new Set(cachedDeletedProposalIds || [])
+
+      const propMap = new Map<string, any>()
+      // Thêm các proposal hiện có nếu chưa bị xóa
+      for (const p of existingProps) {
+        if (p?.id && !deletedSet.has(p.id) && p.status !== 'deleted') {
+          propMap.set(p.id, p)
+        }
+      }
+      // Hợp nhất các proposal từ client (cập nhật hoặc thêm mới)
+      for (const p of incomingProps) {
+        if (p?.id && !deletedSet.has(p.id) && p.status !== 'deleted') {
+          propMap.set(p.id, p)
+        }
+      }
+
+      if (action === 'delete_proposal' && proposalId) {
+        propMap.delete(proposalId)
+      }
+
+      const mergedProposals = Array.from(propMap.values())
+      cachedProposals = mergedProposals
+
       try {
         await supabase
           .from('settings')
           .upsert(
             {
               key: 'issac_proposals_cloud',
-              value: JSON.stringify(proposals),
+              value: JSON.stringify(mergedProposals),
               description: 'Cloud synchronized proposals for iSSAC Web',
               updated_at: new Date().toISOString(),
             },
@@ -392,6 +505,7 @@ export async function POST(request: Request) {
       periods: cachedPeriods,
       activePeriodId: cachedActivePeriodId,
       customPeriodScores: cachedPeriodScores,
+      deletedProposalIds: cachedDeletedProposalIds || [],
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'

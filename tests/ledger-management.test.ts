@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { calculateScoreDelta } from '../src/lib/scoring/engine'
 import { CRITERIA_RULES } from '../src/lib/scoring/constants'
+import { mergeProposals, mergeEvents } from '../src/lib/context/ClubContext'
 
 describe('Ledger Score Management & BCN Edit/Delete Logic', () => {
   it('correctly categorizes records into Tất cả, Điểm cộng (> 0), and Điểm trừ (< 0)', () => {
@@ -80,5 +81,62 @@ describe('Ledger Score Management & BCN Edit/Delete Logic', () => {
       'checkin-evt1-24310069',
       'prop-old-1',
     ])
+  })
+
+  it('mergeProposals prevents cloud overwrite from erasing locally added proposals', () => {
+    const local = [
+      { id: 'prop-local-1', memberCode: '24070680', points: 1, status: 'approved', createdAt: '18/10/2026' } as any,
+      { id: 'prop-local-2', memberCode: '24310069', points: 2, status: 'approved', createdAt: '18/10/2026' } as any,
+    ]
+    // Cloud had only 1 item (e.g. stale cache or device sync delay)
+    const incomingFromCloud = [
+      { id: 'prop-local-1', memberCode: '24070680', points: 1, status: 'approved', createdAt: '18/10/2026' } as any,
+    ]
+
+    const merged = mergeProposals(local, incomingFromCloud)
+    expect(merged.length).toBe(2)
+    expect(merged.map((p) => p.id)).toContain('prop-local-1')
+    expect(merged.map((p) => p.id)).toContain('prop-local-2')
+  })
+
+  it('mergeProposals respects deletedProposalIds and does not resurrect deleted records', () => {
+    const local = [
+      { id: 'prop-active-1', memberCode: '24070680', points: 1, status: 'approved' } as any,
+    ]
+    const incomingFromCloud = [
+      { id: 'prop-active-1', memberCode: '24070680', points: 1, status: 'approved' } as any,
+      { id: 'prop-deleted-2', memberCode: '24310069', points: -5, status: 'approved' } as any, // deleted by BCN
+    ]
+    const deletedIds = new Set(['prop-deleted-2'])
+
+    const merged = mergeProposals(local, incomingFromCloud, deletedIds)
+    expect(merged.length).toBe(1)
+    expect(merged[0].id).toBe('prop-active-1')
+  })
+
+  it('mergeEvents merges checkin records across multiple sessions without losing attendance', () => {
+    const localEvents = [
+      {
+        id: 'evt-1',
+        title: 'Họp CLB Gen 3.0',
+        records: {
+          '24070680': { memberCode: '24070680', status: 'present_on_time', checkinTime: '19:30' },
+        },
+      } as any,
+    ]
+    const incomingEvents = [
+      {
+        id: 'evt-1',
+        title: 'Họp CLB Gen 3.0',
+        records: {
+          '24310069': { memberCode: '24310069', status: 'present_on_time', checkinTime: '19:35' },
+        },
+      } as any,
+    ]
+
+    const merged = mergeEvents(localEvents, incomingEvents)
+    expect(merged.length).toBe(1)
+    expect(merged[0].records['24070680']).toBeDefined()
+    expect(merged[0].records['24310069']).toBeDefined()
   })
 })
