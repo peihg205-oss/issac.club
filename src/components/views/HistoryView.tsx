@@ -22,11 +22,20 @@ import {
   TrendingUp,
   TrendingDown,
   Sparkles,
+  Pencil,
+  Trash2,
+  Search,
+  Filter,
 } from 'lucide-react'
 import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
+import { CRITERIA_RULES } from '@/lib/scoring/constants'
+import type { ProposalItem } from '@/lib/context/ClubContext'
+import type { RuleCode } from '@/types/database'
 
 // Sẵn sàng vận hành thật: Danh sách lịch sử điểm số sạch xuất phát từ các phiên điểm danh & đề xuất thực tế
 const INITIAL_HISTORY: Array<{
+  id: string
+  memberCode: string
   time: string
   name: string
   dept: string
@@ -35,16 +44,18 @@ const INITIAL_HISTORY: Array<{
   points: number
   type: string
   scorer: string
+  rawProposal?: ProposalItem
 }> = []
 
-
 export function HistoryView() {
-  const { isBCN, isHR } = useAuth()
+  const { isBCN, isHR, currentUser } = useAuth()
   const {
     members,
     proposals,
     approveProposal,
     rejectProposal,
+    updateProposal,
+    deleteProposal,
     disputes,
     createDispute,
     resolveDisputeByBCN,
@@ -70,6 +81,21 @@ export function HistoryView() {
   const [scoreModalOpen, setScoreModalOpen] = useState(false)
   const [disputeModalOpen, setDisputeModalOpen] = useState(false)
 
+  // Bộ lọc tìm kiếm & phòng ban & phân trang
+  const [searchQuery, setSearchQuery] = useState('')
+  const [deptFilter, setDeptFilter] = useState('ALL')
+  const [pageSize, setPageSize] = useState<number>(15)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+
+  // State cho BCN Sửa điểm
+  const [editingProposal, setEditingProposal] = useState<ProposalItem | null>(null)
+  const [editPoints, setEditPoints] = useState<number>(0)
+  const [editCriterionCode, setEditCriterionCode] = useState<string>('C07')
+  const [editReason, setEditReason] = useState<string>('')
+
+  // State cho BCN Xóa điểm
+  const [deletingProposal, setDeletingProposal] = useState<ProposalItem | null>(null)
+
   // Form khiếu nại mới
   const [disputeMemberCode, setDisputeMemberCode] = useState(members[0]?.member_code || '')
   const [disputeCriterion, setDisputeCriterion] = useState('T02')
@@ -84,27 +110,110 @@ export function HistoryView() {
   const dynamicHistory = proposals
     .filter((p) => p.status === 'approved')
     .map((p) => ({
+      id: p.id,
+      memberCode: p.memberCode,
       time: normalizeHistoryTimestamp(p.createdAt),
       name: p.memberName,
       dept: p.memberDept,
       code: p.criterionCode,
       title: `${p.criterionName} - ${p.reason}`,
       points: p.points,
-      type: p.points >= 0 ? 'Cộng' : 'Trừ',
+      type: p.points > 0 ? 'Cộng' : p.points < 0 ? 'Trừ' : 'Ghi nhận',
       scorer: p.proposedBy,
+      rawProposal: p,
     }))
 
   const combinedHistory = [...dynamicHistory, ...INITIAL_HISTORY]
 
-  // Filter table data
+  // Filter table data: chuẩn hóa logic điểm cộng > 0, điểm trừ < 0, tất cả = mọi bản ghi
   const filteredHistory = combinedHistory.filter((item) => {
-    if (activeTab === 'add') return item.type === 'Cộng'
-    if (activeTab === 'deduct') return item.type === 'Trừ'
+    // 1. Lọc theo chuỗi tìm kiếm
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      const matchesSearch =
+        item.name.toLowerCase().includes(q) ||
+        item.memberCode.toLowerCase().includes(q) ||
+        item.code.toLowerCase().includes(q) ||
+        item.title.toLowerCase().includes(q) ||
+        item.scorer.toLowerCase().includes(q)
+      if (!matchesSearch) return false
+    }
+
+    // 2. Lọc theo Ban trực thuộc
+    if (deptFilter !== 'ALL' && item.dept !== deptFilter) {
+      return false
+    }
+
+    // 3. Lọc theo Tab chuẩn: Điểm cộng (> 0), Điểm trừ (< 0), Tất cả (bao gồm cả ghi nhận 0đ)
+    if (activeTab === 'add') return item.points > 0
+    if (activeTab === 'deduct') return item.points < 0
     return true
   })
 
-  const countAdd = combinedHistory.filter((i) => i.type === 'Cộng').length
-  const countDeduct = combinedHistory.filter((i) => i.type === 'Trừ').length
+  // Đếm đúng chuẩn số lượng: Điểm cộng > 0, Điểm trừ < 0
+  const countAdd = combinedHistory.filter((i) => i.points > 0).length
+  const countDeduct = combinedHistory.filter((i) => i.points < 0).length
+
+  // Tự động nhảy về trang 1 khi chuyển tab hoặc thay đổi tìm kiếm / bộ lọc
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab, searchQuery, deptFilter, selectedPeriodId, pageSize])
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredHistory.length / (pageSize === 0 ? filteredHistory.length || 1 : pageSize))
+  )
+  const paginatedHistory =
+    pageSize === 0
+      ? filteredHistory
+      : filteredHistory.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  // Mở modal Sửa điểm cho BCN
+  const handleOpenEdit = (prop?: ProposalItem) => {
+    if (!prop) return
+    setEditingProposal(prop)
+    setEditPoints(prop.points)
+    setEditCriterionCode(prop.criterionCode)
+    setEditReason(prop.reason)
+  }
+
+  // Mở modal Xóa điểm cho BCN
+  const handleOpenDelete = (prop?: ProposalItem) => {
+    if (!prop) return
+    setDeletingProposal(prop)
+  }
+
+  // Lưu chỉnh sửa điểm (BCN)
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingProposal) return
+
+    const res = updateProposal(
+      editingProposal.id,
+      {
+        points: Number(editPoints),
+        criterionCode: editCriterionCode,
+        reason: editReason.trim(),
+      },
+      currentUser?.name || 'Ban Chủ nhiệm'
+    )
+
+    alert(res.message)
+    if (res.success) {
+      setEditingProposal(null)
+    }
+  }
+
+  // Xác nhận xóa điểm (BCN)
+  const handleConfirmDelete = () => {
+    if (!deletingProposal) return
+
+    const res = deleteProposal(deletingProposal.id, currentUser?.name || 'Ban Chủ nhiệm')
+    alert(res.message)
+    if (res.success) {
+      setDeletingProposal(null)
+    }
+  }
 
   // Export CSV
   const handleExportCSV = () => {
@@ -581,16 +690,65 @@ export function HistoryView() {
         </div>
       ) : (
         <>
+          {/* 3. Toolbar Tìm Kiếm & Lọc Ban & Số bản ghi/trang */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Tìm theo tên thành viên, MSSV, mã tiêu chí, người chấm..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9.5 pr-8 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <select
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200/90 bg-white text-slate-700 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <option value="ALL">Tất cả các ban</option>
+                <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
+                <option value="Ban Truyền thông">Ban Truyền thông</option>
+                <option value="Ban Tư vấn">Ban Tư vấn</option>
+                <option value="Ban Nhân sự">Ban Nhân sự</option>
+              </select>
+
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200/90 bg-white text-slate-700 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <option value={10}>10 bản ghi/trang</option>
+                <option value={15}>15 bản ghi/trang</option>
+                <option value={25}>25 bản ghi/trang</option>
+                <option value={50}>50 bản ghi/trang</option>
+                <option value={0}>Tất cả ({filteredHistory.length})</option>
+              </select>
+            </div>
+          </div>
+
           {/* Mobile Card List for phones (< md) */}
           <div className="block md:hidden space-y-3">
-            {filteredHistory.length === 0 ? (
+            {paginatedHistory.length === 0 ? (
               <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center text-slate-400">
                 <p className="font-semibold text-xs">Không có dữ liệu lịch sử điểm</p>
               </div>
             ) : (
-              filteredHistory.map((item, index) => (
+              paginatedHistory.map((item, index) => (
                 <div
-                  key={index}
+                  key={item.id || index}
                   className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -613,7 +771,9 @@ export function HistoryView() {
                         className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
                           item.points > 0
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                            : item.points < 0
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
                         }`}
                       >
                         {item.points > 0 ? `+${item.points}` : item.points}đ
@@ -634,12 +794,34 @@ export function HistoryView() {
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        item.type === 'Cộng' ? 'text-emerald-700' : 'text-rose-700'
+                        item.points > 0 ? 'text-emerald-700' : item.points < 0 ? 'text-rose-700' : 'text-slate-600'
                       }`}
                     >
-                      {item.type} điểm
+                      {item.type}
                     </span>
                   </div>
+
+                  {/* Quyền Sửa/Xóa của Ban Chủ nhiệm trên Mobile */}
+                  {isBCN && item.rawProposal && (
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(item.rawProposal)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition active:scale-95 cursor-pointer"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        <span>Sửa điểm</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDelete(item.rawProposal)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-lg transition active:scale-95 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Xóa</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -658,111 +840,187 @@ export function HistoryView() {
                   <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-white w-20">Điểm</th>
                   <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-blue-100 w-16">Loại</th>
                   <th className="py-3 px-4 text-left whitespace-nowrap font-bold text-blue-100">Người chấm</th>
+                  {isBCN && (
+                    <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-amber-200 w-24">Thao tác</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
-                {filteredHistory.map((item, index) => (
-                  <tr key={index} className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100">
-                    {/* Thời gian */}
-                    <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap text-xs">
-                      {item.time}
-                    </td>
-
-                    {/* Thành viên + avatar (whitespace-nowrap enforced) */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2.5 whitespace-nowrap">
-                        {item.name === 'Trần Đức Thắng' ? (
-                          <img
-                            src="/avatars/duc-thang.jpg"
-                            alt={item.name}
-                            className="w-8 h-8 rounded-full object-cover border border-slate-200 flex-shrink-0 shadow-2xs"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1351D8] border border-blue-200/80 font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs group-hover:bg-[#1351D8] group-hover:text-white transition-all">
-                            {item.name.charAt(0)}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <span className="font-bold text-slate-900 group-hover:text-[#1351D8] transition-colors whitespace-nowrap block text-[13px]">
-                            {item.name}
-                          </span>
-                          {item.dept && (
-                            <span className="text-[10.5px] text-slate-400 font-medium block whitespace-nowrap">
-                              {item.dept}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Mã tiêu chí */}
-                    <td className="py-3.5 px-3 text-center font-mono font-black text-xs text-[#1351D8]">
-                      {item.code}
-                    </td>
-
-                    {/* Nội dung */}
-                    <td className="py-3.5 px-4 text-slate-700 font-medium text-xs max-w-md leading-relaxed">
-                      {item.title}
-                    </td>
-
-                    {/* Điểm */}
-                    <td className="py-3.5 px-3 text-center">
-                      <span
-                        className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
-                          item.points > 0
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                            : 'bg-rose-50 text-rose-700 border-rose-200/80'
-                        }`}
-                      >
-                        {item.points > 0 ? `+${item.points}` : item.points}
-                      </span>
-                    </td>
-
-                    {/* Loại */}
-                    <td className="py-3.5 px-3 text-center font-bold text-xs">
-                      <span className={item.type === 'Cộng' ? 'text-emerald-700' : 'text-rose-700'}>
-                        {item.type}
-                      </span>
-                    </td>
-
-                    {/* Người chấm */}
-                    <td className="py-3.5 px-4 text-slate-600 font-semibold text-xs whitespace-nowrap">
-                      {item.scorer}
+                {paginatedHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={isBCN ? 8 : 7} className="py-10 text-center text-slate-400">
+                      <p className="font-semibold text-xs">Không tìm thấy bản ghi lịch sử điểm nào phù hợp</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  paginatedHistory.map((item, index) => (
+                    <tr key={item.id || index} className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100">
+                      {/* Thời gian */}
+                      <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap text-xs">
+                        {item.time}
+                      </td>
+
+                      {/* Thành viên + avatar (whitespace-nowrap enforced) */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5 whitespace-nowrap">
+                          {item.name === 'Trần Đức Thắng' ? (
+                            <img
+                              src="/avatars/duc-thang.jpg"
+                              alt={item.name}
+                              className="w-8 h-8 rounded-full object-cover border border-slate-200 flex-shrink-0 shadow-2xs"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1351D8] border border-blue-200/80 font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs group-hover:bg-[#1351D8] group-hover:text-white transition-all">
+                              {item.name.charAt(0)}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-900 group-hover:text-[#1351D8] transition-colors whitespace-nowrap block text-[13px]">
+                              {item.name}
+                            </span>
+                            {item.dept && (
+                              <span className="text-[10.5px] text-slate-400 font-medium block whitespace-nowrap">
+                                {item.dept}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Mã tiêu chí */}
+                      <td className="py-3.5 px-3 text-center font-mono font-black text-xs text-[#1351D8]">
+                        {item.code}
+                      </td>
+
+                      {/* Nội dung */}
+                      <td className="py-3.5 px-4 text-slate-700 font-medium text-xs max-w-md leading-relaxed">
+                        {item.title}
+                      </td>
+
+                      {/* Điểm */}
+                      <td className="py-3.5 px-3 text-center">
+                        <span
+                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
+                            item.points > 0
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                              : item.points < 0
+                              ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                              : 'bg-slate-100 text-slate-700 border-slate-200/80'
+                          }`}
+                        >
+                          {item.points > 0 ? `+${item.points}` : item.points}
+                        </span>
+                      </td>
+
+                      {/* Loại */}
+                      <td className="py-3.5 px-3 text-center font-bold text-xs">
+                        <span className={item.points > 0 ? 'text-emerald-700' : item.points < 0 ? 'text-rose-700' : 'text-slate-600'}>
+                          {item.type}
+                        </span>
+                      </td>
+
+                      {/* Người chấm */}
+                      <td className="py-3.5 px-4 text-slate-600 font-semibold text-xs whitespace-nowrap">
+                        {item.scorer}
+                      </td>
+
+                      {/* Thao tác BCN (Sửa / Xóa bản ghi điểm nhầm) */}
+                      {isBCN && (
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(item.rawProposal)}
+                              className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200/70 transition shadow-2xs cursor-pointer"
+                              title="Sửa điểm / lý do"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDelete(item.rawProposal)}
+                              className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200/70 transition shadow-2xs cursor-pointer"
+                              title="Xóa / Hoàn tác điểm"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination footer */}
-          <div className="bg-slate-50/80 px-5 py-3.5 border-t border-slate-200/80 flex items-center justify-between">
+          {/* Pagination footer chuẩn hóa đầy đủ */}
+          <div className="bg-slate-50/80 px-5 py-3.5 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span className="text-xs font-medium text-slate-500">
-              Hiển thị <span className="font-bold text-slate-800">{filteredHistory.length}</span> bản ghi
+              Hiển thị <span className="font-bold text-slate-800">{filteredHistory.length > 0 ? (currentPage - 1) * (pageSize || filteredHistory.length) + 1 : 0}</span> - <span className="font-bold text-slate-800">{pageSize ? Math.min(currentPage * pageSize, filteredHistory.length) : filteredHistory.length}</span> trên tổng số <span className="font-bold text-slate-800">{filteredHistory.length}</span> bản ghi
             </span>
 
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="p-1.5 rounded-lg border border-slate-200/90 text-slate-500 hover:bg-white hover:text-slate-800 transition shadow-2xs cursor-pointer"
-                title="Trang trước"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                className="w-7 h-7 rounded-lg text-xs font-bold bg-[#0B1E48] text-white shadow-2xs cursor-pointer"
-              >
-                1
-              </button>
-              <button
-                type="button"
-                className="p-1.5 rounded-lg border border-slate-200/90 text-slate-500 hover:bg-white hover:text-slate-800 transition shadow-2xs cursor-pointer"
-                title="Trang kế tiếp"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={`p-1.5 rounded-lg border border-slate-200/90 transition shadow-2xs ${
+                    currentPage === 1
+                      ? 'text-slate-300 bg-slate-50 cursor-not-allowed'
+                      : 'text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-900 cursor-pointer'
+                  }`}
+                  title="Trang trước"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer ${
+                          currentPage === page
+                            ? 'bg-[#0B1E48] text-white'
+                            : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
+                    return (
+                      <span key={page} className="px-1 text-slate-400 text-xs font-bold select-none">
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={`p-1.5 rounded-lg border border-slate-200/90 transition shadow-2xs ${
+                    currentPage === totalPages
+                      ? 'text-slate-300 bg-slate-50 cursor-not-allowed'
+                      : 'text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-900 cursor-pointer'
+                  }`}
+                  title="Trang kế tiếp"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </>
@@ -885,6 +1143,195 @@ export function HistoryView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Sửa Điểm Nhầm cho BCN */}
+      {editingProposal && (
+        <div className="fixed inset-0 z-50 bg-[#0B1E48]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200/90 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1351D8] flex items-center justify-center border border-blue-200/80 shadow-2xs">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#0B1E48] tracking-tight">
+                    Chỉnh sửa bản ghi điểm (Quyền BCN)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Sửa đổi điểm số / tiêu chí nếu phát hiện nhập nhầm
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingProposal(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Thành viên:</span>
+                  <span className="font-bold text-slate-900 text-sm">{editingProposal.memberName}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Ban trực thuộc:</span>
+                  <span className="font-semibold text-slate-700">{editingProposal.memberDept}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Thời gian tạo:</span>
+                  <span className="font-mono text-slate-600">{normalizeHistoryTimestamp(editingProposal.createdAt)}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Tiêu chí:
+                  </label>
+                  <select
+                    value={editCriterionCode}
+                    onChange={(e) => {
+                      const code = e.target.value
+                      setEditCriterionCode(code)
+                      const rule = CRITERIA_RULES[code as RuleCode]
+                      if (rule) {
+                        setEditPoints(rule.base_points)
+                      }
+                    }}
+                    className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer"
+                  >
+                    <optgroup label="Tiêu chí Cộng điểm (C01 - C09)">
+                      {Object.values(CRITERIA_RULES)
+                        .filter((r) => r.code.startsWith('C'))
+                        .map((r) => (
+                          <option key={r.code} value={r.code}>
+                            {r.code} - {r.name} (+{r.base_points}đ)
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Tiêu chí Trừ điểm (T01 - T13)">
+                      {Object.values(CRITERIA_RULES)
+                        .filter((r) => r.code.startsWith('T'))
+                        .map((r) => (
+                          <option key={r.code} value={r.code}>
+                            {r.code} - {r.name} ({r.base_points}đ)
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Số điểm (Có thể nhập số âm hoặc 0):
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    value={editPoints}
+                    onChange={(e) => setEditPoints(Number(e.target.value))}
+                    className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl font-black text-slate-900 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Gốc: {editingProposal.points > 0 ? `+${editingProposal.points}` : editingProposal.points}đ (Chênh lệch: {editPoints - editingProposal.points >= 0 ? `+${editPoints - editingProposal.points}` : editPoints - editingProposal.points}đ)
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Nội dung / Lý do ghi nhận:
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingProposal(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer"
+                >
+                  Huỷ
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 shadow-sm shadow-blue-600/25 transition-all active:scale-95 cursor-pointer"
+                >
+                  Lưu thay đổi & Cập nhật điểm
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xóa / Hoàn Tác Điểm Nhầm cho BCN */}
+      {deletingProposal && (
+        <div className="fixed inset-0 z-50 bg-[#0B1E48]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center border border-rose-200 shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-rose-950">
+                  Xác nhận xóa bản ghi điểm?
+                </h3>
+                <p className="text-xs text-rose-700/80 font-medium">
+                  Hoàn tác điểm số về trạng thái trước đó
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-200/70 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">Thành viên:</span>
+                <span className="font-bold text-slate-900">{deletingProposal.memberName} ({deletingProposal.memberDept})</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">Điểm trong bản ghi:</span>
+                <span className="font-black text-rose-700">
+                  {deletingProposal.points > 0 ? `+${deletingProposal.points}` : deletingProposal.points} điểm ({deletingProposal.criterionCode})
+                </span>
+              </div>
+              <div className="text-slate-600 leading-relaxed border-t border-rose-200/60 pt-2">
+                <strong>Nội dung:</strong> {deletingProposal.reason}
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+              ⚠️ <strong>Cảnh báo:</strong> Thao tác này sẽ xóa bản ghi khỏi sổ cái và tự động hoàn tác điểm của thành viên: {deletingProposal.points > 0 ? `Trừ lại ${deletingProposal.points} điểm` : deletingProposal.points < 0 ? `Cộng hoàn trả lại ${Math.abs(deletingProposal.points)} điểm` : 'Không ảnh hưởng tổng điểm'}.
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeletingProposal(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 shadow-sm shadow-rose-600/25 transition-all active:scale-95 cursor-pointer"
+              >
+                Xác nhận xóa & Hoàn tác
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -129,6 +129,15 @@ interface ClubContextType {
   }) => { success: boolean; message: string }
   approveProposal: (proposalId: string) => void
   rejectProposal: (proposalId: string) => void
+  updateProposal: (
+    proposalId: string,
+    updatedData: { points?: number; reason?: string; criterionCode?: string },
+    actorName: string
+  ) => { success: boolean; message: string }
+  deleteProposal: (
+    proposalId: string,
+    actorName: string
+  ) => { success: boolean; message: string }
   updateCheckinRecord: (
     eventId: string,
     memberCode: string,
@@ -954,6 +963,169 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     syncToCloud({ proposals: updatedProps })
   }
 
+  // Ban Chủ nhiệm chỉnh sửa trực tiếp 1 bản ghi điểm (nếu phát hiện cộng/trừ điểm nhầm)
+  const updateProposal = (
+    proposalId: string,
+    updatedData: { points?: number; reason?: string; criterionCode?: string },
+    actorName: string
+  ) => {
+    const prop = proposals.find((p) => p.id === proposalId)
+    if (!prop) return { success: false, message: 'Bản ghi điểm không tồn tại' }
+
+    const oldPoints = prop.points
+    const newPoints = updatedData.points !== undefined ? updatedData.points : oldPoints
+    const delta = newPoints - oldPoints
+
+    const targetPeriodId = prop.periodId || currentActivePeriodId || 'month-2026-10'
+    const targetPeriod = periods.find((p) => p.id === targetPeriodId)
+    if (targetPeriod?.status === 'locked') {
+      return { success: false, message: `Chu kỳ "${targetPeriod.name}" đã khóa sổ, không thể điều chỉnh điểm!` }
+    }
+
+    let updatedMembers = members
+    const isCurrentActive =
+      targetPeriodId === currentActivePeriodId ||
+      Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+
+    // Nếu bản ghi này đã được duyệt (approved) và có biến động điểm (delta !== 0)
+    if (prop.status === 'approved' && delta !== 0 && isCurrentActive) {
+      updatedMembers = getRankedMembers(
+        members.map((m) => {
+          if (m.member_code === prop.memberCode) {
+            const newScore = Math.max(0, Math.min(100, m.current_score + delta))
+            return { ...m, current_score: newScore }
+          }
+          return m
+        })
+      )
+      setMembers(updatedMembers)
+    }
+
+    // Cập nhật period scores delta nếu có
+    if (prop.status === 'approved' && delta !== 0) {
+      setCustomPeriodScores((prev) => {
+        const periodMap = prev[targetPeriodId] || {}
+        const curDelta = periodMap[prop.memberCode] || 0
+        return {
+          ...prev,
+          [targetPeriodId]: {
+            ...periodMap,
+            [prop.memberCode]: curDelta + delta,
+          },
+        }
+      })
+    }
+
+    const updatedProps = proposals.map((p) => {
+      if (p.id !== proposalId) return p
+
+      let newCriterionName = p.criterionName
+      if (updatedData.criterionCode && CRITERIA_RULES[updatedData.criterionCode as RuleCode]) {
+        newCriterionName = CRITERIA_RULES[updatedData.criterionCode as RuleCode].name
+      }
+
+      return {
+        ...p,
+        points: newPoints,
+        reason: updatedData.reason !== undefined ? updatedData.reason : p.reason,
+        criterionCode: updatedData.criterionCode || p.criterionCode,
+        criterionName: newCriterionName,
+        proposedBy: p.proposedBy.includes('(Đã chỉnh sửa')
+          ? p.proposedBy
+          : `${p.proposedBy} (BCN ${actorName} sửa)`,
+      }
+    })
+
+    setProposals(updatedProps)
+    try {
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      if (isCurrentActive) {
+        localStorage.setItem('issac_members_clean_v1', JSON.stringify(updatedMembers))
+      }
+    } catch (e) {}
+
+    syncToCloud({
+      proposals: updatedProps,
+      ...(isCurrentActive ? { members: updatedMembers } : {}),
+    })
+
+    return {
+      success: true,
+      message: `Đã cập nhật bản ghi thành công! Điểm của ${prop.memberName} được điều chỉnh ${delta >= 0 ? `+${delta}` : delta}đ (từ ${oldPoints}đ thành ${newPoints}đ).`,
+    }
+  }
+
+  // Ban Chủ nhiệm xóa / hoàn tác 1 bản ghi điểm nhầm
+  const deleteProposal = (proposalId: string, actorName: string) => {
+    const prop = proposals.find((p) => p.id === proposalId)
+    if (!prop) return { success: false, message: 'Bản ghi điểm không tồn tại' }
+
+    const targetPeriodId = prop.periodId || currentActivePeriodId || 'month-2026-10'
+    const targetPeriod = periods.find((p) => p.id === targetPeriodId)
+    if (targetPeriod?.status === 'locked') {
+      return { success: false, message: `Chu kỳ "${targetPeriod.name}" đã khóa sổ, không thể xóa bản ghi!` }
+    }
+
+    let updatedMembers = members
+    const isCurrentActive =
+      targetPeriodId === currentActivePeriodId ||
+      Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+
+    // Nếu bản ghi đã duyệt (approved), hoàn tác lại số điểm đã cộng/trừ
+    if (prop.status === 'approved' && isCurrentActive) {
+      updatedMembers = getRankedMembers(
+        members.map((m) => {
+          if (m.member_code === prop.memberCode) {
+            // Hoàn tác: trừ lại số điểm prop.points
+            const newScore = Math.max(0, Math.min(100, m.current_score - prop.points))
+            const newT02 =
+              prop.criterionCode === 'T02'
+                ? Math.max(0, m.absent_count_t02 - 1)
+                : m.absent_count_t02
+            return { ...m, current_score: newScore, absent_count_t02: newT02 }
+          }
+          return m
+        })
+      )
+      setMembers(updatedMembers)
+    }
+
+    // Hoàn tác trong customPeriodScores
+    if (prop.status === 'approved') {
+      setCustomPeriodScores((prev) => {
+        const periodMap = prev[targetPeriodId] || {}
+        const curDelta = periodMap[prop.memberCode] || 0
+        return {
+          ...prev,
+          [targetPeriodId]: {
+            ...periodMap,
+            [prop.memberCode]: curDelta - prop.points,
+          },
+        }
+      })
+    }
+
+    const updatedProps = proposals.filter((p) => p.id !== proposalId)
+    setProposals(updatedProps)
+
+    try {
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      if (isCurrentActive) {
+        localStorage.setItem('issac_members_clean_v1', JSON.stringify(updatedMembers))
+      }
+    } catch (e) {}
+
+    syncToCloud({
+      proposals: updatedProps,
+      ...(isCurrentActive ? { members: updatedMembers } : {}),
+    })
+
+    return {
+      success: true,
+      message: `Đã xóa bản ghi điểm khỏi sổ cái! Điểm của ${prop.memberName} đã được hoàn tác ${prop.points > 0 ? `-${prop.points}` : `+${Math.abs(prop.points)}`} điểm thành công.`,
+    }
+  }
+
   // Cập nhật trạng thái check-in của 1 thành viên trong buổi họp
   const updateCheckinRecord = (
     eventId: string,
@@ -1188,8 +1360,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     // Cập nhật danh sách thành viên với bảng xếp hạng mới
     setMembers(getRankedMembers(updatedMembers))
 
-    // Thêm các bản ghi mới vào sổ cái
-    setProposals((prev) => [...newLedgerRecords, ...prev])
+    // Thêm các bản ghi mới vào sổ cái và deduplicate theo id
+    const combinedProposals = [
+      ...newLedgerRecords,
+      ...proposals.filter((p) => !newLedgerRecords.some((r) => r.id === p.id)),
+    ]
+    setProposals(combinedProposals)
+    try {
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(combinedProposals))
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(getRankedMembers(updatedMembers)))
+    } catch (e) {}
 
     // Đánh dấu buổi họp đã chốt
     setEvents((prev) =>
@@ -1225,7 +1405,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           action: 'finalize',
           eventId,
           finalizedBy: finalizedByName,
-          proposals: newLedgerRecords,
+          proposals: combinedProposals,
           members: getRankedMembers(updatedMembers),
         }),
       }).catch((e) => console.error('Cloud sync error on finalize:', e))
@@ -1965,6 +2145,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         createProposal,
         approveProposal,
         rejectProposal,
+        updateProposal,
+        deleteProposal,
         updateCheckinRecord,
         memberSelfCheckin,
         finalizeEvent,
