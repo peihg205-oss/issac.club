@@ -25,6 +25,7 @@ import {
   UserPlus,
   ShieldAlert,
   Info,
+  Zap,
 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -54,22 +55,50 @@ export default function AdminPage() {
 
   // Scoring Form State
   const [targetMemberCode, setTargetMemberCode] = useState(members[7]?.member_code || '24070753')
-  const [criterionCode, setCriterionCode] = useState<RuleCode>('T07') // Default to penalty T07 for HR
+  const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07 for HR
+  const [isCustomPoints, setIsCustomPoints] = useState(false)
+  const [customPoints, setCustomPoints] = useState<number>(-2)
   const [reason, setReason] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
   const [directApply, setDirectApply] = useState(isBCN) // BCN can direct apply
   const [formFeedback, setFormFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   const targetMember = members.find((m) => m.member_code === targetMemberCode) || members[0]
-  const rule = CRITERIA_RULES[criterionCode]
+  const rule = CRITERIA_RULES[criterionCode as RuleCode]
 
-  // Calculate live preview
-  const preview = calculateScoreDelta({
-    ruleCode: criterionCode,
-    basePoints: rule.base_points,
-    isCoreAtEvent: targetMember.is_core,
-    currentScore: targetMember.current_score,
-  })
+  const handleCriterionChange = (newCode: string) => {
+    setCriterionCode(newCode)
+    if (newCode === 'CUSTOM_POINT_DEDUCT') {
+      setIsCustomPoints(true)
+      setCustomPoints((prev) => (prev < 0 ? prev : -2))
+    } else if (newCode === 'CUSTOM_POINT_ADD') {
+      setIsCustomPoints(true)
+      setCustomPoints((prev) => (prev > 0 ? prev : 2))
+    } else {
+      const bRule = CRITERIA_RULES[newCode as RuleCode]
+      if (bRule) {
+        setCustomPoints(bRule.type === 'deduct' ? -bRule.base_points : bRule.base_points)
+      }
+    }
+  }
+
+  const isCustomMode = isCustomPoints || criterionCode.startsWith('CUSTOM_POINT_')
+  let previewActualDelta = 0
+  let previewScoreAfter = targetMember?.current_score || 60
+
+  if (isCustomMode) {
+    previewActualDelta = typeof customPoints === 'number' && !isNaN(customPoints) ? customPoints : 0
+    previewScoreAfter = Math.max(0, Math.min(100, (targetMember?.current_score || 60) + previewActualDelta))
+  } else if (rule) {
+    const preview = calculateScoreDelta({
+      ruleCode: criterionCode as RuleCode,
+      basePoints: rule.base_points,
+      isCoreAtEvent: targetMember.is_core,
+      currentScore: targetMember.current_score,
+    })
+    previewActualDelta = preview.actualDelta
+    previewScoreAfter = preview.scoreAfter
+  }
 
   // Pending proposals awaiting BCN
   const pendingQueue = proposals.filter((p) => p.status === 'pending_bcn')
@@ -82,6 +111,7 @@ export default function AdminPage() {
     const res = createProposal({
       memberCode: targetMember.member_code,
       criterionCode,
+      customPoints: isCustomMode ? customPoints : undefined,
       reason,
       evidenceUrl,
       proposerName: currentUser.name,
@@ -279,9 +309,13 @@ export default function AdminPage() {
                 </label>
                 <select
                   value={criterionCode}
-                  onChange={(e) => setCriterionCode(e.target.value as RuleCode)}
+                  onChange={(e) => handleCriterionChange(e.target.value)}
                   className="w-full bg-[#070D1E] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#1E63D6]"
                 >
+                  <optgroup label="--- ⚡ ĐIỂM TỰ CHO / TÙY CHỈNH ĐIỂM ---">
+                    <option value="CUSTOM_POINT_DEDUCT">⚡ Điểm trừ tự cho (Tùy chỉnh số điểm trừ)</option>
+                    <option value="CUSTOM_POINT_ADD">⚡ Điểm cộng tự cho (Tùy chỉnh số điểm cộng)</option>
+                  </optgroup>
                   <optgroup label="--- Điểm trừ vi phạm (T01-T13) ---">
                     {Object.values(CRITERIA_RULES)
                       .filter((c) => c.type === 'deduct')
@@ -303,6 +337,99 @@ export default function AdminPage() {
                 </select>
               </div>
 
+              {/* Custom points input & toggle */}
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#F5B301]" />
+                    <span>Số điểm áp dụng:</span>
+                  </label>
+                  <div className="inline-flex p-0.5 rounded-lg bg-black/40 text-[10.5px] font-bold">
+                    <button
+                      type="button"
+                      disabled={criterionCode.startsWith('CUSTOM_POINT_')}
+                      onClick={() => setIsCustomPoints(false)}
+                      className={`px-2 py-0.5 rounded transition ${
+                        !isCustomMode
+                          ? 'bg-[#1E63D6] text-white shadow'
+                          : 'text-slate-400 hover:text-white disabled:opacity-40'
+                      }`}
+                    >
+                      Mặc định ({rule ? `${rule.type === 'deduct' ? '-' : '+'}${rule.base_points}đ` : '0đ'})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomPoints(true)}
+                      className={`px-2 py-0.5 rounded transition flex items-center gap-1 ${
+                        isCustomMode
+                          ? 'bg-[#F5B301] text-slate-950 font-black shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Zap className="w-3 h-3" />
+                      <span>Điểm tự cho</span>
+                    </button>
+                  </div>
+                </div>
+
+                {isCustomMode ? (
+                  <div className="space-y-2 pt-1 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          value={customPoints}
+                          onChange={(e) => setCustomPoints(Number(e.target.value))}
+                          placeholder="Nhập số điểm (+ hoặc -)..."
+                          className="w-full bg-[#070D1E] border border-[#F5B301]/40 focus:border-[#F5B301] rounded-xl px-3 py-1.5 text-xs font-black text-white focus:outline-none"
+                        />
+                        <span className="absolute right-3 top-2 text-[10px] font-bold text-slate-400">
+                          điểm
+                        </span>
+                      </div>
+                      <div
+                        className={`px-2.5 py-1.5 rounded-xl text-xs font-black min-w-[60px] text-center ${
+                          customPoints > 0
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : customPoints < 0
+                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                            : 'bg-white/10 text-slate-300'
+                        }`}
+                      >
+                        {customPoints > 0 ? `+${customPoints}đ` : `${customPoints}đ`}
+                      </div>
+                    </div>
+
+                    {/* Chips */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-[10px] text-slate-400 mr-0.5">Nhanh:</span>
+                      {[-10, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 10].map((pt) => (
+                        <button
+                          key={pt}
+                          type="button"
+                          onClick={() => setCustomPoints(pt)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition ${
+                            customPoints === pt
+                              ? pt > 0
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-rose-500 text-white'
+                              : pt > 0
+                              ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20'
+                              : 'bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20'
+                          }`}
+                        >
+                          {pt > 0 ? `+${pt}` : pt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[10.5px] text-slate-400">
+                    Đang dùng điểm mặc định. Bấm <span className="font-bold text-[#F5B301]">"Điểm tự cho"</span> để tự nhập điểm.
+                  </p>
+                )}
+              </div>
+
               {/* Preview card */}
               <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1">
                 <div className="flex justify-between">
@@ -312,13 +439,13 @@ export default function AdminPage() {
                 <div className="flex justify-between">
                   <span className="text-slate-400">Chế tài Core Team:</span>
                   <span className={`font-bold ${targetMember.is_core ? 'text-[#F5B301]' : 'text-slate-400'}`}>
-                    {targetMember.is_core ? 'Có (Phạt ×2)' : 'Không'}
+                    {targetMember.is_core ? 'Có (Phạt ×2 nếu dùng quy định chuẩn)' : 'Không'}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-white/10 pt-1 font-bold">
                   <span className="text-slate-300">Dự kiến sau cập nhật:</span>
-                  <span className={preview.actualDelta > 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                    {preview.scoreAfter} ({preview.actualDelta > 0 ? `+${preview.actualDelta}` : preview.actualDelta} đ)
+                  <span className={previewActualDelta > 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                    {previewScoreAfter} ({previewActualDelta > 0 ? `+${previewActualDelta}` : previewActualDelta} đ)
                   </span>
                 </div>
               </div>

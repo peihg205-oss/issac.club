@@ -6,7 +6,7 @@ import { useClub } from '@/lib/context/ClubContext'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
 import type { RuleCode } from '@/types/database'
-import { Send, X, CheckCircle2, ShieldAlert, Crown, ClipboardList, Lock, Calendar } from 'lucide-react'
+import { Send, X, CheckCircle2, ShieldAlert, Crown, ClipboardList, Lock, Calendar, Zap, Sparkles } from 'lucide-react'
 
 interface ScoreModalProps {
   isOpen: boolean
@@ -23,6 +23,8 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
   )
   const [memberCode, setMemberCode] = useState(members[0]?.member_code || '')
   const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07
+  const [isCustomPoints, setIsCustomPoints] = useState(false)
+  const [customPoints, setCustomPoints] = useState<number>(-2)
   const [reason, setReason] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
   const [directApply, setDirectApply] = useState(isBCN)
@@ -47,10 +49,37 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
   const builtinRule = CRITERIA_RULES[criterionCode as RuleCode]
   const customRule = customRules.find((r) => r.code === criterionCode)
 
+  const handleCriterionChange = (newCode: string) => {
+    setCriterionCode(newCode)
+    if (newCode === 'CUSTOM_POINT_DEDUCT') {
+      setIsCustomPoints(true)
+      setCustomPoints((prev) => (prev < 0 ? prev : -2))
+    } else if (newCode === 'CUSTOM_POINT_ADD') {
+      setIsCustomPoints(true)
+      setCustomPoints((prev) => (prev > 0 ? prev : 2))
+    } else {
+      const bRule = CRITERIA_RULES[newCode as RuleCode]
+      const cRule = customRules.find((r) => r.code === newCode)
+      if (bRule) {
+        const defaultPt = bRule.type === 'deduct' ? -bRule.base_points : bRule.base_points
+        setCustomPoints(defaultPt)
+      } else if (cRule) {
+        const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
+        setCustomPoints(pts)
+      }
+    }
+  }
+
+  const isCustomMode = isCustomPoints || criterionCode.startsWith('CUSTOM_POINT_')
+
   let previewActualDelta = 0
   let previewScoreAfter = selectedMember?.current_score || 60
 
-  if (builtinRule) {
+  if (isCustomMode) {
+    const pts = typeof customPoints === 'number' && !isNaN(customPoints) ? customPoints : 0
+    previewActualDelta = pts
+    previewScoreAfter = Math.max(0, Math.min(100, (selectedMember?.current_score || 60) + previewActualDelta))
+  } else if (builtinRule) {
     const preview = calculateScoreDelta({
       ruleCode: criterionCode as RuleCode,
       basePoints: builtinRule.base_points,
@@ -86,6 +115,7 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
     const res = createProposal({
       memberCode: selectedMember.member_code,
       criterionCode,
+      customPoints: isCustomMode ? customPoints : undefined,
       reason,
       evidenceUrl,
       proposerName: currentUser?.name || 'Cán bộ CLB',
@@ -227,10 +257,14 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
               </label>
               <select
                 value={criterionCode}
-                onChange={(e) => setCriterionCode(e.target.value)}
+                onChange={(e) => handleCriterionChange(e.target.value)}
                 disabled={isLocked}
                 className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
+                <optgroup label="--- ⚡ ĐIỂM TỰ CHO / TÙY CHỈNH ĐIỂM ---">
+                  <option value="CUSTOM_POINT_DEDUCT">⚡ Điểm trừ tự cho (Tùy chỉnh số điểm trừ)</option>
+                  <option value="CUSTOM_POINT_ADD">⚡ Điểm cộng tự cho (Tùy chỉnh số điểm cộng)</option>
+                </optgroup>
                 <optgroup label="--- Điểm trừ vi phạm chuẩn (T01-T13) ---">
                   {Object.values(CRITERIA_RULES)
                     .filter((c) => c.type === 'deduct')
@@ -272,6 +306,103 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
                   </optgroup>
                 )}
               </select>
+            </div>
+
+            {/* Custom points input & toggle */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#1351D8]" />
+                  <span>Số điểm áp dụng:</span>
+                </label>
+                <div className="inline-flex p-0.5 rounded-xl bg-slate-200/80 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    disabled={criterionCode.startsWith('CUSTOM_POINT_')}
+                    onClick={() => setIsCustomPoints(false)}
+                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                      !isCustomMode
+                        ? 'bg-white text-slate-900 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    Mặc định ({builtinRule ? `${builtinRule.type === 'deduct' ? '-' : '+'}${builtinRule.base_points}đ` : customRule ? `${customRule.points}đ` : '0đ'})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomPoints(true)}
+                    className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${
+                      isCustomMode
+                        ? 'bg-[#1351D8] text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Zap className="w-3 h-3 text-amber-300" />
+                    <span>Điểm tự cho</span>
+                  </button>
+                </div>
+              </div>
+
+              {isCustomMode ? (
+                <div className="space-y-2 pt-1 border-t border-blue-100/80 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        disabled={isLocked}
+                        value={customPoints}
+                        onChange={(e) => setCustomPoints(Number(e.target.value))}
+                        placeholder="Nhập số điểm (+ hoặc -)..."
+                        className="w-full bg-white border border-blue-300 focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/20 rounded-xl px-3.5 py-2 text-sm font-black text-[#0F172A] focus:outline-none transition shadow-2xs"
+                      />
+                      <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
+                        điểm
+                      </span>
+                    </div>
+                    <div
+                      className={`px-3 py-2 rounded-xl text-xs font-black min-w-[70px] text-center shadow-2xs ${
+                        customPoints > 0
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : customPoints < 0
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {customPoints > 0 ? `+${customPoints}đ` : `${customPoints}đ`}
+                    </div>
+                  </div>
+
+                  {/* Quick point chips */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] font-bold text-slate-400 mr-0.5">Chọn nhanh:</span>
+                    {[-10, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 10].map((pt) => (
+                      <button
+                        key={pt}
+                        type="button"
+                        onClick={() => setCustomPoints(pt)}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer active:scale-95 ${
+                          customPoints === pt
+                            ? pt > 0
+                              ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-500'
+                              : 'bg-rose-600 text-white shadow-2xs ring-1 ring-rose-500'
+                            : pt > 0
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                        }`}
+                      >
+                        {pt > 0 ? `+${pt}` : pt}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10.5px] text-slate-500 font-medium leading-relaxed">
+                    ⚡ <span className="font-semibold text-slate-700">Chế độ điểm tự cho:</span> Nhập số điểm bất kỳ bạn muốn áp dụng (số âm <span className="text-rose-600 font-bold">-</span> để trừ điểm, số dương <span className="text-emerald-600 font-bold">+</span> để cộng điểm).
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Đang sử dụng số điểm mặc định theo quy định. Bạn có thể nhấn <span className="font-bold text-[#1351D8]">"⚡ Điểm tự cho"</span> nếu muốn tự điền số điểm khác.
+                </p>
+              )}
             </div>
 
             {/* Preview Box */}

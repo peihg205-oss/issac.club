@@ -1569,7 +1569,7 @@ export function CheckinView() {
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm">
             <h3 className="text-base font-bold text-[#0F172A] mb-4">
-              Các kỳ sinh hoạt CLB trong nhiệm kỳ 2025 - 2026
+              Các kỳ sinh hoạt CLB trong nhiệm kỳ 2026 - 2027
             </h3>
             <div className="space-y-3">
               {events.length === 0 ? (

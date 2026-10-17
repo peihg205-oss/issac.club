@@ -119,6 +119,7 @@ interface ClubContextType {
   createProposal: (data: {
     memberCode: string
     criterionCode: string
+    customPoints?: number
     reason: string
     evidenceUrl?: string
     proposerName: string
@@ -723,6 +724,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const createProposal = (data: {
     memberCode: string
     criterionCode: string
+    customPoints?: number
     reason: string
     evidenceUrl?: string
     proposerName: string
@@ -752,7 +754,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     let actualDelta = 0
     let scoreAfter = target.current_score
 
-    if (builtinRule) {
+    // ĐIỂM TỰ CHO (Tùy chỉnh số điểm không bắt buộc theo mặc định)
+    if (typeof data.customPoints === 'number' && !isNaN(data.customPoints)) {
+      actualDelta = data.customPoints
+      scoreAfter = Math.max(0, Math.min(100, target.current_score + actualDelta))
+      if (builtinRule) {
+        ruleName = `${builtinRule.name} (Tự cho: ${actualDelta > 0 ? `+${actualDelta}` : actualDelta}đ)`
+      } else if (customRule) {
+        ruleName = `${customRule.name} (Tự cho: ${actualDelta > 0 ? `+${actualDelta}` : actualDelta}đ)`
+      } else {
+        ruleName = `Điểm tự cho (${actualDelta > 0 ? `+${actualDelta}` : actualDelta}đ)`
+      }
+    } else if (builtinRule) {
       ruleName = builtinRule.name
       const calc = calculateScoreDelta({
         ruleCode: data.criterionCode as RuleCode,
@@ -890,17 +903,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       updatedMembers = getRankedMembers(
         members.map((m) => {
           if (m.member_code === prop.memberCode) {
-            const builtinRule = CRITERIA_RULES[prop.criterionCode as RuleCode]
-            let newScore = Math.max(0, Math.min(100, m.current_score + prop.points))
-            if (builtinRule) {
-              const calc = calculateScoreDelta({
-                ruleCode: prop.criterionCode as RuleCode,
-                basePoints: builtinRule.base_points,
-                isCoreAtEvent: m.is_core,
-                currentScore: m.current_score,
-              })
-              newScore = calc.scoreAfter
-            }
+            const newScore = Math.max(0, Math.min(100, m.current_score + prop.points))
             const newT02 =
               prop.criterionCode === 'T02' ? m.absent_count_t02 + 1 : m.absent_count_t02
             return { ...m, current_score: newScore, absent_count_t02: newT02 }

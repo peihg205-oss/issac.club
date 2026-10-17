@@ -45,7 +45,7 @@ export function Navbar() {
                   iSSAC<span className="text-[#F5B301]">_Web</span>
                 </span>
                 <span className="hidden sm:inline-flex items-center px-2 py-0.2 rounded-full text-[10px] font-semibold bg-[#1E63D6]/20 text-[#60A5FA] border border-[#1E63D6]/30">
-                  2025-2026
+                  2026-2027
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-medium tracking-wide">

@@ -77,7 +77,7 @@ export function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto pt-8 mt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-        <p>© 2025-2026 iSSAC Club - International School, VNU. All rights reserved.</p>
+        <p>© 2026-2027 iSSAC Club - International School, VNU. All rights reserved.</p>
         <p className="flex items-center gap-1">
           Thiết kế & phát triển với <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> cho iSSAC members
         </p>

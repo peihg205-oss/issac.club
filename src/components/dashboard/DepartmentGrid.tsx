@@ -53,7 +53,7 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
             4 Ban Chuyên Môn iSSAC
           </h2>
           <p className="text-sm text-slate-400 mt-1">
-            Quy mô phân bổ nhân sự chính thức nhiệm kỳ 2025-2026
+            Quy mô phân bổ nhân sự chính thức nhiệm kỳ 2026-2027
           </p>
         </div>
       </div>

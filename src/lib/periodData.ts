@@ -497,8 +497,9 @@ export function calculatePeriodLeaderboard(
     })
   }
 
-  // 5. Chu kỳ Cả Năm / Nhiệm kỳ 2025-2026 (Tích lũy toàn diện)
-  if (periodId === 'year-2025-2026') {
+  // 5. Chu kỳ Cả Năm / Nhiệm kỳ 2026-2027 & 2025-2026 (Tích lũy toàn diện)
+  if (periodId === 'year-2026-2027' || periodId === 'year-2025-2026') {
+    const is2627 = periodId === 'year-2026-2027'
     const list = activeMembers.map((m) => {
       const deltaAug = AUGUST_2025_DELTAS[m.member_code] ?? 8
       const deltaSep = SEPTEMBER_2025_DELTAS[m.member_code] ?? 10
@@ -526,9 +527,9 @@ export function calculatePeriodLeaderboard(
         rankInDepartment: deptMap[item.member.department_slug],
         deltaRank: 0,
         ratingLevel: rating,
-        periodId: 'year-2025-2026',
-        periodName: 'Nhiệm kỳ 2025-2026 (Cả năm)',
-        isLocked: false,
+        periodId,
+        periodName: is2627 ? 'Nhiệm kỳ 2026 - 2027 (Cả năm)' : 'Nhiệm kỳ 2025 - 2026 (Cả năm)',
+        isLocked: !is2627,
         note: `Tổng điểm cống hiến: +${item.earnedDelta}đ`,
       }
     })

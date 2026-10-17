@@ -66,7 +66,7 @@ export function HistoryView() {
   const selectedPeriodObj = monthPeriods.find((p) => p.id === selectedPeriodId) || monthPeriods[0]
 
   const [activeTab, setActiveTab] = useState<'all' | 'add' | 'deduct' | 'disputes'>('all')
-  const [selectedSemester, setSelectedSemester] = useState('ky1_2025_2026')
+  const [selectedSemester, setSelectedSemester] = useState('ky1_2026_2027')
   const [scoreModalOpen, setScoreModalOpen] = useState(false)
   const [disputeModalOpen, setDisputeModalOpen] = useState(false)
 
@@ -415,8 +415,9 @@ export function HistoryView() {
             onChange={(e) => setSelectedSemester(e.target.value)}
             className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
           >
-            <option value="ky1_2025_2026">Kỳ 1 năm học 2025-2026</option>
-            <option value="ky2_2024_2025">Kỳ 2 năm học 2024-2025</option>
+            <option value="ky1_2026_2027">Kỳ 1 năm học 2026–2027</option>
+            <option value="ky2_2025_2026">Kỳ 2 năm học 2025–2026</option>
+            <option value="ky1_2025_2026">Kỳ 1 năm học 2025–2026</option>
           </select>
 
           {/* Month selector using periods - Clean name without redundant text */}
