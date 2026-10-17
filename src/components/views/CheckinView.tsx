@@ -1018,10 +1018,17 @@ export function CheckinView() {
                           </td>
                           <td className="py-3 px-3">
                             {status === 'present_on_time' && (
-                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] inline-flex items-center gap-1 whitespace-nowrap">
-                                <CheckCircle2 className="w-3 h-3 text-[#059669]" />
-                                <span>Đúng giờ (+1 C07)</span>
-                              </span>
+                              currentEvt.allowRegistration && !currentEvt.registeredMemberCodes?.includes(m.member_code) ? (
+                                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-flex items-center gap-1 whitespace-nowrap" title="Chưa đăng ký trước sự kiện nên không cộng điểm thi đua">
+                                  <Clock className="w-3 h-3 text-slate-500" />
+                                  <span>Đúng giờ (0đ - Chưa ĐK)</span>
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] inline-flex items-center gap-1 whitespace-nowrap">
+                                  <CheckCircle2 className="w-3 h-3 text-[#059669]" />
+                                  <span>Đúng giờ (+{currentEvt.pointBonus !== undefined ? currentEvt.pointBonus : 1} C07)</span>
+                                </span>
+                              )
                             )}
                             {status === 'late' && (
                               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 inline-flex items-center gap-1 whitespace-nowrap">

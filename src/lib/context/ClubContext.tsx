@@ -1044,11 +1044,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const currentStatus: CheckinStatus = 'present_on_time'
     const isRegistered = evt.registeredMemberCodes?.includes(memberCode)
     const bonus = evt.pointBonus !== undefined ? evt.pointBonus : 1
-    const regBadge = evt.allowRegistration
-      ? isRegistered
-        ? ' [🎟️ Đã đăng ký trước]'
-        : ' [Khách mời/Chưa ĐK trước]'
-      : ''
+    const requiresRegistration = evt.allowRegistration !== false
+    const canReceivePoints = !requiresRegistration || isRegistered
+
+    const regBadge = isRegistered
+      ? ' [🎟️ Đã đăng ký trước]'
+      : ' [⚠️ Chưa ĐK trước - Không tính điểm]'
     const modeBadge = mode === 'kiosk' ? ' [Kiosk Lễ tân]' : ' [Thiết bị cá nhân]'
 
     updateCheckinRecord(
@@ -1061,9 +1062,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     return {
       success: true,
       status: currentStatus,
-      message: `Điểm danh thành công cho ${member.full_name}!${
-        regBadge ? ` Trạng thái: ${regBadge}.` : ''
-      } Ghi nhận: ĐÚNG GIỜ (+${bonus} điểm sau khi chốt buổi).`,
+      message: canReceivePoints
+        ? `Điểm danh thành công cho ${member.full_name}! Trạng thái: Đã đăng ký trước. Ghi nhận: ĐÚNG GIỜ (+${bonus} điểm sau khi chốt buổi).`
+        : `Điểm danh thành công cho ${member.full_name}! Lưu ý quy chế: Do bạn KHÔNG ĐĂNG KÝ TRƯỚC nên hệ thống chỉ ghi nhận có mặt, KHÔNG ĐƯỢC CỘNG ĐIỂM THI ĐUA.`,
     }
   }
 
@@ -1101,10 +1102,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       let reason: string
       let change = 0
 
+      // Quy chế: Chỉ thành viên ĐÃ ĐĂNG KÝ TRƯỚC mới được cộng điểm khi check-in đúng giờ.
+      // Dù check-in đúng giờ nhưng không đăng ký trước thì KHÔNG tính điểm (0 điểm).
+      const isRegistered = evt.registeredMemberCodes?.includes(m.member_code)
+      const requiresRegistration = evt.allowRegistration !== false
+      const canReceivePoints = !requiresRegistration || isRegistered
+
       switch (rec.status) {
         case 'present_on_time':
           criterion = 'C07'
-          reason = `Tham gia họp/sự kiện CLB đúng giờ (${evt.title})`
+          reason = canReceivePoints
+            ? `Tham gia họp/sự kiện CLB đúng giờ (${evt.title}) [Đã ĐK trước]`
+            : `Tham gia sự kiện đúng giờ nhưng KHÔNG ĐĂNG KÝ TRƯỚC (${evt.title}) - Không tính điểm theo quy chế`
           present++
           break
         case 'late':
@@ -1126,19 +1135,28 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
 
       const rule = CRITERIA_RULES[criterion]
-      const basePts =
-        rec.status === 'present_on_time' && evt.pointBonus !== undefined && evt.pointBonus > 0
-          ? evt.pointBonus
-          : rule.base_points
+      let calc = { actualDelta: 0, scoreAfter: m.current_score }
 
-      const calc = calculateScoreDelta({
-        ruleCode: criterion,
-        basePoints: basePts,
-        isCoreAtEvent: m.is_core,
-        currentScore: m.current_score,
-      })
+      // Nếu check-in đúng giờ nhưng không đăng ký trước: Không tính điểm (change = 0)
+      if (rec.status === 'present_on_time' && !canReceivePoints) {
+        change = 0
+        calc = { actualDelta: 0, scoreAfter: m.current_score }
+      } else {
+        const basePts =
+          rec.status === 'present_on_time' && evt.pointBonus !== undefined && evt.pointBonus > 0
+            ? evt.pointBonus
+            : rule.base_points
 
-      change = calc.actualDelta
+        calc = calculateScoreDelta({
+          ruleCode: criterion,
+          basePoints: basePts,
+          isCoreAtEvent: m.is_core,
+          currentScore: m.current_score,
+        })
+
+        change = calc.actualDelta
+      }
+
       totalApplied++
 
       // Lưu lại bản ghi điểm đã duyệt
@@ -1149,7 +1167,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         memberDept: m.department_name,
         isCore: m.is_core,
         criterionCode: criterion,
-        criterionName: rule.name,
+        criterionName: rec.status === 'present_on_time' && !canReceivePoints ? `${rule.name} (Chưa ĐK trước: 0đ)` : rule.name,
         points: change,
         reason,
         proposedBy: `${finalizedByName} (Chốt điểm danh)`,

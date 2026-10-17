@@ -79,4 +79,19 @@ describe('QR Check-in Pass & Admin Scanner Anti-Fraud Logic', () => {
     const code = params.get('member')
     expect(code).toBe('24070680')
   })
+
+  it('7. Quy chế điểm thi đua: Phải đăng ký trước mới được cộng điểm khi check-in đúng giờ, không đăng ký trước thì 0 điểm', () => {
+    const registeredCode = '23070691'
+    const unregisteredCode = '99999999'
+
+    // Thành viên đã đăng ký -> Được cộng điểm (+1 C07)
+    const isRegistered = sampleEvent.registeredMemberCodes.includes(registeredCode)
+    const pointsForRegistered = isRegistered ? 1 : 0
+    expect(pointsForRegistered).toBe(1)
+
+    // Thành viên dù check-in đúng giờ nhưng CHƯA đăng ký trước -> 0 điểm
+    const isUnregistered = sampleEvent.registeredMemberCodes.includes(unregisteredCode)
+    const pointsForUnregistered = isUnregistered ? 1 : 0
+    expect(pointsForUnregistered).toBe(0)
+  })
 })

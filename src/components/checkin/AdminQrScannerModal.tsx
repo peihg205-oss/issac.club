@@ -324,17 +324,19 @@ export function AdminQrScannerModal({
     })
 
     const status: CheckinStatus = 'present_on_time'
-    const note = `Xác thực quét mã QR vé tại bàn đón tiếp lúc ${scanTime}`
+    const note = isRegistered
+      ? `Xác thực quét mã QR vé tại bàn đón tiếp lúc ${scanTime} [Đã ĐK trước]`
+      : `Xác thực quét mã QR lúc ${scanTime} [Chưa ĐK trước - Không tính điểm]`
 
     const res = onVerifyCheckin(targetMember.member_code, status, note)
     if (res.success) {
       playSound(true)
       setScanResult({
-        type: 'success',
-        title: isRegistered ? 'XÁC THỰC THÀNH CÔNG (CÓ GIỮ CHỖ)' : 'XÁC THỰC THÀNH CÔNG (BỔ SUNG)',
+        type: isRegistered ? 'success' : 'warning',
+        title: isRegistered ? 'XÁC THỰC THÀNH CÔNG (CÓ GIỮ CHỖ)' : 'ĐIỂM DANH BỔ SUNG (KHÔNG TÍNH ĐIỂM)',
         message: isRegistered
-          ? `Đã xác thực vé thành công cho ${targetMember.full_name} (${targetMember.department_name}). Có tên trong danh sách đăng ký trước!`
-          : `Đã xác thực thành công cho ${targetMember.full_name}. Lưu ý: Thành viên này chưa giữ chỗ trước nhưng đã được Admin chấp thuận có mặt.`,
+          ? `Đã xác thực vé thành công cho ${targetMember.full_name} (${targetMember.department_name}). Có tên trong danh sách đăng ký trước! Được cộng điểm thi đua khi chốt buổi.`
+          : `Đã xác thực có mặt cho ${targetMember.full_name}. LƯU Ý QUY CHẾ: Do KHÔNG ĐĂNG KÝ TRƯỚC nên buổi này KHÔNG ĐƯỢC CỘNG ĐIỂM THI ĐUA (0 điểm).`,
         member: targetMember,
         timestamp: scanTime,
         status,

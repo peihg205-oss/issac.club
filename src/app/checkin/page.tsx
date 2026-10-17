@@ -85,6 +85,7 @@ function CheckinContent() {
     timestamp?: string
     member?: any
     event?: any
+    isRegistered?: boolean
   } | null>(null)
   const [submittingCheckin, setSubmittingCheckin] = useState(false)
 
@@ -203,12 +204,17 @@ function CheckinContent() {
           }
         }
 
+        const isMemberRegistered = Boolean(
+          currentCheckinMember && currentEvent?.registeredMemberCodes?.includes(currentCheckinMember.member_code)
+        )
+
         setCheckinResult({
           success: true,
           message: res.message,
           timestamp: lockInfo.timestamp,
           member: currentCheckinMember,
           event: currentEvent,
+          isRegistered: isMemberRegistered,
         })
       } else {
         setCheckinResult({
@@ -785,14 +791,33 @@ function CheckinContent() {
                       <span className="font-bold text-[#1351D8]">{checkinResult.member?.department_name}</span>
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                      <span className="text-slate-500 font-medium">Trạng thái đăng ký:</span>
+                      {checkinResult.isRegistered ? (
+                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1 text-[11px]">
+                          <Ticket className="w-3 h-3 text-emerald-600" />
+                          Đã giữ chỗ trước
+                        </span>
+                      ) : (
+                        <span className="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px]">
+                          Chưa đăng ký trước
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                       <span className="text-slate-500 font-medium">Giờ điểm danh:</span>
                       <span className="font-bold text-emerald-600">{checkinResult.timestamp} (Đúng giờ)</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500 font-medium">Dự kiến cộng:</span>
-                      <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
-                        +{checkinResult.event?.pointBonus || 1} Điểm thi đua
-                      </span>
+                      {checkinResult.isRegistered ? (
+                        <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                          +{checkinResult.event?.pointBonus || 1} Điểm thi đua
+                        </span>
+                      ) : (
+                        <span className="font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-[11px]">
+                          0 Điểm (Chưa ĐK trước)
+                        </span>
+                      )}
                     </div>
                   </div>
 
