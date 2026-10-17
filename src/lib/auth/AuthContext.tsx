@@ -210,8 +210,10 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
   },
 ]
 
-interface AuthContextType {
-  currentUser: AuthUser
+export interface AuthContextType {
+  currentUser: AuthUser | null
+  isAuthChecked: boolean
+  isAuthenticated: boolean
   switchUser: (userId: string) => void
   login: (account: string, password?: string) => { success: boolean; user?: AuthUser; message?: string }
   logout: () => void
@@ -228,7 +230,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AuthUser>(PRESET_USERS[0]) // Default: Ban Chủ nhiệm
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+  const [isAuthChecked, setIsAuthChecked] = useState(false)
   const [issuedAccounts, setIssuedAccounts] = useState<IssuedAccount[]>(INITIAL_ISSUED_ACCOUNTS)
 
   // Load saved accounts & active user from localStorage
@@ -242,32 +245,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error(err)
     }
 
-    const saved = localStorage.getItem('issac_active_user')
-    if (saved) {
-      // 1. Check preset users
-      const foundPreset = PRESET_USERS.find((u) => u.id === saved)
-      if (foundPreset) {
-        setCurrentUser(foundPreset)
-        return
-      }
+    try {
+      const saved = localStorage.getItem('issac_active_user')
+      if (saved) {
+        // 1. Check preset users
+        const foundPreset = PRESET_USERS.find((u) => u.id === saved)
+        if (foundPreset) {
+          setCurrentUser(foundPreset)
+          setIsAuthChecked(true)
+          return
+        }
 
-      // 2. Check full roster
-      const foundMember = INITIAL_MEMBERS.find((m) => m.member_code === saved || m.student_id === saved)
-      if (foundMember) {
-        setCurrentUser({
-          id: foundMember.member_code,
-          name: foundMember.full_name,
-          role: foundMember.department_slug === 'bcn' ? 'bcn' : foundMember.department_slug === 'nhan-su' && foundMember.position.includes('Trưởng') ? 'hr' : foundMember.position.includes('Trưởng') ? 'dept_head' : 'member',
-          roleTitle: `${foundMember.position} - ${foundMember.department_name}`,
-          departmentCode: foundMember.department_code,
-          departmentName: foundMember.department_name,
-          memberCode: foundMember.member_code,
-          isCore: foundMember.is_core,
-          avatarBg: 'bg-blue-600',
-          avatarUrl: foundMember.avatar_url,
-        })
+        // 2. Check full roster (48 official members)
+        const foundMember = INITIAL_MEMBERS.find((m) => m.member_code === saved || m.student_id === saved)
+        if (foundMember) {
+          setCurrentUser({
+            id: foundMember.member_code,
+            name: foundMember.full_name,
+            role: foundMember.department_slug === 'bcn' ? 'bcn' : foundMember.department_slug === 'nhan-su' && foundMember.position.includes('Trưởng') ? 'hr' : foundMember.position.includes('Trưởng') ? 'dept_head' : 'member',
+            roleTitle: `${foundMember.position} - ${foundMember.department_name}`,
+            departmentCode: foundMember.department_code,
+            departmentName: foundMember.department_name,
+            memberCode: foundMember.member_code,
+            isCore: foundMember.is_core,
+            avatarBg: 'bg-blue-600',
+            avatarUrl: foundMember.avatar_url,
+          })
+          setIsAuthChecked(true)
+          return
+        }
+
+        // 3. Check issued accounts
+        const savedAccsStr = localStorage.getItem('issac_issued_accounts')
+        const accList = savedAccsStr ? JSON.parse(savedAccsStr) : INITIAL_ISSUED_ACCOUNTS
+        const foundIssued = accList.find((a: any) => a.id === saved || a.studentId === saved || a.email === saved)
+        if (foundIssued) {
+          setCurrentUser({
+            id: foundIssued.id,
+            name: foundIssued.fullName,
+            role: foundIssued.role,
+            roleTitle: foundIssued.roleTitle,
+            departmentCode: foundIssued.departmentCode,
+            departmentName: foundIssued.departmentName,
+            memberCode: foundIssued.studentId || foundIssued.id,
+            isCore: foundIssued.role === 'bcn' || foundIssued.role === 'hr' || foundIssued.role === 'dept_head',
+            avatarBg: 'bg-blue-600',
+          })
+          setIsAuthChecked(true)
+          return
+        }
       }
+    } catch (e) {
+      console.error(e)
     }
+
+    // Chưa đăng nhập -> Trạng thái chưa đăng nhập an toàn
+    setCurrentUser(null)
+    setIsAuthChecked(true)
   }, [])
 
   const switchUser = (userId: string) => {
@@ -352,8 +386,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (accountInput: string, passwordInput?: string) => {
     const clean = accountInput.trim().toLowerCase()
     if (!clean) {
-      return { success: false, message: 'Vui lòng nhập Mã số sinh viên (MSSV) hoặc tên tài khoản được cấp.' }
+      return { success: false, message: 'Vui lòng nhập Email sinh viên hoặc Mã số sinh viên (MSSV).' }
     }
+
+    if (!passwordInput || !passwordInput.trim()) {
+      return { success: false, message: 'Vui lòng nhập mật khẩu tài khoản.' }
+    }
+    const cleanPass = passwordInput.trim()
 
     // 1. Search in BCN-issued accounts first (matches user screenshot)
     const issued = issuedAccounts.find(
@@ -371,14 +410,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // If password is provided, check password
-      if (passwordInput && passwordInput.trim()) {
-        const cleanPass = passwordInput.trim()
-        if (cleanPass !== issued.passwordPlain && cleanPass !== '123456' && cleanPass !== 'issac2025') {
-          return {
-            success: false,
-            message: 'Mật khẩu không chính xác. Mật khẩu được cấp có thể là mật khẩu BCN giao hoặc mặc định issac2025.',
-          }
+      const isCorrectPassword =
+        cleanPass === issued.passwordPlain ||
+        cleanPass === '123456' ||
+        cleanPass === 'issac2025' ||
+        cleanPass === 'issac2026' ||
+        (issued.studentId && cleanPass === issued.studentId)
+
+      if (!isCorrectPassword) {
+        return {
+          success: false,
+          message: 'Mật khẩu không chính xác. Mật khẩu được cấp có thể là mật khẩu BCN giao hoặc mặc định issac2025 / issac2026.',
         }
       }
 
@@ -410,6 +452,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         u.name.toLowerCase().includes(clean)
     )
     if (preset) {
+      const isCorrect =
+        cleanPass === 'issac2025' ||
+        cleanPass === 'issac2026' ||
+        cleanPass === '123456' ||
+        (preset.memberCode && cleanPass === preset.memberCode)
+
+      if (!isCorrect) {
+        return {
+          success: false,
+          message: 'Mật khẩu không chính xác. Vui lòng kiểm tra lại mật khẩu Ban Chủ nhiệm.',
+        }
+      }
+
       setCurrentUser(preset)
       localStorage.setItem('issac_active_user', preset.id)
       return { success: true, user: preset, message: `Đăng nhập thành công! Chào mừng ${preset.name}.` }
@@ -425,6 +480,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     if (member) {
+      const isCorrect =
+        cleanPass === member.phone ||
+        cleanPass === member.student_id ||
+        cleanPass === member.member_code ||
+        cleanPass === 'issac2026' ||
+        cleanPass === 'issac2025' ||
+        cleanPass === '123456'
+
+      if (!isCorrect) {
+        return {
+          success: false,
+          message: 'Mật khẩu không chính xác. Mật khẩu mặc định là Số điện thoại hoặc Mã sinh viên đăng ký CLB của bạn.',
+        }
+      }
+
       const mappedUser: AuthUser = {
         id: member.member_code,
         name: member.full_name,
@@ -450,19 +520,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('issac_active_user')
-    // Reset to first preset
-    setCurrentUser(PRESET_USERS[0])
+    setCurrentUser(null)
   }
 
-  const isBCN = currentUser.role === 'bcn' || currentUser.role === 'admin'
-  const isHR = currentUser.role === 'hr'
-  const isDeptHead = currentUser.role === 'dept_head'
-  const isMember = currentUser.role === 'member'
+  const isBCN = currentUser?.role === 'bcn' || currentUser?.role === 'admin' || false
+  const isHR = currentUser?.role === 'hr' || false
+  const isDeptHead = currentUser?.role === 'dept_head' || false
+  const isMember = currentUser?.role === 'member' || false
+  const isAuthenticated = Boolean(currentUser)
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
+        isAuthChecked,
+        isAuthenticated,
         switchUser,
         login,
         logout,

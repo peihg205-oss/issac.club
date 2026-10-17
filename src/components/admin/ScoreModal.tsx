@@ -88,8 +88,8 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
       criterionCode,
       reason,
       evidenceUrl,
-      proposerName: currentUser.name,
-      proposerRole: currentUser.role,
+      proposerName: currentUser?.name || 'Cán bộ CLB',
+      proposerRole: currentUser?.role || 'member',
       directApply: isBCN ? directApply : false,
       periodId: selectedPeriodId,
     })

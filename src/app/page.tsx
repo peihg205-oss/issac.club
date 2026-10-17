@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar, type ActiveNavTab } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { DashboardView } from '@/components/views/DashboardView'
@@ -17,8 +18,9 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import type { RosterMember } from '@/lib/clubData'
 
 export default function AppHome() {
+  const router = useRouter()
+  const { currentUser, isAuthChecked, isBCN } = useAuth()
   const { proposals, activeEvent } = useClub()
-  const { isBCN } = useAuth()
 
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('dashboard')
   const [selectedMember, setSelectedMember] = useState<RosterMember | null>(null)
@@ -26,11 +28,33 @@ export default function AppHome() {
   // Mặc định đóng trên màn hình điện thoại (< 1024px) để không che khuất nội dung
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false)
 
-  React.useEffect(() => {
+  // Auth Guard: Người chưa đăng nhập lập tức bị chuyển hướng về /login
+  useEffect(() => {
+    if (isAuthChecked && !currentUser) {
+      router.replace('/login')
+    }
+  }, [isAuthChecked, currentUser, router])
+
+  useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
       setIsSidebarOpen(true)
     }
   }, [])
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-9 h-9 border-3 border-[#1351D8] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-slate-500">Đang xác thực phiên đăng nhập CLB iSSAC...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentUser) {
+    return null
+  }
 
   const pendingCount = isBCN ? proposals.filter((p) => p.status === 'pending_bcn').length : 0
 

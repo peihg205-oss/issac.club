@@ -181,11 +181,12 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
   // Khóa / Mở khóa chu kỳ trực tiếp bởi Ban Chủ nhiệm
   const handleToggleLock = () => {
     if (!isBCN) return
+    const actor = currentUser?.name || 'Ban Chủ nhiệm'
     if (currentPeriodObj.status === 'locked') {
-      unlockMonthPeriod(currentPeriodObj.id, currentUser.name)
+      unlockMonthPeriod(currentPeriodObj.id, actor)
       setToastMessage(`Đã mở khóa chu kỳ ${currentPeriodObj.name}. Cho phép cập nhật điểm.`)
     } else {
-      lockMonthPeriod(currentPeriodObj.id, currentUser.name)
+      lockMonthPeriod(currentPeriodObj.id, actor)
       setToastMessage(`Đã khóa sổ chính thức chu kỳ ${currentPeriodObj.name}. Điểm số được bảo lưu an toàn.`)
     }
   }

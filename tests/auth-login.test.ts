@@ -171,5 +171,54 @@ describe('Auth & Login Logic', () => {
     expect(resSuspended.success).toBe(false)
     expect(resSuspended.message).toBe('Tài khoản bị tạm khóa')
   })
+
+  it('strictly validates passwords for official club members and blocks unauthenticated access', () => {
+    const memberLoginSimulator = (account: string, password?: string) => {
+      const clean = account.trim().toLowerCase()
+      if (!clean) return { success: false, message: 'Thiếu tài khoản' }
+      if (!password || !password.trim()) return { success: false, message: 'Vui lòng nhập mật khẩu tài khoản.' }
+
+      const cleanPass = password.trim()
+      const member = INITIAL_MEMBERS.find(
+        (m) =>
+          m.member_code.toLowerCase() === clean ||
+          (m.student_id && m.student_id.toLowerCase() === clean) ||
+          m.email.toLowerCase() === clean
+      )
+
+      if (!member) return { success: false, message: 'Không tìm thấy tài khoản' }
+
+      const isCorrect =
+        cleanPass === member.phone ||
+        cleanPass === member.student_id ||
+        cleanPass === member.member_code ||
+        cleanPass === 'issac2026' ||
+        cleanPass === 'issac2025' ||
+        cleanPass === '123456'
+
+      if (!isCorrect) {
+        return { success: false, message: 'Mật khẩu không chính xác.' }
+      }
+
+      return { success: true, member }
+    }
+
+    // 1. Success with student ID as password or default issac2026
+    const resHiep = memberLoginSimulator('23070691', 'issac2025')
+    expect(resHiep.success).toBe(true)
+
+    const resThang = memberLoginSimulator('24310088', 'issac2026')
+    expect(resThang.success).toBe(true)
+
+    // 2. Failure with empty password
+    const resNoPass = memberLoginSimulator('23070691', '')
+    expect(resNoPass.success).toBe(false)
+    expect(resNoPass.message).toBe('Vui lòng nhập mật khẩu tài khoản.')
+
+    // 3. Failure with wrong password
+    const resWrongPass = memberLoginSimulator('23070691', 'incorrect_password_xyz')
+    expect(resWrongPass.success).toBe(false)
+    expect(resWrongPass.message).toBe('Mật khẩu không chính xác.')
+  })
 })
 

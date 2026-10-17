@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AccountsView } from '@/components/views/AccountsView'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -17,7 +18,24 @@ import {
 } from 'lucide-react'
 
 export default function AdminUsersPage() {
-  const { currentUser, isBCN, logout } = useAuth()
+  const router = useRouter()
+  const { currentUser, isAuthChecked, isBCN, logout } = useAuth()
+
+  useEffect(() => {
+    if (isAuthChecked && !currentUser) {
+      router.replace('/login')
+    }
+  }, [isAuthChecked, currentUser, router])
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC]">
+        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!currentUser) return null
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFBFC]">

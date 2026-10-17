@@ -198,7 +198,7 @@ export function CheckinView() {
     if (!currentEvt || !isBCN) return
     setIsFinalizing(true)
 
-    const res = finalizeEvent(currentEvt.id, currentUser.name)
+    const res = finalizeEvent(currentEvt.id, currentUser?.name || 'Ban Chủ nhiệm')
     setIsFinalizing(false)
 
     if (res.success && res.summary) {

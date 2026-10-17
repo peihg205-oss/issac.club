@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, Suspense } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -21,7 +21,14 @@ function LoginContent() {
   const searchParams = useSearchParams()
   const redirectUrl = searchParams.get('redirect') || '/'
 
-  const { login } = useAuth()
+  const { login, currentUser, isAuthChecked } = useAuth()
+
+  // Nếu đã đăng nhập thì tự động chuyển hướng vào hệ thống
+  useEffect(() => {
+    if (isAuthChecked && currentUser) {
+      router.replace(redirectUrl)
+    }
+  }, [isAuthChecked, currentUser, redirectUrl, router])
 
   // Form states - sẵn sàng đăng nhập thật
   const [account, setAccount] = useState('')
@@ -41,6 +48,14 @@ function LoginContent() {
       setFeedback({
         type: 'error',
         message: 'Vui lòng nhập Email sinh viên hoặc Mã số sinh viên (MSSV).',
+      })
+      return
+    }
+
+    if (!password.trim()) {
+      setFeedback({
+        type: 'error',
+        message: 'Vui lòng nhập mật khẩu tài khoản.',
       })
       return
     }

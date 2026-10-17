@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth, PRESET_USERS } from '@/lib/auth/AuthContext'
 import { useClub, type ProposalItem } from '@/lib/context/ClubContext'
 import { CRITERIA_RULES, getRatingLevel } from '@/lib/scoring/constants'
@@ -26,11 +27,29 @@ import {
 } from 'lucide-react'
 
 export default function AdminPage() {
-  const { currentUser, isBCN, isHR, switchUser } = useAuth()
+  const router = useRouter()
+  const { currentUser, isAuthChecked, isBCN, isHR, switchUser } = useAuth()
   const { members, proposals, createProposal, approveProposal, rejectProposal } = useClub()
+
+  // Auth Guard
+  useEffect(() => {
+    if (isAuthChecked && !currentUser) {
+      router.replace('/login')
+    }
+  }, [isAuthChecked, currentUser, router])
 
   const [activeTab, setActiveTab] = useState<'proposals' | 'members' | 'settings'>('proposals')
   const [addModalOpen, setAddModalOpen] = useState(false)
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC]">
+        <div className="w-8 h-8 border-3 border-[#1351D8] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!currentUser) return null
 
   // Scoring Form State
   const [targetMemberCode, setTargetMemberCode] = useState(members[7]?.member_code || '24070753')

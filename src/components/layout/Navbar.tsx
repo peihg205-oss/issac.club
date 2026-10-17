@@ -106,10 +106,10 @@ export function Navbar() {
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-all select-none"
               >
-                <div className={`w-2.5 h-2.5 rounded-full ${currentUser.avatarBg}`} />
-                <span className="truncate max-w-[130px]">{currentUser.name}</span>
+                <div className={`w-2.5 h-2.5 rounded-full ${currentUser?.avatarBg || 'bg-blue-600'}`} />
+                <span className="truncate max-w-[130px]">{currentUser?.name || 'Khách'}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/40 text-[#F5B301] border border-white/10">
-                  {currentUser.role === 'bcn' ? '👑 BCN' : currentUser.role === 'hr' ? '📋 NS' : 'TV'}
+                  {currentUser?.role === 'bcn' ? '👑 BCN' : currentUser?.role === 'hr' ? '📋 NS' : 'TV'}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
@@ -124,7 +124,7 @@ export function Navbar() {
                   </div>
 
                   {PRESET_USERS.map((user) => {
-                    const isSelected = user.id === currentUser.id
+                    const isSelected = user.id === currentUser?.id
                     return (
                       <button
                         key={user.id}
@@ -209,7 +209,7 @@ export function Navbar() {
               Đang đăng nhập với vai trò:
             </span>
             <select
-              value={currentUser.id}
+              value={currentUser?.id || ''}
               onChange={(e) => switchUser(e.target.value)}
               className="w-full bg-[#0B1530] border border-white/10 rounded-xl px-3 py-2 text-xs text-white"
             >
