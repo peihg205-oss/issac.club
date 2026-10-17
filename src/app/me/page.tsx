@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { getRatingLevel } from '@/lib/scoring/constants'
 import type { RosterMember } from '@/lib/clubData'
+import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
 import {
   UserCheck,
   Shield,
@@ -21,7 +22,7 @@ import {
 
 export default function MyScorePage() {
   const router = useRouter()
-  const { members } = useClub()
+  const { members, proposals, events, createDispute } = useClub()
   const { currentUser, isAuthChecked } = useAuth()
 
   useEffect(() => {
@@ -52,39 +53,83 @@ export default function MyScorePage() {
 
   const rating = getRatingLevel(member.current_score)
 
-  const historyEntries = [
-    {
-      date: '10/10/2025',
-      criterion: 'C05',
-      criterionName: 'Hoàn thành nhiệm vụ đúng hạn & đạt chuẩn',
-      delta: 2,
-      scoreAfter: member.current_score,
-      reason: 'Nghiệm thu kế hoạch truyền thông tháng 10',
-      approver: 'Trần Đức Thắng (Trưởng ban)',
-    },
-    {
-      date: '05/10/2025',
-      criterion: 'C07',
-      criterionName: 'Tham dự sự kiện/họp đầy đủ & đúng giờ',
-      delta: 1,
-      scoreAfter: member.current_score - 2,
-      reason: 'Check-in đúng giờ buổi sinh hoạt định kỳ tháng 10',
-      approver: 'Hệ thống tự động',
-    },
-    {
-      date: '01/09/2025',
+  const historyEntries = useMemo(() => {
+    const list: Array<{
+      date: string
+      criterion: string
+      criterionName: string
+      delta: number
+      scoreAfter: number
+      reason: string
+      approver: string
+    }> = []
+
+    // 1. Lấy từ các đề xuất đã được phê duyệt
+    proposals
+      .filter((p) => p.memberCode === member.member_code && p.status === 'approved')
+      .forEach((p) => {
+        list.push({
+          date: normalizeHistoryTimestamp(p.createdAt),
+          criterion: p.criterionCode,
+          criterionName: p.criterionName,
+          delta: p.points,
+          scoreAfter: member.current_score,
+          reason: p.reason,
+          approver: p.proposedBy,
+        })
+      })
+
+    // 2. Lấy từ các buổi điểm danh sự kiện
+    events.forEach((evt) => {
+      const rec = evt.records?.[member.member_code]
+      if (rec) {
+        if (rec.status === 'present_on_time') {
+          list.push({
+            date: `${evt.date} ${rec.checkinTime || evt.startTime}`,
+            criterion: 'C07',
+            criterionName: 'Tham gia sự kiện đúng giờ',
+            delta: 1,
+            scoreAfter: member.current_score,
+            reason: `Điểm danh đúng giờ: ${evt.title}`,
+            approver: 'Hệ thống điểm danh',
+          })
+        } else if (rec.status === 'late') {
+          list.push({
+            date: `${evt.date} ${rec.checkinTime || evt.startTime}`,
+            criterion: 'T04',
+            criterionName: 'Tham dự sự kiện muộn',
+            delta: -2,
+            scoreAfter: member.current_score,
+            reason: `Đi muộn: ${evt.title}`,
+            approver: 'Hệ thống điểm danh',
+          })
+        }
+      }
+    })
+
+    // 3. Mốc xuất phát chuẩn 60đ của CLB
+    list.push({
+      date: '01/10/2026 00:00',
       criterion: 'INIT',
-      criterionName: 'Điểm khởi đầu nhiệm kỳ 2025-2026',
+      criterionName: 'Mốc chuẩn xuất phát thi đua',
       delta: 60,
       scoreAfter: 60,
-      reason: 'Khởi tạo dữ liệu thành viên đầu nhiệm kỳ',
+      reason: 'Thiết lập mốc xuất phát chuẩn 60 điểm cho toàn CLB (Quy chế P01)',
       approver: 'Ban Quản trị CLB',
-    },
-  ]
+    })
+
+    return list
+  }, [proposals, events, member])
 
   const handleDisputeSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!disputeReason.trim()) return
+    createDispute({
+      memberCode: member.member_code,
+      criterionCode: 'Q06',
+      pointsContested: 0,
+      reason: disputeReason.trim(),
+    })
     setDisputeSuccess(true)
     setTimeout(() => {
       setDisputeModalOpen(false)

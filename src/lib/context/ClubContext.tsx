@@ -6,6 +6,12 @@ import type { DepartmentCode, DepartmentSlug, RuleCode } from '@/types/database'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
 import { AVAILABLE_PERIODS, type PeriodItem, createMonthlyPeriodItem } from '@/lib/periodData'
+import {
+  getVietnamNowFormatted,
+  getVietnamNowDateFormatted,
+  getVietnamNowTimeFormatted,
+  normalizeHistoryTimestamp,
+} from '@/lib/vietnamTime'
 
 export interface CustomRuleItem {
   code: string
@@ -78,7 +84,7 @@ export interface DisputeItem {
   criterionCode: string
   pointsContested: number
   reason: string
-  evidenceUrl: string
+  evidenceUrl?: string
   createdAt: string
   status: 'pending_hr_review' | 'pending_bcn' | 'approved_resolved' | 'rejected'
   hrNote?: string
@@ -154,7 +160,7 @@ interface ClubContextType {
     criterionCode: string
     pointsContested: number
     reason: string
-    evidenceUrl: string
+    evidenceUrl?: string
   }) => { success: boolean; message: string }
   reviewDisputeByHR: (disputeId: string, hrNote: string) => void
   resolveDisputeByBCN: (
@@ -333,7 +339,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedProposals = localStorage.getItem('issac_proposals_clean_v1')
       if (savedProposals) {
-        setProposals(JSON.parse(savedProposals))
+        const parsed = JSON.parse(savedProposals)
+        if (Array.isArray(parsed)) {
+          setProposals(
+            parsed.map((p: ProposalItem) => ({
+              ...p,
+              createdAt: normalizeHistoryTimestamp(p.createdAt),
+            }))
+          )
+        }
       }
     } catch (e) {
       console.error('Error reading proposals from localStorage:', e)
@@ -410,9 +424,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
         if (data.proposals && Array.isArray(data.proposals)) {
-          setProposals(data.proposals)
+          const normalized = data.proposals.map((p: ProposalItem) => ({
+            ...p,
+            createdAt: normalizeHistoryTimestamp(p.createdAt),
+          }))
+          setProposals(normalized)
           try {
-            localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(data.proposals))
+            localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(normalized))
           } catch (e) {}
         }
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
@@ -534,7 +552,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const newRule: CustomRuleItem = {
       ...rule,
       code: trimmedCode,
-      createdAt: new Date().toLocaleDateString('vi-VN'),
+      createdAt: getVietnamNowDateFormatted(),
     }
 
     const updated = [...customRules, newRule]
@@ -805,7 +823,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         proposedBy: `${data.proposerName} (Duyệt trực tiếp)`,
         proposedByRole: data.proposerRole,
         status: 'approved',
-        createdAt: 'Vừa xong',
+        createdAt: getVietnamNowFormatted(),
         periodId: targetPeriod.id,
         periodName: targetPeriod.name,
       }
@@ -837,7 +855,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       proposedBy: data.proposerName,
       proposedByRole: data.proposerRole,
       status: 'pending_bcn',
-      createdAt: 'Vừa xong',
+      createdAt: getVietnamNowFormatted(),
       periodId: targetPeriod.id,
       periodName: targetPeriod.name,
     }
@@ -906,9 +924,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    // Đánh dấu approved
+    // Đánh dấu approved và cập nhật mốc thời gian duyệt chuẩn giờ Việt Nam
     const updatedProps = proposals.map((p) =>
-      p.id === proposalId ? { ...p, status: 'approved' as const } : p
+      p.id === proposalId
+        ? {
+            ...p,
+            status: 'approved' as const,
+            reviewedAt: getVietnamNowFormatted(),
+            createdAt: normalizeHistoryTimestamp(p.createdAt),
+          }
+        : p
     )
     setProposals(updatedProps)
     syncToCloud({
@@ -1055,7 +1080,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     let totalApplied = 0
 
     const newLedgerRecords: ProposalItem[] = []
-    const nowStr = new Date().toLocaleDateString('vi-VN')
+    const nowStr = getVietnamNowFormatted()
 
     // Duyệt qua từng thành viên để tính điểm chuẩn quy chế iSSAC
     const updatedMembers = members.map((m) => {
@@ -1152,13 +1177,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           ? {
               ...e,
               isFinalized: true,
-              finalizedAt: new Date().toLocaleTimeString('vi-VN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              }),
+              finalizedAt: getVietnamNowFormatted(),
               finalizedBy: finalizedByName,
             }
           : e
@@ -1200,7 +1219,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     criterionCode: string
     pointsContested: number
     reason: string
-    evidenceUrl: string
+    evidenceUrl?: string
   }) => {
     const member = members.find((m) => m.member_code === data.memberCode)
     if (!member) return { success: false, message: 'Thành viên không tồn tại' }
@@ -1213,14 +1232,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       criterionCode: data.criterionCode,
       pointsContested: data.pointsContested,
       reason: data.reason,
-      evidenceUrl: data.evidenceUrl,
-      createdAt: new Date().toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      evidenceUrl: data.evidenceUrl || '',
+      createdAt: getVietnamNowFormatted(),
       status: 'pending_hr_review',
     }
 
@@ -1294,7 +1307,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         proposedBy: 'Nguyễn Thị Hồng Hân (Chủ nhiệm CLB)',
         proposedByRole: 'bcn',
         status: 'approved',
-        createdAt: 'Vừa xong',
+        createdAt: getVietnamNowFormatted(),
       }
       updatedProposals = [refundRecord, ...proposals]
       setProposals(updatedProposals)
@@ -1307,7 +1320,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             ...d,
             status: finalStatus,
             bcnVerdict: verdict,
-            resolvedAt: new Date().toLocaleDateString('vi-VN'),
+            resolvedAt: getVietnamNowFormatted(),
           }
         : d
     )
@@ -1354,7 +1367,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       proposedBy: actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
-      createdAt: 'Vừa xong',
+      createdAt: getVietnamNowFormatted(),
     }
     const updatedProps = [logItem, ...proposals]
     setProposals(updatedProps)
@@ -1455,7 +1468,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       proposedBy: data.actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
-      createdAt: 'Vừa xong',
+      createdAt: getVietnamNowFormatted(),
     }
     const updatedProps = [logItem, ...proposals]
     setProposals(updatedProps)
@@ -1492,8 +1505,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const target = periods.find((p) => p.id === periodId)
     if (!target) return { success: false, message: 'Không tìm thấy chu kỳ!' }
 
-    const now = new Date()
-    const lockedAt = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    const lockedAt = getVietnamNowFormatted()
 
     const updatedPeriods = periods.map((p) =>
       p.id === periodId
@@ -1523,7 +1535,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       proposedBy: actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
-      createdAt: 'Vừa xong',
+      createdAt: getVietnamNowFormatted(),
     }
     const updatedProps = [logItem, ...proposals]
     setProposals(updatedProps)
@@ -1635,7 +1647,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       proposedBy: actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
-      createdAt: 'Vừa xong',
+      createdAt: getVietnamNowFormatted(),
     }
     const updatedProps = [
       logItem,
@@ -1724,7 +1736,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       proposedBy: actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
-      createdAt: 'Vừa xong',
+      createdAt: getVietnamNowFormatted(),
     }
     const updatedProps = [logItem, ...proposals]
     setProposals(updatedProps)

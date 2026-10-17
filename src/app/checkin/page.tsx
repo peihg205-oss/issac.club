@@ -181,7 +181,11 @@ function CheckinContent() {
         const lockInfo = {
           memberCode: currentCheckinMember?.member_code || checkinMemberCode,
           memberName: currentCheckinMember?.full_name || checkinMemberCode,
-          timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: new Date().toLocaleTimeString('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
         }
 
         // Nếu là thiết bị cá nhân, khóa cứng thiết bị cho sự kiện này

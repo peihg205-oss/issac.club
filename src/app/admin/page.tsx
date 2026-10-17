@@ -8,6 +8,7 @@ import { CRITERIA_RULES, getRatingLevel } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
 import type { RuleCode } from '@/types/database'
 import { AddMemberModal } from '@/components/admin/AddMemberModal'
+import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
 import {
   KeyRound,
   Crown,
@@ -460,7 +461,7 @@ export default function AdminPage() {
                     )}
 
                     <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] text-slate-400">
-                      <span>Người đề xuất: {item.proposedBy} - {item.createdAt}</span>
+                      <span>Người đề xuất: {item.proposedBy} - {normalizeHistoryTimestamp(item.createdAt)}</span>
 
                       {/* Approval buttons (BCN only) */}
                       {isBCN ? (

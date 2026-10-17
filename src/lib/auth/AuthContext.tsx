@@ -340,7 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const newAcc: IssuedAccount = {
       ...data,
       id: `acc-${Date.now()}`,
-      createdAt: new Date().toLocaleDateString('vi-VN'),
+      createdAt: new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
     }
 
     const updated = [newAcc, ...issuedAccounts]

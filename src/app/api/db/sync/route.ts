@@ -207,6 +207,7 @@ export async function POST(request: Request) {
                   status: status || 'present_on_time',
                   note: note || '',
                   checkinTime: new Date().toLocaleTimeString('vi-VN', {
+                    timeZone: 'Asia/Ho_Chi_Minh',
                     hour: '2-digit',
                     minute: '2-digit',
                   }),
@@ -224,6 +225,7 @@ export async function POST(request: Request) {
               ...evt,
               isFinalized: true,
               finalizedAt: new Date().toLocaleTimeString('vi-VN', {
+                timeZone: 'Asia/Ho_Chi_Minh',
                 hour: '2-digit',
                 minute: '2-digit',
                 day: '2-digit',

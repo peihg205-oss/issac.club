@@ -9,6 +9,7 @@ import type { RosterMember } from './clubData'
 import { INITIAL_MEMBERS } from './clubData'
 import { getRatingLevel } from './scoring/constants'
 import type { RatingLevelName } from '@/types/database'
+import { formatVietnamDateTime } from './vietnamTime'
 
 export const STANDARD_MONTHLY_BASELINE = 60
 
@@ -171,8 +172,7 @@ export function createMonthlyPeriodItem(
   const defaultName = `Tháng ${monthStr}/${year}`
   const shortLabel = `T${monthStr}/${year}`
 
-  const now = new Date()
-  const createdAt = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  const createdAt = formatVietnamDateTime()
 
   return {
     id: periodId,

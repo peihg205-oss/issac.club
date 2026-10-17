@@ -23,6 +23,7 @@ import {
   TrendingDown,
   Sparkles,
 } from 'lucide-react'
+import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
 
 // Sẵn sàng vận hành thật: Danh sách lịch sử điểm số sạch xuất phát từ các phiên điểm danh & đề xuất thực tế
 const INITIAL_HISTORY: Array<{
@@ -83,7 +84,7 @@ export function HistoryView() {
   const dynamicHistory = proposals
     .filter((p) => p.status === 'approved')
     .map((p) => ({
-      time: p.createdAt,
+      time: normalizeHistoryTimestamp(p.createdAt),
       name: p.memberName,
       dept: p.memberDept,
       code: p.criterionCode,
@@ -293,7 +294,7 @@ export function HistoryView() {
                   <div className="mt-2 text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="truncate">
-                      Đề xuất: <strong className="text-slate-600 font-semibold">{item.proposedBy}</strong> • {item.createdAt}
+                      Đề xuất: <strong className="text-slate-600 font-semibold">{item.proposedBy}</strong> • {normalizeHistoryTimestamp(item.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -485,7 +486,7 @@ export function HistoryView() {
                     </div>
                     <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3 text-slate-400" />
-                      {disp.createdAt}
+                      {normalizeHistoryTimestamp(disp.createdAt)}
                     </span>
                   </div>
 

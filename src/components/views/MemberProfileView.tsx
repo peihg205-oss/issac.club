@@ -11,6 +11,7 @@ import {
   STANDARD_MONTHLY_BASELINE,
 } from '@/lib/periodData'
 import { EditMemberModal } from '@/components/admin/EditMemberModal'
+import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
 import {
   ArrowLeft,
   Award,
@@ -107,7 +108,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
       .forEach((p) => {
         list.push({
           id: p.id,
-          time: p.createdAt,
+          time: normalizeHistoryTimestamp(p.createdAt),
           code: p.criterionCode,
           title: `${p.criterionName} - ${p.reason}`,
           category: p.points >= 0 ? 'Khen thưởng & Cống hiến' : 'Kỷ luật & Vi phạm',
