@@ -44,7 +44,6 @@ function CheckinContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlEventId = searchParams.get('event')
-  const urlPin = searchParams.get('pin')
   const urlTab = searchParams.get('tab')
 
   const {
@@ -118,10 +117,18 @@ function CheckinContent() {
     if (urlEventId && events.some((e) => e.id === urlEventId)) {
       setSelectedEventId(urlEventId)
     }
-    if (urlPin) {
-      setPinInput(urlPin)
+  }, [urlEventId, events])
+
+  // Tuyệt đối không đọc PIN từ URL và tự động xóa param 'pin' nếu người dùng truy cập từ link cũ
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('pin=')) {
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('pin')
+        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''))
+      } catch {}
     }
-  }, [urlEventId, urlPin, events])
+  }, [])
 
   const currentEvent = events.find((e) => e.id === selectedEventId) || activeEvent || events[0]
   const currentCheckinMember = members.find((m) => m.member_code === checkinMemberCode)
@@ -1021,25 +1028,27 @@ function CheckinContent() {
                         </span>
                       </div>
 
-                      {/* Bước 2: Nhập mã PIN máy chiếu - HOÀN TOÀN TRỐNG, KHÔNG GỢI Ý */}
+                      {/* Bước 2: Nhập mã PIN dự phòng do BTC đọc khi không quét được QR */}
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-slate-800">
                           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">2</span>
-                          Nhập mã PIN máy chiếu hội trường (4 số): <span className="text-rose-500">*</span>
+                          Mã PIN dự phòng (4 số do BTC đọc): <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                           <input
                             type="text"
-                            maxLength={6}
+                            inputMode="numeric"
+                            autoComplete="off"
+                            maxLength={4}
                             required
-                            placeholder="Nhập mã 4 số từ máy chiếu..."
+                            placeholder="•••• (BTC đọc mã để nhập)"
                             value={pinInput}
-                            onChange={(e) => setPinInput(e.target.value)}
+                            onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
                             className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-center tracking-[0.3em] font-mono text-xl font-black text-[#1351D8] transition shadow-2xs placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-medium placeholder:text-slate-400"
                           />
                         </div>
                         <span className="block text-[11px] text-slate-500 mt-1 text-center font-medium">
-                          Mã PIN hiển thị trực tiếp trên màn hình máy chiếu phòng họp / hội trường để xác minh bạn đang có mặt.
+                          Phương thức dự phòng: Khi không quét được mã QR, Ban Tổ Chức sẽ trực tiếp đọc mã PIN để bạn nhập xác thực.
                         </span>
                       </div>
 
