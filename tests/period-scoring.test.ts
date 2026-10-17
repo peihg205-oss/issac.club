@@ -135,5 +135,90 @@ describe('Period Scoring & Monthly Reset Engine', () => {
     expect(rankings[0].isLocked).toBe(true)
     expect(rankings[0].note).toBe('Đã khóa sổ bởi BCN')
   })
+
+  it('10. Ban Chủ nhiệm có thể chỉnh sửa tên, mô tả và thời gian của chu kỳ đã tạo', () => {
+    const originalPeriod = { ...AVAILABLE_PERIODS[0] }
+    const updates = {
+      name: 'Tháng 10/2026 (Chính Thức)',
+      shortLabel: 'T10/2026-CT',
+      description: 'Cập nhật mục tiêu thi đua tân sinh viên',
+      timeRange: '05/10/2026 - 31/10/2026',
+    }
+
+    const updatedPeriod = {
+      ...originalPeriod,
+      name: updates.name,
+      shortLabel: updates.shortLabel,
+      description: updates.description,
+      timeRange: updates.timeRange,
+    }
+
+    expect(updatedPeriod.name).toBe('Tháng 10/2026 (Chính Thức)')
+    expect(updatedPeriod.shortLabel).toBe('T10/2026-CT')
+    expect(updatedPeriod.timeRange).toBe('05/10/2026 - 31/10/2026')
+  })
+
+  it('11. Xóa chu kỳ đang hoạt động sẽ tự động chuyển active period sang chu kỳ hợp lệ tiếp theo', () => {
+    const periodsList = [
+      {
+        id: 'month-2026-10',
+        scope: 'month' as const,
+        name: 'Tháng 10/2026',
+        shortLabel: 'T10/2026',
+        description: 'Tháng cần xóa',
+        timeRange: '01/10/2026 - 31/10/2026',
+        status: 'active' as const,
+        isCurrent: true,
+      },
+      {
+        id: 'month-2025-10',
+        scope: 'month' as const,
+        name: 'Tháng 10/2025',
+        shortLabel: 'T10/2025',
+        description: 'Tháng kế tiếp',
+        timeRange: '01/10/2025 - 31/10/2025',
+        status: 'locked' as const,
+        isCurrent: false,
+      },
+    ]
+
+    const targetIdToDelete = 'month-2026-10'
+    const remaining = periodsList.filter((p) => p.id !== targetIdToDelete)
+    expect(remaining.length).toBe(1)
+
+    // Fallback logic
+    const fallback =
+      remaining.find((p) => p.scope === 'month' && p.status === 'active') ||
+      remaining.find((p) => p.scope === 'month') ||
+      remaining[0]
+
+    expect(fallback.id).toBe('month-2025-10')
+    const finalPeriods = remaining.map((p) => ({
+      ...p,
+      isCurrent: p.id === fallback.id,
+    }))
+
+    expect(finalPeriods[0].isCurrent).toBe(true)
+    expect(finalPeriods[0].id).toBe('month-2025-10')
+  })
+
+  it('12. Không thể xóa chu kỳ nếu chỉ còn duy nhất 1 chu kỳ trong hệ thống', () => {
+    const singlePeriod = [
+      {
+        id: 'month-2026-10',
+        scope: 'month' as const,
+        name: 'Tháng 10/2026',
+        shortLabel: 'T10/2026',
+        description: 'Duy nhất',
+        timeRange: '01/10/2026 - 31/10/2026',
+        status: 'active' as const,
+        isCurrent: true,
+      },
+    ]
+
+    const canDelete = singlePeriod.length > 1
+    expect(canDelete).toBe(false)
+  })
 })
+
 

@@ -177,6 +177,17 @@ interface ClubContextType {
     description?: string
     actorName: string
   }) => { success: boolean; message: string; period?: PeriodItem }
+  updateMonthPeriod: (
+    periodId: string,
+    data: {
+      name?: string
+      shortLabel?: string
+      description?: string
+      timeRange?: string
+    },
+    actorName: string
+  ) => { success: boolean; message: string; period?: PeriodItem }
+  deleteMonthPeriod: (periodId: string, actorName: string) => { success: boolean; message: string }
   lockMonthPeriod: (periodId: string, actorName: string) => { success: boolean; message: string }
   unlockMonthPeriod: (periodId: string, actorName: string) => { success: boolean; message: string }
   // Quản lý quy định & tiêu chí mở rộng
@@ -1565,6 +1576,183 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Cập nhật thông tin chu kỳ (Ban Chủ nhiệm chỉnh sửa tên, mô tả, thời gian)
+  const updateMonthPeriod = (
+    periodId: string,
+    data: {
+      name?: string
+      shortLabel?: string
+      description?: string
+      timeRange?: string
+    },
+    actorName: string
+  ): { success: boolean; message: string; period?: PeriodItem } => {
+    const target = periods.find((p) => p.id === periodId)
+    if (!target) return { success: false, message: 'Không tìm thấy chu kỳ cần chỉnh sửa!' }
+
+    const trimmedName =
+      data.name !== undefined && data.name.trim() !== '' ? data.name.trim() : target.name
+    const trimmedShortLabel =
+      data.shortLabel !== undefined && data.shortLabel.trim() !== ''
+        ? data.shortLabel.trim()
+        : target.shortLabel
+    const trimmedDescription =
+      data.description !== undefined ? data.description.trim() : target.description
+    const trimmedTimeRange =
+      data.timeRange !== undefined && data.timeRange.trim() !== ''
+        ? data.timeRange.trim()
+        : target.timeRange
+
+    const updatedPeriods = periods.map((p) =>
+      p.id === periodId
+        ? {
+            ...p,
+            name: trimmedName,
+            shortLabel: trimmedShortLabel,
+            description: trimmedDescription,
+            timeRange: trimmedTimeRange,
+          }
+        : p
+    )
+    setPeriods(updatedPeriods)
+
+    if (periodId === currentActivePeriodId) {
+      setCurrentActiveMonth(trimmedName)
+    }
+
+    const logItem: ProposalItem = {
+      id: `sys-edit-period-${Date.now()}`,
+      memberCode: 'ALL-CLUB',
+      memberName: 'Toàn bộ 48 Thành viên',
+      memberDept: 'Toàn Câu Lạc bộ',
+      isCore: false,
+      criterionCode: 'T02',
+      criterionName: `Cập nhật chu kỳ: ${trimmedName}`,
+      points: 0,
+      periodId: target.id,
+      periodName: trimmedName,
+      reason: `Ban Chủ nhiệm (${actorName}) đã cập nhật thông tin chu kỳ thi đua "${trimmedName}" (${trimmedTimeRange}).`,
+      proposedBy: actorName,
+      proposedByRole: 'Ban Chủ nhiệm',
+      status: 'approved',
+      createdAt: 'Vừa xong',
+    }
+    const updatedProps = [
+      logItem,
+      ...proposals.map((prop) =>
+        prop.periodId === periodId ? { ...prop, periodName: trimmedName } : prop
+      ),
+    ]
+    setProposals(updatedProps)
+
+    try {
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updatedPeriods))
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+    } catch (e) {
+      console.error('Error saving updated period to localStorage:', e)
+    }
+
+    syncToCloud({
+      periods: updatedPeriods,
+      proposals: updatedProps,
+    })
+
+    const updatedTarget = updatedPeriods.find((p) => p.id === periodId)
+    return {
+      success: true,
+      message: `Đã cập nhật thông tin chu kỳ thi đua "${trimmedName}" thành công!`,
+      period: updatedTarget,
+    }
+  }
+
+  // Xóa chu kỳ tháng (Ban Chủ nhiệm xóa bỏ chu kỳ đã tạo hoặc không còn dùng)
+  const deleteMonthPeriod = (
+    periodId: string,
+    actorName: string
+  ): { success: boolean; message: string } => {
+    const target = periods.find((p) => p.id === periodId)
+    if (!target) return { success: false, message: 'Không tìm thấy chu kỳ cần xóa!' }
+
+    if (periods.length <= 1) {
+      return { success: false, message: 'Không thể xóa chu kỳ duy nhất còn lại của Câu Lạc Bộ!' }
+    }
+
+    const remainingPeriods = periods.filter((p) => p.id !== periodId)
+
+    let nextActiveId = currentActivePeriodId
+    let nextActiveName = currentActiveMonth
+    let updatedPeriods = remainingPeriods
+
+    // Nếu chu kỳ bị xóa đang là chu kỳ kích hoạt hiện tại
+    if (periodId === currentActivePeriodId) {
+      const fallbackPeriod =
+        remainingPeriods.find((p) => p.scope === 'month' && p.status === 'active') ||
+        remainingPeriods.find((p) => p.scope === 'month') ||
+        remainingPeriods[0]
+
+      nextActiveId = fallbackPeriod.id
+      nextActiveName = fallbackPeriod.name
+
+      updatedPeriods = remainingPeriods.map((p) => ({
+        ...p,
+        isCurrent: p.id === nextActiveId,
+      }))
+
+      _setCurrentActivePeriodId(nextActiveId)
+      setCurrentActiveMonth(nextActiveName)
+    }
+
+    setPeriods(updatedPeriods)
+
+    // Xóa điểm tự tính riêng của chu kỳ này (nếu có)
+    const updatedCustomScores = { ...customPeriodScores }
+    delete updatedCustomScores[periodId]
+    setCustomPeriodScores(updatedCustomScores)
+
+    const logItem: ProposalItem = {
+      id: `sys-del-period-${Date.now()}`,
+      memberCode: 'ALL-CLUB',
+      memberName: 'Toàn bộ 48 Thành viên',
+      memberDept: 'Toàn Câu Lạc bộ',
+      isCore: false,
+      criterionCode: 'T03',
+      criterionName: `Xóa chu kỳ: ${target.name}`,
+      points: 0,
+      periodId: target.id,
+      periodName: target.name,
+      reason: `Ban Chủ nhiệm (${actorName}) đã xóa chu kỳ thi đua "${target.name}". Dữ liệu chu kỳ đã được làm sạch và chuyển đổi an toàn.`,
+      proposedBy: actorName,
+      proposedByRole: 'Ban Chủ nhiệm',
+      status: 'approved',
+      createdAt: 'Vừa xong',
+    }
+    const updatedProps = [logItem, ...proposals]
+    setProposals(updatedProps)
+
+    try {
+      localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updatedPeriods))
+      if (periodId === currentActivePeriodId) {
+        localStorage.setItem('issac_active_period_id', nextActiveId)
+      }
+      localStorage.setItem('issac_custom_period_scores', JSON.stringify(updatedCustomScores))
+      localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+    } catch (e) {
+      console.error('Error deleting period from localStorage:', e)
+    }
+
+    syncToCloud({
+      periods: updatedPeriods,
+      activePeriodId: nextActiveId,
+      customPeriodScores: updatedCustomScores,
+      proposals: updatedProps,
+    })
+
+    return {
+      success: true,
+      message: `Đã xóa chu kỳ thi đua "${target.name}" thành công!`,
+    }
+  }
+
   // Quản lý sự kiện sắp tới & cổng đăng ký
   const createUpcomingEvent = (data: {
     title: string
@@ -1758,6 +1946,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         currentActivePeriodId,
         setCurrentActivePeriodId,
         createMonthPeriod,
+        updateMonthPeriod,
+        deleteMonthPeriod,
         lockMonthPeriod,
         unlockMonthPeriod,
         customRules,

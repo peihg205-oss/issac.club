@@ -26,13 +26,18 @@ import {
   Zap,
   Sliders,
   Flame,
+  Pencil,
+  X,
 } from 'lucide-react'
+import type { PeriodItem } from '@/lib/periodData'
 
 export function SettingsView() {
   const { isBCN, currentUser } = useAuth()
   const {
     periods,
     createMonthPeriod,
+    updateMonthPeriod,
+    deleteMonthPeriod,
     lockMonthPeriod,
     unlockMonthPeriod,
     events,
@@ -55,6 +60,17 @@ export function SettingsView() {
   const [description, setDescription] = useState<string>(
     'Chu kỳ thi đua Tháng 10/2026 theo thời gian thực - Mốc xuất phát 60 điểm cho toàn CLB'
   )
+
+  // Chỉnh sửa & Xóa chu kỳ tháng (Dành riêng cho Ban Chủ nhiệm)
+  const [editingPeriod, setEditingPeriod] = useState<PeriodItem | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editShortLabel, setEditShortLabel] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editTimeRange, setEditTimeRange] = useState('')
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false)
+
+  const [deletingPeriod, setDeletingPeriod] = useState<PeriodItem | null>(null)
+  const [isSubmittingDelete, setIsSubmittingDelete] = useState(false)
 
   // Form tạo sự kiện sắp tới & mở cổng đăng ký
   const [eventTitle, setEventTitle] = useState('Workshop Kỹ năng Đàm phán & Thuyết trình chuyên nghiệp')
@@ -138,6 +154,77 @@ export function SettingsView() {
     const actor = currentUser?.name || 'Ban Chủ nhiệm'
     const res = unlockMonthPeriod(periodId, actor)
     setToast({ type: 'success', message: res.message })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  // Mở modal chỉnh sửa chu kỳ tháng (Chỉ BCN)
+  const handleOpenEdit = (period: PeriodItem) => {
+    if (!isBCN) {
+      alert('Chỉ Ban Chủ nhiệm mới có quyền chỉnh sửa chu kỳ thi đua!')
+      return
+    }
+    setEditingPeriod(period)
+    setEditName(period.name)
+    setEditShortLabel(period.shortLabel)
+    setEditDescription(period.description)
+    setEditTimeRange(period.timeRange)
+  }
+
+  // Lưu chỉnh sửa chu kỳ tháng (Chỉ BCN)
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isBCN) {
+      alert('Chỉ Ban Chủ nhiệm mới có quyền chỉnh sửa chu kỳ thi đua!')
+      return
+    }
+    if (!editingPeriod) return
+    if (!editName.trim()) {
+      alert('Vui lòng nhập tên chu kỳ!')
+      return
+    }
+
+    setIsSubmittingEdit(true)
+    const actor = currentUser?.name || 'Ban Chủ nhiệm'
+    const res = updateMonthPeriod(
+      editingPeriod.id,
+      {
+        name: editName.trim(),
+        shortLabel: editShortLabel.trim(),
+        description: editDescription.trim(),
+        timeRange: editTimeRange.trim(),
+      },
+      actor
+    )
+    setIsSubmittingEdit(false)
+
+    if (res.success) {
+      setToast({ type: 'success', message: res.message })
+      setEditingPeriod(null)
+    } else {
+      setToast({ type: 'error', message: res.message })
+    }
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  // Xác nhận xóa chu kỳ tháng (Chỉ BCN)
+  const handleConfirmDelete = () => {
+    if (!isBCN) {
+      alert('Chỉ Ban Chủ nhiệm mới có quyền xóa chu kỳ thi đua!')
+      return
+    }
+    if (!deletingPeriod) return
+
+    setIsSubmittingDelete(true)
+    const actor = currentUser?.name || 'Ban Chủ nhiệm'
+    const res = deleteMonthPeriod(deletingPeriod.id, actor)
+    setIsSubmittingDelete(false)
+
+    if (res.success) {
+      setToast({ type: 'success', message: res.message })
+      setDeletingPeriod(null)
+    } else {
+      setToast({ type: 'error', message: res.message })
+    }
     setTimeout(() => setToast(null), 4000)
   }
 
@@ -1146,36 +1233,220 @@ export function SettingsView() {
                     {/* Hành Động Ban Chủ Nhiệm */}
                     <div className="flex items-center gap-2 self-end md:self-auto flex-shrink-0">
                       {isBCN ? (
-                        isLocked ? (
+                        <>
+                          {/* Nút Chỉnh Sửa Chu Kỳ (Chỉ BCN) */}
                           <button
                             type="button"
-                            onClick={() => handleUnlockPeriod(period.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer whitespace-nowrap"
-                            title="Mở khóa lại chu kỳ này nếu cần bổ sung duyệt điểm"
+                            onClick={() => handleOpenEdit(period)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-slate-200/90 bg-white text-slate-700 hover:text-blue-600 hover:bg-blue-50/70 hover:border-blue-200 transition shadow-2xs cursor-pointer whitespace-nowrap"
+                            title="Chỉnh sửa tên, nhãn viết tắt, mô tả hoặc thời gian chu kỳ (Chỉ BCN)"
                           >
-                            <Unlock className="w-3.5 h-3.5 text-slate-600" />
-                            <span>Mở khóa lại</span>
+                            <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Sửa</span>
                           </button>
-                        ) : (
+
+                          {/* Nút Khóa / Mở Khóa Sổ Điểm */}
+                          {isLocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleUnlockPeriod(period.id)}
+                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer whitespace-nowrap"
+                              title="Mở khóa lại chu kỳ này nếu cần bổ sung duyệt điểm"
+                            >
+                              <Unlock className="w-3.5 h-3.5 text-slate-600" />
+                              <span>Mở khóa lại</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleLockPeriod(period.id)}
+                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap"
+                              title="Chốt điểm và khóa sổ chu kỳ này, không cho phép cộng/trừ điểm nữa"
+                            >
+                              <Lock className="w-3.5 h-3.5" />
+                              <span>Khóa sổ điểm</span>
+                            </button>
+                          )}
+
+                          {/* Nút Xóa Chu Kỳ (Chỉ BCN) */}
                           <button
                             type="button"
-                            onClick={() => handleLockPeriod(period.id)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap"
-                            title="Chốt điểm và khóa sổ chu kỳ này, không cho phép cộng/trừ điểm nữa"
+                            onClick={() => setDeletingPeriod(period)}
+                            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                            title={`Xóa chu kỳ thi đua "${period.name}" (Chỉ BCN)`}
                           >
-                            <Lock className="w-3.5 h-3.5" />
-                            <span>Khóa sổ điểm tháng</span>
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        )
+                        </>
                       ) : (
                         <span className="text-[11px] text-slate-400 italic">
-                          Chỉ BCN có quyền khóa sổ điểm
+                          Chỉ BCN có quyền chỉnh sửa, khóa sổ hoặc xóa chu kỳ
                         </span>
                       )}
                     </div>
                   </div>
                 )
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CHỈNH SỬA CHU KỲ (CHỈ BAN CHỦ NHIỆM) */}
+      {editingPeriod && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-lg w-full border border-slate-200/90 shadow-2xl relative space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-xs shrink-0">
+                  <Pencil className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60">
+                      Chỉ Ban Chủ Nhiệm
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-500">
+                      {editingPeriod.id}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-[#0B1E48] tracking-tight">
+                    Chỉnh Sửa Chu Kỳ Thi Đua
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPeriod(null)}
+                className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Tên chu kỳ tháng</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden"
+                    placeholder="VD: Tháng 10/2026"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-700">Nhãn viết tắt</label>
+                  <input
+                    type="text"
+                    value={editShortLabel}
+                    onChange={(e) => setEditShortLabel(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold font-mono text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden"
+                    placeholder="VD: T10/2026"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Khung thời gian thực</label>
+                <input
+                  type="text"
+                  value={editTimeRange}
+                  onChange={(e) => setEditTimeRange(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-xs font-mono focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden"
+                  placeholder="VD: 01/10/2026 - 31/10/2026"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700">Mục tiêu &amp; Kế hoạch thi đua</label>
+                <textarea
+                  rows={3}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden resize-none"
+                  placeholder="Mô tả trọng tâm thi đua..."
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setEditingPeriod(null)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingEdit}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  {isSubmittingEdit ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XÁC NHẬN XÓA CHU KỲ (CHỈ BAN CHỦ NHIỆM) */}
+      {deletingPeriod && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full border border-slate-200/90 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200/70 flex items-center justify-center shadow-xs shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-[#0B1E48]">
+                  Xác Nhận Xóa Chu Kỳ
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Hành động này chỉ dành cho Ban Chủ nhiệm
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs space-y-1.5 text-slate-600">
+              <div className="font-bold text-[#0B1E48] flex items-center gap-2">
+                <span>{deletingPeriod.name}</span>
+                <span className="font-mono text-[10px] text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  {deletingPeriod.shortLabel}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                {deletingPeriod.description}
+              </p>
+              <p className="text-[11px] text-rose-600 font-medium pt-1">
+                ⚠️ Chu kỳ này và mọi dữ liệu liên quan sẽ bị xóa khỏi hệ thống. Nếu đây là chu kỳ hiện tại, hệ thống sẽ tự động chuyển sang chu kỳ gần nhất.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeletingPeriod(null)}
+                disabled={isSubmittingDelete}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition cursor-pointer text-xs"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isSubmittingDelete}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-xs cursor-pointer text-xs flex items-center gap-1.5"
+              >
+                {isSubmittingDelete ? 'Đang xóa...' : 'Xác Nhận Xóa'}
+              </button>
             </div>
           </div>
         </div>
