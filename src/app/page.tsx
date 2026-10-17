@@ -11,7 +11,6 @@ import { StatsView } from '@/components/views/StatsView'
 import { SettingsView } from '@/components/views/SettingsView'
 import { CheckinView } from '@/components/views/CheckinView'
 import { MemberProfileView } from '@/components/views/MemberProfileView'
-import { DatabaseLiveView } from '@/components/views/DatabaseLiveView'
 import { AccountsView } from '@/components/views/AccountsView'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -98,8 +97,6 @@ export default function AppHome() {
             <RulesView />
           ) : activeTab === 'stats' ? (
             <StatsView onSelectMember={handleSelectMember} />
-          ) : activeTab === 'database' ? (
-            <DatabaseLiveView />
           ) : activeTab === 'accounts' ? (
             <AccountsView />
           ) : (

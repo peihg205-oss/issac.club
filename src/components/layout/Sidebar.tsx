@@ -8,7 +8,6 @@ import {
   Clock,
   BookOpen,
   Trophy,
-  Database,
   Settings,
   KeyRound,
 } from 'lucide-react'
@@ -22,7 +21,6 @@ export type ActiveNavTab =
   | 'stats'
   | 'accounts'
   | 'settings'
-  | 'database'
 
 export interface SidebarProps {
   activeTab: ActiveNavTab
@@ -185,13 +183,6 @@ export function Sidebar({
       label: 'Cấp tài khoản Ban',
       icon: KeyRound,
       badge: 'BCN',
-      badgeType: 'pill',
-    },
-    {
-      id: 'database',
-      label: 'Cơ sở dữ liệu SQL',
-      icon: Database,
-      badge: 'SQL',
       badgeType: 'pill',
     },
     {

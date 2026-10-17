@@ -314,6 +314,24 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     fetchCloudSync()
   }, [])
 
+  // Helper đồng bộ dữ liệu đa thiết bị qua Supabase Cloud API
+  const syncToCloud = (payload: {
+    events?: MeetingEvent[]
+    proposals?: ProposalItem[]
+    members?: RosterMember[]
+    disputes?: DisputeItem[]
+    action?: string
+    [key: string]: any
+  }) => {
+    if (typeof window !== 'undefined') {
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((e) => console.error('Cloud sync notice:', e))
+    }
+  }
+
   // Đồng bộ đám mây Supabase (PC <-> Điện thoại)
   const fetchCloudSync = async () => {
     try {
@@ -330,6 +348,21 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           setProposals(data.proposals)
           try {
             localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(data.proposals))
+          } catch (e) {}
+        }
+        if (data.members && Array.isArray(data.members) && data.members.length > 0) {
+          setMembers(data.members)
+          try {
+            localStorage.setItem('issac_members_clean_v1', JSON.stringify(data.members))
+          } catch (e) {}
+        } else if (!data.members || data.members.length === 0) {
+          // Lưu 48 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
+          syncToCloud({ members })
+        }
+        if (data.disputes && Array.isArray(data.disputes)) {
+          setDisputes(data.disputes)
+          try {
+            localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(data.disputes))
           } catch (e) {}
         }
       }
@@ -482,6 +515,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.error('Error saving members to localStorage:', e)
       }
+      syncToCloud({ members: updated })
       return updated
     })
   }
@@ -531,6 +565,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Error saving updated members to localStorage:', e)
     }
+    syncToCloud({ members: reRanked })
 
     return { success: true, message: 'Đã cập nhật thông tin thành viên thành công!' }
   }
@@ -550,6 +585,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Error saving members after deletion:', e)
     }
+    syncToCloud({ members: reRanked })
     return { success: true, message: `Đã xóa thành viên ${target.full_name} khỏi hệ thống.` }
   }
 
@@ -611,20 +647,20 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     // Nếu Ban Chủ nhiệm chọn áp dụng trực tiếp:
     if (data.directApply) {
+      let updatedMembers = members
       // 1. Nếu là chu kỳ mặc định 'month-2025-10', cập nhật vào mảng members
       if (targetPeriodId === 'month-2025-10') {
-        setMembers((prev) =>
-          getRankedMembers(
-            prev.map((m) => {
-              if (m.member_code === data.memberCode) {
-                const newT02 =
-                  data.criterionCode === 'T02' ? m.absent_count_t02 + 1 : m.absent_count_t02
-                return { ...m, current_score: scoreAfter, absent_count_t02: newT02 }
-              }
-              return m
-            })
-          )
+        updatedMembers = getRankedMembers(
+          members.map((m) => {
+            if (m.member_code === data.memberCode) {
+              const newT02 =
+                data.criterionCode === 'T02' ? m.absent_count_t02 + 1 : m.absent_count_t02
+              return { ...m, current_score: scoreAfter, absent_count_t02: newT02 }
+            }
+            return m
+          })
         )
+        setMembers(updatedMembers)
       }
 
       // 2. Ghi nhận delta vào sổ cái customPeriodScores cho chu kỳ này
@@ -659,7 +695,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         periodId: targetPeriod.id,
         periodName: targetPeriod.name,
       }
-      setProposals((prev) => [record, ...prev])
+      const updatedProps = [record, ...proposals]
+      setProposals(updatedProps)
+      syncToCloud({
+        proposals: updatedProps,
+        ...(targetPeriodId === 'month-2025-10' ? { members: updatedMembers } : {}),
+      })
 
       return {
         success: true,
@@ -686,7 +727,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       periodId: targetPeriod.id,
       periodName: targetPeriod.name,
     }
-    setProposals((prev) => [newProp, ...prev])
+    const updatedProps = [newProp, ...proposals]
+    setProposals(updatedProps)
+    syncToCloud({ proposals: updatedProps })
 
     return {
       success: true,
@@ -706,31 +749,31 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    let updatedMembers = members
     // Cập nhật điểm thành viên nếu là chu kỳ mặc định
     if (targetPeriodId === 'month-2025-10') {
-      setMembers((prev) =>
-        getRankedMembers(
-          prev.map((m) => {
-            if (m.member_code === prop.memberCode) {
-              const builtinRule = CRITERIA_RULES[prop.criterionCode as RuleCode]
-              let newScore = Math.max(0, Math.min(100, m.current_score + prop.points))
-              if (builtinRule) {
-                const calc = calculateScoreDelta({
-                  ruleCode: prop.criterionCode as RuleCode,
-                  basePoints: builtinRule.base_points,
-                  isCoreAtEvent: m.is_core,
-                  currentScore: m.current_score,
-                })
-                newScore = calc.scoreAfter
-              }
-              const newT02 =
-                prop.criterionCode === 'T02' ? m.absent_count_t02 + 1 : m.absent_count_t02
-              return { ...m, current_score: newScore, absent_count_t02: newT02 }
+      updatedMembers = getRankedMembers(
+        members.map((m) => {
+          if (m.member_code === prop.memberCode) {
+            const builtinRule = CRITERIA_RULES[prop.criterionCode as RuleCode]
+            let newScore = Math.max(0, Math.min(100, m.current_score + prop.points))
+            if (builtinRule) {
+              const calc = calculateScoreDelta({
+                ruleCode: prop.criterionCode as RuleCode,
+                basePoints: builtinRule.base_points,
+                isCoreAtEvent: m.is_core,
+                currentScore: m.current_score,
+              })
+              newScore = calc.scoreAfter
             }
-            return m
-          })
-        )
+            const newT02 =
+              prop.criterionCode === 'T02' ? m.absent_count_t02 + 1 : m.absent_count_t02
+            return { ...m, current_score: newScore, absent_count_t02: newT02 }
+          }
+          return m
+        })
       )
+      setMembers(updatedMembers)
     }
 
     // Ghi nhận delta vào customPeriodScores cho chu kỳ này
@@ -747,16 +790,23 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     })
 
     // Đánh dấu approved
-    setProposals((prev) =>
-      prev.map((p) => (p.id === proposalId ? { ...p, status: 'approved' } : p))
+    const updatedProps = proposals.map((p) =>
+      p.id === proposalId ? { ...p, status: 'approved' as const } : p
     )
+    setProposals(updatedProps)
+    syncToCloud({
+      proposals: updatedProps,
+      ...(targetPeriodId === 'month-2025-10' ? { members: updatedMembers } : {}),
+    })
   }
 
   // Ban Chủ nhiệm từ chối đề xuất
   const rejectProposal = (proposalId: string) => {
-    setProposals((prev) =>
-      prev.map((p) => (p.id === proposalId ? { ...p, status: 'rejected' } : p))
+    const updatedProps = proposals.map((p) =>
+      p.id === proposalId ? { ...p, status: 'rejected' as const } : p
     )
+    setProposals(updatedProps)
+    syncToCloud({ proposals: updatedProps })
   }
 
   // Cập nhật trạng thái check-in của 1 thành viên trong buổi họp
@@ -1019,6 +1069,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           eventId,
           finalizedBy: finalizedByName,
           proposals: newLedgerRecords,
+          members: getRankedMembers(updatedMembers),
         }),
       }).catch((e) => console.error('Cloud sync error on finalize:', e))
     }
@@ -1056,7 +1107,10 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       status: 'pending_hr_review',
     }
 
-    setDisputes((prev) => [newDisp, ...prev])
+    const updatedDisputes = [newDisp, ...disputes]
+    setDisputes(updatedDisputes)
+    syncToCloud({ disputes: updatedDisputes })
+
     return {
       success: true,
       message: 'Đã gửi khiếu nại thành công! Ban Nhân sự sẽ tiến hành xác minh trong vòng 48h.',
@@ -1065,17 +1119,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Ban Nhân sự thẩm định khiếu nại và chuyển BCN
   const reviewDisputeByHR = (disputeId: string, hrNote: string) => {
-    setDisputes((prev) =>
-      prev.map((d) =>
-        d.id === disputeId
-          ? {
-              ...d,
-              hrNote,
-              status: 'pending_bcn',
-            }
-          : d
-      )
+    const updatedDisputes = disputes.map((d) =>
+      d.id === disputeId
+        ? {
+            ...d,
+            hrNote,
+            status: 'pending_bcn' as const,
+          }
+        : d
     )
+    setDisputes(updatedDisputes)
+    syncToCloud({ disputes: updatedDisputes })
   }
 
   // Ban Chủ nhiệm ra quyết định khiếu nại cuối cùng
@@ -1087,25 +1141,27 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const disp = disputes.find((d) => d.id === disputeId)
     if (!disp) return { success: false, message: 'Khiếu nại không tồn tại' }
 
+    let updatedMembers = members
+    let updatedProposals = proposals
+
     if (approved) {
       // Hoàn lại điểm cho thành viên (cộng bù lại số điểm đã bị trừ)
       const refundPoints = Math.abs(disp.pointsContested)
 
-      setMembers((prev) =>
-        getRankedMembers(
-          prev.map((m) => {
-            if (m.member_code === disp.memberCode) {
-              const newScore = Math.min(100, m.current_score + refundPoints)
-              const newT02 =
-                disp.criterionCode === 'T02'
-                  ? Math.max(0, m.absent_count_t02 - 1)
-                  : m.absent_count_t02
-              return { ...m, current_score: newScore, absent_count_t02: newT02 }
-            }
-            return m
-          })
-        )
+      updatedMembers = getRankedMembers(
+        members.map((m) => {
+          if (m.member_code === disp.memberCode) {
+            const newScore = Math.min(100, m.current_score + refundPoints)
+            const newT02 =
+              disp.criterionCode === 'T02'
+                ? Math.max(0, m.absent_count_t02 - 1)
+                : m.absent_count_t02
+            return { ...m, current_score: newScore, absent_count_t02: newT02 }
+          }
+          return m
+        })
       )
+      setMembers(updatedMembers)
 
       // Ghi nhận vào sổ cái lịch sử hoàn điểm
       const refundRecord: ProposalItem = {
@@ -1123,21 +1179,27 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         status: 'approved',
         createdAt: 'Vừa xong',
       }
-      setProposals((prev) => [refundRecord, ...prev])
+      updatedProposals = [refundRecord, ...proposals]
+      setProposals(updatedProposals)
     }
 
-    setDisputes((prev) =>
-      prev.map((d) =>
-        d.id === disputeId
-          ? {
-              ...d,
-              status: approved ? 'approved_resolved' : 'rejected',
-              bcnVerdict: verdict,
-              resolvedAt: new Date().toLocaleDateString('vi-VN'),
-            }
-          : d
-      )
+    const finalStatus: DisputeItem['status'] = approved ? 'approved_resolved' : 'rejected'
+    const updatedDisputes = disputes.map((d) =>
+      d.id === disputeId
+        ? {
+            ...d,
+            status: finalStatus,
+            bcnVerdict: verdict,
+            resolvedAt: new Date().toLocaleDateString('vi-VN'),
+          }
+        : d
     )
+    setDisputes(updatedDisputes)
+
+    syncToCloud({
+      disputes: updatedDisputes,
+      ...(approved ? { members: updatedMembers, proposals: updatedProposals } : {}),
+    })
 
     return {
       success: true,
@@ -1149,16 +1211,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Ban Chủ nhiệm chốt kỳ & reset điểm tháng mới về mốc 60 điểm
   const resetMonthlyScores = (newMonthLabel: string, actorName: string) => {
-    setMembers((prev) =>
-      getRankedMembers(
-        prev.map((m) => ({
-          ...m,
-          current_score: 60, // Reset chuẩn 60 điểm
-          absent_count_t02: 0,
-          delta_rank: 0,
-        }))
-      )
+    const resetMembers = getRankedMembers(
+      members.map((m) => ({
+        ...m,
+        current_score: 60, // Reset chuẩn 60 điểm
+        absent_count_t02: 0,
+        delta_rank: 0,
+      }))
     )
+    setMembers(resetMembers)
 
     setCurrentActiveMonth(newMonthLabel)
 
@@ -1178,7 +1239,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       status: 'approved',
       createdAt: 'Vừa xong',
     }
-    setProposals((prev) => [logItem, ...prev])
+    const updatedProps = [logItem, ...proposals]
+    setProposals(updatedProps)
+    syncToCloud({ members: resetMembers, proposals: updatedProps })
 
     return {
       success: true,
