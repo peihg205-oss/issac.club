@@ -23,8 +23,9 @@ import {
   X,
   Check,
   Zap,
+  ImageIcon,
+  Upload,
 } from 'lucide-react'
-import jsQR from 'jsqr'
 import type { MeetingEvent, CheckinRecord, CheckinStatus } from '@/lib/context/ClubContext'
 import type { RosterMember } from '@/lib/clubData'
 
@@ -50,7 +51,6 @@ export function AdminQrScannerModal({
   const [activeCamera, setActiveCamera] = useState(false)
   const [cameraScanFlash, setCameraScanFlash] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
   const lastScannedPayloadRef = useRef<string>('')
   const lastScannedTimeRef = useRef<number>(0)
 
@@ -111,150 +111,126 @@ export function AdminQrScannerModal({
     }
   }
 
-  // Camera video stream handling & continuous frame scan with BarcodeDetector + jsQR fallback
+  // Camera video stream handling with Html5Qrcode (Tối ưu tuyệt đối cho iPhone Safari / Android Chrome)
   useEffect(() => {
-    let stream: MediaStream | null = null
-    let animationFrameId: number
-    let isRunning = true
+    let isMounted = true
+    let html5Qr: any = null
 
-    if (isOpen && activeCamera && typeof navigator !== 'undefined' && navigator.mediaDevices) {
-      // Khởi tạo BarcodeDetector nếu trình duyệt hỗ trợ (Tăng tốc phần cứng trên iOS 17+ và Android Chrome)
-      const hasBarcodeDetector = typeof window !== 'undefined' && 'BarcodeDetector' in window
-      let barcodeDetector: any = null
-      if (hasBarcodeDetector) {
+    if (isOpen && activeCamera && typeof window !== 'undefined') {
+      const initScanner = async () => {
         try {
-          barcodeDetector = new (window as any).BarcodeDetector({ formats: ['qr_code'] })
-        } catch {
-          barcodeDetector = null
+          const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode')
+          if (!isMounted) return
+
+          // Đợi DOM #admin-qr-reader sẵn sàng
+          const readerEl = document.getElementById('admin-qr-reader')
+          if (!readerEl) return
+
+          html5Qr = new Html5Qrcode('admin-qr-reader', {
+            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+            verbose: false,
+          })
+
+          const qrBoxSize = (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight)
+            return {
+              width: Math.floor(minEdge * 0.8),
+              height: Math.floor(minEdge * 0.8),
+            }
+          }
+
+          await html5Qr.start(
+            { facingMode: 'environment' },
+            {
+              fps: 15,
+              qrbox: qrBoxSize,
+              aspectRatio: 1.0,
+            },
+            (decodedText: string) => {
+              if (!decodedText || !decodedText.trim()) return
+
+              const now = Date.now()
+              const isSame = decodedText === lastScannedPayloadRef.current
+              const cooldown = isSame ? 2500 : 1000
+
+              if (now - lastScannedTimeRef.current > cooldown) {
+                lastScannedPayloadRef.current = decodedText
+                lastScannedTimeRef.current = now
+
+                // Hiệu ứng chớp xanh & rung điện thoại phản hồi xúc giác
+                setCameraScanFlash(true)
+                setTimeout(() => setCameraScanFlash(false), 800)
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  try {
+                    navigator.vibrate([80, 40, 80])
+                  } catch {}
+                }
+
+                processScan(decodedText)
+              }
+            },
+            () => {
+              // frame miss - continue scanning
+            }
+          )
+
+          if (isMounted) {
+            setCameraError(null)
+          }
+        } catch (err: any) {
+          console.warn('HTML5 QR Scanner start error:', err)
+          if (isMounted) {
+            setCameraError('Không thể mở camera. Vui lòng cấp quyền truy cập Camera trên Safari/Chrome hoặc bấm nút Quét Nhanh bên dưới.')
+            setActiveCamera(false)
+          }
         }
       }
 
-      navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280, max: 1920 },
-            height: { ideal: 720, max: 1080 },
-          },
-        })
-        .then((s) => {
-          stream = s
-          if (videoRef.current) {
-            videoRef.current.srcObject = s
-            videoRef.current.setAttribute('playsinline', 'true')
-            videoRef.current.play().catch(() => {})
-          }
-          setCameraError(null)
-
-          // Vòng lặp giải mã thời gian thực siêu tốc
-          let isScanning = false
-          let lastScanTimestamp = 0
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d', { willReadFrequently: true })
-
-          const tick = async () => {
-            if (!isRunning) return
-
-            const now = performance.now()
-            const video = videoRef.current
-
-            // Quét định kỳ mỗi 80ms (12-13 FPS) - Tối ưu 100% tài nguyên CPU/GPU, không làm lag khung hình
-            if (!isScanning && now - lastScanTimestamp >= 80 && video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-              isScanning = true
-              lastScanTimestamp = now
-
-              let detectedCode: string | null = null
-
-              // 1. ƯU TIÊN 1: Dùng Hardware BarcodeDetector của trình duyệt nếu có (Apple Vision / ML Kit)
-              if (barcodeDetector) {
-                try {
-                  const barcodes = await barcodeDetector.detect(video)
-                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                    detectedCode = barcodes[0].rawValue
-                  }
-                } catch {
-                  // Fallback sang jsQR
-                }
-              }
-
-              // 2. ƯU TIÊN 2: jsQR với khung hình downsample 640px và quét đảo ngược chống chói (attemptBoth)
-              if (!detectedCode && ctx) {
-                const maxDim = 640
-                let w = video.videoWidth
-                let h = video.videoHeight
-                if (w > maxDim || h > maxDim) {
-                  if (w > h) {
-                    h = Math.round((h * maxDim) / w)
-                    w = maxDim
-                  } else {
-                    w = Math.round((w * maxDim) / h)
-                    h = maxDim
-                  }
-                }
-
-                if (canvas.width !== w || canvas.height !== h) {
-                  canvas.width = w
-                  canvas.height = h
-                }
-
-                ctx.drawImage(video, 0, 0, w, h)
-                const imageData = ctx.getImageData(0, 0, w, h)
-                const code = jsQR(imageData.data, w, h, {
-                  inversionAttempts: 'attemptBoth',
-                })
-
-                if (code && code.data && code.data.trim()) {
-                  detectedCode = code.data.trim()
-                }
-              }
-
-              if (detectedCode) {
-                const timeNow = Date.now()
-                const isSame = detectedCode === lastScannedPayloadRef.current
-                const cooldown = isSame ? 2500 : 1000
-
-                if (timeNow - lastScannedTimeRef.current > cooldown) {
-                  lastScannedPayloadRef.current = detectedCode
-                  lastScannedTimeRef.current = timeNow
-
-                  // Hiệu ứng chớp xanh & rung điện thoại phản hồi xúc giác
-                  setCameraScanFlash(true)
-                  setTimeout(() => setCameraScanFlash(false), 800)
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                    try {
-                      navigator.vibrate([80, 40, 80])
-                    } catch {}
-                  }
-
-                  processScan(detectedCode)
-                }
-              }
-
-              isScanning = false
-            }
-
-            animationFrameId = requestAnimationFrame(tick)
-          }
-
-          animationFrameId = requestAnimationFrame(tick)
-        })
-        .catch((err) => {
-          console.warn('Camera access error:', err)
-          setCameraError('Không thể mở camera. Bạn có thể cho phép quyền Camera trên trình duyệt hoặc dùng phím Quét Nhanh.')
-          setActiveCamera(false)
-        })
+      initScanner()
     }
 
     return () => {
-      isRunning = false
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
+      isMounted = false
+      if (html5Qr) {
+        if (html5Qr.isScanning) {
+          html5Qr.stop().then(() => {
+            try { html5Qr.clear() } catch {}
+          }).catch(() => {
+            try { html5Qr.clear() } catch {}
+          })
+        } else {
+          try { html5Qr.clear() } catch {}
+        }
       }
     }
   }, [isOpen, activeCamera])
+
+  // Quét mã từ ảnh chụp trong thư viện điện thoại
+  const handleFileScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode')
+      const tempScanner = new Html5Qrcode('admin-qr-reader-temp')
+      const decodedText = await tempScanner.scanFile(file, true)
+      try { tempScanner.clear() } catch {}
+      if (decodedText) {
+        setCameraScanFlash(true)
+        setTimeout(() => setCameraScanFlash(false), 800)
+        processScan(decodedText)
+      }
+    } catch (err) {
+      console.warn('File scan error:', err)
+      setScanResult({
+        type: 'error',
+        title: 'KHÔNG TÌM THẤY MÃ QR TRONG ẢNH',
+        message: 'Ảnh tải lên không phát hiện mã QR hợp lệ. Bạn hãy chụp ảnh rõ nét hơn hoặc dùng camera quét trực tiếp.',
+      })
+    } finally {
+      e.target.value = ''
+    }
+  }
 
   // Xử lý quét mã QR
   const processScan = (rawPayload: string) => {
@@ -459,14 +435,11 @@ export function AdminQrScannerModal({
             {/* Left: Camera / Scanner Zone (6 cols) */}
             <div className="md:col-span-6 space-y-4">
               <div className="bg-slate-900 rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center border-2 border-slate-800 shadow-inner">
-                {activeCamera ? (
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-cover"
-                    playsInline
-                    muted
-                  />
-                ) : (
+                {/* Luôn giữ container #admin-qr-reader để Html5Qrcode gắn vào DOM */}
+                <div id="admin-qr-reader" className={`w-full h-full ${activeCamera ? 'block' : 'hidden'}`} />
+                <div id="admin-qr-reader-temp" style={{ display: 'none' }} />
+
+                {!activeCamera && (
                   <div className="text-center p-6 space-y-3">
                     <div className="w-14 h-14 rounded-2xl bg-white/10 mx-auto flex items-center justify-center text-blue-400">
                       <Camera className="w-7 h-7" />
@@ -474,13 +447,13 @@ export function AdminQrScannerModal({
                     <div>
                       <p className="text-xs font-bold text-white">Camera đang tắt</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        Bật camera hoặc sử dụng chế độ Quét Mô Phỏng bên dưới
+                        Bật camera quét trực tiếp hoặc chọn ảnh vé từ máy
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setActiveCamera(true)}
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center gap-1.5 shadow-md"
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition inline-flex items-center gap-1.5 shadow-md cursor-pointer"
                     >
                       <Camera className="w-3.5 h-3.5" />
                       <span>Bật Camera Quét Mã</span>
@@ -488,21 +461,19 @@ export function AdminQrScannerModal({
                   </div>
                 )}
 
-                {/* Laser scan line overlay when camera is on */}
+                {/* Controls and flash overlay when camera is on */}
                 {activeCamera && (
                   <>
-                    <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-0.5 bg-emerald-400 shadow-[0_0_12px_#34d399] animate-pulse" />
-                    <div className="absolute inset-8 border-2 border-emerald-400/50 rounded-2xl pointer-events-none" />
                     <button
                       type="button"
                       onClick={() => setActiveCamera(false)}
-                      className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold z-10"
+                      className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 hover:bg-black text-white text-[10px] font-bold z-20 backdrop-blur-xs cursor-pointer"
                     >
                       Tắt Camera
                     </button>
                     {/* Hiệu ứng chớp xanh khi nhận mã thành công */}
                     {cameraScanFlash && (
-                      <div className="absolute inset-0 bg-emerald-500/35 border-4 border-emerald-400 rounded-2xl flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-150">
+                      <div className="absolute inset-0 bg-emerald-500/35 border-4 border-emerald-400 rounded-2xl flex items-center justify-center pointer-events-none z-30 animate-in fade-in zoom-in duration-150">
                         <div className="bg-emerald-600 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2 border border-white/40">
                           <Check className="w-4 h-4 stroke-[3]" />
                           <span>ĐÃ BẮT MÃ THÀNH CÔNG!</span>
@@ -511,6 +482,21 @@ export function AdminQrScannerModal({
                     )}
                   </>
                 )}
+              </div>
+
+              {/* Tùy chọn quét vé từ ảnh thư viện */}
+              <div className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                <span className="text-[11px] text-slate-600 font-semibold">Ảnh chụp màn hình vé:</span>
+                <label className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 border border-blue-200 transition">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Chọn ảnh từ thư viện</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileScan}
+                  />
+                </label>
               </div>
 
               {cameraError && (
