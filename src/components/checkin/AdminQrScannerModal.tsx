@@ -48,6 +48,7 @@ export function AdminQrScannerModal({
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [manualInput, setManualInput] = useState('')
   const [activeCamera, setActiveCamera] = useState(false)
+  const [cameraScanFlash, setCameraScanFlash] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const lastScannedPayloadRef = useRef<string>('')
@@ -110,19 +111,30 @@ export function AdminQrScannerModal({
     }
   }
 
-  // Camera video stream handling & continuous frame scan with jsQR
+  // Camera video stream handling & continuous frame scan with BarcodeDetector + jsQR fallback
   useEffect(() => {
     let stream: MediaStream | null = null
     let animationFrameId: number
     let isRunning = true
 
     if (isOpen && activeCamera && typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      // Khởi tạo BarcodeDetector nếu trình duyệt hỗ trợ (Tăng tốc phần cứng trên iOS 17+ và Android Chrome)
+      const hasBarcodeDetector = typeof window !== 'undefined' && 'BarcodeDetector' in window
+      let barcodeDetector: any = null
+      if (hasBarcodeDetector) {
+        try {
+          barcodeDetector = new (window as any).BarcodeDetector({ formats: ['qr_code'] })
+        } catch {
+          barcodeDetector = null
+        }
+      }
+
       navigator.mediaDevices
         .getUserMedia({
           video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
           },
         })
         .then((s) => {
@@ -134,36 +146,91 @@ export function AdminQrScannerModal({
           }
           setCameraError(null)
 
-          // Continuous Frame Scanning loop with jsQR
+          // Vòng lặp giải mã thời gian thực siêu tốc
+          let isScanning = false
+          let lastScanTimestamp = 0
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
-          const tick = () => {
+          const tick = async () => {
             if (!isRunning) return
 
+            const now = performance.now()
             const video = videoRef.current
-            if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-              canvas.width = video.videoWidth
-              canvas.height = video.videoHeight
-              if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                  inversionAttempts: 'dontInvert',
+
+            // Quét định kỳ mỗi 80ms (12-13 FPS) - Tối ưu 100% tài nguyên CPU/GPU, không làm lag khung hình
+            if (!isScanning && now - lastScanTimestamp >= 80 && video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+              isScanning = true
+              lastScanTimestamp = now
+
+              let detectedCode: string | null = null
+
+              // 1. ƯU TIÊN 1: Dùng Hardware BarcodeDetector của trình duyệt nếu có (Apple Vision / ML Kit)
+              if (barcodeDetector) {
+                try {
+                  const barcodes = await barcodeDetector.detect(video)
+                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                    detectedCode = barcodes[0].rawValue
+                  }
+                } catch {
+                  // Fallback sang jsQR
+                }
+              }
+
+              // 2. ƯU TIÊN 2: jsQR với khung hình downsample 640px và quét đảo ngược chống chói (attemptBoth)
+              if (!detectedCode && ctx) {
+                const maxDim = 640
+                let w = video.videoWidth
+                let h = video.videoHeight
+                if (w > maxDim || h > maxDim) {
+                  if (w > h) {
+                    h = Math.round((h * maxDim) / w)
+                    w = maxDim
+                  } else {
+                    w = Math.round((w * maxDim) / h)
+                    h = maxDim
+                  }
+                }
+
+                if (canvas.width !== w || canvas.height !== h) {
+                  canvas.width = w
+                  canvas.height = h
+                }
+
+                ctx.drawImage(video, 0, 0, w, h)
+                const imageData = ctx.getImageData(0, 0, w, h)
+                const code = jsQR(imageData.data, w, h, {
+                  inversionAttempts: 'attemptBoth',
                 })
 
                 if (code && code.data && code.data.trim()) {
-                  const now = Date.now()
-                  const isSame = code.data === lastScannedPayloadRef.current
-                  const cooldown = isSame ? 2500 : 1000
-
-                  if (now - lastScannedTimeRef.current > cooldown) {
-                    lastScannedPayloadRef.current = code.data
-                    lastScannedTimeRef.current = now
-                    processScan(code.data)
-                  }
+                  detectedCode = code.data.trim()
                 }
               }
+
+              if (detectedCode) {
+                const timeNow = Date.now()
+                const isSame = detectedCode === lastScannedPayloadRef.current
+                const cooldown = isSame ? 2500 : 1000
+
+                if (timeNow - lastScannedTimeRef.current > cooldown) {
+                  lastScannedPayloadRef.current = detectedCode
+                  lastScannedTimeRef.current = timeNow
+
+                  // Hiệu ứng chớp xanh & rung điện thoại phản hồi xúc giác
+                  setCameraScanFlash(true)
+                  setTimeout(() => setCameraScanFlash(false), 800)
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    try {
+                      navigator.vibrate([80, 40, 80])
+                    } catch {}
+                  }
+
+                  processScan(detectedCode)
+                }
+              }
+
+              isScanning = false
             }
 
             animationFrameId = requestAnimationFrame(tick)
@@ -200,9 +267,15 @@ export function AdminQrScannerModal({
       if (rawPayload.includes('{') && rawPayload.includes('}')) {
         const parsed = JSON.parse(rawPayload)
         if (parsed.memberCode) {
-          memberCode = parsed.memberCode
+          memberCode = String(parsed.memberCode)
         } else if (parsed.studentId) {
-          memberCode = parsed.studentId
+          memberCode = String(parsed.studentId)
+        } else if (parsed.ticketToken) {
+          memberCode = String(parsed.ticketToken)
+        } else if (parsed.m) {
+          memberCode = String(parsed.m)
+        } else if (parsed.s) {
+          memberCode = String(parsed.s)
         }
       }
     } catch {
@@ -214,18 +287,20 @@ export function AdminQrScannerModal({
       try {
         const queryStr = memberCode.includes('?') ? memberCode.split('?')[1] : ''
         const params = new URLSearchParams(queryStr)
-        const code = params.get('member') || params.get('code') || params.get('memberCode') || params.get('studentId')
+        const code = params.get('member') || params.get('code') || params.get('memberCode') || params.get('studentId') || params.get('t')
         if (code) memberCode = code
       } catch {
         // ignore
       }
     }
 
-    // 3. Nếu là mã vé token TKT-XXX-MEMBERCODE
+    // 3. Nếu là mã vé token TKT-XXX-MEMBERCODE hoặc TKT-MEMBERCODE
     if (memberCode.startsWith('TKT-')) {
       const parts = memberCode.split('-')
       if (parts.length >= 3) {
         memberCode = parts.slice(2).join('-')
+      } else if (parts.length === 2) {
+        memberCode = parts[1]
       }
     }
 
@@ -421,10 +496,19 @@ export function AdminQrScannerModal({
                     <button
                       type="button"
                       onClick={() => setActiveCamera(false)}
-                      className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold"
+                      className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-bold z-10"
                     >
                       Tắt Camera
                     </button>
+                    {/* Hiệu ứng chớp xanh khi nhận mã thành công */}
+                    {cameraScanFlash && (
+                      <div className="absolute inset-0 bg-emerald-500/35 border-4 border-emerald-400 rounded-2xl flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-150">
+                        <div className="bg-emerald-600 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2 border border-white/40">
+                          <Check className="w-4 h-4 stroke-[3]" />
+                          <span>ĐÃ BẮT MÃ THÀNH CÔNG!</span>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

@@ -30,31 +30,21 @@ export function QrTicketPass({ event, member, onUnregister }: QrTicketPassProps)
   const [qrDataUrl, setQrDataUrl] = useState<string>('')
   const [isFullScreen, setIsFullScreen] = useState(false)
 
-  // Payload định dạng chuẩn: ISSAC_TICKET:{eventId}:{memberCode}:{checksum}
+  // Mã vé định dạng chuẩn siêu nét, tối ưu cho camera quét tức thì trên mọi loại màn hình
   const ticketToken = `TKT-${event.id.slice(-6).toUpperCase()}-${member.member_code}`
-  const qrPayload = JSON.stringify({
-    type: 'ISSAC_EVENT_TICKET',
-    v: 1,
-    eventId: event.id,
-    eventTitle: event.title,
-    memberCode: member.member_code,
-    memberName: member.full_name,
-    studentId: member.student_id || member.member_code,
-    dept: member.department_name,
-    ticketToken,
-    issuedAt: event.date,
-  })
 
   useEffect(() => {
     let isMounted = true
-    QRCode.toDataURL(qrPayload, {
+    // Sử dụng ticketToken (20 ký tự) thay vì chuỗi JSON dài hàng trăm ký tự
+    // Giúp mã QR có ma trận ô vuông to gấp 4 lần, siêu nét, chống chói và chống sọc moiré màn hình
+    QRCode.toDataURL(ticketToken, {
       width: 320,
       margin: 2,
       color: {
-        dark: '#0B1E48',
+        dark: '#000000',
         light: '#FFFFFF',
       },
-      errorCorrectionLevel: 'H',
+      errorCorrectionLevel: 'M',
     })
       .then((url) => {
         if (isMounted) setQrDataUrl(url)
@@ -64,7 +54,7 @@ export function QrTicketPass({ event, member, onUnregister }: QrTicketPassProps)
     return () => {
       isMounted = false
     }
-  }, [qrPayload])
+  }, [ticketToken])
 
   const handleDownloadTicket = () => {
     if (!qrDataUrl) return

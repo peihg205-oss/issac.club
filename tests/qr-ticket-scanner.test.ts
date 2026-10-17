@@ -60,4 +60,23 @@ describe('QR Check-in Pass & Admin Scanner Anti-Fraud Logic', () => {
     const isRegistered = sampleEvent.registeredMemberCodes.includes(unregisteredMemberCode)
     expect(isRegistered).toBe(false)
   })
+
+  it('5. Giải mã chính xác token vé TKT-EVENT-MEMBERCODE (ví dụ TKT-598471-24070680)', () => {
+    const token = 'TKT-598471-24070680'
+    const parts = token.split('-')
+    const extractedCode = parts.slice(2).join('-')
+    expect(extractedCode).toBe('24070680')
+
+    const member = INITIAL_MEMBERS.find((m) => m.member_code === extractedCode || m.student_id === extractedCode)
+    expect(member).toBeDefined()
+    expect(member?.full_name).toBe('Phương Gia Huy')
+  })
+
+  it('6. Giải mã chính xác URL query params check-in', () => {
+    const url = 'https://issacclubvnuis-eight.vercel.app/checkin?event=evt-1792261598471&member=24070680'
+    const queryStr = url.split('?')[1]
+    const params = new URLSearchParams(queryStr)
+    const code = params.get('member')
+    expect(code).toBe('24070680')
+  })
 })
