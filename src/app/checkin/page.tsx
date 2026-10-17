@@ -58,11 +58,11 @@ function CheckinContent() {
   } = useClub()
 
   // 3 tab dành cho thành viên không có tài khoản:
+  // 'register': Đăng ký trước các sự kiện/workshop sắp tới của CLB (Ưu tiên số 1)
   // 'live_checkin': Điểm danh trực tiếp tại hội trường bằng PIN máy chiếu
-  // 'register': Đăng ký trước các sự kiện/workshop sắp tới của CLB
   // 'lookup': Tra cứu điểm thi đua và hồ sơ cá nhân nhanh bằng MSSV/Họ tên
-  const [activeTab, setActiveTab] = useState<'live_checkin' | 'register' | 'lookup'>(
-    urlTab === 'register' ? 'register' : urlTab === 'lookup' ? 'lookup' : 'live_checkin'
+  const [activeTab, setActiveTab] = useState<'register' | 'live_checkin' | 'lookup'>(
+    urlTab === 'live_checkin' || urlPin ? 'live_checkin' : urlTab === 'lookup' ? 'lookup' : 'register'
   )
 
   // Sự kiện đang chọn để check-in hoặc đăng ký
@@ -333,10 +333,10 @@ function CheckinContent() {
                 <span>Không Cần Đăng Nhập Mật Khẩu</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
-                Điểm Danh &amp; Đăng Ký Sự Kiện Dành Riêng Cho 48 Thành Viên CLB
+                Đăng Ký Sự Kiện &amp; Điểm Danh Dành Riêng Cho 48 Thành Viên CLB
               </h2>
               <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed">
-                Thành viên không cần tài khoản riêng. Chỉ cần chọn hoặc nhập <strong>Họ tên / MSSV</strong> và nhập <strong>Mã PIN 4 số</strong> hiển thị trên máy chiếu hội trường để điểm danh, hoặc đăng ký giữ chỗ trước các sự kiện/workshop sắp tới.
+                Thành viên không cần tài khoản riêng. Dễ dàng đăng ký giữ chỗ trước các sự kiện/workshop sắp tới của CLB, hoặc nhập <strong>Họ tên / MSSV</strong> và <strong>Mã PIN 4 số</strong> hiển thị trên máy chiếu hội trường để điểm danh trực tiếp.
               </p>
             </div>
 
@@ -353,8 +353,22 @@ function CheckinContent() {
           </div>
         </div>
 
-        {/* Segmented Control 3 Tabs */}
+        {/* Segmented Control 3 Tabs - Đăng ký đặt trước Check-in */}
         <div className="grid grid-cols-3 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-2xs gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('register')}
+            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'register'
+                ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Ticket className={`w-4 h-4 shrink-0 ${activeTab === 'register' ? 'text-[#1351D8]' : 'text-slate-500'}`} />
+            <span className="hidden sm:inline">1. Đăng Ký Sự Kiện Trước</span>
+            <span className="sm:hidden">1. Đăng ký trước</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -368,22 +382,8 @@ function CheckinContent() {
             }`}
           >
             <QrCode className={`w-4 h-4 shrink-0 ${activeTab === 'live_checkin' ? 'text-[#1351D8]' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">1. Điểm Danh Hội Trường</span>
-            <span className="sm:hidden">1. Điểm danh</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('register')}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'register'
-                ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <Ticket className={`w-4 h-4 shrink-0 ${activeTab === 'register' ? 'text-[#1351D8]' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">2. Đăng Ký Sự Kiện Trước</span>
-            <span className="sm:hidden">2. Đăng ký trước</span>
+            <span className="hidden sm:inline">2. Điểm Danh Hội Trường</span>
+            <span className="sm:hidden">2. Điểm danh</span>
           </button>
 
           <button
@@ -429,7 +429,146 @@ function CheckinContent() {
         )}
 
         {/* ========================================================= */}
-        {/* TAB 1: ĐIỂM DANH HỘI TRƯỜNG BẰNG MÃ PIN (LIVE CHECK-IN) */}
+        {/* TAB 1: ĐĂNG KÝ TRƯỚC SỰ KIỆN / WORKSHOP (PRE-REGISTRATION) */}
+        {/* ========================================================= */}
+        {activeTab === 'register' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200/80 font-bold shadow-2xs">
+                    <Ticket className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-[#0B1E48]">
+                      Cổng Đăng Ký Sự Kiện &amp; Workshop Sắp Tới
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Chọn danh tính của bạn rồi bấm Đăng ký giữ chỗ trước tại các sự kiện
+                    </p>
+                  </div>
+                </div>
+
+                {/* Chọn danh tính thành viên để đăng ký */}
+                <div className="flex items-center gap-2 flex-1 max-w-sm">
+                  <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Bạn là:</span>
+                  <select
+                    suppressHydrationWarning
+                    value={regMemberCode}
+                    onChange={(e) => setRegMemberCode(e.target.value)}
+                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs cursor-pointer transition"
+                  >
+                    {members.map((m) => (
+                      <option key={m.member_code} value={m.member_code} suppressHydrationWarning>
+                        {m.full_name} ({m.department_name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Danh sách các sự kiện đang mở đăng ký */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {events.length === 0 ? (
+                  <div className="col-span-full py-12 text-center text-slate-400 space-y-2">
+                    <Ticket className="w-10 h-10 text-slate-300 mx-auto" />
+                    <p className="font-bold text-xs text-slate-600">Hiện chưa có sự kiện hoặc workshop nào mở đăng ký</p>
+                    <p className="text-[11px] text-slate-400">Các sự kiện sắp tới sẽ hiển thị tại đây khi Ban Tổ chức công bố.</p>
+                  </div>
+                ) : (
+                events.map((evt) => {
+                  const registeredList = evt.registeredMemberCodes || []
+                  const isUserRegistered = registeredList.includes(regMemberCode)
+                  const remainingSeats = Math.max(0, (evt.maxAttendees || 50) - registeredList.length)
+
+                  return (
+                    <div
+                      key={evt.id}
+                      className={`p-5 sm:p-6 rounded-2xl border transition-all duration-200 space-y-4 shadow-2xs flex flex-col justify-between ${
+                        isUserRegistered
+                          ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300/40'
+                          : 'bg-white border-slate-200/90 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                            {evt.category === 'workshop'
+                              ? 'Workshop chuyên đề'
+                              : evt.category === 'teambuilding'
+                              ? 'Teambuilding'
+                              : 'Sinh hoạt định kỳ'}
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold border ${
+                              isUserRegistered
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : 'bg-amber-50 text-amber-800 border-amber-200/80'
+                            }`}
+                          >
+                            {isUserRegistered ? 'Đã giữ chỗ' : `Còn ${remainingSeats} chỗ`}
+                          </span>
+                        </div>
+
+                        <h4 className="text-base font-black text-[#0B1E48] leading-tight">
+                          {evt.title}
+                        </h4>
+                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                          {evt.description}
+                        </p>
+
+                        <div className="pt-2 space-y-1.5 text-xs text-slate-500">
+                          <div className="flex items-center gap-2 font-semibold text-slate-700">
+                            <Calendar className="w-3.5 h-3.5 text-[#1351D8]" />
+                            <span>{evt.date} ({evt.startTime} - {evt.endTime})</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <MapPin className="w-3.5 h-3.5 text-[#1351D8]" />
+                            <span className="truncate">{evt.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-emerald-700 font-bold">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>+{evt.pointBonus || 2} Điểm thi đua khi tham gia</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Hiển thị Vé Điểm Danh QR Cá Nhân nếu đã đăng ký */}
+                      {isUserRegistered && members.find((m) => m.member_code === regMemberCode) ? (
+                        <div className="pt-2">
+                          <QrTicketPass
+                            event={evt}
+                            member={members.find((m) => m.member_code === regMemberCode)!}
+                            onUnregister={() => handleUnregisterEvent(evt.id, regMemberCode)}
+                          />
+                        </div>
+                      ) : (
+                        /* Hành động Đăng ký nếu chưa tham gia */
+                        <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <div className="text-xs text-slate-500">
+                            Đã đăng ký: <strong>{registeredList.length}/{evt.maxAttendees || 50}</strong>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRegisterEvent(evt.id, regMemberCode)}
+                            className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-2xs shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Đăng ký tham gia ngay</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 2: ĐIỂM DANH HỘI TRƯỜNG BẰNG MÃ PIN (LIVE CHECK-IN) */}
         {/* ========================================================= */}
         {activeTab === 'live_checkin' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -923,144 +1062,6 @@ function CheckinContent() {
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* TAB 2: ĐĂNG KÝ TRƯỚC SỰ KIỆN / WORKSHOP (PRE-REGISTRATION) */}
-        {/* ========================================================= */}
-        {activeTab === 'register' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200/80 font-bold shadow-2xs">
-                    <Ticket className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-[#0B1E48]">
-                      Cổng Đăng Ký Sự Kiện &amp; Workshop Sắp Tới
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium">
-                      Chọn danh tính của bạn rồi bấm Đăng ký giữ chỗ trước tại các sự kiện
-                    </p>
-                  </div>
-                </div>
-
-                {/* Chọn danh tính thành viên để đăng ký */}
-                <div className="flex items-center gap-2 flex-1 max-w-sm">
-                  <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Bạn là:</span>
-                  <select
-                    suppressHydrationWarning
-                    value={regMemberCode}
-                    onChange={(e) => setRegMemberCode(e.target.value)}
-                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs cursor-pointer transition"
-                  >
-                    {members.map((m) => (
-                      <option key={m.member_code} value={m.member_code} suppressHydrationWarning>
-                        {m.full_name} ({m.department_name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Danh sách các sự kiện đang mở đăng ký */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {events.length === 0 ? (
-                  <div className="col-span-full py-12 text-center text-slate-400 space-y-2">
-                    <Ticket className="w-10 h-10 text-slate-300 mx-auto" />
-                    <p className="font-bold text-xs text-slate-600">Hiện chưa có sự kiện hoặc workshop nào mở đăng ký</p>
-                    <p className="text-[11px] text-slate-400">Các sự kiện sắp tới sẽ hiển thị tại đây khi Ban Tổ chức công bố.</p>
-                  </div>
-                ) : (
-                events.map((evt) => {
-                  const registeredList = evt.registeredMemberCodes || []
-                  const isUserRegistered = registeredList.includes(regMemberCode)
-                  const remainingSeats = Math.max(0, (evt.maxAttendees || 50) - registeredList.length)
-
-                  return (
-                    <div
-                      key={evt.id}
-                      className={`p-5 sm:p-6 rounded-2xl border transition-all duration-200 space-y-4 shadow-2xs flex flex-col justify-between ${
-                        isUserRegistered
-                          ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-300/40'
-                          : 'bg-white border-slate-200/90 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/80">
-                            {evt.category === 'workshop'
-                              ? 'Workshop chuyên đề'
-                              : evt.category === 'teambuilding'
-                              ? 'Teambuilding'
-                              : 'Sinh hoạt định kỳ'}
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-bold border ${
-                              isUserRegistered
-                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                : 'bg-amber-50 text-amber-800 border-amber-200/80'
-                            }`}
-                          >
-                            {isUserRegistered ? 'Đã giữ chỗ' : `Còn ${remainingSeats} chỗ`}
-                          </span>
-                        </div>
-
-                        <h4 className="text-base font-black text-[#0B1E48] leading-tight">
-                          {evt.title}
-                        </h4>
-                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                          {evt.description}
-                        </p>
-
-                        <div className="pt-2 space-y-1.5 text-xs text-slate-500">
-                          <div className="flex items-center gap-2 font-semibold text-slate-700">
-                            <Calendar className="w-3.5 h-3.5 text-[#1351D8]" />
-                            <span>{evt.date} ({evt.startTime} - {evt.endTime})</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <MapPin className="w-3.5 h-3.5 text-[#1351D8]" />
-                            <span className="truncate">{evt.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>+{evt.pointBonus || 2} Điểm thi đua khi tham gia</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Hiển thị Vé Điểm Danh QR Cá Nhân nếu đã đăng ký */}
-                      {isUserRegistered && members.find((m) => m.member_code === regMemberCode) ? (
-                        <div className="pt-2">
-                          <QrTicketPass
-                            event={evt}
-                            member={members.find((m) => m.member_code === regMemberCode)!}
-                            onUnregister={() => handleUnregisterEvent(evt.id, regMemberCode)}
-                          />
-                        </div>
-                      ) : (
-                        /* Hành động Đăng ký nếu chưa tham gia */
-                        <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                          <div className="text-xs text-slate-500">
-                            Đã đăng ký: <strong>{registeredList.length}/{evt.maxAttendees || 50}</strong>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRegisterEvent(evt.id, regMemberCode)}
-                            className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-2xs shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-                          >
-                            <UserPlus className="w-3.5 h-3.5" />
-                            <span>Đăng ký tham gia ngay</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )
-                }))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ========================================================= */}
         {/* TAB 3: TRA CỨU ĐIỂM THI ĐUA & SỔ CÁI CÁ NHÂN (LOOKUP) */}

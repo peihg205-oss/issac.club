@@ -93,7 +93,7 @@ export function Navbar() {
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#F43F5E]" />
-              <span>Check-in</span>
+              <span>Đăng ký &amp; Check-in</span>
             </Link>
           </nav>
 
@@ -264,7 +264,7 @@ export function Navbar() {
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-white/5"
             >
               <Sparkles className="w-4 h-4 text-[#F43F5E]" />
-              <span>Điểm danh Check-in</span>
+              <span>Đăng ký &amp; Check-in</span>
             </Link>
           </div>
 
