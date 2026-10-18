@@ -29,6 +29,7 @@ export interface RosterMember {
   rank_in_department?: number
   delta_rank?: number // e.g. +2 (tăng 2 hạng), -1 (giảm 1 hạng), 0
   avatar_url?: string
+  avatarBg?: string
 }
 
 export const INITIAL_MEMBERS: RosterMember[] = [

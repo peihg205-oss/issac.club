@@ -1,34 +1,116 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
 import type { RuleCode } from '@/types/database'
-import { Send, X, CheckCircle2, ShieldAlert, Crown, ClipboardList, Lock, Calendar, Zap, Sparkles } from 'lucide-react'
+import {
+  Send,
+  X,
+  CheckCircle2,
+  ShieldAlert,
+  Crown,
+  ClipboardList,
+  Lock,
+  Calendar,
+  Zap,
+  Sparkles,
+  Search,
+  History,
+  AlertTriangle,
+  Award,
+  ChevronDown,
+  User,
+  ArrowRight,
+  TrendingDown,
+  TrendingUp,
+  Sliders,
+  Check,
+  Building2,
+  Clock,
+  ExternalLink,
+} from 'lucide-react'
 
 interface ScoreModalProps {
   isOpen: boolean
   onClose: () => void
   initialPeriodId?: string
+  initialMemberCode?: string
 }
 
-export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps) {
+const DEPARTMENTS = [
+  { slug: 'all', name: 'Tất cả' },
+  { slug: 'bcn', name: 'Ban Chủ nhiệm' },
+  { slug: 'truyen-thong', name: 'Truyền thông' },
+  { slug: 'tu-van', name: 'Tư vấn' },
+  { slug: 'nhan-su', name: 'Nhân sự' },
+]
+
+const QUICK_REASONS_DEDUCT = [
+  'Đi muộn họp CLB >15 phút',
+  'Vắng họp CLB có phép hợp lệ',
+  'Vắng họp CLB không phép',
+  'Không hoàn thành nhiệm vụ đúng deadline',
+  'Nộp báo cáo công việc muộn hạn',
+  'Vi phạm tác phong / trang phục CLB',
+]
+
+const QUICK_REASONS_ADD = [
+  'Tham gia họp và check-in đúng giờ',
+  'Hoàn thành xuất sắc nhiệm vụ Ban giao',
+  'Hỗ trợ sự kiện CLB nhiệt tình ngoài giờ',
+  'Đóng góp ý tưởng / nội dung truyền thông xuất sắc',
+  'Điều phối tổ chức sự kiện thành công',
+]
+
+export function ScoreModal({
+  isOpen,
+  onClose,
+  initialPeriodId,
+  initialMemberCode,
+}: ScoreModalProps) {
   const { currentUser, isBCN, isHR } = useAuth()
-  const { members, createProposal, periods, currentActivePeriodId, customRules } = useClub()
+  const {
+    members,
+    createProposal,
+    periods,
+    currentActivePeriodId,
+    customRules,
+    proposals,
+  } = useClub()
 
   const [selectedPeriodId, setSelectedPeriodId] = useState(
     initialPeriodId || currentActivePeriodId || 'month-2026-10'
   )
-  const [memberCode, setMemberCode] = useState(members[0]?.member_code || '')
+  const [memberCode, setMemberCode] = useState(initialMemberCode || members[0]?.member_code || '')
+  
+  // Member Search & Filter
+  const [memberSearch, setMemberSearch] = useState('')
+  const [deptFilter, setDeptFilter] = useState('all')
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Criterion Mode: 'deduct' | 'add' | 'custom'
+  const [criterionCategory, setCriterionCategory] = useState<'deduct' | 'add' | 'custom'>('deduct')
   const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07
-  const [isCustomPoints, setIsCustomPoints] = useState(false)
   const [customPoints, setCustomPoints] = useState<number>(-2)
   const [reason, setReason] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
   const [directApply, setDirectApply] = useState(isBCN)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Close dropdown when click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (initialPeriodId) {
@@ -36,44 +118,98 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
     } else if (currentActivePeriodId) {
       setSelectedPeriodId(currentActivePeriodId)
     }
+    if (initialMemberCode) {
+      setMemberCode(initialMemberCode)
+    }
     if (isBCN) {
       setDirectApply(true)
     }
-  }, [initialPeriodId, currentActivePeriodId, isOpen, isBCN])
+  }, [initialPeriodId, currentActivePeriodId, initialMemberCode, isOpen, isBCN])
+
+  // Lọc danh sách thành viên theo từ khóa tìm kiếm và Ban
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase()
+    return members.filter((m) => {
+      const matchDept = deptFilter === 'all' || m.department_slug === deptFilter
+      const matchQuery =
+        !q ||
+        m.full_name.toLowerCase().includes(q) ||
+        m.member_code.toLowerCase().includes(q) ||
+        m.department_name.toLowerCase().includes(q)
+      return matchDept && matchQuery
+    })
+  }, [members, memberSearch, deptFilter])
 
   if (!isOpen) return null
 
   // Danh sách các chu kỳ tháng
   const monthPeriods = periods.filter((p) => p.scope === 'month')
-  const selectedPeriod = periods.find((p) => p.id === selectedPeriodId) || monthPeriods[0] || periods[0]
+  const selectedPeriod =
+    periods.find((p) => p.id === selectedPeriodId) || monthPeriods[0] || periods[0]
   const isLocked = selectedPeriod?.status === 'locked'
 
   const selectedMember = members.find((m) => m.member_code === memberCode) || members[0]
+
+  // ⭐ NHẬT KÝ ĐÃ CHẤM THÁNG NÀY CHO THÀNH VIÊN ĐANG CHỌN (Khắc phục hoàn toàn việc quên đã cho gì)
+  const memberHistoryThisMonth = proposals
+    .filter(
+      (p) =>
+        p.memberCode === selectedMember?.member_code &&
+        (p.periodId === selectedPeriodId || (!p.periodId && selectedPeriodId === currentActivePeriodId))
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+  const totalAddedThisMonth = memberHistoryThisMonth
+    .filter((p) => p.points > 0 && p.status === 'approved')
+    .reduce((sum, p) => sum + p.points, 0)
+
+  const totalDeductedThisMonth = Math.abs(
+    memberHistoryThisMonth
+      .filter((p) => p.points < 0 && p.status === 'approved')
+      .reduce((sum, p) => sum + p.points, 0)
+  )
+
+  const pendingCountThisMonth = memberHistoryThisMonth.filter(
+    (p) => p.status === 'pending_bcn'
+  ).length
+
+  // Rules list by category
+  const builtinDeductRules = Object.values(CRITERIA_RULES).filter((c) => c.type === 'deduct')
+  const builtinAddRules = Object.values(CRITERIA_RULES).filter((c) => c.type === 'add')
+  const customDeductRules = customRules.filter((c) => c.type === 'deduct')
+  const customAddRules = customRules.filter((c) => c.type === 'add')
+
   const builtinRule = CRITERIA_RULES[criterionCode as RuleCode]
   const customRule = customRules.find((r) => r.code === criterionCode)
 
-  const handleCriterionChange = (newCode: string) => {
-    setCriterionCode(newCode)
-    if (newCode === 'CUSTOM_POINT_DEDUCT') {
-      setIsCustomPoints(true)
-      setCustomPoints((prev) => (prev < 0 ? prev : -2))
-    } else if (newCode === 'CUSTOM_POINT_ADD') {
-      setIsCustomPoints(true)
-      setCustomPoints((prev) => (prev > 0 ? prev : 2))
+  const handleCategorySwitch = (cat: 'deduct' | 'add' | 'custom') => {
+    setCriterionCategory(cat)
+    if (cat === 'deduct') {
+      setCriterionCode('T07')
+      setCustomPoints(-2)
+    } else if (cat === 'add') {
+      setCriterionCode('C06')
+      setCustomPoints(1)
     } else {
-      const bRule = CRITERIA_RULES[newCode as RuleCode]
-      const cRule = customRules.find((r) => r.code === newCode)
-      if (bRule) {
-        const defaultPt = bRule.type === 'deduct' ? -Math.abs(bRule.base_points) : Math.abs(bRule.base_points)
-        setCustomPoints(defaultPt)
-      } else if (cRule) {
-        const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
-        setCustomPoints(cRule.type === 'deduct' ? -Math.abs(pts) : Math.abs(pts))
-      }
+      setCriterionCode('CUSTOM_POINT_DEDUCT')
+      setCustomPoints(-2)
     }
   }
 
-  const isCustomMode = isCustomPoints || criterionCode.startsWith('CUSTOM_POINT_')
+  const handleCriterionChange = (newCode: string) => {
+    setCriterionCode(newCode)
+    const bRule = CRITERIA_RULES[newCode as RuleCode]
+    const cRule = customRules.find((r) => r.code === newCode)
+    if (bRule) {
+      const defaultPt = bRule.type === 'deduct' ? -Math.abs(bRule.base_points) : Math.abs(bRule.base_points)
+      setCustomPoints(defaultPt)
+    } else if (cRule) {
+      const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
+      setCustomPoints(cRule.type === 'deduct' ? -Math.abs(pts) : Math.abs(pts))
+    }
+  }
+
+  const isCustomMode = criterionCategory === 'custom' || criterionCode.startsWith('CUSTOM_POINT_')
 
   let previewActualDelta = 0
   let previewScoreAfter = selectedMember?.current_score || 60
@@ -145,29 +281,32 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1E48]/55 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-slate-200/90 shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-4xl w-full border border-slate-200/90 shadow-2xl relative space-y-4 max-h-[94vh] overflow-y-auto">
+        
         {/* Header */}
         <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xs flex-shrink-0 ${
-                isBCN ? 'bg-gradient-to-br from-amber-500 to-amber-700' : 'bg-gradient-to-br from-[#0B1E48] via-[#1351D8] to-[#1E62F4]'
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-sm flex-shrink-0 ${
+                isBCN
+                  ? 'bg-gradient-to-br from-amber-500 to-amber-700'
+                  : 'bg-gradient-to-br from-[#0B1E48] via-[#1351D8] to-[#1E62F4]'
               }`}
             >
               {isBCN ? <Crown className="w-5 h-5 stroke-[2.2]" /> : <ClipboardList className="w-5 h-5 stroke-[2.2]" />}
             </div>
             <div>
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-blue-50 text-[#1351D8] border border-blue-200/60 mb-1">
-                <span>{isBCN ? 'Ban Chủ Nhiệm' : 'Ban Nhân Sự'}</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10.5px] font-extrabold uppercase tracking-wide bg-blue-50 text-[#1351D8] border border-blue-200/60 mb-0.5">
+                <span>{isBCN ? 'Ban Chủ Nhiệm CLB' : 'Ban Nhân Sự CLB'}</span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
-                {isBCN ? 'Ghi Nhận & Duyệt Điểm (BCN)' : 'Đề Xuất Chấm Điểm (Ban Nhân Sự)'}
+                {isBCN ? 'Trung Tâm Chấm Điểm & Phê Duyệt' : 'Đề Xuất Chấm Điểm Thi Đua'}
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
                 {isBCN
-                  ? 'Quyền cao nhất: Có thể duyệt và áp dụng điểm trực tiếp'
-                  : 'Đề xuất cộng hoặc trừ điểm gửi BCN phê duyệt'}
+                  ? 'Chọn thành viên, xem lịch sử đã cho điểm trong tháng và phê duyệt trực tiếp'
+                  : 'Ghi nhận đề xuất cộng/trừ điểm minh bạch chuyển Ban Chủ nhiệm duyệt'}
               </p>
             </div>
           </div>
@@ -180,348 +319,612 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
         </div>
 
         {feedback ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-2xs">
-              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+          <div className="py-12 text-center space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
+              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900">{feedback.message}</h4>
+            <h4 className="text-sm font-bold text-slate-900 max-w-md mx-auto leading-relaxed">
+              {feedback.message}
+            </h4>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-            {/* 1. Chu kỳ tháng áp dụng điểm */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#1351D8]" />
-                  <span>Chọn tháng áp dụng điểm:</span>
-                </label>
-                {isLocked ? (
-                  <span className="text-[10px] font-bold text-rose-700 flex items-center gap-1 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 shadow-2xs">
-                    <Lock className="w-3 h-3" /> Đã khóa sổ bởi BCN
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đang mở chấm điểm
-                  </span>
-                )}
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            
+            {/* Top Toolbar: Chọn Tháng & Cảnh báo Khóa sổ */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#1351D8] flex-shrink-0" />
+                <span className="font-bold text-slate-700 text-xs">Chu kỳ áp dụng:</span>
+                <select
+                  value={selectedPeriodId}
+                  onChange={(e) => setSelectedPeriodId(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-[#0F172A] focus:outline-none focus:border-[#1351D8] cursor-pointer shadow-2xs"
+                >
+                  {monthPeriods.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} {p.status === 'locked' ? '🔒 (Đã khóa)' : '🟢 (Đang mở)'}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <select
-                value={selectedPeriodId}
-                onChange={(e) => setSelectedPeriodId(e.target.value)}
-                className={`w-full bg-slate-50/80 hover:bg-white focus:bg-white border rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#0F172A] focus:outline-none transition shadow-2xs cursor-pointer ${
-                  isLocked
-                    ? 'border-rose-300 bg-rose-50/40 text-rose-950'
-                    : 'border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10'
-                }`}
-              >
-                {monthPeriods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.status === 'locked' ? '(Đã khóa sổ)' : '(Đang mở chấm điểm)'}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Lock Banner if Month is Locked */}
-            {isLocked && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1.5 animate-fadeIn">
-                <div className="flex items-center gap-2 font-bold text-rose-800">
-                  <Lock className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                  <span>Chu kỳ {selectedPeriod?.name} đã được Ban Chủ nhiệm KHÓA SỔ ĐIỂM!</span>
-                </div>
-                <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                  Chu kỳ này đã kết thúc và được khóa sổ an toàn {selectedPeriod?.lockedBy ? `bởi ${selectedPeriod.lockedBy}` : ''}. Để bảo đảm tính công bằng tuyệt đối cho toàn bộ CLB, không thể ghi nhận hay đề xuất điểm cho tháng đã đóng sổ.
-                </p>
-                <p className="text-[10.5px] font-bold text-rose-800">
-                  Vui lòng chọn một tháng đang mở chấm điểm (ví dụ: Tháng 10/2026) ở dropdown phía trên.
-                </p>
-              </div>
-            )}
-
-            {/* Member select */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Chọn thành viên:
-              </label>
-              <select
-                value={memberCode}
-                onChange={(e) => setMemberCode(e.target.value)}
-                disabled={isLocked}
-                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {members.map((m) => (
-                  <option key={m.member_code} value={m.member_code}>
-                    {m.full_name} ({m.department_name} - {m.current_score}đ)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Criterion select */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Tiêu chí chấm điểm:
-              </label>
-              <select
-                value={criterionCode}
-                onChange={(e) => handleCriterionChange(e.target.value)}
-                disabled={isLocked}
-                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <optgroup label="--- ⚡ ĐIỂM TỰ CHO / TÙY CHỈNH ĐIỂM ---">
-                  <option value="CUSTOM_POINT_DEDUCT">⚡ Điểm trừ tự cho (Tùy chỉnh số điểm trừ)</option>
-                  <option value="CUSTOM_POINT_ADD">⚡ Điểm cộng tự cho (Tùy chỉnh số điểm cộng)</option>
-                </optgroup>
-                <optgroup label="--- Điểm trừ vi phạm chuẩn (T01-T13) ---">
-                  {Object.values(CRITERIA_RULES)
-                    .filter((c) => c.type === 'deduct')
-                    .map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.code} ({c.base_points}đ): {c.name}
-                      </option>
-                    ))}
-                </optgroup>
-                {customRules.filter((c) => c.type === 'deduct').length > 0 && (
-                  <optgroup label="--- Điểm trừ quy định bổ sung của CLB ---">
-                    {customRules
-                      .filter((c) => c.type === 'deduct')
-                      .map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.points}đ): {c.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                )}
-                <optgroup label="--- Điểm cộng đóng góp chuẩn (C01-C09) ---">
-                  {Object.values(CRITERIA_RULES)
-                    .filter((c) => c.type === 'add')
-                    .map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.code} (+{c.base_points}đ): {c.name}
-                      </option>
-                    ))}
-                </optgroup>
-                {customRules.filter((c) => c.type === 'add').length > 0 && (
-                  <optgroup label="--- Điểm cộng quy định bổ sung của CLB ---">
-                    {customRules
-                      .filter((c) => c.type === 'add')
-                      .map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} (+{c.points}đ): {c.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                )}
-              </select>
-            </div>
-
-            {/* Custom points input & toggle */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 space-y-2.5 shadow-2xs">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#1351D8]" />
-                  <span>Số điểm áp dụng:</span>
-                </label>
-                <div className="inline-flex p-0.5 rounded-xl bg-slate-200/80 text-[11px] font-bold">
-                  <button
-                    type="button"
-                    disabled={criterionCode.startsWith('CUSTOM_POINT_')}
-                    onClick={() => setIsCustomPoints(false)}
-                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      !isCustomMode
-                        ? 'bg-white text-slate-900 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed'
-                    }`}
-                  >
-                    Mặc định ({builtinRule ? `${builtinRule.type === 'deduct' ? '-' : '+'}${builtinRule.base_points}đ` : customRule ? `${customRule.points}đ` : '0đ'})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomPoints(true)}
-                    className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${
-                      isCustomMode
-                        ? 'bg-[#1351D8] text-white shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Zap className="w-3 h-3 text-amber-300" />
-                    <span>Điểm tự cho</span>
-                  </button>
-                </div>
-              </div>
-
-              {isCustomMode ? (
-                <div className="space-y-2 pt-1 border-t border-blue-100/80 animate-fadeIn">
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        disabled={isLocked}
-                        value={customPoints}
-                        onChange={(e) => setCustomPoints(Number(e.target.value))}
-                        placeholder="Nhập số điểm (+ hoặc -)..."
-                        className="w-full bg-white border border-blue-300 focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/20 rounded-xl px-3.5 py-2 text-sm font-black text-[#0F172A] focus:outline-none transition shadow-2xs"
-                      />
-                      <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
-                        điểm
-                      </span>
-                    </div>
-                    <div
-                      className={`px-3 py-2 rounded-xl text-xs font-black min-w-[70px] text-center shadow-2xs ${
-                        customPoints > 0
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : customPoints < 0
-                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                          : 'bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {customPoints > 0 ? `+${customPoints}đ` : `${customPoints}đ`}
-                    </div>
-                  </div>
-
-                  {/* Quick point chips */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <span className="text-[10px] font-bold text-slate-400 mr-0.5">Chọn nhanh:</span>
-                    {[-10, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 10].map((pt) => (
-                      <button
-                        key={pt}
-                        type="button"
-                        onClick={() => setCustomPoints(pt)}
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer active:scale-95 ${
-                          customPoints === pt
-                            ? pt > 0
-                              ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-500'
-                              : 'bg-rose-600 text-white shadow-2xs ring-1 ring-rose-500'
-                            : pt > 0
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                        }`}
-                      >
-                        {pt > 0 ? `+${pt}` : pt}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-[10.5px] text-slate-500 font-medium leading-relaxed">
-                    ⚡ <span className="font-semibold text-slate-700">Chế độ điểm tự cho:</span> Nhập số điểm bất kỳ bạn muốn áp dụng (số âm <span className="text-rose-600 font-bold">-</span> để trừ điểm, số dương <span className="text-emerald-600 font-bold">+</span> để cộng điểm).
-                  </p>
-                </div>
-              ) : (
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Đang sử dụng số điểm mặc định theo quy định. Bạn có thể nhấn <span className="font-bold text-[#1351D8]">"⚡ Điểm tự cho"</span> nếu muốn tự điền số điểm khác.
-                </p>
-              )}
-            </div>
-
-            {/* Preview Box */}
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 text-xs space-y-1.5 shadow-2xs">
-              <div className="flex justify-between font-medium">
-                <span className="text-slate-500">Điểm hiện tại:</span>
-                <span className="font-bold text-[#0F172A]">{selectedMember?.current_score}đ</span>
-              </div>
-              <div className="flex justify-between font-medium">
-                <span className="text-slate-500">Core Team (phạt ×2):</span>
-                <span className={`font-bold ${selectedMember?.is_core ? 'text-amber-700' : 'text-slate-600'}`}>
-                  {selectedMember?.is_core ? 'Có (Nhân đôi lỗi vi phạm)' : 'Không'}
-                </span>
-              </div>
-              <div className="flex justify-between border-t border-slate-200/80 pt-1.5 font-bold">
-                <span className="text-slate-800">Dự kiến sau khi áp dụng:</span>
-                <span className={previewActualDelta > 0 ? 'text-emerald-700' : 'text-rose-700'}>
-                  {previewScoreAfter}đ ({previewActualDelta > 0 ? `+${previewActualDelta}` : previewActualDelta} đ)
-                </span>
-              </div>
-            </div>
-
-            {/* Direct Apply for BCN only */}
-            {isBCN && !isLocked && (
-              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/70 flex items-center justify-between text-xs">
-                <div>
-                  <span className="font-bold text-amber-900 block">Áp dụng trực tiếp (Quyền BCN)</span>
-                  <span className="text-[11px] text-amber-800/80 font-medium">Cập nhật ngay vào sổ cái không cần chờ</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={directApply}
-                  onChange={(e) => setDirectApply(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 bg-white cursor-pointer"
-                />
-              </div>
-            )}
-
-            {/* HR Notice */}
-            {isHR && !isLocked && (
-              <div className="p-3 rounded-2xl bg-purple-50/70 border border-purple-200/70 text-[11px] text-purple-900 flex items-start gap-2">
-                <ShieldAlert className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                <span>Ban Nhân sự đề xuất điểm sẽ được chuyển vào hàng đợi để Ban Chủ nhiệm phê duyệt trước khi cập nhật.</span>
-              </div>
-            )}
-
-            {/* Reason */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Lý do / Nội dung chi tiết: <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                required
-                rows={2}
-                disabled={isLocked}
-                placeholder="Ghi rõ đầu việc hoặc lỗi vi phạm cụ thể..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl p-3 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            {/* Evidence Link */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Link minh chứng (Drive, ảnh, URL):
-              </label>
-              <input
-                type="url"
-                disabled={isLocked}
-                placeholder="https://..."
-                value={evidenceUrl}
-                onChange={(e) => setEvidenceUrl(e.target.value)}
-                className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-slate-200/90 text-slate-700 font-bold text-xs hover:bg-slate-50 transition shadow-2xs active:scale-95 cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
 
               {isLocked ? (
-                <button
-                  type="button"
-                  disabled
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
-                >
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Tháng Này Đã Khóa Sổ Điểm</span>
-                </button>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Chu kỳ đã bị BCN khóa sổ</span>
+                </div>
               ) : (
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white font-bold text-xs shadow-xs hover:shadow transition active:scale-95 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>
-                    {isBCN
-                      ? directApply
-                        ? 'Áp Dụng Trực Tiếp (BCN)'
-                        : 'Đưa Vào Hàng Đợi Duyệt'
-                      : 'Gửi BCN Phê Duyệt'}
-                  </span>
-                </button>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Sổ điểm đang mở ghi nhận</span>
+                </div>
               )}
             </div>
+
+            {/* Layout 2 Cột Chống Nhầm & Ghi Nhớ Lịch Sử */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              
+              {/* CỘT TRÁI (5 Cols): CHỌN THÀNH VIÊN & XEM LỊCH SỬ ĐÃ CHO THÁNG NÀY */}
+              <div className="lg:col-span-5 space-y-3.5">
+                
+                {/* 1. Bộ chọn thành viên thông minh có tìm kiếm & lọc Ban */}
+                <div className="space-y-1.5" ref={dropdownRef}>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-[#1351D8]" />
+                      <span>Thành viên nhận điểm:</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Tìm kiếm nhanh theo tên/mã
+                    </span>
+                  </div>
+
+                  {/* Nút bấm mở popover chọn thành viên */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full bg-slate-50 hover:bg-white border border-slate-200/90 rounded-2xl p-2.5 flex items-center justify-between text-left transition shadow-2xs group focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 cursor-pointer disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-xs shrink-0 ${
+                            selectedMember?.avatarBg || 'bg-[#1351D8]'
+                          }`}
+                        >
+                          {selectedMember?.full_name?.charAt(0) || 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-xs text-slate-900 truncate">
+                            {selectedMember?.full_name}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-medium truncate">
+                            {selectedMember?.member_code} • {selectedMember?.department_name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-[11px] font-black ${
+                            (selectedMember?.current_score || 60) >= 80
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : (selectedMember?.current_score || 60) >= 65
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : (selectedMember?.current_score || 60) >= 60
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          {selectedMember?.current_score || 60}đ
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition" />
+                      </div>
+                    </button>
+
+                    {/* Popover Menu: Tìm kiếm + Lọc Ban + Danh sách */}
+                    {isDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 space-y-2 max-h-72 flex flex-col animate-fadeIn">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Gõ tên hoặc mã SV..."
+                            value={memberSearch}
+                            onChange={(e) => setMemberSearch(e.target.value)}
+                            autoFocus
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                          />
+                        </div>
+
+                        {/* Dept Filter Tabs */}
+                        <div className="flex gap-1 overflow-x-auto pb-1 shrink-0 no-scrollbar">
+                          {DEPARTMENTS.map((d) => (
+                            <button
+                              key={d.slug}
+                              type="button"
+                              onClick={() => setDeptFilter(d.slug)}
+                              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
+                                deptFilter === d.slug
+                                  ? 'bg-[#1351D8] text-white shadow-2xs'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
+                            >
+                              {d.name}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* List Items */}
+                        <div className="overflow-y-auto space-y-1 flex-1 pr-1">
+                          {filteredMembers.length === 0 ? (
+                            <div className="py-6 text-center text-slate-400 text-xs">
+                              Không tìm thấy thành viên phù hợp
+                            </div>
+                          ) : (
+                            filteredMembers.map((m) => {
+                              const isSelected = m.member_code === memberCode
+                              return (
+                                <button
+                                  key={m.member_code}
+                                  type="button"
+                                  onClick={() => {
+                                    setMemberCode(m.member_code)
+                                    setIsDropdownOpen(false)
+                                  }}
+                                  className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-blue-50/80 border border-blue-200 text-[#1351D8]'
+                                      : 'hover:bg-slate-50 text-slate-700'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div
+                                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-[10px] shrink-0 ${
+                                        m.avatarBg || 'bg-[#1351D8]'
+                                      }`}
+                                    >
+                                      {m.full_name.charAt(0)}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-xs truncate">{m.full_name}</p>
+                                      <p className="text-[10px] text-slate-400 truncate">
+                                        {m.member_code} • {m.department_name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                    <span className="text-[11px] font-black">{m.current_score}đ</span>
+                                    {isSelected && <Check className="w-3.5 h-3.5 text-[#1351D8]" />}
+                                  </div>
+                                </button>
+                              )
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Thẻ hồ sơ thành viên đang chọn */}
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-50/60 to-slate-50 border border-blue-100/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Hồ sơ nhanh thành viên
+                    </span>
+                    {selectedMember?.is_core ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        <Crown className="w-3 h-3 text-amber-600" /> Core Team (Phạt ×2)
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">Thành viên thường</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-medium">Điểm hiện tại:</p>
+                      <p className="text-xl font-black text-slate-900 tracking-tight">
+                        {selectedMember?.current_score}đ
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-500 font-medium">Biến động tháng này:</p>
+                      <div className="flex items-center gap-1.5 font-black text-xs justify-end">
+                        <span className="text-emerald-600">+{totalAddedThisMonth}đ</span>
+                        <span className="text-slate-300">/</span>
+                        <span className="text-rose-600">-{totalDeductedThisMonth}đ</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. ⭐ SỔ GHI NHỚ LỊCH SỬ ĐÃ CHẤM THÁNG NÀY (Đúng mong muốn của người dùng) */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <History className="w-3.5 h-3.5 text-[#1351D8]" />
+                      <span className="font-bold text-slate-700 text-xs">
+                        Đã ghi nhận trong {selectedPeriod?.name}:
+                      </span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-200/80 text-slate-700">
+                      {memberHistoryThisMonth.length} lần
+                    </span>
+                  </div>
+
+                  {memberHistoryThisMonth.length === 0 ? (
+                    <div className="p-3 rounded-xl bg-white border border-dashed border-slate-200 text-center space-y-1">
+                      <p className="text-[11px] text-slate-600 font-semibold">
+                        Chưa có bản ghi điểm nào trong tháng này
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Thành viên đang giữ trọn vẹn 60 điểm xuất phát chuẩn.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                      {memberHistoryThisMonth.map((rec) => {
+                        const isAdd = rec.points >= 0
+                        return (
+                          <div
+                            key={rec.id}
+                            className="p-2 rounded-xl bg-white border border-slate-200/80 text-[11px] space-y-1 shadow-2xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                                  isAdd
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}
+                              >
+                                {isAdd ? `+${rec.points}đ` : `${rec.points}đ`} ({rec.criterionCode})
+                              </span>
+                              <span className="text-[9.5px] text-slate-400 font-medium">
+                                {rec.createdAt}
+                              </span>
+                            </div>
+                            <p className="text-[10.5px] font-bold text-slate-800 line-clamp-1">
+                              {rec.reason || rec.criterionName}
+                            </p>
+                            <div className="flex items-center justify-between text-[9.5px] text-slate-400 border-t border-slate-100 pt-1">
+                              <span>Bởi: {rec.proposedBy}</span>
+                              <span
+                                className={
+                                  rec.status === 'approved'
+                                    ? 'text-emerald-600 font-semibold'
+                                    : 'text-amber-600 font-semibold'
+                                }
+                              >
+                                {rec.status === 'approved' ? '✓ Đã duyệt' : '⏳ Chờ duyệt'}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* CỘT PHẢI (7 Cols): THAO TÁC CHO ĐIỂM DỄ SỬ DỤNG - KHÔNG BỊ RỐI */}
+              <div className="lg:col-span-7 space-y-3.5">
+                
+                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Chọn loại điểm muốn ghi nhận:
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => handleCategorySwitch('deduct')}
+                      className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition cursor-pointer ${
+                        criterionCategory === 'deduct'
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                      }`}
+                    >
+                      <TrendingDown className="w-3.5 h-3.5" />
+                      <span>Vi phạm (Trừ)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCategorySwitch('add')}
+                      className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition cursor-pointer ${
+                        criterionCategory === 'add'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                      }`}
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span>Cống hiến (Cộng)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCategorySwitch('custom')}
+                      className={`flex items-center justify-center gap-1.5 py-2 rounded-xl transition cursor-pointer ${
+                        criterionCategory === 'custom'
+                          ? 'bg-amber-500 text-slate-950 font-black shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                      }`}
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Điểm tự cho</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Tiêu chí theo loại (Không nhồi nhét, cực kỳ rõ ràng) */}
+                {criterionCategory !== 'custom' ? (
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {criterionCategory === 'deduct'
+                        ? 'Chọn lỗi vi phạm quy định:'
+                        : 'Chọn hoạt động đóng góp / khen thưởng:'}
+                    </label>
+
+                    <select
+                      value={criterionCode}
+                      onChange={(e) => handleCriterionChange(e.target.value)}
+                      disabled={isLocked}
+                      className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs cursor-pointer"
+                    >
+                      {criterionCategory === 'deduct' && (
+                        <>
+                          <optgroup label="--- Lỗi vi phạm tiêu chuẩn (T01 - T13) ---">
+                            {builtinDeductRules.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.code} ({c.base_points}đ): {c.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                          {customDeductRules.length > 0 && (
+                            <optgroup label="--- Quy định phạt bổ sung của CLB ---">
+                              {customDeductRules.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                  {c.code} ({c.points}đ): {c.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </>
+                      )}
+
+                      {criterionCategory === 'add' && (
+                        <>
+                          <optgroup label="--- Đóng góp & Khen thưởng chuẩn (C01 - C09) ---">
+                            {builtinAddRules.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.code} (+{c.base_points}đ): {c.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                          {customAddRules.length > 0 && (
+                            <optgroup label="--- Điểm cộng bổ sung của CLB ---">
+                              {customAddRules.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                  {c.code} (+{c.points}đ): {c.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </>
+                      )}
+                    </select>
+                  </div>
+                ) : (
+                  /* 2. Điểm tự cho */
+                  <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Chế độ tự cho điểm (Tùy biến):</span>
+                      </span>
+                      <span className="text-[10px] text-amber-800 font-medium">
+                        Điểm âm (-) là phạt, Điểm dương (+) là thưởng
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          disabled={isLocked}
+                          value={customPoints}
+                          onChange={(e) => setCustomPoints(Number(e.target.value))}
+                          placeholder="Nhập số điểm (+ hoặc -)..."
+                          className="w-full bg-white border border-amber-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 rounded-xl px-3.5 py-2 text-sm font-black text-[#0F172A] focus:outline-none transition shadow-2xs"
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
+                          điểm
+                        </span>
+                      </div>
+                      <div
+                        className={`px-3 py-2 rounded-xl text-xs font-black min-w-[70px] text-center shadow-2xs ${
+                          customPoints > 0
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : customPoints < 0
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {customPoints > 0 ? `+${customPoints}đ` : `${customPoints}đ`}
+                      </div>
+                    </div>
+
+                    {/* Chips nhanh */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-[10px] font-bold text-slate-500 mr-0.5">Chọn nhanh:</span>
+                      {[-10, -5, -3, -2, -1, 1, 2, 3, 5, 10].map((pt) => (
+                        <button
+                          key={pt}
+                          type="button"
+                          onClick={() => setCustomPoints(pt)}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer active:scale-95 ${
+                            customPoints === pt
+                              ? pt > 0
+                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                : 'bg-rose-600 text-white shadow-2xs'
+                              : pt > 0
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                          }`}
+                        >
+                          {pt > 0 ? `+${pt}` : pt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Lý do & Gợi ý 1 chạm (Quick chips) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700">
+                      Lý do / Nội dung chi tiết: <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">Gợi ý 1 chạm phía dưới</span>
+                  </div>
+
+                  <textarea
+                    required
+                    rows={2}
+                    disabled={isLocked}
+                    placeholder="Ghi rõ đầu việc hoặc lý do cụ thể..."
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl p-2.5 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60"
+                  />
+
+                  {/* Chips gợi ý nhanh */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[10px] text-slate-400 font-medium">Gợi ý:</span>
+                    {(criterionCategory === 'deduct' ? QUICK_REASONS_DEDUCT : QUICK_REASONS_ADD).map(
+                      (qReason) => (
+                        <button
+                          key={qReason}
+                          type="button"
+                          onClick={() => setReason(qReason)}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                        >
+                          {qReason}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. Link minh chứng */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Link minh chứng (Drive, ảnh, bài viết - nếu có):
+                  </label>
+                  <input
+                    type="url"
+                    disabled={isLocked}
+                    placeholder="https://drive.google.com/..."
+                    value={evidenceUrl}
+                    onChange={(e) => setEvidenceUrl(e.target.value)}
+                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60"
+                  />
+                </div>
+
+                {/* 5. Tóm tắt Biến Động Điểm Tức Thì (Real-time Impact Box) */}
+                <div className="p-3 rounded-2xl bg-slate-900 text-white space-y-1.5 shadow-sm">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-medium">Trước khi chấm:</span>
+                    <span className="font-bold">{selectedMember?.current_score}đ</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-medium">Biến động điểm:</span>
+                    <span
+                      className={`font-black ${
+                        previewActualDelta > 0 ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {previewActualDelta > 0 ? `+${previewActualDelta}đ` : `${previewActualDelta}đ`}
+                      {selectedMember?.is_core && previewActualDelta < 0 && !isCustomMode ? ' (Core Team ×2)' : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-800 pt-1.5 text-xs font-bold">
+                    <span className="text-amber-400">Dự kiến điểm mới:</span>
+                    <span className="text-sm font-black text-white">
+                      {previewScoreAfter}đ
+                    </span>
+                  </div>
+                </div>
+
+                {/* 6. Phân quyền BCN / HR & Submit Actions */}
+                <div className="space-y-2.5 pt-1">
+                  {isBCN && !isLocked && (
+                    <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/70 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-amber-950 block">Áp dụng trực tiếp (Quyền BCN)</span>
+                        <span className="text-[10px] text-amber-800">Cập nhật ngay vào bảng xếp hạng</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={directApply}
+                        onChange={(e) => setDirectApply(e.target.checked)}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 bg-white cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {isHR && !isLocked && (
+                    <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-[11px] text-purple-900 flex items-start gap-2">
+                      <ShieldAlert className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span>Đề xuất sẽ được gửi vào hàng đợi chờ Ban Chủ nhiệm phê duyệt.</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+
+                    {isLocked ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-500 cursor-not-allowed"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Tháng Này Đã Khóa Sổ Điểm</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>
+                          {isBCN
+                            ? directApply
+                              ? 'Áp Dụng Trực Tiếp (BCN)'
+                              : 'Đưa Vào Hàng Đợi Duyệt'
+                            : 'Gửi BCN Phê Duyệt'}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
           </form>
         )}
       </div>

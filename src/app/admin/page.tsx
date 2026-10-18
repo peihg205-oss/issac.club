@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, PRESET_USERS } from '@/lib/auth/AuthContext'
 import { useClub, type ProposalItem } from '@/lib/context/ClubContext'
+import type { RosterMember } from '@/lib/clubData'
 import { CRITERIA_RULES, getRatingLevel } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
 import type { RuleCode } from '@/types/database'
@@ -26,12 +27,17 @@ import {
   ShieldAlert,
   Info,
   Zap,
+  Search,
+  History,
+  ChevronDown,
+  Check,
+  User,
 } from 'lucide-react'
 
 export default function AdminPage() {
   const router = useRouter()
   const { currentUser, isAuthChecked, isBCN, isHR, switchUser } = useAuth()
-  const { members, proposals, createProposal, approveProposal, rejectProposal, customRules } = useClub()
+  const { members, proposals, createProposal, approveProposal, rejectProposal, customRules, currentActivePeriodId } = useClub()
 
   // Auth Guard
   useEffect(() => {
@@ -43,18 +49,14 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'proposals' | 'members' | 'settings'>('proposals')
   const [addModalOpen, setAddModalOpen] = useState(false)
 
-  if (!isAuthChecked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC]">
-        <div className="w-8 h-8 border-3 border-[#1351D8] border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (!currentUser) return null
+  // Member Search & Filter for Scoring Form
+  const [memberSearchQuery, setMemberSearchQuery] = useState('')
+  const [memberDeptFilter, setMemberDeptFilter] = useState('all')
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false)
 
   // Scoring Form State
   const [targetMemberCode, setTargetMemberCode] = useState(members[7]?.member_code || '24070753')
+  const [criterionCategory, setCriterionCategory] = useState<'deduct' | 'add' | 'custom'>('deduct')
   const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07 for HR
   const [isCustomPoints, setIsCustomPoints] = useState(false)
   const [customPoints, setCustomPoints] = useState<number>(-2)
@@ -70,6 +72,28 @@ export default function AdminPage() {
   }, [isBCN])
 
   const targetMember = members.find((m) => m.member_code === targetMemberCode) || members[0]
+
+  const filteredTargetMembers = useMemo(() => {
+    const q = memberSearchQuery.trim().toLowerCase()
+    return members.filter((m) => {
+      const matchDept = memberDeptFilter === 'all' || m.department_slug === memberDeptFilter
+      const matchQuery =
+        !q ||
+        m.full_name.toLowerCase().includes(q) ||
+        m.member_code.toLowerCase().includes(q) ||
+        m.department_name.toLowerCase().includes(q)
+      return matchDept && matchQuery
+    })
+  }, [members, memberSearchQuery, memberDeptFilter])
+
+  const targetMemberHistory = useMemo(() => {
+    return proposals.filter(
+      (p) =>
+        p.memberCode === targetMember?.member_code &&
+        (p.periodId === currentActivePeriodId || !p.periodId)
+    )
+  }, [proposals, targetMember, currentActivePeriodId])
+
   const rule = CRITERIA_RULES[criterionCode as RuleCode]
   const customRule = customRules.find((r) => r.code === criterionCode)
 
@@ -124,6 +148,16 @@ export default function AdminPage() {
   // Pending proposals awaiting BCN
   const pendingQueue = proposals.filter((p) => p.status === 'pending_bcn')
   const historyQueue = proposals.filter((p) => p.status !== 'pending_bcn')
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC]">
+        <div className="w-8 h-8 border-3 border-[#1351D8] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!currentUser) return null
 
   const handleSubmitScore = (e: React.FormEvent) => {
     e.preventDefault()
@@ -309,22 +343,163 @@ export default function AdminPage() {
             )}
 
             <form onSubmit={handleSubmitScore} className="space-y-3.5">
-              {/* Member select */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              {/* Smart Member selector with Search & Filter */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-300">
                   Chọn thành viên:
                 </label>
-                <select
-                  value={targetMemberCode}
-                  onChange={(e) => setTargetMemberCode(e.target.value)}
-                  className="w-full bg-[#070D1E] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#1E63D6]"
-                >
-                  {members.map((m) => (
-                    <option key={m.member_code} value={m.member_code}>
-                      {m.full_name} ({m.department_name} - {m.current_score}đ)
-                    </option>
-                  ))}
-                </select>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)}
+                    className="w-full bg-[#070D1E] hover:bg-[#0c152e] border border-white/10 rounded-2xl p-2.5 flex items-center justify-between text-left transition shadow-md group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-xs shrink-0 ${
+                          targetMember?.avatarBg || 'bg-[#1E63D6]'
+                        }`}
+                      >
+                        {targetMember?.full_name?.charAt(0) || 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-extrabold text-xs text-white truncate">
+                          {targetMember?.full_name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">
+                          {targetMember?.member_code} • {targetMember?.department_name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <span className="px-2 py-0.5 rounded-lg text-[11px] font-black bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        {targetMember?.current_score}đ
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition" />
+                    </div>
+                  </button>
+
+                  {/* Popover Dropdown */}
+                  {isMemberDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-[#0A1227] rounded-2xl border border-white/20 shadow-2xl p-2 space-y-2 max-h-72 flex flex-col animate-fadeIn">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Tìm theo tên hoặc mã SV..."
+                          value={memberSearchQuery}
+                          onChange={(e) => setMemberSearchQuery(e.target.value)}
+                          autoFocus
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#1E63D6]"
+                        />
+                      </div>
+
+                      <div className="flex gap-1 overflow-x-auto pb-1 shrink-0 no-scrollbar">
+                        {[
+                          { slug: 'all', name: 'Tất cả' },
+                          { slug: 'bcn', name: 'BCN' },
+                          { slug: 'truyen-thong', name: 'Truyền thông' },
+                          { slug: 'tu-van', name: 'Tư vấn' },
+                          { slug: 'nhan-su', name: 'Nhân sự' },
+                        ].map((d) => (
+                          <button
+                            key={d.slug}
+                            type="button"
+                            onClick={() => setMemberDeptFilter(d.slug)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
+                              memberDeptFilter === d.slug
+                                ? 'bg-[#1E63D6] text-white shadow'
+                                : 'bg-white/5 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {d.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="overflow-y-auto space-y-1 flex-1 pr-1">
+                        {filteredTargetMembers.map((m: RosterMember) => {
+                          const isSelected = m.member_code === targetMemberCode
+                          return (
+                            <button
+                              key={m.member_code}
+                              type="button"
+                              onClick={() => {
+                                setTargetMemberCode(m.member_code)
+                                setIsMemberDropdownOpen(false)
+                              }}
+                              className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#1E63D6]/30 border border-[#1E63D6] text-white'
+                                  : 'hover:bg-white/5 text-slate-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div
+                                  className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-[10px] shrink-0 ${
+                                    m.avatarBg || 'bg-[#1E63D6]'
+                                  }`}
+                                >
+                                  {m.full_name.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-xs truncate">{m.full_name}</p>
+                                  <p className="text-[10px] text-slate-400 truncate">
+                                    {m.member_code} • {m.department_name}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                <span className="text-[11px] font-black">{m.current_score}đ</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-[#F5B301]" />}
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sổ ghi nhớ lịch sử đã chấm tháng này cho thành viên được chọn */}
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 text-slate-300 font-bold">
+                      <History className="w-3.5 h-3.5 text-[#F5B301]" />
+                      <span>Đã chấm tháng này:</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-white/10 text-slate-300">
+                      {targetMemberHistory.length} lần
+                    </span>
+                  </div>
+
+                  {targetMemberHistory.length === 0 ? (
+                    <p className="text-[10.5px] text-slate-400 italic">
+                      Chưa có bản ghi điểm nào trong tháng này.
+                    </p>
+                  ) : (
+                    <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                      {targetMemberHistory.map((rec: ProposalItem) => (
+                        <div
+                          key={rec.id}
+                          className="flex items-center justify-between p-1.5 rounded-lg bg-black/30 border border-white/5 text-[10.5px]"
+                        >
+                          <span className="font-bold text-slate-200 truncate mr-2">
+                            {rec.criterionCode}: {rec.reason || rec.criterionName}
+                          </span>
+                          <span
+                            className={`font-black shrink-0 ${
+                              rec.points >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                            }`}
+                          >
+                            {rec.points > 0 ? `+${rec.points}đ` : `${rec.points}đ`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Criterion select */}
