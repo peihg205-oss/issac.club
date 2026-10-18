@@ -675,30 +675,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(data.disputes))
           } catch (e) {}
         }
-        if (data.periods && Array.isArray(data.periods) && data.periods.length > 0) {
-          const periodMap = new Map<string, PeriodItem>()
-          AVAILABLE_PERIODS.forEach((p) => {
-            if (!deletedPeriodIdsRef.current.has(p.id)) {
-              periodMap.set(p.id, p)
-            }
-          })
-          data.periods.forEach((p: PeriodItem) => {
-            if (p?.id && !deletedPeriodIdsRef.current.has(p.id)) {
-              periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
-            }
-          })
-          const mergedPeriods = Array.from(periodMap.values())
-          if (mergedPeriods.length > 0) {
-            setPeriods(mergedPeriods)
-            try {
-              localStorage.setItem('issac_periods_clean_v1', JSON.stringify(mergedPeriods))
-            } catch (e) {}
-          }
+        if (data.periods !== undefined && Array.isArray(data.periods)) {
+          setPeriods(data.periods)
+          try {
+            localStorage.setItem('issac_periods_clean_v1', JSON.stringify(data.periods))
+          } catch (e) {}
         }
         if (data.activePeriodId) {
           _setCurrentActivePeriodId(data.activePeriodId)
           const allPeriods =
-            data.periods && Array.isArray(data.periods) && data.periods.length > 0
+            data.periods && Array.isArray(data.periods)
               ? data.periods
               : periods
           const found = allPeriods.find((p: any) => p.id === data.activePeriodId)
@@ -1862,6 +1848,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const monthStr = String(data.month).padStart(2, '0')
     const targetId = `month-${data.year}-${monthStr}`
     const periodName = data.name?.trim() || `Tháng ${monthStr}/${data.year}`
+
+    // Gỡ targetId ra khỏi danh sách đã xóa nếu từng bị xóa
+    if (deletedPeriodIdsRef.current.has(targetId)) {
+      deletedPeriodIdsRef.current.delete(targetId)
+      try {
+        localStorage.setItem(
+          'issac_deleted_period_ids',
+          JSON.stringify(Array.from(deletedPeriodIdsRef.current))
+        )
+      } catch (e) {}
+    }
 
     // 1. Reset toàn bộ 48 thành viên về mốc xuất phát chuẩn 60 điểm cho chu kỳ mới
     const resetMembers = getRankedMembers(

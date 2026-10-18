@@ -175,15 +175,20 @@ export async function GET() {
 
       const activeDeletedPeriodIds = new Set(deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [])
       const periodMap = new Map<string, any>()
-      // Chỉ nạp từ AVAILABLE_PERIODS nếu chu kỳ đó CHƯA TỪNG bị xóa
-      for (const p of AVAILABLE_PERIODS) {
-        if (!activeDeletedPeriodIds.has(p.id)) {
-          periodMap.set(p.id, p)
+      
+      const savedPeriodsList = periodsFromDb !== null ? periodsFromDb : cachedPeriods
+      if (Array.isArray(savedPeriodsList)) {
+        for (const p of savedPeriodsList) {
+          if (p?.id && !activeDeletedPeriodIds.has(p.id)) {
+            periodMap.set(p.id, p)
+          }
         }
-      }
-      for (const p of (periodsFromDb || cachedPeriods || [])) {
-        if (p?.id && !activeDeletedPeriodIds.has(p.id)) {
-          periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+      } else {
+        // Chỉ dùng AVAILABLE_PERIODS mặc định nếu hệ thống chưa từng lưu chu kỳ nào
+        for (const p of AVAILABLE_PERIODS) {
+          if (!activeDeletedPeriodIds.has(p.id)) {
+            periodMap.set(p.id, p)
+          }
         }
       }
       const safePeriods = Array.from(periodMap.values())
@@ -214,14 +219,17 @@ export async function GET() {
 
     const fallbackDeletedPeriodIds = new Set(cachedDeletedPeriodIds || [])
     const fallbackPeriodMap = new Map<string, any>()
-    for (const p of AVAILABLE_PERIODS) {
-      if (!fallbackDeletedPeriodIds.has(p.id)) {
-        fallbackPeriodMap.set(p.id, p)
+    if (Array.isArray(cachedPeriods)) {
+      for (const p of cachedPeriods) {
+        if (p?.id && !fallbackDeletedPeriodIds.has(p.id)) {
+          fallbackPeriodMap.set(p.id, p)
+        }
       }
-    }
-    for (const p of (cachedPeriods || [])) {
-      if (p?.id && !fallbackDeletedPeriodIds.has(p.id)) {
-        fallbackPeriodMap.set(p.id, { ...(fallbackPeriodMap.get(p.id) || {}), ...p })
+    } else {
+      for (const p of AVAILABLE_PERIODS) {
+        if (!fallbackDeletedPeriodIds.has(p.id)) {
+          fallbackPeriodMap.set(p.id, p)
+        }
       }
     }
     const safeFallbackPeriods = Array.from(fallbackPeriodMap.values())
@@ -358,23 +366,31 @@ export async function POST(request: Request) {
 
     // 0.2 Quản lý danh sách ID chu kỳ thi đua đã xóa (Tombstones để chống hồi sinh chu kỳ đã xóa)
     if (deletedPeriodIds !== undefined || (action === 'delete_period' && periodId)) {
-      const incomingDelPer = Array.isArray(deletedPeriodIds) ? deletedPeriodIds : []
-      if (action === 'delete_period' && periodId && !incomingDelPer.includes(periodId)) {
-        incomingDelPer.push(periodId)
+      if (action === 'delete_period' && periodId) {
+        const set = new Set([...(cachedDeletedPeriodIds || []), periodId])
+        cachedDeletedPeriodIds = Array.from(set)
+      } else if (Array.isArray(deletedPeriodIds)) {
+        cachedDeletedPeriodIds = Array.from(new Set(deletedPeriodIds))
       }
-      const combinedDelPerSet = new Set([
-        ...(cachedDeletedPeriodIds || []),
-        ...incomingDelPer,
-      ])
-      cachedDeletedPeriodIds = Array.from(combinedDelPerSet)
+    }
 
+    // Nếu có danh sách periods được gửi lên (kể cả tạo mới hay cập nhật):
+    // Mọi chu kỳ có trong periods đều PHẢI ĐƯỢC GỠ KHỎI cachedDeletedPeriodIds!
+    if (periods !== undefined && Array.isArray(periods)) {
+      const activePeriodIds = new Set(periods.map((p: any) => p?.id).filter(Boolean))
+      if (cachedDeletedPeriodIds && cachedDeletedPeriodIds.length > 0) {
+        cachedDeletedPeriodIds = cachedDeletedPeriodIds.filter((id) => !activePeriodIds.has(id))
+      }
+    }
+
+    if (deletedPeriodIds !== undefined || (action === 'delete_period' && periodId) || (periods !== undefined && Array.isArray(periods))) {
       try {
         await supabase
           .from('settings')
           .upsert(
             {
               key: 'issac_deleted_period_ids',
-              value: JSON.stringify(cachedDeletedPeriodIds),
+              value: JSON.stringify(cachedDeletedPeriodIds || []),
               description: 'Cloud synchronized deleted period IDs for iSSAC Web',
               updated_at: new Date().toISOString(),
             },

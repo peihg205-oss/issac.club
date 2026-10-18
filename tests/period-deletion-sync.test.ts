@@ -31,14 +31,12 @@ describe('Period Deletion & Cloud Tombstone Persistence', () => {
     ] as PeriodItem[]
 
     const periodMap = new Map<string, PeriodItem>()
-    // 1. Chỉ nạp AVAILABLE_PERIODS nếu chưa bị xóa
     AVAILABLE_PERIODS.forEach((p) => {
       if (!deletedPeriodIds.has(p.id)) {
         periodMap.set(p.id, p)
       }
     })
 
-    // 2. Chỉ merge cloud periods nếu chưa bị xóa
     cloudIncomingPeriods.forEach((p) => {
       if (p?.id && !deletedPeriodIds.has(p.id)) {
         periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
@@ -67,5 +65,26 @@ describe('Period Deletion & Cloud Tombstone Persistence', () => {
 
     expect(periodMap.has('month-2026-10')).toBe(true)
     expect(deletedPeriodIds.has('month-2026-10')).toBe(false)
+  })
+
+  it('un-tombstones any period present in the incoming periods payload at the server', () => {
+    let cachedDeleted = ['month-2026-10', 'month-2025-10', 'month-2025-09']
+    const incomingPeriods = [
+      { id: 'month-2026-10', name: 'Tháng 10/2026', scope: 'month', status: 'active' },
+    ]
+
+    // Logic xử lý un-tombstone ở API route
+    const activePeriodIds = new Set(incomingPeriods.map((p) => p.id))
+    cachedDeleted = cachedDeleted.filter((id) => !activePeriodIds.has(id))
+
+    expect(cachedDeleted).not.toContain('month-2026-10')
+    expect(cachedDeleted).toContain('month-2025-10')
+    expect(cachedDeleted).toContain('month-2025-09')
+
+    // Khi lọc periods:
+    const activeDelSet = new Set(cachedDeleted)
+    const cleanPeriods = incomingPeriods.filter((p) => !activeDelSet.has(p.id))
+    expect(cleanPeriods.length).toBe(1)
+    expect(cleanPeriods[0].id).toBe('month-2026-10')
   })
 })
