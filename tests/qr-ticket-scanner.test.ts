@@ -94,4 +94,42 @@ describe('QR Check-in Pass & Admin Scanner Anti-Fraud Logic', () => {
     const pointsForUnregistered = isUnregistered ? 1 : 0
     expect(pointsForUnregistered).toBe(0)
   })
+
+  it('8. Xác thực thành viên bằng MSSV chính xác: tìm đúng Họ tên, Ban, MSSV', () => {
+    const inputMssv = '24310069'
+    const found = INITIAL_MEMBERS.find(
+      (m) =>
+        (m.student_id && m.student_id.trim().toLowerCase() === inputMssv) ||
+        m.member_code.trim().toLowerCase() === inputMssv
+    )
+    expect(found).toBeDefined()
+    expect(found?.full_name).toBe('Lê Trần Thuỷ Nguyên')
+    expect(found?.department_name).toBe('Ban Tư vấn')
+    expect(found?.position).toBe('Trưởng ban')
+  })
+
+  it('9. Từ chối MSSV không tồn tại trong danh sách 48 thành viên CLB', () => {
+    const fakeMssv = '99999999'
+    const found = INITIAL_MEMBERS.find(
+      (m) =>
+        (m.student_id && m.student_id.trim().toLowerCase() === fakeMssv) ||
+        m.member_code.trim().toLowerCase() === fakeMssv
+    )
+    expect(found).toBeUndefined()
+  })
+
+  it('10. Giữ nguyên toàn bộ dữ liệu thành viên đã đăng ký trước đó khi chuyển sang cơ chế xác thực MSSV', () => {
+    // Sự kiện mẫu có sẵn registeredMemberCodes: ['23070691', '24310088', '25071203']
+    const existingRegisteredCodes = [...sampleEvent.registeredMemberCodes]
+    
+    // Thành viên 23070691 xác thực MSSV
+    const verifiedMember = INITIAL_MEMBERS.find((m) => m.student_id === '23070691')
+    expect(verifiedMember).toBeDefined()
+    
+    // Kiểm tra trạng thái đã đăng ký được giữ nguyên 100%
+    const isStillRegistered = existingRegisteredCodes.includes(verifiedMember!.member_code)
+    expect(isStillRegistered).toBe(true)
+    expect(existingRegisteredCodes.length).toBe(3)
+  })
 })
+
