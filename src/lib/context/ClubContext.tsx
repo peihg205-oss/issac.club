@@ -721,19 +721,46 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // 4. Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop)
+        // 4. Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop, Chống nhảy lại dữ liệu)
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
           const currentMembers = membersRef.current
           const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
+          let hasLocalNewer = false
+
           const merged = data.members.map((cloudM: RosterMember) => {
             const localM = curMap.get(cloudM.member_code)
-            return {
-              ...(localM || {}),
-              ...cloudM,
-              current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
-              absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
+            if (!localM) return cloudM
+
+            const localTime = localM.updated_at ? new Date(localM.updated_at).getTime() : 0
+            const cloudTime = cloudM.updated_at ? new Date(cloudM.updated_at).getTime() : 0
+
+            // Nếu local có cập nhật mới hơn cloud, bảo toàn tuyệt đối dữ liệu local!
+            if (localTime > cloudTime) {
+              hasLocalNewer = true
+              return {
+                ...cloudM,
+                ...localM,
+                current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
+                absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
+              }
+            } else {
+              return {
+                ...localM,
+                ...cloudM,
+                current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
+                absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
+              }
             }
           })
+
+          // Giữ lại các thành viên mới tạo ở local mà cloud chưa kịp có
+          const cloudCodes = new Set(data.members.map((m: any) => m.member_code))
+          const localOnlyMembers = currentMembers.filter((m) => !cloudCodes.has(m.member_code))
+          if (localOnlyMembers.length > 0) {
+            merged.push(...localOnlyMembers)
+            hasLocalNewer = true
+          }
+
           // Tự động chuẩn hóa điểm số thực tế từ sổ cái proposals
           const reconciled = reconcileMemberScores(merged, latestMergedProposals, currentActivePeriodIdRef.current)
           const isMembersChanged = JSON.stringify(reconciled) !== JSON.stringify(currentMembers)
@@ -743,6 +770,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             try {
               localStorage.setItem('issac_members_clean_v1', JSON.stringify(reconciled))
             } catch (e) {}
+          }
+
+          // Đẩy ngay bản cập nhật mới nhất lên cloud nếu local có sửa đổi mới hơn
+          if (hasLocalNewer) {
+            syncToCloud({ members: reconciled })
           }
         } else if (!data.members || data.members.length === 0) {
           // Lưu 48 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
@@ -825,7 +857,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    const timer = setInterval(pollSync, 4000)
+    const timer = setInterval(pollSync, 12000)
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -991,6 +1023,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const deptInfo = deptSlugMap[data.departmentCode]
     const nextStt = members.length + 1
     const generatedCode = data.studentId ? data.studentId.trim() : `STAFF-00${nextStt}`
+    const nowIso = new Date().toISOString()
 
     const newMember: RosterMember = {
       source_stt: nextStt,
@@ -1008,18 +1041,19 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       current_score: 60,
       absent_count_t02: 0,
       avatar_url: data.avatarUrl?.trim() || undefined,
+      updated_at: nowIso,
     }
 
-    setMembers((prev) => {
-      const updated = getRankedMembers([...prev, newMember])
-      try {
-        localStorage.setItem('issac_members_clean_v1', JSON.stringify(updated))
-      } catch (e) {
-        console.error('Error saving members to localStorage:', e)
-      }
-      syncToCloud({ members: updated })
-      return updated
-    })
+    const currentList = membersRef.current.length > 0 ? membersRef.current : members
+    const updated = getRankedMembers([...currentList, newMember])
+    membersRef.current = updated
+    setMembers(updated)
+    try {
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(updated))
+    } catch (e) {
+      console.error('Error saving members to localStorage:', e)
+    }
+    syncToCloud({ members: updated })
   }
 
   // Cập nhật thông tin thành viên & ảnh đại diện Avatar
@@ -1034,8 +1068,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       B03: { name: 'Ban Nhân sự', slug: 'nhan-su' },
     }
 
+    const currentList = membersRef.current.length > 0 ? membersRef.current : members
     let found = false
-    const updatedList = members.map((m) => {
+    const nowIso = new Date().toISOString()
+
+    const updatedList = currentList.map((m) => {
       if (m.member_code === memberCode) {
         found = true
         let deptName = m.department_name
@@ -1051,6 +1088,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           ...updates,
           department_name: deptName,
           department_slug: deptSlug,
+          updated_at: nowIso,
         }
       }
       return m
@@ -1061,6 +1099,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     const reRanked = getRankedMembers(updatedList)
+    membersRef.current = reRanked
     setMembers(reRanked)
     try {
       localStorage.setItem('issac_members_clean_v1', JSON.stringify(reRanked))
@@ -1076,11 +1115,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const deleteMember = (
     memberCode: string
   ): { success: boolean; message: string } => {
-    const target = members.find((m) => m.member_code === memberCode)
+    const currentList = membersRef.current.length > 0 ? membersRef.current : members
+    const target = currentList.find((m) => m.member_code === memberCode)
     if (!target) return { success: false, message: 'Không tìm thấy thành viên để xóa' }
 
-    const updated = members.filter((m) => m.member_code !== memberCode)
+    const updated = currentList.filter((m) => m.member_code !== memberCode)
     const reRanked = getRankedMembers(updated)
+    membersRef.current = reRanked
     setMembers(reRanked)
     try {
       localStorage.setItem('issac_members_clean_v1', JSON.stringify(reRanked))

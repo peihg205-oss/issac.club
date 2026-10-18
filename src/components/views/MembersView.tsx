@@ -722,7 +722,7 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
       <EditMemberModal
         isOpen={Boolean(editingMember)}
         onClose={() => setEditingMember(null)}
-        member={editingMember}
+        member={editingMember ? members.find((m) => m.member_code === editingMember.member_code) || editingMember : null}
       />
     </div>
   )

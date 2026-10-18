@@ -30,6 +30,7 @@ export interface RosterMember {
   delta_rank?: number // e.g. +2 (tăng 2 hạng), -1 (giảm 1 hạng), 0
   avatar_url?: string
   avatarBg?: string
+  updated_at?: string
 }
 
 export const INITIAL_MEMBERS: RosterMember[] = [
@@ -47,7 +48,7 @@ export const INITIAL_MEMBERS: RosterMember[] = [
   { source_stt: 9, member_code: '25071203', full_name: 'Lục Xuân Huy', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'MIS2025B', student_id: '25071203', email: 'huylucxuan2007@gmail.com', phone: '0985030207', current_score: 60, absent_count_t02: 0, delta_rank: 4 },
   { source_stt: 10, member_code: '25070203', full_name: 'Hoàng Thị Tú An', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'MIS2025B', student_id: '25070203', email: 'anhoang26.htta12@gmail.com', phone: '0367030748', current_score: 60, absent_count_t02: 0, delta_rank: 0 },
   { source_stt: 11, member_code: '25070278', full_name: 'Đinh Tấn Tài', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'MIS2025A', student_id: '25070278', email: 'dinhtai691@gmail.com', phone: '0393518168', current_score: 60, absent_count_t02: 0, delta_rank: -1 },
-  { source_stt: 12, member_code: '24310108', full_name: 'Hoàng Triều Xuân', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'DC2024B', student_id: '24310108', email: 'xuanht2603nb@gmail.com', phone: '0865512672', current_score: 60, absent_count_t02: 0, delta_rank: 1 },
+  { source_stt: 12, member_code: '24310108', full_name: 'Hoàng Triều Xuân', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'DC2024A', student_id: '24310108', email: 'xuanht2603nb@gmail.com', phone: '0865512672', current_score: 60, absent_count_t02: 0, delta_rank: 1, updated_at: '2026-10-18T20:00:00.000Z' },
   { source_stt: 13, member_code: '24310078', full_name: 'Nguyễn Tố Như', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'DC2024B', student_id: '24310078', email: 'ntonhu808@gmail.com', phone: '0813773199', current_score: 60, absent_count_t02: 0, delta_rank: 0 },
   { source_stt: 14, member_code: '26070162', full_name: 'Ngô Ánh Dương', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'ICE2026', student_id: '26070162', email: 'ngoanhduong200@gmail.com', phone: '0867385112', current_score: 60, absent_count_t02: 0, delta_rank: 0 },
   { source_stt: 15, member_code: '26070774', full_name: 'Tô Mai Trang', department_name: 'Ban Truyền thông', department_code: 'B01', department_slug: 'truyen-thong', position: 'Thành viên', is_core: false, class_name: 'BEL2026', student_id: '26070774', email: 'thimaitrangto@gmail.com', phone: '0343299388', current_score: 60, absent_count_t02: 0, delta_rank: -1 },

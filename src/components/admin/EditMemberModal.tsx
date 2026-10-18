@@ -82,9 +82,9 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Đồng bộ form khi member thay đổi
+  // Đồng bộ form khi modal mở hoặc đổi thành viên
   useEffect(() => {
-    if (member) {
+    if (member && isOpen) {
       setFullName(member.full_name || '')
       setDepartmentCode(member.department_code || 'B01')
       setPosition(member.position || 'Thành viên')
@@ -99,7 +99,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
       setCustomUrlInput(member.avatar_url || '')
       setFeedback(null)
     }
-  }, [member, isOpen])
+  }, [member?.member_code, isOpen])
 
   if (!isOpen || !member) return null
 
