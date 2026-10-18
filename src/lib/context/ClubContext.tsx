@@ -315,18 +315,19 @@ export function mergeProposals(
 // Thuật toán hợp nhất Events 2 chiều thông minh theo ID và bản ghi điểm danh
 export function mergeEvents(
   localList: MeetingEvent[],
-  incomingList: MeetingEvent[]
+  incomingList: MeetingEvent[],
+  deletedEventIds?: Set<string>
 ): MeetingEvent[] {
   const map = new Map<string, MeetingEvent>()
 
   for (const evt of incomingList) {
-    if (evt?.id) {
+    if (evt?.id && (!deletedEventIds || !deletedEventIds.has(evt.id))) {
       map.set(evt.id, evt)
     }
   }
 
   for (const evt of localList) {
-    if (evt?.id) {
+    if (evt?.id && (!deletedEventIds || !deletedEventIds.has(evt.id))) {
       const existing = map.get(evt.id)
       if (!existing) {
         map.set(evt.id, evt)
@@ -366,6 +367,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   const isHydratedRef = useRef(false)
   const deletedProposalIdsRef = useRef<Set<string>>(new Set())
+  const deletedEventIdsRef = useRef<Set<string>>(new Set())
 
   // Đổi chu kỳ hoạt động và đồng bộ lập tức đa nền tảng
   const setCurrentActivePeriodId = (newId: string) => {
@@ -490,6 +492,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {}
 
+    try {
+      const savedDeletedEvents = localStorage.getItem('issac_deleted_event_ids')
+      if (savedDeletedEvents) {
+        const parsed = JSON.parse(savedDeletedEvents)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => deletedEventIdsRef.current.add(id))
+        }
+      }
+    } catch (e) {}
+
     isHydratedRef.current = true
     // Đồng bộ tức thì từ Supabase Cloud khi vừa tải trang
     fetchCloudSync()
@@ -505,6 +517,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     activePeriodId?: string
     customPeriodScores?: Record<string, Record<string, number>>
     deletedProposalIds?: string[]
+    deletedEventIds?: string[]
     action?: string
     [key: string]: any
   }) => {
@@ -524,7 +537,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json()
 
-        // 1. Đồng bộ danh sách ID đã xóa
+        // 1. Đồng bộ danh sách ID đề xuất đã xóa
         if (data.deletedProposalIds && Array.isArray(data.deletedProposalIds)) {
           data.deletedProposalIds.forEach((id: string) => deletedProposalIdsRef.current.add(id))
           try {
@@ -535,10 +548,21 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
 
-        // 2. Hợp nhất Sự kiện (Events) 2 chiều
+        // 1.1 Đồng bộ danh sách ID sự kiện đã xóa
+        if (data.deletedEventIds && Array.isArray(data.deletedEventIds)) {
+          data.deletedEventIds.forEach((id: string) => deletedEventIdsRef.current.add(id))
+          try {
+            localStorage.setItem(
+              'issac_deleted_event_ids',
+              JSON.stringify(Array.from(deletedEventIdsRef.current))
+            )
+          } catch (e) {}
+        }
+
+        // 2. Hợp nhất Sự kiện (Events) 2 chiều (Lọc bỏ sự kiện đã xóa)
         if (data.events && Array.isArray(data.events)) {
           setEvents((currentEvents) => {
-            const merged = mergeEvents(currentEvents, data.events)
+            const merged = mergeEvents(currentEvents, data.events, deletedEventIdsRef.current)
             try {
               localStorage.setItem('issac_events_clean_v1', JSON.stringify(merged))
             } catch (e) {}
@@ -2275,24 +2299,34 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Xóa sự kiện
   const deleteEvent = (eventId: string) => {
+    deletedEventIdsRef.current.add(eventId)
     const updated = events.filter((e) => e.id !== eventId)
     setEvents(updated)
-    if (activeEventId === eventId && updated.length > 0) {
-      setActiveEventId(updated[0].id)
+    if (activeEventId === eventId) {
+      setActiveEventId(updated.length > 0 ? updated[0].id : '')
     }
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
+        localStorage.setItem(
+          'issac_deleted_event_ids',
+          JSON.stringify(Array.from(deletedEventIdsRef.current))
+        )
       } catch (err) {
         console.error(err)
       }
       fetch('/api/db/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all', events: updated }),
+        body: JSON.stringify({
+          action: 'delete_event',
+          eventId,
+          events: updated,
+          deletedEventIds: Array.from(deletedEventIdsRef.current),
+        }),
       }).catch((e) => console.error('Cloud sync error on deleteEvent:', e))
     }
-    return { success: true, message: 'Đã xóa sự kiện khỏi hệ thống.' }
+    return { success: true, message: 'Đã xóa sự kiện khỏi hệ thống và đồng bộ tới tất cả thiết bị.' }
   }
 
   return (

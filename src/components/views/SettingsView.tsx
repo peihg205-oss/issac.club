@@ -785,7 +785,16 @@ export function SettingsView() {
 
             {/* Event Cards */}
             <div className="space-y-4">
-              {events.map((evt) => {
+              {events.length === 0 ? (
+                <div className="text-center py-12 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-300 space-y-2">
+                  <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
+                  <p className="text-sm font-bold text-slate-700">Chưa có sự kiện nào trong danh sách</p>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Ban Chủ nhiệm có thể tạo sự kiện mới ở phần biểu mẫu bên trên để bắt đầu mở cổng đăng ký và điểm danh.
+                  </p>
+                </div>
+              ) : (
+                events.map((evt) => {
                 const registeredList = evt.registeredMemberCodes || []
                 const isUserRegistered = registeredList.includes(testRegMemberCode)
                 const isActive = activeEventId === evt.id
@@ -951,25 +960,36 @@ export function SettingsView() {
                         </button>
 
                         {/* Xóa sự kiện nếu là BCN */}
-                        {isBCN && events.length > 1 && (
+                        {isBCN && (
                           <button
                             type="button"
                             onClick={() => {
-                              if (confirm(`Bạn có chắc muốn xóa sự kiện "${evt.title}" không?`)) {
+                              if (
+                                confirm(
+                                  `Bạn có chắc chắn muốn xóa sự kiện "${evt.title}" không? Hành động này sẽ đồng bộ ngay lập tức và xóa sự kiện trên tất cả thiết bị (điện thoại & máy tính).`
+                                )
+                              ) {
                                 deleteEvent(evt.id)
+                                setToast({
+                                  type: 'success',
+                                  message: `Đã xóa sự kiện "${evt.title}" thành công. Dữ liệu đang được đồng bộ tới mọi thiết bị.`,
+                                })
+                                setTimeout(() => setToast(null), 4000)
                               }
                             }}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-                            title="Xóa sự kiện này"
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100/90 border border-rose-200/90 transition shadow-2xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                            title="Xóa sự kiện này khỏi hệ thống và đồng bộ đa thiết bị"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Xóa sự kiện</span>
                           </button>
                         )}
                       </div>
                     </div>
                   </div>
                 )
-              })}
+              })
+            )}
             </div>
           </div>
         </div>

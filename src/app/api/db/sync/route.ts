@@ -10,6 +10,7 @@ let cachedPeriods: any[] | null = null
 let cachedActivePeriodId: string | null = null
 let cachedPeriodScores: Record<string, any> | null = null
 let cachedDeletedProposalIds: string[] | null = null
+let cachedDeletedEventIds: string[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET() {
@@ -29,6 +30,7 @@ export async function GET() {
         'issac_active_period_id',
         'issac_custom_period_scores',
         'issac_deleted_proposal_ids',
+        'issac_deleted_event_ids',
       ])
 
     if (!error && data && data.length > 0) {
@@ -40,6 +42,7 @@ export async function GET() {
       const activePeriodRow = data.find((r) => r.key === 'issac_active_period_id')
       const scoresRow = data.find((r) => r.key === 'issac_custom_period_scores')
       const deletedIdsRow = data.find((r) => r.key === 'issac_deleted_proposal_ids')
+      const deletedEventIdsRow = data.find((r) => r.key === 'issac_deleted_event_ids')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -49,6 +52,7 @@ export async function GET() {
       let activePeriodFromDb = null
       let scoresFromDb = null
       let deletedIdsFromDb = null
+      let deletedEventIdsFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -118,9 +122,24 @@ export async function GET() {
         }
       }
 
+      if (deletedEventIdsRow?.value) {
+        try {
+          deletedEventIdsFromDb = JSON.parse(deletedEventIdsRow.value)
+          cachedDeletedEventIds = deletedEventIdsFromDb
+        } catch (e) {
+          console.error('Error parsing deleted event IDs JSON:', e)
+        }
+      }
+
+      const activeDeletedEventIds = new Set(deletedEventIdsFromDb || cachedDeletedEventIds || [])
+      let finalEvents = eventsFromDb || cachedEvents || []
+      if (activeDeletedEventIds.size > 0 && Array.isArray(finalEvents)) {
+        finalEvents = finalEvents.filter((e: any) => !activeDeletedEventIds.has(e.id))
+      }
+
       return NextResponse.json({
         success: true,
-        events: eventsFromDb || cachedEvents,
+        events: finalEvents,
         proposals: proposalsFromDb || cachedProposals,
         members: membersFromDb || cachedMembers,
         disputes: disputesFromDb || cachedDisputes,
@@ -128,13 +147,20 @@ export async function GET() {
         activePeriodId: activePeriodFromDb || cachedActivePeriodId,
         customPeriodScores: scoresFromDb || cachedPeriodScores,
         deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
+        deletedEventIds: deletedEventIdsFromDb || cachedDeletedEventIds || [],
         source: 'supabase_cloud',
       })
     }
 
+    const fallbackDeletedEventIds = new Set(cachedDeletedEventIds || [])
+    let fallbackEvents = cachedEvents || []
+    if (fallbackDeletedEventIds.size > 0 && Array.isArray(fallbackEvents)) {
+      fallbackEvents = fallbackEvents.filter((e: any) => !fallbackDeletedEventIds.has(e.id))
+    }
+
     return NextResponse.json({
       success: true,
-      events: cachedEvents,
+      events: fallbackEvents,
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
@@ -142,13 +168,20 @@ export async function GET() {
       activePeriodId: cachedActivePeriodId,
       customPeriodScores: cachedPeriodScores,
       deletedProposalIds: cachedDeletedProposalIds || [],
+      deletedEventIds: cachedDeletedEventIds || [],
       source: 'cache_memory',
     })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Sync error'
+    const errorFallbackDeletedEventIds = new Set(cachedDeletedEventIds || [])
+    let errorFallbackEvents = cachedEvents || []
+    if (errorFallbackDeletedEventIds.size > 0 && Array.isArray(errorFallbackEvents)) {
+      errorFallbackEvents = errorFallbackEvents.filter((e: any) => !errorFallbackDeletedEventIds.has(e.id))
+    }
+
     return NextResponse.json({
       success: true,
-      events: cachedEvents,
+      events: errorFallbackEvents,
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
@@ -156,6 +189,7 @@ export async function GET() {
       activePeriodId: cachedActivePeriodId,
       customPeriodScores: cachedPeriodScores,
       deletedProposalIds: cachedDeletedProposalIds || [],
+      deletedEventIds: cachedDeletedEventIds || [],
       error: msg,
       source: 'fallback',
     })
@@ -177,6 +211,7 @@ export async function POST(request: Request) {
       proposals,
       proposalId,
       deletedProposalIds,
+      deletedEventIds,
       members,
       disputes,
       periods,
@@ -217,6 +252,35 @@ export async function POST(request: Request) {
       }
     }
 
+    // 0.1 Quản lý danh sách ID sự kiện đã xóa (Tombstones để chống hồi sinh khi sync từ máy khác)
+    if (deletedEventIds !== undefined || (action === 'delete_event' && eventId)) {
+      const incomingDelEvt = Array.isArray(deletedEventIds) ? deletedEventIds : []
+      if (action === 'delete_event' && eventId && !incomingDelEvt.includes(eventId)) {
+        incomingDelEvt.push(eventId)
+      }
+      const combinedDelEvtSet = new Set([
+        ...(cachedDeletedEventIds || []),
+        ...incomingDelEvt,
+      ])
+      cachedDeletedEventIds = Array.from(combinedDelEvtSet)
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_event_ids',
+              value: JSON.stringify(cachedDeletedEventIds),
+              description: 'Cloud synchronized deleted event IDs for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (delEvtErr) {
+        console.warn('Supabase deleted events upsert notice:', delEvtErr)
+      }
+    }
+
     const shouldUpdateEvents = events !== undefined || action !== undefined
 
     if (shouldUpdateEvents) {
@@ -238,7 +302,13 @@ export async function POST(request: Request) {
 
       let updatedEvents = cachedEvents || []
 
-      if (action === 'create_event' && event) {
+      if (action === 'delete_event' && eventId) {
+        // Xóa sự kiện cụ thể
+        updatedEvents = updatedEvents.filter((e: any) => e.id !== eventId)
+        if (Array.isArray(events)) {
+          updatedEvents = events.filter((e: any) => e.id !== eventId)
+        }
+      } else if (action === 'create_event' && event) {
         // Đẩy sự kiện mới lên đầu danh sách và giữ nguyên các sự kiện cũ
         updatedEvents = [event, ...updatedEvents.filter((e: any) => e.id !== event.id)]
       } else if (action === 'checkin' && eventId && memberCode) {
@@ -286,12 +356,13 @@ export async function POST(request: Request) {
         })
       } else if (events && Array.isArray(events)) {
         // Hợp nhất events 2 chiều thông minh theo ID (tránh ghi đè mất sự kiện hoặc mất record điểm danh)
+        const delSet = new Set(cachedDeletedEventIds || [])
         const evtMap = new Map<string, any>()
         for (const e of updatedEvents) {
-          if (e?.id) evtMap.set(e.id, e)
+          if (e?.id && !delSet.has(e.id)) evtMap.set(e.id, e)
         }
         for (const e of events) {
-          if (e?.id) {
+          if (e?.id && !delSet.has(e.id)) {
             const existing = evtMap.get(e.id)
             if (!existing) {
               evtMap.set(e.id, e)
@@ -312,6 +383,11 @@ export async function POST(request: Request) {
           }
         }
         updatedEvents = Array.from(evtMap.values())
+      }
+
+      if (cachedDeletedEventIds && cachedDeletedEventIds.length > 0) {
+        const delSet = new Set(cachedDeletedEventIds)
+        updatedEvents = updatedEvents.filter((e: any) => !delSet.has(e.id))
       }
 
       cachedEvents = updatedEvents
@@ -506,6 +582,7 @@ export async function POST(request: Request) {
       activePeriodId: cachedActivePeriodId,
       customPeriodScores: cachedPeriodScores,
       deletedProposalIds: cachedDeletedProposalIds || [],
+      deletedEventIds: cachedDeletedEventIds || [],
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'

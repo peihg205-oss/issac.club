@@ -139,4 +139,20 @@ describe('Ledger Score Management & BCN Edit/Delete Logic', () => {
     expect(merged[0].records['24070680']).toBeDefined()
     expect(merged[0].records['24310069']).toBeDefined()
   })
+
+  it('mergeEvents filters out deleted events via deletedEventIds tombstone set', () => {
+    const localEvents = [
+      { id: 'evt-del-1', title: 'Sự kiện đã bị xóa' } as any,
+      { id: 'evt-keep-2', title: 'Sự kiện còn hiệu lực' } as any,
+    ]
+    const incomingEvents = [
+      { id: 'evt-del-1', title: 'Sự kiện đã bị xóa từ cloud' } as any,
+      { id: 'evt-keep-2', title: 'Sự kiện còn hiệu lực' } as any,
+    ]
+    const deletedEventIds = new Set(['evt-del-1'])
+
+    const merged = mergeEvents(localEvents, incomingEvents, deletedEventIds)
+    expect(merged.length).toBe(1)
+    expect(merged[0].id).toBe('evt-keep-2')
+  })
 })
