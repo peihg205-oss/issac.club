@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { AVAILABLE_PERIODS } from '@/lib/periodData'
 
 // Bộ nhớ đệm tạm thời phía server để phản hồi tức thì
 let cachedEvents: any[] | null = null
+let cachedActiveEventId: string | null = null
 let cachedProposals: any[] | null = null
 let cachedMembers: any[] | null = null
 let cachedDisputes: any[] | null = null
@@ -11,6 +13,7 @@ let cachedActivePeriodId: string | null = null
 let cachedPeriodScores: Record<string, any> | null = null
 let cachedDeletedProposalIds: string[] | null = null
 let cachedDeletedEventIds: string[] | null = null
+let cachedCustomRules: any[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET() {
@@ -23,6 +26,7 @@ export async function GET() {
       .select('key, value')
       .in('key', [
         'issac_events_cloud',
+        'issac_active_event_id',
         'issac_proposals_cloud',
         'issac_members_cloud',
         'issac_disputes_cloud',
@@ -31,6 +35,7 @@ export async function GET() {
         'issac_custom_period_scores',
         'issac_deleted_proposal_ids',
         'issac_deleted_event_ids',
+        'issac_custom_rules_cloud',
       ])
 
     if (!error && data && data.length > 0) {
@@ -43,6 +48,8 @@ export async function GET() {
       const scoresRow = data.find((r) => r.key === 'issac_custom_period_scores')
       const deletedIdsRow = data.find((r) => r.key === 'issac_deleted_proposal_ids')
       const deletedEventIdsRow = data.find((r) => r.key === 'issac_deleted_event_ids')
+      const activeEventRow = data.find((r) => r.key === 'issac_active_event_id')
+      const customRulesRow = data.find((r) => r.key === 'issac_custom_rules_cloud')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -53,6 +60,8 @@ export async function GET() {
       let scoresFromDb = null
       let deletedIdsFromDb = null
       let deletedEventIdsFromDb = null
+      let activeEventIdFromDb = null
+      let customRulesFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -60,6 +69,20 @@ export async function GET() {
           cachedEvents = eventsFromDb
         } catch (e) {
           console.error('Error parsing events JSON:', e)
+        }
+      }
+
+      if (activeEventRow?.value) {
+        activeEventIdFromDb = activeEventRow.value
+        cachedActiveEventId = activeEventIdFromDb
+      }
+
+      if (customRulesRow?.value) {
+        try {
+          customRulesFromDb = JSON.parse(customRulesRow.value)
+          cachedCustomRules = customRulesFromDb
+        } catch (e) {
+          console.error('Error parsing custom rules JSON:', e)
         }
       }
 
@@ -137,15 +160,27 @@ export async function GET() {
         finalEvents = finalEvents.filter((e: any) => !activeDeletedEventIds.has(e.id))
       }
 
+      // Luôn đảm bảo AVAILABLE_PERIODS mặc định (như Tháng 10/2026) hiện diện đầy đủ
+      const periodMap = new Map<string, any>()
+      for (const p of AVAILABLE_PERIODS) {
+        periodMap.set(p.id, p)
+      }
+      for (const p of (periodsFromDb || cachedPeriods || [])) {
+        if (p?.id) periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+      }
+      const safePeriods = Array.from(periodMap.values())
+
       return NextResponse.json({
         success: true,
         events: finalEvents,
+        activeEventId: activeEventIdFromDb || cachedActiveEventId || '',
         proposals: proposalsFromDb || cachedProposals,
         members: membersFromDb || cachedMembers,
         disputes: disputesFromDb || cachedDisputes,
-        periods: periodsFromDb || cachedPeriods,
-        activePeriodId: activePeriodFromDb || cachedActivePeriodId,
+        periods: safePeriods,
+        activePeriodId: activePeriodFromDb || cachedActivePeriodId || 'month-2026-10',
         customPeriodScores: scoresFromDb || cachedPeriodScores,
+        customRules: customRulesFromDb || cachedCustomRules || [],
         deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
         deletedEventIds: deletedEventIdsFromDb || cachedDeletedEventIds || [],
         source: 'supabase_cloud',
@@ -158,15 +193,25 @@ export async function GET() {
       fallbackEvents = fallbackEvents.filter((e: any) => !fallbackDeletedEventIds.has(e.id))
     }
 
+    const fallbackPeriodMap = new Map<string, any>()
+    for (const p of AVAILABLE_PERIODS) {
+      fallbackPeriodMap.set(p.id, p)
+    }
+    for (const p of (cachedPeriods || [])) {
+      if (p?.id) fallbackPeriodMap.set(p.id, { ...(fallbackPeriodMap.get(p.id) || {}), ...p })
+    }
+
     return NextResponse.json({
       success: true,
       events: fallbackEvents,
+      activeEventId: cachedActiveEventId || '',
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
-      periods: cachedPeriods,
-      activePeriodId: cachedActivePeriodId,
+      periods: Array.from(fallbackPeriodMap.values()),
+      activePeriodId: cachedActivePeriodId || 'month-2026-10',
       customPeriodScores: cachedPeriodScores,
+      customRules: cachedCustomRules || [],
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
       source: 'cache_memory',
@@ -212,11 +257,13 @@ export async function POST(request: Request) {
       proposalId,
       deletedProposalIds,
       deletedEventIds,
+      activeEventId,
       members,
       disputes,
       periods,
       activePeriodId,
       customPeriodScores,
+      customRules,
     } = body
     const supabase = createAdminClient()
 
@@ -553,6 +600,44 @@ export async function POST(request: Request) {
       }
     }
 
+    if (activeEventId !== undefined) {
+      cachedActiveEventId = String(activeEventId)
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_active_event_id',
+              value: String(activeEventId),
+              description: 'Cloud synchronized active event ID for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (actEvtErr) {
+        console.warn('Supabase active event upsert notice:', actEvtErr)
+      }
+    }
+
+    if (customRules !== undefined) {
+      cachedCustomRules = customRules
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_custom_rules_cloud',
+              value: JSON.stringify(customRules),
+              description: 'Cloud synchronized custom rules for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (ruleErr) {
+        console.warn('Supabase custom rules upsert notice:', ruleErr)
+      }
+    }
+
     if (customPeriodScores !== undefined) {
       cachedPeriodScores = customPeriodScores
       try {
@@ -575,12 +660,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       events: cachedEvents,
+      activeEventId: cachedActiveEventId || '',
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
       periods: cachedPeriods,
-      activePeriodId: cachedActivePeriodId,
+      activePeriodId: cachedActivePeriodId || 'month-2026-10',
       customPeriodScores: cachedPeriodScores,
+      customRules: cachedCustomRules || [],
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
       cloudSynced: dbSuccess,

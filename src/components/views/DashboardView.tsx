@@ -33,7 +33,7 @@ export function DashboardView({
   onNavigateToCheckin,
   onNavigateToLeaderboard,
 }: DashboardViewProps) {
-  const { members, activeEvent, proposals } = useClub()
+  const { members, activeEvent, events, proposals, currentActiveMonth } = useClub()
 
   const totalMembers = members.length
   const totalScore = members.reduce((sum, m) => sum + m.current_score, 0)
@@ -126,7 +126,7 @@ export function DashboardView({
                   Đang diễn ra trực tiếp
                 </span>
                 <span className="text-xs font-bold text-blue-100 font-mono bg-white/15 px-2.5 py-0.5 rounded-lg border border-white/20">
-                  Mã PIN: {activeEvent.pinCode}
+                  Mã PIN: {activeEvent.pinCode || (activeEvent as any).passcode || '8899'}
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-white mt-1 tracking-tight">
@@ -230,10 +230,10 @@ export function DashboardView({
               Kỳ sinh hoạt CLB
             </span>
             <span className="text-2xl sm:text-3xl font-black text-[#7C3AED] mt-1 block">
-              1
+              {events.length}
             </span>
             <span className="text-[11px] text-purple-700/80 font-medium block mt-0.5">
-              Tháng 10/2025
+              {currentActiveMonth || 'Tháng 10/2026'}
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-white text-[#7C3AED] shadow-2xs border border-purple-200/60 flex items-center justify-center flex-shrink-0">

@@ -357,7 +357,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<RosterMember[]>(() => getActiveRosterMembers(INITIAL_MEMBERS))
   const [proposals, setProposals] = useState<ProposalItem[]>(INITIAL_PROPOSALS)
   const [events, setEvents] = useState<MeetingEvent[]>(INITIAL_EVENTS)
-  const [activeEventId, setActiveEventId] = useState<string>('')
+  const [activeEventId, _setActiveEventId] = useState<string>('')
+  const setActiveEventId = (id: string) => {
+    _setActiveEventId(id)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('issac_active_event_id', id)
+      } catch (e) {}
+    }
+    syncToCloud({ activeEventId: id })
+  }
   const [disputes, setDisputes] = useState<DisputeItem[]>(INITIAL_DISPUTES)
   const [currentActiveMonth, setCurrentActiveMonth] = useState<string>('Tháng 10/2026')
   const [periods, setPeriods] = useState<PeriodItem[]>(AVAILABLE_PERIODS)
@@ -414,6 +423,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Error reading events from localStorage:', e)
     }
+
+    try {
+      const savedActiveEventId = localStorage.getItem('issac_active_event_id')
+      if (savedActiveEventId) {
+        _setActiveEventId(savedActiveEventId)
+      }
+    } catch (e) {}
 
     try {
       const savedRules = localStorage.getItem('issac_custom_rules_v1')
@@ -510,12 +526,14 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   // Helper đồng bộ dữ liệu đa thiết bị qua Supabase Cloud API
   const syncToCloud = (payload: {
     events?: MeetingEvent[]
+    activeEventId?: string
     proposals?: ProposalItem[]
     members?: RosterMember[]
     disputes?: DisputeItem[]
     periods?: PeriodItem[]
     activePeriodId?: string
     customPeriodScores?: Record<string, Record<string, number>>
+    customRules?: CustomRuleItem[]
     deletedProposalIds?: string[]
     deletedEventIds?: string[]
     action?: string
@@ -559,6 +577,14 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
 
+        // 1.2 Đồng bộ activeEventId từ cloud để máy tính và điện thoại chọn cùng 1 sự kiện
+        if (data.activeEventId !== undefined && data.activeEventId !== '') {
+          _setActiveEventId(data.activeEventId)
+          try {
+            localStorage.setItem('issac_active_event_id', data.activeEventId)
+          } catch (e) {}
+        }
+
         // 2. Hợp nhất Sự kiện (Events) 2 chiều (Lọc bỏ sự kiện đã xóa)
         if (data.events && Array.isArray(data.events)) {
           setEvents((currentEvents) => {
@@ -588,18 +614,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           })
         }
 
-        // 4. Hợp nhất Danh sách Thành viên & Điểm số
+        // 4. Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop)
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
           setMembers((currentMembers) => {
             const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
             const merged = data.members.map((cloudM: RosterMember) => {
               const localM = curMap.get(cloudM.member_code)
-              if (!localM) return cloudM
-              // Giữ điểm đã được cập nhật từ các thao tác gần đây
               return {
+                ...(localM || {}),
                 ...cloudM,
-                current_score: localM.current_score !== undefined ? localM.current_score : cloudM.current_score,
-                absent_count_t02: localM.absent_count_t02 !== undefined ? localM.absent_count_t02 : cloudM.absent_count_t02,
+                // Cloud là Single Source of Truth
+                current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
+                absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
               }
             })
             const ranked = getRankedMembers(merged)
@@ -619,9 +645,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
         if (data.periods && Array.isArray(data.periods) && data.periods.length > 0) {
-          setPeriods(data.periods)
+          const periodMap = new Map<string, PeriodItem>()
+          AVAILABLE_PERIODS.forEach((p) => periodMap.set(p.id, p))
+          data.periods.forEach((p: PeriodItem) => {
+            if (p?.id) periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+          })
+          const mergedPeriods = Array.from(periodMap.values())
+          setPeriods(mergedPeriods)
           try {
-            localStorage.setItem('issac_periods_clean_v1', JSON.stringify(data.periods))
+            localStorage.setItem('issac_periods_clean_v1', JSON.stringify(mergedPeriods))
           } catch (e) {}
         }
         if (data.activePeriodId) {
@@ -642,6 +674,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           setCustomPeriodScores(data.customPeriodScores)
           try {
             localStorage.setItem('issac_custom_period_scores', JSON.stringify(data.customPeriodScores))
+          } catch (e) {}
+        }
+        if (data.customRules && Array.isArray(data.customRules)) {
+          setCustomRules(data.customRules)
+          try {
+            localStorage.setItem('issac_custom_rules_v1', JSON.stringify(data.customRules))
           } catch (e) {}
         }
       }
