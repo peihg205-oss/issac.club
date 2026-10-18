@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   Check,
 } from 'lucide-react'
+import { compressImage } from '@/lib/utils/imageCompress'
 
 // Bộ sưu tập avatar mẫu gợi ý nhanh (SVG / Gradient chuyên nghiệp cho Đại sứ sinh viên)
 const PRESET_AVATARS = [
@@ -104,37 +105,23 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
   if (!isOpen || !member) return null
 
   // Xử lý upload file ảnh từ máy tính (convert sang base64 Data URL)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Kiểm tra dung lượng (giới hạn 3MB để lưu localStorage tối ưu)
-    if (file.size > 3 * 1024 * 1024) {
+    const compressed = await compressImage(file, 160, 0.8)
+    if (compressed) {
+      setAvatarUrl(compressed)
+      setFeedback({
+        type: 'success',
+        message: 'Đã tối ưu và nén ảnh thành công! Bấm "Lưu thay đổi" để áp dụng vào hồ sơ.',
+      })
+    } else {
       setFeedback({
         type: 'error',
-        message: 'Kích thước ảnh quá lớn (> 3MB). Vui lòng chọn ảnh nhẹ hơn để tải lên nhanh chóng.',
-      })
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string
-      if (dataUrl) {
-        setAvatarUrl(dataUrl)
-        setFeedback({
-          type: 'success',
-          message: 'Đã tải ảnh lên thành công! Bấm "Lưu thay đổi" để áp dụng vào hồ sơ.',
-        })
-      }
-    }
-    reader.onerror = () => {
-      setFeedback({
-        type: 'error',
-        message: 'Có lỗi khi đọc file ảnh. Vui lòng thử lại.',
+        message: 'Có lỗi khi nén file ảnh. Vui lòng thử lại.',
       })
     }
-    reader.readAsDataURL(file)
   }
 
   // Áp dụng URL ảnh tự nhập

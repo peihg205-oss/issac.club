@@ -12,6 +12,7 @@ import {
   getVietnamNowTimeFormatted,
   normalizeHistoryTimestamp,
 } from '@/lib/vietnamTime'
+import { sanitizeMemberAvatar } from '@/lib/utils/imageCompress'
 
 export interface CustomRuleItem {
   code: string
@@ -420,6 +421,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const deletedProposalIdsRef = useRef<Set<string>>(new Set())
   const deletedEventIdsRef = useRef<Set<string>>(new Set())
   const deletedPeriodIdsRef = useRef<Set<string>>(new Set())
+  const deletedMemberCodesRef = useRef<Set<string>>(new Set())
 
   // Các Refs chống stale closure và đảm bảo Single Source of Truth
   const proposalsRef = useRef<ProposalItem[]>(proposals)
@@ -509,9 +511,26 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      const savedDeletedMemberCodes = localStorage.getItem('issac_deleted_member_codes')
+      if (savedDeletedMemberCodes) {
+        const parsed = JSON.parse(savedDeletedMemberCodes)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((code: string) => deletedMemberCodesRef.current.add(code))
+        }
+      }
+    } catch (e) {}
+
+    try {
       const savedMembers = localStorage.getItem('issac_members_clean_v1')
       const savedProposals = localStorage.getItem('issac_proposals_clean_v1')
       let initialMemberList: RosterMember[] = savedMembers ? JSON.parse(savedMembers) : getActiveRosterMembers(INITIAL_MEMBERS)
+      // Loại bỏ các thành viên đã xóa và nén/làm sạch avatar quá lớn
+      initialMemberList = initialMemberList
+        .filter((m) => !deletedMemberCodesRef.current.has(m.member_code))
+        .map((m) => ({
+          ...m,
+          avatar_url: sanitizeMemberAvatar(m.avatar_url),
+        }))
       let initialProposalList: ProposalItem[] = []
       if (savedProposals) {
         const parsed = JSON.parse(savedProposals)
@@ -620,6 +639,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     deletedProposalIds?: string[]
     deletedEventIds?: string[]
     deletedPeriodIds?: string[]
+    deletedMemberCodes?: string[]
+    member?: RosterMember
+    memberCode?: string
     action?: string
     [key: string]: any
   }) => {
@@ -725,42 +747,65 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
 
         // 4. Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop, Chống nhảy lại dữ liệu)
+        if (data.deletedMemberCodes && Array.isArray(data.deletedMemberCodes)) {
+          data.deletedMemberCodes.forEach((code: string) => deletedMemberCodesRef.current.add(code))
+          try {
+            localStorage.setItem(
+              'issac_deleted_member_codes',
+              JSON.stringify(Array.from(deletedMemberCodesRef.current))
+            )
+          } catch (e) {}
+        }
+
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
-          const currentMembers = membersRef.current
+          const deletedCodes = deletedMemberCodesRef.current
+          // Lọc bỏ thành viên đã xóa khỏi cloud list
+          const safeCloudMembers = data.members.filter((m: any) => m?.member_code && !deletedCodes.has(m.member_code))
+
+          const currentMembers = membersRef.current.filter((m) => !deletedCodes.has(m.member_code))
           const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
           let hasLocalNewer = false
 
-          const merged = data.members.map((cloudM: RosterMember) => {
-            const localM = curMap.get(cloudM.member_code)
-            if (!localM) return cloudM
+          const merged = safeCloudMembers.map((cloudM: RosterMember) => {
+            const cleanCloudM: RosterMember = {
+              ...cloudM,
+              avatar_url: sanitizeMemberAvatar(cloudM.avatar_url),
+            }
+            const localM = curMap.get(cleanCloudM.member_code)
+            if (!localM) return cleanCloudM
 
             const localTime = localM.updated_at ? new Date(localM.updated_at).getTime() : 0
-            const cloudTime = cloudM.updated_at ? new Date(cloudM.updated_at).getTime() : 0
+            const cloudTime = cleanCloudM.updated_at ? new Date(cleanCloudM.updated_at).getTime() : 0
 
             // Nếu local có cập nhật mới hơn cloud, bảo toàn tuyệt đối dữ liệu local!
             if (localTime > cloudTime) {
               hasLocalNewer = true
               return {
-                ...cloudM,
+                ...cleanCloudM,
                 ...localM,
-                current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
-                absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
+                avatar_url: sanitizeMemberAvatar(localM.avatar_url) || cleanCloudM.avatar_url,
+                current_score: cleanCloudM.current_score !== undefined ? cleanCloudM.current_score : (localM?.current_score ?? 60),
+                absent_count_t02: cleanCloudM.absent_count_t02 !== undefined ? cleanCloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
               }
             } else {
               return {
                 ...localM,
-                ...cloudM,
-                current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
-                absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
+                ...cleanCloudM,
+                avatar_url: cleanCloudM.avatar_url || sanitizeMemberAvatar(localM.avatar_url),
+                current_score: cleanCloudM.current_score !== undefined ? cleanCloudM.current_score : (localM?.current_score ?? 60),
+                absent_count_t02: cleanCloudM.absent_count_t02 !== undefined ? cleanCloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
               }
             }
           })
 
-          // Giữ lại các thành viên mới tạo ở local mà cloud chưa kịp có
-          const cloudCodes = new Set(data.members.map((m: any) => m.member_code))
-          const localOnlyMembers = currentMembers.filter((m) => !cloudCodes.has(m.member_code))
+          // Giữ lại các thành viên mới tạo ở local mà cloud chưa kịp có (loại trừ đã xóa)
+          const cloudCodes = new Set(safeCloudMembers.map((m: any) => m.member_code))
+          const localOnlyMembers = currentMembers.filter((m) => !cloudCodes.has(m.member_code) && !deletedCodes.has(m.member_code))
           if (localOnlyMembers.length > 0) {
-            merged.push(...localOnlyMembers)
+            merged.push(...localOnlyMembers.map((m) => ({
+              ...m,
+              avatar_url: sanitizeMemberAvatar(m.avatar_url),
+            })))
             hasLocalNewer = true
           }
 
@@ -777,11 +822,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
           // Đẩy ngay bản cập nhật mới nhất lên cloud nếu local có sửa đổi mới hơn
           if (hasLocalNewer) {
-            syncToCloud({ members: reconciled })
+            syncToCloud({
+              members: reconciled,
+              deletedMemberCodes: Array.from(deletedCodes),
+            })
           }
         } else if (!data.members || data.members.length === 0) {
           // Lưu 48 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
-          syncToCloud({ members: membersRef.current })
+          syncToCloud({
+            members: membersRef.current,
+            deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
+          })
         }
 
         if (data.disputes && Array.isArray(data.disputes)) {
@@ -1028,6 +1079,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const generatedCode = data.studentId ? data.studentId.trim() : `STAFF-00${nextStt}`
     const nowIso = new Date().toISOString()
 
+    const cleanAvatar = sanitizeMemberAvatar(data.avatarUrl?.trim())
     const newMember: RosterMember = {
       source_stt: nextStt,
       member_code: generatedCode,
@@ -1043,11 +1095,19 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       email: data.email.trim(),
       current_score: 60,
       absent_count_t02: 0,
-      avatar_url: data.avatarUrl?.trim() || undefined,
+      avatar_url: cleanAvatar || undefined,
       updated_at: nowIso,
     }
 
-    const currentList = membersRef.current.length > 0 ? membersRef.current : members
+    // Gỡ khỏi deletedMemberCodes nếu trước đó từng bị đánh dấu xóa
+    deletedMemberCodesRef.current.delete(generatedCode)
+    try {
+      localStorage.setItem('issac_deleted_member_codes', JSON.stringify(Array.from(deletedMemberCodesRef.current)))
+    } catch (e) {}
+
+    const currentList = (membersRef.current.length > 0 ? membersRef.current : members).filter(
+      (m) => m.member_code !== generatedCode && !deletedMemberCodesRef.current.has(m.member_code)
+    )
     const updated = getRankedMembers([...currentList, newMember])
     membersRef.current = updated
     setMembers(updated)
@@ -1056,7 +1116,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Error saving members to localStorage:', e)
     }
-    syncToCloud({ members: updated })
+    syncToCloud({
+      action: 'add_member',
+      member: newMember,
+      members: updated,
+      deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
+    })
   }
 
   // Cập nhật thông tin thành viên & ảnh đại diện Avatar
@@ -1086,9 +1151,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           deptSlug = deptSlugMap[updates.department_code].slug
         }
 
+        const cleanAvatar = updates.avatar_url !== undefined ? sanitizeMemberAvatar(updates.avatar_url) : m.avatar_url
+
         return {
           ...m,
           ...updates,
+          avatar_url: cleanAvatar,
           department_name: deptName,
           department_slug: deptSlug,
           updated_at: nowIso,
@@ -1109,7 +1177,10 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Error saving updated members to localStorage:', e)
     }
-    syncToCloud({ members: reRanked })
+    syncToCloud({
+      members: reRanked,
+      deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
+    })
 
     return { success: true, message: 'Đã cập nhật thông tin thành viên thành công!' }
   }
@@ -1122,6 +1193,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const target = currentList.find((m) => m.member_code === memberCode)
     if (!target) return { success: false, message: 'Không tìm thấy thành viên để xóa' }
 
+    deletedMemberCodesRef.current.add(memberCode)
+    try {
+      localStorage.setItem('issac_deleted_member_codes', JSON.stringify(Array.from(deletedMemberCodesRef.current)))
+    } catch (e) {}
+
     const updated = currentList.filter((m) => m.member_code !== memberCode)
     const reRanked = getRankedMembers(updated)
     membersRef.current = reRanked
@@ -1131,7 +1207,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Error saving members after deletion:', e)
     }
-    syncToCloud({ members: reRanked })
+    syncToCloud({
+      action: 'delete_member',
+      memberCode,
+      members: reRanked,
+      deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
+    })
     return { success: true, message: `Đã xóa thành viên ${target.full_name} khỏi hệ thống.` }
   }
 

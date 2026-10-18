@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useClub } from '@/lib/context/ClubContext'
 import type { DepartmentCode } from '@/types/database'
 import { UserPlus, X, CheckCircle2, ShieldAlert, Camera, Upload, Trash2 } from 'lucide-react'
+import { compressImage } from '@/lib/utils/imageCompress'
 
 interface AddMemberModalProps {
   isOpen: boolean
@@ -26,15 +27,11 @@ export function AddMemberModal({ isOpen, onClose }: AddMemberModalProps) {
 
   if (!isOpen) return null
 
-  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string
-      if (dataUrl) setAvatarUrl(dataUrl)
-    }
-    reader.readAsDataURL(file)
+    const compressed = await compressImage(file, 160, 0.8)
+    if (compressed) setAvatarUrl(compressed)
   }
 
   const handleSubmit = (e: React.FormEvent) => {

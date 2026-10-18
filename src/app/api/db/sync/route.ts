@@ -17,6 +17,7 @@ let cachedDeletedPeriodIds: string[] | null = null
 let cachedCustomRules: any[] | null = null
 let cachedAccounts: any[] | null = null
 let cachedDeletedAccountIds: string[] | null = null
+let cachedDeletedMemberCodes: string[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET() {
@@ -42,6 +43,7 @@ export async function GET() {
         'issac_custom_rules_cloud',
         'issac_issued_accounts_cloud',
         'issac_deleted_account_ids',
+        'issac_deleted_member_codes',
       ])
 
     if (!error && data && data.length > 0) {
@@ -59,6 +61,7 @@ export async function GET() {
       const customRulesRow = data.find((r) => r.key === 'issac_custom_rules_cloud')
       const accountsRow = data.find((r) => r.key === 'issac_issued_accounts_cloud')
       const deletedAccountsRow = data.find((r) => r.key === 'issac_deleted_account_ids')
+      const deletedMemberCodesRow = data.find((r) => r.key === 'issac_deleted_member_codes')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -74,6 +77,7 @@ export async function GET() {
       let customRulesFromDb = null
       let accountsFromDb = null
       let deletedAccountIdsFromDb = null
+      let deletedMemberCodesFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -184,6 +188,15 @@ export async function GET() {
         }
       }
 
+      if (deletedMemberCodesRow?.value) {
+        try {
+          deletedMemberCodesFromDb = JSON.parse(deletedMemberCodesRow.value)
+          cachedDeletedMemberCodes = deletedMemberCodesFromDb
+        } catch (e) {
+          console.error('Error parsing deleted member codes JSON:', e)
+        }
+      }
+
       if (accountsRow?.value) {
         try {
           accountsFromDb = JSON.parse(accountsRow.value)
@@ -225,12 +238,24 @@ export async function GET() {
         finalAccounts = finalAccounts.filter((a: any) => a?.id && !activeDeletedAccountIds.has(a.id))
       }
 
+      const activeDeletedMemberCodes = new Set(deletedMemberCodesFromDb || cachedDeletedMemberCodes || [])
+      let finalMembers = membersFromDb || cachedMembers
+      if (Array.isArray(finalMembers)) {
+        if (activeDeletedMemberCodes.size > 0) {
+          finalMembers = finalMembers.filter((m: any) => m?.member_code && !activeDeletedMemberCodes.has(m.member_code))
+        }
+        finalMembers = finalMembers.map((m: any) => ({
+          ...m,
+          avatar_url: m.avatar_url && m.avatar_url.length > 40000 ? undefined : m.avatar_url,
+        }))
+      }
+
       return NextResponse.json({
         success: true,
         events: finalEvents,
         activeEventId: activeEventIdFromDb || cachedActiveEventId || '',
         proposals: proposalsFromDb || cachedProposals,
-        members: membersFromDb || cachedMembers,
+        members: finalMembers,
         disputes: disputesFromDb || cachedDisputes,
         periods: safePeriods,
         activePeriodId: activePeriodFromDb || cachedActivePeriodId || (safePeriods[0]?.id || 'month-2026-10'),
@@ -241,6 +266,7 @@ export async function GET() {
         deletedPeriodIds: deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [],
         accounts: finalAccounts,
         deletedAccountIds: Array.from(activeDeletedAccountIds),
+        deletedMemberCodes: Array.from(activeDeletedMemberCodes),
         source: 'supabase_cloud',
       })
     }
@@ -345,6 +371,8 @@ export async function POST(request: Request) {
       accounts,
       deletedAccountIds,
       accountId,
+      deletedMemberCodes,
+      member,
     } = body
     const supabase = createAdminClient()
 
@@ -476,6 +504,35 @@ export async function POST(request: Request) {
           )
       } catch (delAccErr) {
         console.warn('Supabase deleted accounts upsert notice:', delAccErr)
+      }
+    }
+
+    // 0.4 Quản lý danh sách Member Code đã xóa (Tombstones để chống hồi sinh khi sync từ thiết bị khác)
+    if (deletedMemberCodes !== undefined || (action === 'delete_member' && memberCode)) {
+      const incomingDel = Array.isArray(deletedMemberCodes) ? deletedMemberCodes : []
+      if (action === 'delete_member' && memberCode && !incomingDel.includes(memberCode)) {
+        incomingDel.push(memberCode)
+      }
+      const combinedDelSet = new Set([
+        ...(cachedDeletedMemberCodes || []),
+        ...incomingDel,
+      ])
+      cachedDeletedMemberCodes = Array.from(combinedDelSet)
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_member_codes',
+              value: JSON.stringify(cachedDeletedMemberCodes),
+              description: 'Cloud synchronized deleted member codes for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (delMemErr) {
+        console.warn('Supabase deleted member codes upsert notice:', delMemErr)
       }
     }
 
@@ -718,15 +775,40 @@ export async function POST(request: Request) {
       }
     }
 
-    if (members !== undefined) {
-      cachedMembers = members
+    if (members !== undefined || action === 'add_member' || action === 'delete_member') {
+      const activeDelMemSet = new Set(cachedDeletedMemberCodes || [])
+      let baseMembers = members !== undefined ? members : (cachedMembers || [])
+      if (!Array.isArray(baseMembers)) baseMembers = []
+
+      if (action === 'delete_member' && memberCode) {
+        baseMembers = baseMembers.filter((m: any) => m.member_code !== memberCode)
+      }
+
+      if (action === 'add_member' && member) {
+        const existingIdx = baseMembers.findIndex((m: any) => m.member_code === member.member_code)
+        if (existingIdx >= 0) {
+          baseMembers[existingIdx] = member
+        } else {
+          baseMembers.push(member)
+        }
+      }
+
+      // Filter out deleted members and sanitize oversized avatars
+      const cleanMembers = baseMembers
+        .filter((m: any) => m?.member_code && !activeDelMemSet.has(m.member_code))
+        .map((m: any) => ({
+          ...m,
+          avatar_url: m.avatar_url && m.avatar_url.length > 40000 ? undefined : m.avatar_url,
+        }))
+
+      cachedMembers = cleanMembers
       try {
         await supabase
           .from('settings')
           .upsert(
             {
               key: 'issac_members_cloud',
-              value: JSON.stringify(members),
+              value: JSON.stringify(cleanMembers),
               description: 'Cloud synchronized members for iSSAC Web',
               updated_at: new Date().toISOString(),
             },
@@ -894,6 +976,7 @@ export async function POST(request: Request) {
       deletedPeriodIds: cachedDeletedPeriodIds || [],
       accounts: cachedAccounts,
       deletedAccountIds: cachedDeletedAccountIds || [],
+      deletedMemberCodes: cachedDeletedMemberCodes || [],
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'
