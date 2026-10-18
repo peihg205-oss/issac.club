@@ -377,6 +377,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const isHydratedRef = useRef(false)
   const deletedProposalIdsRef = useRef<Set<string>>(new Set())
   const deletedEventIdsRef = useRef<Set<string>>(new Set())
+  const deletedPeriodIdsRef = useRef<Set<string>>(new Set())
 
   // Đổi chu kỳ hoạt động và đồng bộ lập tức đa nền tảng
   const setCurrentActivePeriodId = (newId: string) => {
@@ -467,11 +468,49 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      const savedDeleted = localStorage.getItem('issac_deleted_proposal_ids')
+      if (savedDeleted) {
+        const parsed = JSON.parse(savedDeleted)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => deletedProposalIdsRef.current.add(id))
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const savedDeletedEvents = localStorage.getItem('issac_deleted_event_ids')
+      if (savedDeletedEvents) {
+        const parsed = JSON.parse(savedDeletedEvents)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => deletedEventIdsRef.current.add(id))
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const savedDeletedPeriods = localStorage.getItem('issac_deleted_period_ids')
+      if (savedDeletedPeriods) {
+        const parsed = JSON.parse(savedDeletedPeriods)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => deletedPeriodIdsRef.current.add(id))
+        }
+      }
+    } catch (e) {}
+
+    try {
       const savedPeriods = localStorage.getItem('issac_periods_clean_v1')
       if (savedPeriods) {
         const parsed = JSON.parse(savedPeriods)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setPeriods(parsed)
+          const clean = parsed.filter((p: any) => p?.id && !deletedPeriodIdsRef.current.has(p.id))
+          if (clean.length > 0) {
+            setPeriods(clean)
+          }
+        }
+      } else {
+        const cleanAvailable = AVAILABLE_PERIODS.filter((p) => !deletedPeriodIdsRef.current.has(p.id))
+        if (cleanAvailable.length > 0) {
+          setPeriods(cleanAvailable)
         }
       }
     } catch (e) {
@@ -498,26 +537,6 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {}
 
-    try {
-      const savedDeleted = localStorage.getItem('issac_deleted_proposal_ids')
-      if (savedDeleted) {
-        const parsed = JSON.parse(savedDeleted)
-        if (Array.isArray(parsed)) {
-          parsed.forEach((id: string) => deletedProposalIdsRef.current.add(id))
-        }
-      }
-    } catch (e) {}
-
-    try {
-      const savedDeletedEvents = localStorage.getItem('issac_deleted_event_ids')
-      if (savedDeletedEvents) {
-        const parsed = JSON.parse(savedDeletedEvents)
-        if (Array.isArray(parsed)) {
-          parsed.forEach((id: string) => deletedEventIdsRef.current.add(id))
-        }
-      }
-    } catch (e) {}
-
     isHydratedRef.current = true
     // Đồng bộ tức thì từ Supabase Cloud khi vừa tải trang
     fetchCloudSync()
@@ -536,6 +555,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     customRules?: CustomRuleItem[]
     deletedProposalIds?: string[]
     deletedEventIds?: string[]
+    deletedPeriodIds?: string[]
     action?: string
     [key: string]: any
   }) => {
@@ -573,6 +593,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem(
               'issac_deleted_event_ids',
               JSON.stringify(Array.from(deletedEventIdsRef.current))
+            )
+          } catch (e) {}
+        }
+
+        // 1.3 Đồng bộ danh sách ID chu kỳ đã xóa (Chống hồi sinh chu kỳ khi chuyển thiết bị)
+        if (data.deletedPeriodIds && Array.isArray(data.deletedPeriodIds)) {
+          data.deletedPeriodIds.forEach((id: string) => deletedPeriodIdsRef.current.add(id))
+          try {
+            localStorage.setItem(
+              'issac_deleted_period_ids',
+              JSON.stringify(Array.from(deletedPeriodIdsRef.current))
             )
           } catch (e) {}
         }
@@ -646,15 +677,23 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
         if (data.periods && Array.isArray(data.periods) && data.periods.length > 0) {
           const periodMap = new Map<string, PeriodItem>()
-          AVAILABLE_PERIODS.forEach((p) => periodMap.set(p.id, p))
+          AVAILABLE_PERIODS.forEach((p) => {
+            if (!deletedPeriodIdsRef.current.has(p.id)) {
+              periodMap.set(p.id, p)
+            }
+          })
           data.periods.forEach((p: PeriodItem) => {
-            if (p?.id) periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+            if (p?.id && !deletedPeriodIdsRef.current.has(p.id)) {
+              periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+            }
           })
           const mergedPeriods = Array.from(periodMap.values())
-          setPeriods(mergedPeriods)
-          try {
-            localStorage.setItem('issac_periods_clean_v1', JSON.stringify(mergedPeriods))
-          } catch (e) {}
+          if (mergedPeriods.length > 0) {
+            setPeriods(mergedPeriods)
+            try {
+              localStorage.setItem('issac_periods_clean_v1', JSON.stringify(mergedPeriods))
+            } catch (e) {}
+          }
         }
         if (data.activePeriodId) {
           _setCurrentActivePeriodId(data.activePeriodId)
@@ -1911,6 +1950,16 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       console.error('Error saving period to localStorage:', e)
     }
 
+    if (deletedPeriodIdsRef.current.has(activeItem.id)) {
+      deletedPeriodIdsRef.current.delete(activeItem.id)
+      try {
+        localStorage.setItem(
+          'issac_deleted_period_ids',
+          JSON.stringify(Array.from(deletedPeriodIdsRef.current))
+        )
+      } catch (e) {}
+    }
+
     // 4. Lưu vĩnh viễn lên Supabase Cloud
     syncToCloud({
       periods: updatedPeriods,
@@ -1918,6 +1967,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       members: resetMembers,
       proposals: updatedProps,
       customPeriodScores: updatedPeriodScores,
+      deletedPeriodIds: Array.from(deletedPeriodIdsRef.current),
     })
 
     return {
@@ -2168,6 +2218,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const updatedProps = [logItem, ...proposals]
     setProposals(updatedProps)
 
+    deletedPeriodIdsRef.current.add(periodId)
+
     try {
       localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updatedPeriods))
       if (periodId === currentActivePeriodId) {
@@ -2175,11 +2227,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
       localStorage.setItem('issac_custom_period_scores', JSON.stringify(updatedCustomScores))
       localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      localStorage.setItem(
+        'issac_deleted_period_ids',
+        JSON.stringify(Array.from(deletedPeriodIdsRef.current))
+      )
     } catch (e) {
       console.error('Error deleting period from localStorage:', e)
     }
 
     syncToCloud({
+      action: 'delete_period',
+      periodId,
+      deletedPeriodIds: Array.from(deletedPeriodIdsRef.current),
       periods: updatedPeriods,
       activePeriodId: nextActiveId,
       customPeriodScores: updatedCustomScores,

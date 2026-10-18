@@ -13,6 +13,7 @@ let cachedActivePeriodId: string | null = null
 let cachedPeriodScores: Record<string, any> | null = null
 let cachedDeletedProposalIds: string[] | null = null
 let cachedDeletedEventIds: string[] | null = null
+let cachedDeletedPeriodIds: string[] | null = null
 let cachedCustomRules: any[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
@@ -35,6 +36,7 @@ export async function GET() {
         'issac_custom_period_scores',
         'issac_deleted_proposal_ids',
         'issac_deleted_event_ids',
+        'issac_deleted_period_ids',
         'issac_custom_rules_cloud',
       ])
 
@@ -48,6 +50,7 @@ export async function GET() {
       const scoresRow = data.find((r) => r.key === 'issac_custom_period_scores')
       const deletedIdsRow = data.find((r) => r.key === 'issac_deleted_proposal_ids')
       const deletedEventIdsRow = data.find((r) => r.key === 'issac_deleted_event_ids')
+      const deletedPeriodIdsRow = data.find((r) => r.key === 'issac_deleted_period_ids')
       const activeEventRow = data.find((r) => r.key === 'issac_active_event_id')
       const customRulesRow = data.find((r) => r.key === 'issac_custom_rules_cloud')
 
@@ -60,6 +63,7 @@ export async function GET() {
       let scoresFromDb = null
       let deletedIdsFromDb = null
       let deletedEventIdsFromDb = null
+      let deletedPeriodIdsFromDb = null
       let activeEventIdFromDb = null
       let customRulesFromDb = null
 
@@ -154,19 +158,33 @@ export async function GET() {
         }
       }
 
+      if (deletedPeriodIdsRow?.value) {
+        try {
+          deletedPeriodIdsFromDb = JSON.parse(deletedPeriodIdsRow.value)
+          cachedDeletedPeriodIds = deletedPeriodIdsFromDb
+        } catch (e) {
+          console.error('Error parsing deleted period IDs JSON:', e)
+        }
+      }
+
       const activeDeletedEventIds = new Set(deletedEventIdsFromDb || cachedDeletedEventIds || [])
       let finalEvents = eventsFromDb || cachedEvents || []
       if (activeDeletedEventIds.size > 0 && Array.isArray(finalEvents)) {
         finalEvents = finalEvents.filter((e: any) => !activeDeletedEventIds.has(e.id))
       }
 
-      // Luôn đảm bảo AVAILABLE_PERIODS mặc định (như Tháng 10/2026) hiện diện đầy đủ
+      const activeDeletedPeriodIds = new Set(deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [])
       const periodMap = new Map<string, any>()
+      // Chỉ nạp từ AVAILABLE_PERIODS nếu chu kỳ đó CHƯA TỪNG bị xóa
       for (const p of AVAILABLE_PERIODS) {
-        periodMap.set(p.id, p)
+        if (!activeDeletedPeriodIds.has(p.id)) {
+          periodMap.set(p.id, p)
+        }
       }
       for (const p of (periodsFromDb || cachedPeriods || [])) {
-        if (p?.id) periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+        if (p?.id && !activeDeletedPeriodIds.has(p.id)) {
+          periodMap.set(p.id, { ...(periodMap.get(p.id) || {}), ...p })
+        }
       }
       const safePeriods = Array.from(periodMap.values())
 
@@ -178,11 +196,12 @@ export async function GET() {
         members: membersFromDb || cachedMembers,
         disputes: disputesFromDb || cachedDisputes,
         periods: safePeriods,
-        activePeriodId: activePeriodFromDb || cachedActivePeriodId || 'month-2026-10',
+        activePeriodId: activePeriodFromDb || cachedActivePeriodId || (safePeriods[0]?.id || 'month-2026-10'),
         customPeriodScores: scoresFromDb || cachedPeriodScores,
         customRules: customRulesFromDb || cachedCustomRules || [],
         deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
         deletedEventIds: deletedEventIdsFromDb || cachedDeletedEventIds || [],
+        deletedPeriodIds: deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [],
         source: 'supabase_cloud',
       })
     }
@@ -193,13 +212,19 @@ export async function GET() {
       fallbackEvents = fallbackEvents.filter((e: any) => !fallbackDeletedEventIds.has(e.id))
     }
 
+    const fallbackDeletedPeriodIds = new Set(cachedDeletedPeriodIds || [])
     const fallbackPeriodMap = new Map<string, any>()
     for (const p of AVAILABLE_PERIODS) {
-      fallbackPeriodMap.set(p.id, p)
+      if (!fallbackDeletedPeriodIds.has(p.id)) {
+        fallbackPeriodMap.set(p.id, p)
+      }
     }
     for (const p of (cachedPeriods || [])) {
-      if (p?.id) fallbackPeriodMap.set(p.id, { ...(fallbackPeriodMap.get(p.id) || {}), ...p })
+      if (p?.id && !fallbackDeletedPeriodIds.has(p.id)) {
+        fallbackPeriodMap.set(p.id, { ...(fallbackPeriodMap.get(p.id) || {}), ...p })
+      }
     }
+    const safeFallbackPeriods = Array.from(fallbackPeriodMap.values())
 
     return NextResponse.json({
       success: true,
@@ -208,12 +233,13 @@ export async function GET() {
       proposals: cachedProposals,
       members: cachedMembers,
       disputes: cachedDisputes,
-      periods: Array.from(fallbackPeriodMap.values()),
-      activePeriodId: cachedActivePeriodId || 'month-2026-10',
+      periods: safeFallbackPeriods,
+      activePeriodId: cachedActivePeriodId || (safeFallbackPeriods[0]?.id || 'month-2026-10'),
       customPeriodScores: cachedPeriodScores,
       customRules: cachedCustomRules || [],
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
+      deletedPeriodIds: cachedDeletedPeriodIds || [],
       source: 'cache_memory',
     })
   } catch (err: unknown) {
@@ -257,6 +283,8 @@ export async function POST(request: Request) {
       proposalId,
       deletedProposalIds,
       deletedEventIds,
+      deletedPeriodIds,
+      periodId,
       activeEventId,
       members,
       disputes,
@@ -325,6 +353,35 @@ export async function POST(request: Request) {
           )
       } catch (delEvtErr) {
         console.warn('Supabase deleted events upsert notice:', delEvtErr)
+      }
+    }
+
+    // 0.2 Quản lý danh sách ID chu kỳ thi đua đã xóa (Tombstones để chống hồi sinh chu kỳ đã xóa)
+    if (deletedPeriodIds !== undefined || (action === 'delete_period' && periodId)) {
+      const incomingDelPer = Array.isArray(deletedPeriodIds) ? deletedPeriodIds : []
+      if (action === 'delete_period' && periodId && !incomingDelPer.includes(periodId)) {
+        incomingDelPer.push(periodId)
+      }
+      const combinedDelPerSet = new Set([
+        ...(cachedDeletedPeriodIds || []),
+        ...incomingDelPer,
+      ])
+      cachedDeletedPeriodIds = Array.from(combinedDelPerSet)
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_period_ids',
+              value: JSON.stringify(cachedDeletedPeriodIds),
+              description: 'Cloud synchronized deleted period IDs for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (delPerErr) {
+        console.warn('Supabase deleted periods upsert notice:', delPerErr)
       }
     }
 
@@ -563,14 +620,18 @@ export async function POST(request: Request) {
     }
 
     if (periods !== undefined) {
-      cachedPeriods = periods
+      const activeDelPerSet = new Set(cachedDeletedPeriodIds || [])
+      const cleanPeriods = Array.isArray(periods)
+        ? periods.filter((p: any) => p?.id && !activeDelPerSet.has(p.id))
+        : periods
+      cachedPeriods = cleanPeriods
       try {
         await supabase
           .from('settings')
           .upsert(
             {
               key: 'issac_periods_cloud',
-              value: JSON.stringify(periods),
+              value: JSON.stringify(cleanPeriods),
               description: 'Cloud synchronized periods for iSSAC Web',
               updated_at: new Date().toISOString(),
             },
