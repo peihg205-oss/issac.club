@@ -154,5 +154,27 @@ describe('QR Check-in Pass & Admin Scanner Anti-Fraud Logic', () => {
     expect(canIssueQrAfterVerify).toBe(true)
     expect(verifiedMember.full_name).toBe('Phương Gia Huy')
   })
+
+  it('13. Tra cứu điểm Tab 3: Không mặc định hiển thị điểm của thành viên đầu tiên khi chưa xác thực MSSV', () => {
+    let verifiedMember: any = null
+    let selectedLookupMember = ''
+
+    // Khi người dùng mới vào Tab 3 chưa nhập MSSV
+    const currentLookupMember = (selectedLookupMember ? INITIAL_MEMBERS.find((m) => m.member_code === selectedLookupMember) : null) || verifiedMember || null
+    expect(currentLookupMember).toBeNull()
+  })
+
+  it('14. Tra cứu điểm Tab 3: Khi nhập đúng MSSV sẽ hiển thị chính xác điểm thi đua cá nhân', () => {
+    const inputMssv = '24310088' // Trần Đức Thắng
+    const verifiedMember = INITIAL_MEMBERS.find((m) => m.student_id === inputMssv)
+    expect(verifiedMember).toBeDefined()
+
+    const selectedLookupMember = verifiedMember!.member_code
+    const currentLookupMember = INITIAL_MEMBERS.find((m) => m.member_code === selectedLookupMember)
+    expect(currentLookupMember).toBeDefined()
+    expect(currentLookupMember?.full_name).toBe('Trần Đức Thắng')
+    expect(currentLookupMember?.department_name).toBe('Ban Truyền thông')
+    expect(currentLookupMember?.current_score).toBe(60)
+  })
 })
 

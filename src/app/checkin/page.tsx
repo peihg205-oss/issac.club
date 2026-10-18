@@ -129,6 +129,7 @@ function CheckinContent() {
             setVerifiedRegMember(found)
             setRegMemberCode(found.member_code)
             setCheckinMemberCode(found.member_code)
+            setSelectedLookupMember(found.member_code)
           }
         }
       } catch (err) {
@@ -165,6 +166,7 @@ function CheckinContent() {
     setVerifiedRegMember(member)
     setRegMemberCode(member.member_code)
     setCheckinMemberCode(member.member_code)
+    setSelectedLookupMember(member.member_code)
     setTargetConfirmMember(null)
     setMssvInput('')
     setMssvError(null)
@@ -186,6 +188,8 @@ function CheckinContent() {
     setVerifiedRegMember(null)
     setRegMemberCode('')
     setCheckinMemberCode('')
+    setSelectedLookupMember('')
+    setLookupQuery('')
     setMssvInput('')
     setMssvError(null)
     if (typeof window !== 'undefined') {
@@ -201,9 +205,9 @@ function CheckinContent() {
     })
   }
 
-  // Tra cứu điểm thành viên
+  // Tra cứu điểm thành viên (Không mặc định chọn người đầu tiên để tránh nhầm lẫn)
   const [lookupQuery, setLookupQuery] = useState<string>('')
-  const [selectedLookupMember, setSelectedLookupMember] = useState<string>(members[0]?.member_code || '')
+  const [selectedLookupMember, setSelectedLookupMember] = useState<string>('')
 
   // Đồng bộ URL params nếu có
   useEffect(() => {
@@ -225,7 +229,10 @@ function CheckinContent() {
 
   const currentEvent = events.find((e) => e.id === selectedEventId) || activeEvent || events[0]
   const currentCheckinMember = members.find((m) => m.member_code === checkinMemberCode)
-  const currentLookupMember = members.find((m) => m.member_code === selectedLookupMember)
+  const currentLookupMember =
+    (selectedLookupMember ? members.find((m) => m.member_code === selectedLookupMember) : null) ||
+    verifiedRegMember ||
+    null
 
   // Đọc trạng thái khóa thiết bị từ localStorage
   useEffect(() => {
@@ -1628,89 +1635,256 @@ function CheckinContent() {
                 </div>
               </div>
 
-              {/* Selector danh sách thành viên */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Chọn thành viên cần xem thông tin ({filteredLookupMembers.length} kết quả):
-                </label>
-                <select
-                  suppressHydrationWarning
-                  value={selectedLookupMember}
-                  onChange={(e) => setSelectedLookupMember(e.target.value)}
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1351D8] shadow-2xs cursor-pointer transition"
-                >
-                  {filteredLookupMembers.map((m) => (
-                    <option key={m.member_code} value={m.member_code} suppressHydrationWarning>
-                      {m.full_name} ({m.department_name} - MSSV: {m.student_id || m.member_code})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Kết quả tìm kiếm khi nhập từ khóa tra cứu */}
+              {lookupQuery.trim() ? (
+                <div className="p-4 sm:p-5 bg-blue-50/50 rounded-2xl border border-blue-200/80 space-y-3 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Search className="w-3.5 h-3.5 text-[#1351D8]" />
+                      <span>Kết quả tìm kiếm cho &ldquo;{lookupQuery.trim()}&rdquo; ({filteredLookupMembers.length} thành viên):</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLookupQuery('')}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                    >
+                      Đóng tìm kiếm
+                    </button>
+                  </div>
 
-              {/* Thẻ hiển thị điểm cá nhân */}
-              {currentLookupMember && (
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 space-y-5 shadow-2xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0B1E48] to-[#1351D8] text-white font-black flex items-center justify-center text-lg shadow-sm shrink-0">
+                  {filteredLookupMembers.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic py-2">
+                      Không tìm thấy thành viên nào phù hợp với từ khóa này.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-80 overflow-y-auto pr-1">
+                      {filteredLookupMembers.map((m) => {
+                        const isSelected = currentLookupMember?.member_code === m.member_code
+                        return (
+                          <button
+                            key={m.member_code}
+                            type="button"
+                            onClick={() => {
+                              setSelectedLookupMember(m.member_code)
+                              setLookupQuery('')
+                            }}
+                            className={`flex items-center justify-between p-3 rounded-xl border text-left transition cursor-pointer ${
+                              isSelected
+                                ? 'bg-blue-100/70 border-[#1351D8] shadow-2xs'
+                                : 'bg-white border-slate-200/90 hover:border-blue-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-[#0B1E48] text-white font-black text-xs flex items-center justify-center shrink-0">
+                                {m.full_name.charAt(0)}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="font-extrabold text-xs text-slate-900 truncate block">
+                                  {m.full_name}
+                                </span>
+                                <span className="text-[10.5px] text-slate-500 truncate block">
+                                  {m.department_name} • MSSV: {m.student_id || m.member_code}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0 ml-2">
+                              <span className="text-xs font-black text-[#1351D8] block">{m.current_score}đ</span>
+                              <span className="text-[10px] font-bold text-slate-400 block">#{m.rank_in_club || 1}</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : currentLookupMember ? (
+                /* Thẻ hiển thị điểm cá nhân của thành viên */
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  {/* Thanh thông tin xác thực danh tính */}
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/40 to-white border border-blue-200/80 shadow-2xs">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#0B1E48] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
                         {currentLookupMember.full_name.charAt(0)}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-lg font-black text-[#0B1E48]">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
                             {currentLookupMember.full_name}
-                          </h4>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200/70">
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200 shrink-0">
                             {currentLookupMember.department_name}
                           </span>
+                          {currentLookupMember.member_code === verifiedRegMember?.member_code ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Hồ sơ chính chủ của bạn
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
+                              Kết quả tra cứu
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs text-slate-500 font-mono mt-1">
-                          MSSV: {currentLookupMember.student_id || '-'} | Lớp: {currentLookupMember.class_name || '-'}
+                        <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                          MSSV: <strong className="text-slate-800">{currentLookupMember.student_id || currentLookupMember.member_code}</strong>
+                          {currentLookupMember.class_name ? ` • Lớp ${currentLookupMember.class_name}` : ''}
+                          {currentLookupMember.position ? ` • ${currentLookupMember.position}` : ''}
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                          Điểm thi đua hiện tại
-                        </span>
-                        <span className="text-2xl sm:text-3xl font-black text-[#1351D8]">
-                          {currentLookupMember.current_score}đ
-                        </span>
-                      </div>
-                      <div className="text-right pl-4 border-l border-slate-200">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                          Xếp hạng CLB
-                        </span>
-                        <span className="text-2xl sm:text-3xl font-black text-[#0B1E48]">
-                          #{currentLookupMember.rank_in_club || 1}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      {currentLookupMember.member_code !== verifiedRegMember?.member_code && verifiedRegMember && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedLookupMember(verifiedRegMember.member_code)
+                            setLookupQuery('')
+                          }}
+                          className="text-xs font-bold text-[#1351D8] hover:text-[#0B1E48] px-2.5 py-1.5 rounded-xl hover:bg-blue-50 border border-blue-200 transition cursor-pointer"
+                        >
+                          Về điểm của tôi
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedLookupMember('')
+                          handleClearVerifiedMember()
+                        }}
+                        className="text-xs font-bold text-slate-500 hover:text-rose-600 px-2.5 py-1.5 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition cursor-pointer"
+                        title="Đổi sang MSSV khác"
+                      >
+                        Đổi MSSV
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
-                      <span className="text-[11px] text-slate-500 block">Vắng T02 không phép:</span>
-                      <span className="font-bold text-rose-600 text-sm mt-0.5 block">
-                        {currentLookupMember.absent_count_t02 || 0} lần
-                      </span>
+                  {/* Chi tiết bảng điểm thi đua */}
+                  <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 space-y-5 shadow-2xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0B1E48] to-[#1351D8] text-white font-black flex items-center justify-center text-lg shadow-sm shrink-0">
+                          {currentLookupMember.full_name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-lg font-black text-[#0B1E48]">
+                              {currentLookupMember.full_name}
+                            </h4>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200/70">
+                              {currentLookupMember.department_name}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-mono mt-1">
+                            MSSV: {currentLookupMember.student_id || '-'} | Lớp: {currentLookupMember.class_name || '-'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                            Điểm thi đua hiện tại
+                          </span>
+                          <span className="text-2xl sm:text-3xl font-black text-[#1351D8]">
+                            {currentLookupMember.current_score}đ
+                          </span>
+                        </div>
+                        <div className="text-right pl-4 border-l border-slate-200">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                            Xếp hạng CLB
+                          </span>
+                          <span className="text-2xl sm:text-3xl font-black text-[#0B1E48]">
+                            #{currentLookupMember.rank_in_club || 1}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
-                      <span className="text-[11px] text-slate-500 block">Vai trò CLB:</span>
-                      <span className="font-bold text-slate-800 text-sm truncate mt-0.5 block">
-                        {currentLookupMember.position || 'Thành viên'}
-                      </span>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                        <span className="text-[11px] text-slate-500 block">Vắng T02 không phép:</span>
+                        <span className="font-bold text-rose-600 text-sm mt-0.5 block">
+                          {currentLookupMember.absent_count_t02 || 0} lần
+                        </span>
+                      </div>
+                      <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                        <span className="text-[11px] text-slate-500 block">Vai trò CLB:</span>
+                        <span className="font-bold text-slate-800 text-sm truncate mt-0.5 block">
+                          {currentLookupMember.position || 'Thành viên'}
+                        </span>
+                      </div>
+                      <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                        <span className="text-[11px] text-slate-500 block">Khởi đầu chu kỳ:</span>
+                        <span className="font-bold text-slate-800 text-sm mt-0.5 block">60 điểm</span>
+                      </div>
+                      <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
+                        <span className="text-[11px] text-slate-500 block">Trạng thái:</span>
+                        <span className="font-bold text-emerald-600 text-sm mt-0.5 block">Đang hoạt động</span>
+                      </div>
                     </div>
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
-                      <span className="text-[11px] text-slate-500 block">Khởi đầu chu kỳ:</span>
-                      <span className="font-bold text-slate-800 text-sm mt-0.5 block">60 điểm</span>
+
+                    <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200/70 text-xs text-slate-600 space-y-1">
+                      <p className="font-bold text-[#0B1E48] flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-[#1351D8]" />
+                        <span>Quy chế tính điểm thi đua CLB Đại sứ sinh viên (iSSAC)</span>
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-slate-500">
+                        Mỗi thành viên khởi đầu chu kỳ với 60 điểm chuẩn. Điểm danh đúng giờ được cộng +1 điểm thi đua mỗi sự kiện (áp dụng khi đã đăng ký giữ chỗ trước tại Tab 1). Vắng không phép hoặc vi phạm quy chế sẽ bị trừ điểm theo biểu quyết của BCN.
+                      </p>
                     </div>
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
-                      <span className="text-[11px] text-slate-500 block">Trạng thái:</span>
-                      <span className="font-bold text-emerald-600 text-sm mt-0.5 block">Đang hoạt động</span>
+                  </div>
+                </div>
+              ) : (
+                /* Form nhập MSSV tra cứu điểm khi chưa xác thực */
+                <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border border-blue-200/80 shadow-2xs space-y-4 animate-in fade-in duration-200">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                      Nhập Mã sinh viên (MSSV) của bạn để tra cứu điểm thi đua: <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="lookup-mssv-input"
+                        type="text"
+                        value={mssvInput}
+                        onChange={(e) => {
+                          setMssvInput(e.target.value)
+                          setMssvError(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleVerifyMssv()
+                          }
+                        }}
+                        placeholder="Nhập MSSV (VD: 24310069)..."
+                        className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyMssv}
+                        className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                      >
+                        Tra cứu điểm
+                      </button>
                     </div>
+                  </div>
+
+                  {mssvError && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2 shadow-2xs animate-in fade-in duration-200">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{mssvError}</span>
+                    </div>
+                  )}
+
+                  <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
+                    <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-[#1351D8]" />
+                      <span>Bảo mật kết quả &amp; Tránh nhầm lẫn bảng điểm</span>
+                    </p>
+                    <p className="text-[11.5px] leading-relaxed text-slate-500">
+                      Hệ thống đối soát trực tiếp MSSV của bạn trong danh sách 48 thành viên CLB để hiển thị chính xác kết quả điểm thi đua, xếp hạng và lịch sử của chính bạn, tuyệt đối không bị chọn nhầm sang bảng điểm của người khác.
+                    </p>
                   </div>
                 </div>
               )}
