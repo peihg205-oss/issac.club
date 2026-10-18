@@ -152,7 +152,7 @@ function CheckinContent() {
     )
     if (!found) {
       setMssvError(
-        `Không tìm thấy MSSV "${mssvInput.trim()}" trong danh sách 48 thành viên CLB. Vui lòng kiểm tra lại chính xác MSSV của bạn.`
+        `Không tìm thấy MSSV "${mssvInput.trim()}" trong danh sách thành viên CLB. Vui lòng kiểm tra lại chính xác MSSV của bạn.`
       )
       setTargetConfirmMember(null)
       return
@@ -465,7 +465,7 @@ function CheckinContent() {
                 <span>Không Cần Đăng Nhập Mật Khẩu</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
-                Đăng Ký Sự Kiện &amp; Điểm Danh Dành Riêng Cho 48 Thành Viên CLB
+                Đăng Ký Sự Kiện &amp; Điểm Danh Dành Riêng Cho Thành Viên CLB
               </h2>
               <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed">
                 Thành viên không cần tài khoản riêng. Dễ dàng đăng ký giữ chỗ trước các sự kiện/workshop sắp tới của CLB, hoặc nhập <strong>Họ tên / MSSV</strong> và <strong>Mã PIN 4 số</strong> hiển thị trên máy chiếu hội trường để điểm danh trực tiếp.
@@ -1234,7 +1234,7 @@ function CheckinContent() {
                               <span>Tránh nhầm lẫn vé QR &amp; bảo vệ quyền lợi cá nhân</span>
                             </p>
                             <p className="text-[11.5px] leading-relaxed text-slate-500">
-                              Mỗi thành viên sở hữu một mã QR điểm danh gắn liền với MSSV trong danh sách 48 thành viên CLB. Nhập MSSV của bạn để hiện mã QR chính chủ, tránh nhầm lẫn với bạn khác.
+                              Mỗi thành viên sở hữu một mã QR điểm danh gắn liền với MSSV trong danh sách thành viên CLB. Nhập MSSV của bạn để hiện mã QR chính chủ, tránh nhầm lẫn với bạn khác.
                             </p>
                           </div>
                         </div>
@@ -1336,7 +1336,7 @@ function CheckinContent() {
                             </div>
                           )}
                           <span className="block text-[11px] text-slate-400 pl-1">
-                            (Nhập MSSV để xác minh chính chủ trong danh sách 48 thành viên CLB, tránh điểm danh nhầm người).
+                            (Nhập MSSV để xác minh chính chủ trong danh sách thành viên CLB, tránh điểm danh nhầm người).
                           </span>
                         </div>
                       )}
@@ -1883,7 +1883,7 @@ function CheckinContent() {
                       <span>Bảo mật kết quả &amp; Tránh nhầm lẫn bảng điểm</span>
                     </p>
                     <p className="text-[11.5px] leading-relaxed text-slate-500">
-                      Hệ thống đối soát trực tiếp MSSV của bạn trong danh sách 48 thành viên CLB để hiển thị chính xác kết quả điểm thi đua, xếp hạng và lịch sử của chính bạn, tuyệt đối không bị chọn nhầm sang bảng điểm của người khác.
+                      Hệ thống đối soát trực tiếp MSSV của bạn trong danh sách thành viên CLB để hiển thị chính xác kết quả điểm thi đua, xếp hạng và lịch sử của chính bạn, tuyệt đối không bị chọn nhầm sang bảng điểm của người khác.
                     </p>
                   </div>
                 </div>

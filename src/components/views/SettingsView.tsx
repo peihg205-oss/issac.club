@@ -454,7 +454,7 @@ export function SettingsView() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Quản trị chu kỳ thi đua và thiết lập sự kiện/workshop cho 48 thành viên CLB
+            Quản trị chu kỳ thi đua và thiết lập sự kiện/workshop cho các thành viên CLB
           </p>
         </div>
 
@@ -1072,7 +1072,7 @@ export function SettingsView() {
               <div className="p-3.5 rounded-xl bg-white/95 border border-blue-200/80 shadow-2xs space-y-1">
                 <span className="font-bold text-[#0B1E48] block text-xs">1. Tạo tháng thi đua mới (BCN)</span>
                 <span>
-                  Tạo độc lập theo lịch thực tế (ví dụ: <strong className="text-[#1351D8]">Tháng 10/2026</strong>). Không phá hủy lịch sử tháng cũ. Tất cả 48 thành viên tự động xuất phát từ mốc <strong className="text-[#0B1E48]">60 điểm</strong>.
+                  Tạo độc lập theo lịch thực tế (ví dụ: <strong className="text-[#1351D8]">Tháng 10/2026</strong>). Không phá hủy lịch sử tháng cũ. Tất cả thành viên tự động xuất phát từ mốc <strong className="text-[#0B1E48]">60 điểm</strong>.
                 </span>
               </div>
               <div className="p-3.5 rounded-xl bg-white/95 border border-purple-200/80 shadow-2xs space-y-1">

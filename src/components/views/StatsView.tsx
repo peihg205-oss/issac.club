@@ -268,7 +268,7 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Bảng xếp hạng thi đua rèn luyện theo thời gian thực. Cập nhật minh bạch cho toàn bộ 48 thành viên CLB.
+            Bảng xếp hạng thi đua rèn luyện theo thời gian thực.
           </p>
         </div>
 

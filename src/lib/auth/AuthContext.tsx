@@ -690,7 +690,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: false,
-      message: 'Không tìm thấy tài khoản trong danh sách 48 thành viên CLB được cấp phép. Vui lòng kiểm tra lại MSSV hoặc liên hệ Ban Chủ nhiệm.',
+      message: 'Không tìm thấy tài khoản trong danh sách thành viên CLB được cấp phép. Vui lòng kiểm tra lại MSSV hoặc liên hệ Ban Chủ nhiệm.',
     }
   }
 

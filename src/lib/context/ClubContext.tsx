@@ -2072,7 +2072,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const logItem: ProposalItem = {
       id: `sys-reset-${Date.now()}`,
       memberCode: 'ALL-CLUB',
-      memberName: 'Toàn bộ 48 Thành viên',
+      memberName: 'Toàn bộ Thành viên',
       memberDept: 'Toàn Câu Lạc bộ',
       isCore: false,
       criterionCode: 'C01',
@@ -2090,7 +2090,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: true,
-      message: `Đã chốt kết quả và reset điểm toàn bộ 48 thành viên về mốc chuẩn 60 điểm cho ${newMonthLabel}!`,
+      message: `Đã chốt kết quả và reset điểm toàn bộ thành viên về mốc chuẩn 60 điểm cho ${newMonthLabel}!`,
     }
   }
 
@@ -2182,7 +2182,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const logItem: ProposalItem = {
       id: `sys-period-${Date.now()}`,
       memberCode: 'ALL-CLUB',
-      memberName: 'Toàn bộ 48 Thành viên',
+      memberName: 'Toàn bộ Thành viên',
       memberDept: 'Toàn Câu Lạc bộ',
       isCore: false,
       criterionCode: 'C01',
@@ -2190,7 +2190,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       points: 0,
       periodId: activeItem.id,
       periodName: activeItem.name,
-      reason: `Ban Chủ nhiệm (${data.actorName}) đã khởi tạo chu kỳ thi đua ${activeItem.name} theo thời gian thực (${activeItem.timeRange}). Tất cả 48 thành viên được reset về mốc 60 điểm chuẩn thi đua.`,
+      reason: `Ban Chủ nhiệm (${data.actorName}) đã khởi tạo chu kỳ thi đua ${activeItem.name} theo thời gian thực (${activeItem.timeRange}). Tất cả thành viên được reset về mốc 60 điểm chuẩn thi đua.`,
       proposedBy: data.actorName,
       proposedByRole: 'Ban Chủ nhiệm',
       status: 'approved',
@@ -2232,7 +2232,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     return {
       success: true,
-      message: `Đã khởi tạo thành công chu kỳ thi đua "${activeItem.name}" theo thời gian thực! Tất cả 48 thành viên đã reset về mốc chuẩn 60 điểm và được lưu vĩnh viễn lên hệ thống Cloud.`,
+      message: `Đã khởi tạo thành công chu kỳ thi đua "${activeItem.name}" theo thời gian thực! Tất cả thành viên đã reset về mốc chuẩn 60 điểm và được lưu vĩnh viễn lên hệ thống Cloud.`,
       period: activeItem,
     }
   }
@@ -2260,7 +2260,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const logItem: ProposalItem = {
       id: `sys-lock-${Date.now()}`,
       memberCode: 'ALL-CLUB',
-      memberName: 'Toàn bộ 48 Thành viên',
+      memberName: 'Toàn bộ Thành viên',
       memberDept: 'Toàn Câu Lạc bộ',
       isCore: false,
       criterionCode: 'T01',
@@ -2372,7 +2372,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const logItem: ProposalItem = {
       id: `sys-edit-period-${Date.now()}`,
       memberCode: 'ALL-CLUB',
-      memberName: 'Toàn bộ 48 Thành viên',
+      memberName: 'Toàn bộ Thành viên',
       memberDept: 'Toàn Câu Lạc bộ',
       isCore: false,
       criterionCode: 'T02',
@@ -2461,7 +2461,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const logItem: ProposalItem = {
       id: `sys-del-period-${Date.now()}`,
       memberCode: 'ALL-CLUB',
-      memberName: 'Toàn bộ 48 Thành viên',
+      memberName: 'Toàn bộ Thành viên',
       memberDept: 'Toàn Câu Lạc bộ',
       isCore: false,
       criterionCode: 'T03',

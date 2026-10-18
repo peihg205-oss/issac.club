@@ -397,7 +397,7 @@ export function RulesView() {
             Bảng Quy Định & Tiêu Chí Chấm Điểm
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Hệ thống quy chuẩn hóa hoạt động thi đua và rèn luyện. Áp dụng minh bạch cho toàn bộ 48 thành viên CLB.
+            Hệ thống quy chuẩn hóa hoạt động thi đua và rèn luyện. Áp dụng minh bạch cho toàn bộ thành viên CLB.
           </p>
         </div>
 

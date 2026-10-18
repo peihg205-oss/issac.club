@@ -72,7 +72,7 @@ export function DashboardView({
             Dashboard Điểm Hoạt Động
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Tổng quan tiến độ rèn luyện, thi đua và chuyên cần của toàn bộ 48 thành viên CLB.
+            Tổng quan tiến độ rèn luyện, thi đua và chuyên cần của toàn bộ {members.length} thành viên CLB.
           </p>
         </div>
 
@@ -447,7 +447,7 @@ export function DashboardView({
               </div>
               <div>
                 <h3 className="text-sm font-black text-[#0F172A]">
-                  Phân bổ thành viên theo Ban (48 thành viên)
+                  Phân bổ thành viên theo Ban ({members.length} thành viên)
                 </h3>
                 <p className="text-[11px] text-[#64748B] font-medium">
                   Cơ cấu nhân sự và điểm trung bình theo từng ban trực thuộc

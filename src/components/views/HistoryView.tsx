@@ -278,7 +278,7 @@ export function HistoryView() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Sổ cái ghi nhận điểm thi đua, tiếp nhận &amp; xử lý hồ sơ khiếu nại của 48 thành viên CLB
+            Sổ cái ghi nhận điểm thi đua, tiếp nhận &amp; xử lý hồ sơ khiếu nại của các thành viên CLB
           </p>
         </div>
 
