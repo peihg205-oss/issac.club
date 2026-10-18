@@ -213,12 +213,19 @@ export function RulesView() {
       return
     }
 
+    let pts: number | string = formPoints
+    if (formType === 'deduct') {
+      pts = -Math.abs(Number(formPoints) || 2)
+    } else if (formType === 'add') {
+      pts = Math.abs(Number(formPoints) || 2)
+    }
+
     const res = addCustomRule({
       code: formCode.trim().toUpperCase(),
       name: formName.trim(),
       description: formCondition.trim() || formName.trim(),
       type: formType,
-      points: formType === 'principle' ? String(formPoints) : Number(formPoints),
+      points: formType === 'principle' ? String(formPoints) : pts,
       category: formCategory,
       condition: formCondition.trim(),
       coreMultiplierApplies: formCoreMultiplier,
@@ -228,7 +235,7 @@ export function RulesView() {
     if (res.success) {
       setFeedback({ type: 'success', message: res.message })
       setIsAddModalOpen(false)
-      setTimeout(() => setFeedback(null), 3000)
+      setTimeout(() => setFeedback(null), 3500)
     } else {
       alert(res.message)
     }

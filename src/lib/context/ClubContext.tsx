@@ -702,10 +702,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {}
         }
         if (data.customRules && Array.isArray(data.customRules)) {
-          setCustomRules(data.customRules)
-          try {
-            localStorage.setItem('issac_custom_rules_v1', JSON.stringify(data.customRules))
-          } catch (e) {}
+          if (data.customRules.length === 0 && customRules.length > 0) {
+            // Đẩy danh sách quy định cục bộ lên cloud lần đầu
+            syncToCloud({ customRules })
+          } else if (data.customRules.length > 0) {
+            setCustomRules(data.customRules)
+            try {
+              localStorage.setItem('issac_custom_rules_v1', JSON.stringify(data.customRules))
+            } catch (e) {}
+          }
         }
       }
     } catch (err) {
@@ -782,9 +787,20 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: `Mã "${trimmedCode}" đã tồn tại trong danh mục quy định bổ sung!` }
     }
 
+    // Chuẩn hóa điểm số: Trừ luôn âm (-), Cộng luôn dương (+)
+    let normalizedPoints: number | string = rule.points
+    if (rule.type === 'deduct') {
+      const num = typeof rule.points === 'number' ? rule.points : parseFloat(String(rule.points)) || 2
+      normalizedPoints = -Math.abs(num)
+    } else if (rule.type === 'add') {
+      const num = typeof rule.points === 'number' ? rule.points : parseFloat(String(rule.points)) || 2
+      normalizedPoints = Math.abs(num)
+    }
+
     const newRule: CustomRuleItem = {
       ...rule,
       code: trimmedCode,
+      points: normalizedPoints,
       createdAt: getVietnamNowDateFormatted(),
     }
 
@@ -797,6 +813,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         console.error('Error writing custom rules to localStorage:', e)
       }
     }
+
+    // Đồng bộ tức thời lên Supabase Cloud để toàn bộ PC và Mobile đều nhận được tiêu chí mới
+    syncToCloud({ customRules: updated })
 
     return {
       success: true,
@@ -817,6 +836,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         console.error('Error updating custom rules in localStorage:', e)
       }
     }
+
+    syncToCloud({ customRules: updated })
 
     return {
       success: true,

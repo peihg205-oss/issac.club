@@ -61,6 +61,7 @@ export function HistoryView() {
     resolveDisputeByBCN,
     periods,
     currentActivePeriodId,
+    customRules,
   } = useClub()
 
   const monthPeriods = periods.filter((p) => p.scope === 'month')
@@ -1201,13 +1202,17 @@ export function HistoryView() {
                       const code = e.target.value
                       setEditCriterionCode(code)
                       const rule = CRITERIA_RULES[code as RuleCode]
+                      const cRule = customRules.find((r) => r.code === code)
                       if (rule) {
-                        setEditPoints(rule.base_points)
+                        setEditPoints(rule.type === 'deduct' ? -rule.base_points : rule.base_points)
+                      } else if (cRule) {
+                        const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
+                        setEditPoints(pts)
                       }
                     }}
                     className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer"
                   >
-                    <optgroup label="Tiêu chí Cộng điểm (C01 - C09)">
+                    <optgroup label="Tiêu chí Cộng điểm chuẩn (C01 - C09)">
                       {Object.values(CRITERIA_RULES)
                         .filter((r) => r.code.startsWith('C'))
                         .map((r) => (
@@ -1216,7 +1221,18 @@ export function HistoryView() {
                           </option>
                         ))}
                     </optgroup>
-                    <optgroup label="Tiêu chí Trừ điểm (T01 - T13)">
+                    {customRules.filter((r) => r.type === 'add').length > 0 && (
+                      <optgroup label="Tiêu chí Cộng điểm bổ sung CLB">
+                        {customRules
+                          .filter((r) => r.type === 'add')
+                          .map((r) => (
+                            <option key={r.code} value={r.code}>
+                              {r.code} - {r.name} (+{r.points}đ)
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                    <optgroup label="Tiêu chí Trừ điểm chuẩn (T01 - T13)">
                       {Object.values(CRITERIA_RULES)
                         .filter((r) => r.code.startsWith('T'))
                         .map((r) => (
@@ -1225,6 +1241,17 @@ export function HistoryView() {
                           </option>
                         ))}
                     </optgroup>
+                    {customRules.filter((r) => r.type === 'deduct').length > 0 && (
+                      <optgroup label="Tiêu chí Trừ điểm bổ sung CLB">
+                        {customRules
+                          .filter((r) => r.type === 'deduct')
+                          .map((r) => (
+                            <option key={r.code} value={r.code}>
+                              {r.code} - {r.name} ({r.points}đ)
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 

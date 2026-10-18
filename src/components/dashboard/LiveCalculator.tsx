@@ -3,28 +3,70 @@
 import React, { useState, useMemo } from 'react'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
+import { useClub } from '@/lib/context/ClubContext'
 import type { RuleCode } from '@/types/database'
 import { Calculator, Sparkles, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react'
 
 export function LiveCalculator() {
+  const { customRules } = useClub()
   const [currentScore, setCurrentScore] = useState<number>(60)
   const [isCore, setIsCore] = useState<boolean>(false)
-  const [selectedRule, setSelectedRule] = useState<RuleCode>('C05')
+  const [selectedRule, setSelectedRule] = useState<string>('C05')
   const [quotaUsed, setQuotaUsed] = useState<number>(0)
   const [supersedes, setSupersedes] = useState<string>('none')
 
-  const ruleDetails = CRITERIA_RULES[selectedRule]
+  const builtinRule = CRITERIA_RULES[selectedRule as RuleCode]
+  const customRule = customRules.find((r) => r.code === selectedRule)
+  const basePoints = builtinRule
+    ? builtinRule.base_points
+    : customRule
+    ? (typeof customRule.points === 'number'
+        ? customRule.points
+        : parseFloat(String(customRule.points)) || 0)
+    : 0
 
   const calculation = useMemo(() => {
-    return calculateScoreDelta({
-      ruleCode: selectedRule,
-      basePoints: ruleDetails.base_points,
-      isCoreAtEvent: isCore,
-      currentScore: currentScore,
-      monthlyQuotaUsed: quotaUsed,
-      supersedesRuleCode: supersedes === 'none' ? null : (supersedes as RuleCode),
-    })
-  }, [selectedRule, ruleDetails, isCore, currentScore, quotaUsed, supersedes])
+    if (builtinRule) {
+      return calculateScoreDelta({
+        ruleCode: selectedRule as RuleCode,
+        basePoints: builtinRule.base_points,
+        isCoreAtEvent: isCore,
+        currentScore: currentScore,
+        monthlyQuotaUsed: quotaUsed,
+        supersedesRuleCode: supersedes === 'none' ? null : (supersedes as RuleCode),
+      })
+    }
+    if (customRule) {
+      const isCoreMultiplier = !!customRule.coreMultiplierApplies && basePoints < 0
+      const coreMultiplier = isCore && isCoreMultiplier ? 2 : 1
+      const rulePoints = basePoints * coreMultiplier
+      const scoreBefore = Math.min(100, Math.max(0, currentScore))
+      const eligibleDelta = rulePoints
+      const rawAfter = scoreBefore + eligibleDelta
+      const scoreAfter = Math.min(100, Math.max(0, rawAfter))
+      const actualDelta = scoreAfter - scoreBefore
+      return {
+        coreMultiplier,
+        rulePoints,
+        quotaEligibleDelta: eligibleDelta,
+        eligibleDelta,
+        scoreBefore,
+        scoreAfter,
+        actualDelta,
+        newQuotaUsed: quotaUsed,
+      }
+    }
+    return {
+      coreMultiplier: 1,
+      rulePoints: 0,
+      quotaEligibleDelta: 0,
+      eligibleDelta: 0,
+      scoreBefore: currentScore,
+      scoreAfter: currentScore,
+      actualDelta: 0,
+      newQuotaUsed: quotaUsed,
+    }
+  }, [selectedRule, builtinRule, customRule, basePoints, isCore, currentScore, quotaUsed, supersedes])
 
   return (
     <div className="pt-12">
@@ -56,10 +98,10 @@ export function LiveCalculator() {
               </label>
               <select
                 value={selectedRule}
-                onChange={(e) => setSelectedRule(e.target.value as RuleCode)}
+                onChange={(e) => setSelectedRule(e.target.value)}
                 className="w-full bg-[#070D1E] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#1E63D6] focus:ring-1 focus:ring-[#1E63D6]"
               >
-                <optgroup label="--- Điểm cộng (C01-C09) ---">
+                <optgroup label="--- Điểm cộng chuẩn (C01-C09) ---">
                   {Object.values(CRITERIA_RULES)
                     .filter((c) => c.type === 'add')
                     .map((c) => (
@@ -68,7 +110,18 @@ export function LiveCalculator() {
                       </option>
                     ))}
                 </optgroup>
-                <optgroup label="--- Điểm trừ (T01-T13) ---">
+                {customRules.filter((c) => c.type === 'add').length > 0 && (
+                  <optgroup label="--- Điểm cộng bổ sung CLB ---">
+                    {customRules
+                      .filter((c) => c.type === 'add')
+                      .map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} (+{c.points}): {c.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                )}
+                <optgroup label="--- Điểm trừ chuẩn (T01-T13) ---">
                   {Object.values(CRITERIA_RULES)
                     .filter((c) => c.type === 'deduct')
                     .map((c) => (
@@ -77,6 +130,17 @@ export function LiveCalculator() {
                       </option>
                     ))}
                 </optgroup>
+                {customRules.filter((c) => c.type === 'deduct').length > 0 && (
+                  <optgroup label="--- Điểm trừ bổ sung CLB ---">
+                    {customRules
+                      .filter((c) => c.type === 'deduct')
+                      .map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} ({c.points}): {c.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 
@@ -171,7 +235,7 @@ export function LiveCalculator() {
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-slate-400">Điểm gốc tiêu chí:</span>
-                  <span className="font-bold text-white">{ruleDetails.base_points > 0 ? `+${ruleDetails.base_points}` : ruleDetails.base_points}</span>
+                  <span className="font-bold text-white">{basePoints > 0 ? `+${basePoints}` : basePoints}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-white/5">
                   <span className="text-slate-400">Hệ số Core Team áp dụng:</span>

@@ -31,7 +31,7 @@ import {
 export default function AdminPage() {
   const router = useRouter()
   const { currentUser, isAuthChecked, isBCN, isHR, switchUser } = useAuth()
-  const { members, proposals, createProposal, approveProposal, rejectProposal } = useClub()
+  const { members, proposals, createProposal, approveProposal, rejectProposal, customRules } = useClub()
 
   // Auth Guard
   useEffect(() => {
@@ -65,6 +65,7 @@ export default function AdminPage() {
 
   const targetMember = members.find((m) => m.member_code === targetMemberCode) || members[0]
   const rule = CRITERIA_RULES[criterionCode as RuleCode]
+  const customRule = customRules.find((r) => r.code === criterionCode)
 
   const handleCriterionChange = (newCode: string) => {
     setCriterionCode(newCode)
@@ -76,8 +77,12 @@ export default function AdminPage() {
       setCustomPoints((prev) => (prev > 0 ? prev : 2))
     } else {
       const bRule = CRITERIA_RULES[newCode as RuleCode]
+      const cRule = customRules.find((r) => r.code === newCode)
       if (bRule) {
         setCustomPoints(bRule.type === 'deduct' ? -bRule.base_points : bRule.base_points)
+      } else if (cRule) {
+        const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
+        setCustomPoints(pts)
       }
     }
   }
@@ -98,6 +103,16 @@ export default function AdminPage() {
     })
     previewActualDelta = preview.actualDelta
     previewScoreAfter = preview.scoreAfter
+  } else if (customRule) {
+    const basePts =
+      typeof customRule.points === 'number'
+        ? customRule.points
+        : parseFloat(String(customRule.points)) || 0
+    const isCoreMultiplier = !!customRule.coreMultiplierApplies && basePts < 0
+    const multiplier = targetMember?.is_core && isCoreMultiplier ? 2 : 1
+    const nominal = basePts * multiplier
+    previewScoreAfter = Math.max(0, Math.min(100, (targetMember?.current_score || 60) + nominal))
+    previewActualDelta = previewScoreAfter - (targetMember?.current_score || 60)
   }
 
   // Pending proposals awaiting BCN
@@ -325,6 +340,17 @@ export default function AdminPage() {
                         </option>
                       ))}
                   </optgroup>
+                  {customRules.filter((c) => c.type === 'deduct').length > 0 && (
+                    <optgroup label="--- Điểm trừ quy định bổ sung của CLB ---">
+                      {customRules
+                        .filter((c) => c.type === 'deduct')
+                        .map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.code} ({c.points}đ): {c.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
                   <optgroup label="--- Điểm cộng đóng góp (C01-C09) ---">
                     {Object.values(CRITERIA_RULES)
                       .filter((c) => c.type === 'add')
@@ -334,6 +360,17 @@ export default function AdminPage() {
                         </option>
                       ))}
                   </optgroup>
+                  {customRules.filter((c) => c.type === 'add').length > 0 && (
+                    <optgroup label="--- Điểm cộng quy định bổ sung của CLB ---">
+                      {customRules
+                        .filter((c) => c.type === 'add')
+                        .map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.code} (+{c.points}đ): {c.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 
