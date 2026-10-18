@@ -15,6 +15,8 @@ let cachedDeletedProposalIds: string[] | null = null
 let cachedDeletedEventIds: string[] | null = null
 let cachedDeletedPeriodIds: string[] | null = null
 let cachedCustomRules: any[] | null = null
+let cachedAccounts: any[] | null = null
+let cachedDeletedAccountIds: string[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET() {
@@ -38,6 +40,8 @@ export async function GET() {
         'issac_deleted_event_ids',
         'issac_deleted_period_ids',
         'issac_custom_rules_cloud',
+        'issac_issued_accounts_cloud',
+        'issac_deleted_account_ids',
       ])
 
     if (!error && data && data.length > 0) {
@@ -53,6 +57,8 @@ export async function GET() {
       const deletedPeriodIdsRow = data.find((r) => r.key === 'issac_deleted_period_ids')
       const activeEventRow = data.find((r) => r.key === 'issac_active_event_id')
       const customRulesRow = data.find((r) => r.key === 'issac_custom_rules_cloud')
+      const accountsRow = data.find((r) => r.key === 'issac_issued_accounts_cloud')
+      const deletedAccountsRow = data.find((r) => r.key === 'issac_deleted_account_ids')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -66,6 +72,8 @@ export async function GET() {
       let deletedPeriodIdsFromDb = null
       let activeEventIdFromDb = null
       let customRulesFromDb = null
+      let accountsFromDb = null
+      let deletedAccountIdsFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -167,6 +175,24 @@ export async function GET() {
         }
       }
 
+      if (deletedAccountsRow?.value) {
+        try {
+          deletedAccountIdsFromDb = JSON.parse(deletedAccountsRow.value)
+          cachedDeletedAccountIds = deletedAccountIdsFromDb
+        } catch (e) {
+          console.error('Error parsing deleted accounts JSON:', e)
+        }
+      }
+
+      if (accountsRow?.value) {
+        try {
+          accountsFromDb = JSON.parse(accountsRow.value)
+          cachedAccounts = accountsFromDb
+        } catch (e) {
+          console.error('Error parsing accounts JSON:', e)
+        }
+      }
+
       const activeDeletedEventIds = new Set(deletedEventIdsFromDb || cachedDeletedEventIds || [])
       let finalEvents = eventsFromDb || cachedEvents || []
       if (activeDeletedEventIds.size > 0 && Array.isArray(finalEvents)) {
@@ -193,6 +219,12 @@ export async function GET() {
       }
       const safePeriods = Array.from(periodMap.values())
 
+      const activeDeletedAccountIds = new Set(deletedAccountIdsFromDb || cachedDeletedAccountIds || [])
+      let finalAccounts = accountsFromDb || cachedAccounts
+      if (Array.isArray(finalAccounts) && activeDeletedAccountIds.size > 0) {
+        finalAccounts = finalAccounts.filter((a: any) => a?.id && !activeDeletedAccountIds.has(a.id))
+      }
+
       return NextResponse.json({
         success: true,
         events: finalEvents,
@@ -207,6 +239,8 @@ export async function GET() {
         deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
         deletedEventIds: deletedEventIdsFromDb || cachedDeletedEventIds || [],
         deletedPeriodIds: deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [],
+        accounts: finalAccounts,
+        deletedAccountIds: Array.from(activeDeletedAccountIds),
         source: 'supabase_cloud',
       })
     }
@@ -234,6 +268,12 @@ export async function GET() {
     }
     const safeFallbackPeriods = Array.from(fallbackPeriodMap.values())
 
+    const fallbackDeletedAccountIds = new Set(cachedDeletedAccountIds || [])
+    let fallbackAccounts = cachedAccounts || []
+    if (fallbackDeletedAccountIds.size > 0 && Array.isArray(fallbackAccounts)) {
+      fallbackAccounts = fallbackAccounts.filter((a: any) => !fallbackDeletedAccountIds.has(a.id))
+    }
+
     return NextResponse.json({
       success: true,
       events: fallbackEvents,
@@ -248,6 +288,8 @@ export async function GET() {
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
       deletedPeriodIds: cachedDeletedPeriodIds || [],
+      accounts: fallbackAccounts,
+      deletedAccountIds: Array.from(fallbackDeletedAccountIds),
       source: 'cache_memory',
     })
   } catch (err: unknown) {
@@ -300,6 +342,9 @@ export async function POST(request: Request) {
       activePeriodId,
       customPeriodScores,
       customRules,
+      accounts,
+      deletedAccountIds,
+      accountId,
     } = body
     const supabase = createAdminClient()
 
@@ -398,6 +443,39 @@ export async function POST(request: Request) {
           )
       } catch (delPerErr) {
         console.warn('Supabase deleted periods upsert notice:', delPerErr)
+      }
+    }
+
+    // 0.3 Quản lý danh sách ID tài khoản đã xóa (Tombstones để đồng bộ nhất quán giữa Điện thoại và Máy tính)
+    if (deletedAccountIds !== undefined || (action === 'delete_account' && accountId)) {
+      const incomingDelAcc = Array.isArray(deletedAccountIds) ? deletedAccountIds : []
+      if (action === 'delete_account' && accountId && !incomingDelAcc.includes(accountId)) {
+        incomingDelAcc.push(accountId)
+      }
+      const combinedDelAccSet = new Set([
+        ...(cachedDeletedAccountIds || []),
+        ...incomingDelAcc,
+      ])
+      cachedDeletedAccountIds = Array.from(combinedDelAccSet)
+
+      if (Array.isArray(cachedAccounts)) {
+        cachedAccounts = cachedAccounts.filter((a: any) => !combinedDelAccSet.has(a.id))
+      }
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_account_ids',
+              value: JSON.stringify(cachedDeletedAccountIds),
+              description: 'Cloud synchronized deleted account IDs for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (delAccErr) {
+        console.warn('Supabase deleted accounts upsert notice:', delAccErr)
       }
     }
 
@@ -734,6 +812,29 @@ export async function POST(request: Request) {
       }
     }
 
+    if (accounts !== undefined) {
+      const activeDelAccSet = new Set(cachedDeletedAccountIds || [])
+      const cleanAccounts = Array.isArray(accounts)
+        ? accounts.filter((a: any) => a?.id && !activeDelAccSet.has(a.id))
+        : accounts
+      cachedAccounts = cleanAccounts
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_issued_accounts_cloud',
+              value: JSON.stringify(cleanAccounts),
+              description: 'Cloud synchronized issued accounts for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (accErr) {
+        console.warn('Supabase accounts upsert notice:', accErr)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       events: cachedEvents,
@@ -747,6 +848,9 @@ export async function POST(request: Request) {
       customRules: cachedCustomRules || [],
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
+      deletedPeriodIds: cachedDeletedPeriodIds || [],
+      accounts: cachedAccounts,
+      deletedAccountIds: cachedDeletedAccountIds || [],
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'

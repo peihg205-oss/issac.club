@@ -32,6 +32,7 @@ export function AccountsView() {
     updateIssuedAccount,
     deleteIssuedAccount,
     isBCN,
+    canManageAccounts,
     switchUser,
   } = useAuth()
   const { members } = useClub()
@@ -228,17 +229,24 @@ export function AccountsView() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setIsAddModalOpen(true)
-            setAddFeedback(null)
-          }}
-          className="self-start md:self-center px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-xs hover:shadow transition active:scale-95 cursor-pointer flex items-center gap-2 shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Cấp tài khoản mới</span>
-        </button>
+        {canManageAccounts ? (
+          <button
+            type="button"
+            onClick={() => {
+              setIsAddModalOpen(true)
+              setAddFeedback(null)
+            }}
+            className="self-start md:self-center px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-xs hover:shadow transition active:scale-95 cursor-pointer flex items-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Cấp tài khoản mới</span>
+          </button>
+        ) : (
+          <div className="self-start md:self-center px-4 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/90 flex items-center gap-2 shrink-0 shadow-2xs">
+            <Lock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Chỉ Ban Chủ nhiệm mới có quyền cấp tài khoản</span>
+          </div>
+        )}
       </div>
 
       {/* 2. MAIN TABLE CARD: DANH SÁCH CÁN BỘ TUYỂN QUÂN */}
@@ -349,7 +357,7 @@ export function AccountsView() {
                   )}
                 </div>
 
-                {!account.isFixed && (
+                {!account.isFixed && canManageAccounts && (
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60">
                     <button
                       type="button"
@@ -488,7 +496,7 @@ export function AccountsView() {
                           <span className="text-[11px] text-slate-400 font-semibold px-2 py-1 bg-slate-100 rounded-lg">
                             Khóa bảo vệ BCN
                           </span>
-                        ) : (
+                        ) : canManageAccounts ? (
                           <>
                             <button
                               type="button"
@@ -514,6 +522,10 @@ export function AccountsView() {
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-medium px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                            Chỉ BCN quản lý
+                          </span>
                         )}
                       </div>
                     </td>

@@ -127,6 +127,7 @@ interface ClubContextType {
     evidenceUrl?: string
     proposerName: string
     proposerRole: string
+    proposerDepartmentCode?: string
     directApply?: boolean
     periodId?: string
   }) => { success: boolean; message: string }
@@ -1141,11 +1142,33 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     evidenceUrl?: string
     proposerName: string
     proposerRole: string
+    proposerDepartmentCode?: string
     directApply?: boolean
     periodId?: string
   }) => {
     const target = members.find((m) => m.member_code === data.memberCode)
     if (!target) return { success: false, message: 'Không tìm thấy thành viên' }
+
+    // KIỂM TRA PHÂN QUYỀN CHO ĐIỂM THEO BAN:
+    // 1. Ban Truyền thông (B01): Chỉ cho điểm thành viên Ban Truyền thông
+    if (data.proposerDepartmentCode === 'B01') {
+      if (target.department_code !== 'B01' && target.department_slug !== 'truyen-thong') {
+        return {
+          success: false,
+          message: 'Cán bộ Ban Truyền thông chỉ có quyền cho điểm thành viên thuộc Ban Truyền thông!',
+        }
+      }
+    }
+    // 2. Ban Tư vấn (B02): Chỉ cho điểm thành viên Ban Tư vấn
+    if (data.proposerDepartmentCode === 'B02') {
+      if (target.department_code !== 'B02' && target.department_slug !== 'tu-van') {
+        return {
+          success: false,
+          message: 'Cán bộ Ban Tư vấn chỉ có quyền cho điểm thành viên thuộc Ban Tư vấn!',
+        }
+      }
+    }
+    // 3. Ban Nhân sự (B03) & Ban Chủ nhiệm (B04): Có quyền cho điểm mọi người tất cả các ban
 
     // Xác định chu kỳ mục tiêu
     const targetPeriodId = data.periodId || currentActivePeriodId

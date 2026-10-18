@@ -36,7 +36,7 @@ import {
 
 export default function AdminPage() {
   const router = useRouter()
-  const { currentUser, isAuthChecked, isBCN, isHR, switchUser } = useAuth()
+  const { currentUser, isAuthChecked, isBCN, isHR, canScoreMember, getAllowedMembers, switchUser } = useAuth()
   const { members, proposals, createProposal, approveProposal, rejectProposal, customRules, currentActivePeriodId } = useClub()
 
   // Auth Guard
@@ -54,8 +54,13 @@ export default function AdminPage() {
   const [memberDeptFilter, setMemberDeptFilter] = useState('all')
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false)
 
+  // Lọc danh sách thành viên mà người dùng có quyền chấm điểm theo vai trò/Ban
+  const allowedMembers = useMemo(() => {
+    return getAllowedMembers(members)
+  }, [getAllowedMembers, members])
+
   // Scoring Form State
-  const [targetMemberCode, setTargetMemberCode] = useState(members[7]?.member_code || '24070753')
+  const [targetMemberCode, setTargetMemberCode] = useState(allowedMembers[0]?.member_code || '24070753')
   const [criterionCategory, setCriterionCategory] = useState<'deduct' | 'add' | 'custom'>('deduct')
   const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07 for HR
   const [isCustomPoints, setIsCustomPoints] = useState(false)
@@ -71,11 +76,17 @@ export default function AdminPage() {
     }
   }, [isBCN])
 
-  const targetMember = members.find((m) => m.member_code === targetMemberCode) || members[0]
+  useEffect(() => {
+    if (allowedMembers.length > 0 && !allowedMembers.some((m) => m.member_code === targetMemberCode)) {
+      setTargetMemberCode(allowedMembers[0].member_code)
+    }
+  }, [allowedMembers, targetMemberCode])
+
+  const targetMember = members.find((m) => m.member_code === targetMemberCode) || allowedMembers[0] || members[0]
 
   const filteredTargetMembers = useMemo(() => {
     const q = memberSearchQuery.trim().toLowerCase()
-    return members.filter((m) => {
+    return allowedMembers.filter((m) => {
       const matchDept = memberDeptFilter === 'all' || m.department_slug === memberDeptFilter
       const matchQuery =
         !q ||
@@ -84,7 +95,7 @@ export default function AdminPage() {
         m.department_name.toLowerCase().includes(q)
       return matchDept && matchQuery
     })
-  }, [members, memberSearchQuery, memberDeptFilter])
+  }, [allowedMembers, memberSearchQuery, memberDeptFilter])
 
   const targetMemberHistory = useMemo(() => {
     return proposals.filter(
@@ -163,6 +174,15 @@ export default function AdminPage() {
     e.preventDefault()
     if (!reason.trim()) return
 
+    const permCheck = canScoreMember(targetMember)
+    if (!permCheck.allowed) {
+      setFormFeedback({
+        type: 'error',
+        message: permCheck.reason || 'Bạn không có quyền cho điểm thành viên này!',
+      })
+      return
+    }
+
     const res = createProposal({
       memberCode: targetMember.member_code,
       criterionCode,
@@ -171,6 +191,7 @@ export default function AdminPage() {
       evidenceUrl,
       proposerName: currentUser.name,
       proposerRole: currentUser.role,
+      proposerDepartmentCode: currentUser.departmentCode,
       directApply: isBCN ? directApply : false, // Only BCN can directApply
     })
 

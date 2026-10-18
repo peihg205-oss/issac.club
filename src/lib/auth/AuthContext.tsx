@@ -1,7 +1,9 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import type { UserRole, DepartmentCode } from '@/types/database'
+import { canUserManageAccounts, canUserScoreMember, getAllowedScoringMembers } from './permissions'
+import type { RosterMember } from '@/lib/clubData'
 
 export interface AuthUser {
   id: string
@@ -225,6 +227,9 @@ export interface AuthContextType {
   isHR: boolean
   isDeptHead: boolean
   isMember: boolean
+  canManageAccounts: boolean
+  canScoreMember: (targetMember: { department_code?: string; department_slug?: string; full_name?: string } | null) => { allowed: boolean; reason?: string }
+  getAllowedMembers: (members: RosterMember[]) => RosterMember[]
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -233,13 +238,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isAuthChecked, setIsAuthChecked] = useState(false)
   const [issuedAccounts, setIssuedAccounts] = useState<IssuedAccount[]>(INITIAL_ISSUED_ACCOUNTS)
+  const deletedAccountIdsRef = useRef<Set<string>>(new Set())
+
+  // Helper gửi danh sách tài khoản lên Supabase Cloud API để Máy tính và Điện thoại cùng đồng bộ
+  const syncAccountsToCloud = (payload: {
+    accounts?: IssuedAccount[]
+    deletedAccountIds?: string[]
+    action?: string
+    accountId?: string
+  }) => {
+    if (typeof window !== 'undefined') {
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch((e) => console.error('Cloud account sync notice:', e))
+    }
+  }
+
+  // Tải và hợp nhất tài khoản đám mây (Chống hồi sinh tài khoản đã xóa khi chuyển giữa ĐT và Máy tính)
+  const fetchCloudAccounts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/db/sync')
+      if (res.ok) {
+        const data = await res.json()
+
+        // 1. Đồng bộ tombstones các tài khoản đã xóa từ cloud
+        if (data.deletedAccountIds && Array.isArray(data.deletedAccountIds)) {
+          data.deletedAccountIds.forEach((id: string) => deletedAccountIdsRef.current.add(id))
+          try {
+            localStorage.setItem(
+              'issac_deleted_account_ids',
+              JSON.stringify(Array.from(deletedAccountIdsRef.current))
+            )
+          } catch (e) {}
+        }
+
+        const delSet = deletedAccountIdsRef.current
+
+        // 2. Hợp nhất danh sách tài khoản
+        if (data.accounts && Array.isArray(data.accounts)) {
+          setIssuedAccounts((prev) => {
+            const localMap = new Map(prev.map((a) => [a.id, a]))
+            for (const cloudAcc of data.accounts) {
+              if (cloudAcc?.id && !delSet.has(cloudAcc.id)) {
+                localMap.set(cloudAcc.id, {
+                  ...(localMap.get(cloudAcc.id) || {}),
+                  ...cloudAcc,
+                })
+              }
+            }
+            const cleanList = Array.from(localMap.values()).filter((a) => !delSet.has(a.id))
+            try {
+              localStorage.setItem('issac_issued_accounts', JSON.stringify(cleanList))
+            } catch (e) {}
+            return cleanList
+          })
+        } else if (delSet.size > 0) {
+          setIssuedAccounts((prev) => {
+            const clean = prev.filter((a) => !delSet.has(a.id))
+            try {
+              localStorage.setItem('issac_issued_accounts', JSON.stringify(clean))
+            } catch (e) {}
+            return clean
+          })
+        }
+
+        // 3. Nếu tài khoản hiện đang đăng nhập vừa bị xóa từ thiết bị khác -> Đăng xuất ngay
+        setCurrentUser((current) => {
+          if (current && delSet.has(current.id)) {
+            try {
+              localStorage.removeItem('issac_active_user')
+            } catch (e) {}
+            return null
+          }
+          return current
+        })
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+  }, [])
 
   // Load saved accounts & active user from localStorage
   useEffect(() => {
     try {
+      const savedDelAccs = localStorage.getItem('issac_deleted_account_ids')
+      if (savedDelAccs) {
+        const parsed = JSON.parse(savedDelAccs)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => deletedAccountIdsRef.current.add(id))
+        }
+      }
+    } catch (e) {}
+
+    try {
       const savedAccs = localStorage.getItem('issac_issued_accounts')
       if (savedAccs) {
-        setIssuedAccounts(JSON.parse(savedAccs))
+        const parsed: IssuedAccount[] = JSON.parse(savedAccs)
+        const clean = parsed.filter((a) => !deletedAccountIdsRef.current.has(a.id))
+        setIssuedAccounts(clean)
       }
     } catch (err) {
       console.error(err)
@@ -247,7 +345,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const saved = localStorage.getItem('issac_active_user')
-      if (saved) {
+      if (saved && !deletedAccountIdsRef.current.has(saved)) {
         // 1. Check preset users
         const foundPreset = PRESET_USERS.find((u) => u.id === saved)
         if (foundPreset) {
@@ -278,7 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 3. Check issued accounts
         const savedAccsStr = localStorage.getItem('issac_issued_accounts')
         const accList = savedAccsStr ? JSON.parse(savedAccsStr) : INITIAL_ISSUED_ACCOUNTS
-        const foundIssued = accList.find((a: any) => a.id === saved || a.studentId === saved || a.email === saved)
+        const foundIssued = accList.find((a: any) => (a.id === saved || a.studentId === saved || a.email === saved) && !deletedAccountIdsRef.current.has(a.id))
         if (foundIssued) {
           setCurrentUser({
             id: foundIssued.id,
@@ -302,7 +400,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Chưa đăng nhập -> Trạng thái chưa đăng nhập an toàn
     setCurrentUser(null)
     setIsAuthChecked(true)
-  }, [])
+
+    // Đồng bộ tức thì từ Cloud
+    fetchCloudAccounts()
+  }, [fetchCloudAccounts])
+
+  // Lắng nghe visibilitychange và chu kỳ polling để cập nhật tài khoản trên các thiết bị
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        fetchCloudAccounts()
+      }
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibility)
+    }
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        fetchCloudAccounts()
+      }
+    }, 15000)
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibility)
+      }
+      clearInterval(timer)
+    }
+  }, [fetchCloudAccounts])
 
   const switchUser = (userId: string) => {
     const foundPreset = PRESET_USERS.find((u) => u.id === userId)
@@ -332,6 +457,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const createIssuedAccount = (data: Omit<IssuedAccount, 'id' | 'createdAt'>) => {
+    // Chỉ Ban Chủ nhiệm mới có thể cấp tài khoản
+    if (!canUserManageAccounts(currentUser)) {
+      return { success: false, message: 'Chỉ Ban Chủ nhiệm mới có quyền cấp tài khoản cán bộ!' }
+    }
+
     const cleanEmail = data.email.trim().toLowerCase()
     if (issuedAccounts.some((a) => a.email.toLowerCase() === cleanEmail)) {
       return { success: false, message: 'Email này đã tồn tại trong danh sách tài khoản được cấp!' }
@@ -351,10 +481,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error(e)
     }
 
+    syncAccountsToCloud({ accounts: updated })
+
     return { success: true, message: `Cấp tài khoản thành công cho cán bộ "${data.fullName}"!` }
   }
 
   const updateIssuedAccount = (id: string, updates: Partial<IssuedAccount>) => {
+    // Chỉ Ban Chủ nhiệm mới có thể sửa tài khoản
+    if (!canUserManageAccounts(currentUser)) {
+      return { success: false, message: 'Chỉ Ban Chủ nhiệm mới có quyền chỉnh sửa tài khoản cán bộ!' }
+    }
+
     const updated = issuedAccounts.map((a) => (a.id === id ? { ...a, ...updates } : a))
     setIssuedAccounts(updated)
     try {
@@ -363,14 +500,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error(e)
     }
 
+    syncAccountsToCloud({ accounts: updated })
+
     return { success: true, message: 'Cập nhật tài khoản thành công!' }
   }
 
   const deleteIssuedAccount = (id: string) => {
+    // Chỉ Ban Chủ nhiệm mới có thể xóa tài khoản
+    if (!canUserManageAccounts(currentUser)) {
+      return { success: false, message: 'Chỉ Ban Chủ nhiệm mới có quyền xóa tài khoản cán bộ!' }
+    }
+
     const target = issuedAccounts.find((a) => a.id === id)
     if (target?.isFixed) {
       return { success: false, message: 'Không thể xóa tài khoản cố định của Ban Chủ nhiệm!' }
     }
+
+    deletedAccountIdsRef.current.add(id)
+    try {
+      localStorage.setItem(
+        'issac_deleted_account_ids',
+        JSON.stringify(Array.from(deletedAccountIdsRef.current))
+      )
+    } catch (e) {}
 
     const updated = issuedAccounts.filter((a) => a.id !== id)
     setIssuedAccounts(updated)
@@ -379,6 +531,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error(e)
     }
+
+    // Nếu người dùng đang đăng nhập bằng chính tài khoản vừa xóa -> Đăng xuất
+    if (currentUser?.id === id) {
+      setCurrentUser(null)
+      try {
+        localStorage.removeItem('issac_active_user')
+      } catch (e) {}
+    }
+
+    // Đồng bộ lập tức lên Cloud Supabase để Điện thoại và Laptop nhận ngay xóa bỏ
+    syncAccountsToCloud({
+      accounts: updated,
+      deletedAccountIds: Array.from(deletedAccountIdsRef.current),
+      action: 'delete_account',
+      accountId: id,
+    })
 
     return { success: true, message: 'Đã xóa tài khoản thành công!' }
   }
@@ -397,12 +565,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 1. Search in BCN-issued accounts first (matches user screenshot)
     const issued = issuedAccounts.find(
       (a) =>
-        a.email.toLowerCase() === clean ||
+        !deletedAccountIdsRef.current.has(a.id) &&
+        (a.email.toLowerCase() === clean ||
         (a.studentId && a.studentId.toLowerCase() === clean) ||
-        a.fullName.toLowerCase().includes(clean)
+        a.fullName.toLowerCase().includes(clean))
     )
 
     if (issued) {
+      if (deletedAccountIdsRef.current.has(issued.id)) {
+        return {
+          success: false,
+          message: 'Tài khoản này đã bị xóa khỏi hệ thống bởi Ban Chủ nhiệm.',
+        }
+      }
+
       if (issued.status === 'suspended') {
         return {
           success: false,
@@ -523,10 +699,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null)
   }
 
-  const isBCN = currentUser?.role === 'bcn' || currentUser?.role === 'admin' || false
-  const isHR = currentUser?.role === 'hr' || false
+  const isBCN = currentUser?.role === 'bcn' || currentUser?.role === 'admin' || currentUser?.departmentCode === 'B04' || false
+  const isHR = currentUser?.role === 'hr' || currentUser?.departmentCode === 'B03' || false
   const isDeptHead = currentUser?.role === 'dept_head' || false
   const isMember = currentUser?.role === 'member' || false
+  const canManageAccounts = canUserManageAccounts(currentUser)
+
+  const canScoreMember = useCallback(
+    (targetMember: { department_code?: string; department_slug?: string; full_name?: string } | null) => {
+      return canUserScoreMember(currentUser, targetMember)
+    },
+    [currentUser]
+  )
+
+  const getAllowedMembers = useCallback(
+    (membersList: RosterMember[]) => {
+      return getAllowedScoringMembers(currentUser, membersList)
+    },
+    [currentUser]
+  )
+
   const isAuthenticated = Boolean(currentUser)
 
   return (
@@ -546,6 +738,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isHR,
         isDeptHead,
         isMember,
+        canManageAccounts,
+        canScoreMember,
+        getAllowedMembers,
       }}
     >
       {children}

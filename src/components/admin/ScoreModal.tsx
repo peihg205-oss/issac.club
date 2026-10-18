@@ -38,7 +38,7 @@ export function ScoreModal({
   initialPeriodId,
   initialMemberCode,
 }: ScoreModalProps) {
-  const { currentUser, isBCN, isHR } = useAuth()
+  const { currentUser, isBCN, isHR, canScoreMember, getAllowedMembers } = useAuth()
   const {
     members,
     createProposal,
@@ -79,6 +79,11 @@ export function ScoreModal({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Lọc danh sách thành viên mà người dùng có quyền chấm điểm theo vai trò/Ban
+  const allowedMembers = useMemo(() => {
+    return getAllowedMembers(members)
+  }, [getAllowedMembers, members])
+
   useEffect(() => {
     if (initialPeriodId) {
       setSelectedPeriodId(initialPeriodId)
@@ -87,16 +92,18 @@ export function ScoreModal({
     }
     if (initialMemberCode) {
       setMemberCode(initialMemberCode)
+    } else if (allowedMembers.length > 0 && !allowedMembers.some((m) => m.member_code === memberCode)) {
+      setMemberCode(allowedMembers[0].member_code)
     }
     if (isBCN) {
       setDirectApply(true)
     }
-  }, [initialPeriodId, currentActivePeriodId, initialMemberCode, isOpen, isBCN])
+  }, [initialPeriodId, currentActivePeriodId, initialMemberCode, isOpen, isBCN, allowedMembers, memberCode])
 
   // Lọc danh sách thành viên theo từ khóa tìm kiếm và Ban
   const filteredMembers = useMemo(() => {
     const q = memberSearch.trim().toLowerCase()
-    return members.filter((m) => {
+    return allowedMembers.filter((m) => {
       const matchDept = deptFilter === 'all' || m.department_slug === deptFilter
       const matchQuery =
         !q ||
@@ -105,7 +112,18 @@ export function ScoreModal({
         m.department_name.toLowerCase().includes(q)
       return matchDept && matchQuery
     })
-  }, [members, memberSearch, deptFilter])
+  }, [allowedMembers, memberSearch, deptFilter])
+
+  // Danh sách Ban hiển thị theo phân quyền
+  const availableDepts = useMemo(() => {
+    if (currentUser?.departmentCode === 'B01') {
+      return [{ slug: 'truyen-thong', name: 'Ban Truyền thông (Ban của bạn)' }]
+    }
+    if (currentUser?.departmentCode === 'B02') {
+      return [{ slug: 'tu-van', name: 'Ban Tư vấn (Ban của bạn)' }]
+    }
+    return DEPARTMENTS
+  }, [currentUser?.departmentCode])
 
   if (!isOpen) return null
 
@@ -218,6 +236,15 @@ export function ScoreModal({
       return
     }
 
+    const permCheck = canScoreMember(selectedMember)
+    if (!permCheck.allowed) {
+      setFeedback({
+        type: 'error',
+        message: permCheck.reason || 'Bạn không có quyền cho điểm thành viên này!',
+      })
+      return
+    }
+
     const res = createProposal({
       memberCode: selectedMember.member_code,
       criterionCode,
@@ -226,6 +253,7 @@ export function ScoreModal({
       evidenceUrl,
       proposerName: currentUser?.name || 'Cán bộ CLB',
       proposerRole: currentUser?.role || 'member',
+      proposerDepartmentCode: currentUser?.departmentCode,
       directApply: isBCN ? directApply : false,
       periodId: selectedPeriodId,
     })
@@ -259,15 +287,29 @@ export function ScoreModal({
             </div>
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10.5px] font-extrabold uppercase tracking-wide bg-blue-50 text-[#1351D8] border border-blue-200/60 mb-0.5">
-                <span>{isBCN ? 'Ban Chủ Nhiệm CLB' : 'Ban Nhân Sự CLB'}</span>
+                <span>
+                  {isBCN
+                    ? '👑 Ban Chủ Nhiệm (Toàn quyền tất cả các ban)'
+                    : isHR || currentUser?.departmentCode === 'B03'
+                    ? '📋 Ban Nhân Sự (Cho điểm tất cả các ban)'
+                    : currentUser?.departmentCode === 'B01'
+                    ? '📢 Ban Truyền Thông (Cho điểm thành viên Ban Truyền thông)'
+                    : currentUser?.departmentCode === 'B02'
+                    ? '💡 Ban Tư Vấn (Cho điểm thành viên Ban Tư vấn)'
+                    : 'Cán bộ CLB'}
+                </span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
                 {isBCN ? 'Trung Tâm Chấm Điểm & Phê Duyệt' : 'Đề Xuất Chấm Điểm Thi Đua'}
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                {isBCN
-                  ? 'Chọn thành viên, xem lịch sử đã cho điểm trong tháng và phê duyệt trực tiếp'
-                  : 'Ghi nhận đề xuất cộng/trừ điểm minh bạch chuyển Ban Chủ nhiệm duyệt'}
+                {currentUser?.departmentCode === 'B01'
+                  ? 'Ban Truyền thông có quyền cho điểm các thành viên thuộc Ban Truyền thông'
+                  : currentUser?.departmentCode === 'B02'
+                  ? 'Ban Tư vấn có quyền cho điểm các thành viên thuộc Ban Tư vấn'
+                  : isHR || currentUser?.departmentCode === 'B03'
+                  ? 'Ban Nhân sự có quyền cho điểm mọi người ở tất cả các ban'
+                  : 'Chọn thành viên, xem lịch sử đã cho điểm trong tháng và phê duyệt trực tiếp'}
               </p>
             </div>
           </div>
@@ -399,7 +441,7 @@ export function ScoreModal({
 
                         {/* Dept Filter Tabs */}
                         <div className="flex gap-1 overflow-x-auto pb-1 shrink-0 no-scrollbar">
-                          {DEPARTMENTS.map((d) => (
+                          {availableDepts.map((d) => (
                             <button
                               key={d.slug}
                               type="button"
