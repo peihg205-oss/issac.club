@@ -28,8 +28,11 @@ import {
   Flame,
   Pencil,
   X,
+  Search,
+  Filter,
 } from 'lucide-react'
 import type { PeriodItem } from '@/lib/periodData'
+import type { MeetingEvent } from '@/lib/context/ClubContext'
 
 export function SettingsView() {
   const { isBCN, currentUser } = useAuth()
@@ -44,6 +47,8 @@ export function SettingsView() {
     activeEventId,
     setActiveEventId,
     createUpcomingEvent,
+    updateEvent,
+    updateEventAttendees,
     registerForEvent,
     unregisterFromEvent,
     deleteEvent,
@@ -88,8 +93,26 @@ export function SettingsView() {
     'Chuyên đề nâng cao kỹ năng đàm phán, giao tiếp đối ngoại và ứng biến sân khấu dành riêng cho thành viên CLB.'
   )
 
-  // Thử nghiệm đăng ký thành viên
-  const [testRegMemberCode, setTestRegMemberCode] = useState(members[0]?.member_code || '')
+  // Quản lý danh sách đăng ký theo danh sách CLB
+  const [managingAttendeesEvent, setManagingAttendeesEvent] = useState<MeetingEvent | null>(null)
+  const [attendeeSelectedCodes, setAttendeeSelectedCodes] = useState<string[]>([])
+  const [attendeeSearchQuery, setAttendeeSearchQuery] = useState('')
+  const [attendeeFilterDept, setAttendeeFilterDept] = useState('ALL')
+
+  // Chỉnh sửa thông tin sự kiện
+  const [editingEvent, setEditingEvent] = useState<MeetingEvent | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editStartTime, setEditStartTime] = useState('')
+  const [editEndTime, setEditEndTime] = useState('')
+  const [editLocation, setEditLocation] = useState('')
+  const [editPin, setEditPin] = useState('')
+  const [editIsRequired, setEditIsRequired] = useState(false)
+  const [editAllowRegistration, setEditAllowRegistration] = useState(true)
+  const [editMaxAttendees, setEditMaxAttendees] = useState(50)
+  const [editPointBonus, setEditPointBonus] = useState(2)
+  const [editCategory, setEditCategory] = useState<'meeting' | 'workshop' | 'teambuilding' | 'external'>('workshop')
+  const [editEventDescription, setEditEventDescription] = useState('')
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -272,23 +295,70 @@ export function SettingsView() {
     setTimeout(() => setToast(null), 5000)
   }
 
-  // Thử đăng ký tham gia sự kiện
-  const handleTestRegister = (eventId: string) => {
-    if (!testRegMemberCode) return
-    const res = registerForEvent(eventId, testRegMemberCode)
-    if (res.success) {
-      setToast({ type: 'success', message: res.message })
-    } else {
-      setToast({ type: 'error', message: res.message })
-    }
-    setTimeout(() => setToast(null), 4000)
+  // Mở modal quản lý danh sách đăng ký theo danh sách CLB
+  const openManageAttendees = (evt: MeetingEvent) => {
+    setManagingAttendeesEvent(evt)
+    setAttendeeSelectedCodes(evt.registeredMemberCodes || [])
+    setAttendeeSearchQuery('')
+    setAttendeeFilterDept('ALL')
   }
 
-  // Hủy đăng ký
-  const handleTestUnregister = (eventId: string, memberCode: string) => {
-    const res = unregisterFromEvent(eventId, memberCode)
+  // Danh sách thành viên CLB được lọc trong modal
+  const filteredClubMembers = members.filter((m) => {
+    const matchesDept = attendeeFilterDept === 'ALL' || m.department_name === attendeeFilterDept
+    const q = attendeeSearchQuery.toLowerCase().trim()
+    const matchesQuery =
+      !q ||
+      m.full_name.toLowerCase().includes(q) ||
+      m.member_code.toLowerCase().includes(q) ||
+      (m.email && m.email.toLowerCase().includes(q))
+    return matchesDept && matchesQuery
+  })
+
+  // Mở modal chỉnh sửa thông tin sự kiện
+  const openEditEvent = (evt: MeetingEvent) => {
+    setEditingEvent(evt)
+    setEditTitle(evt.title)
+    setEditDate(evt.date)
+    setEditStartTime(evt.startTime)
+    setEditEndTime(evt.endTime)
+    setEditLocation(evt.location)
+    setEditPin(evt.pinCode)
+    setEditIsRequired(evt.isRequired)
+    setEditAllowRegistration(evt.allowRegistration ?? true)
+    setEditMaxAttendees(evt.maxAttendees || 50)
+    setEditPointBonus(evt.pointBonus ?? 2)
+    setEditCategory(evt.category || 'workshop')
+    setEditEventDescription(evt.description)
+  }
+
+  // Lưu chỉnh sửa thông tin sự kiện
+  const handleSaveEditEvent = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingEvent) return
+    if (!editTitle.trim()) {
+      setToast({ type: 'error', message: 'Vui lòng nhập tên sự kiện!' })
+      return
+    }
+    const res = updateEvent(editingEvent.id, {
+      title: editTitle.trim(),
+      date: editDate,
+      startTime: editStartTime,
+      endTime: editEndTime,
+      location: editLocation.trim(),
+      pinCode: editPin.trim() || '8899',
+      isRequired: editIsRequired,
+      allowRegistration: editAllowRegistration,
+      maxAttendees: Number(editMaxAttendees) || 50,
+      pointBonus: Number(editPointBonus) || 0,
+      category: editCategory,
+      description: editEventDescription.trim(),
+    })
     if (res.success) {
       setToast({ type: 'success', message: res.message })
+      setEditingEvent(null)
+    } else {
+      setToast({ type: 'error', message: res.message })
     }
     setTimeout(() => setToast(null), 4000)
   }
@@ -761,25 +831,14 @@ export function SettingsView() {
               </span>
             </div>
 
-            {/* Test Registration Control Bar */}
-            <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            {/* Thanh thông tin đồng bộ theo CLB */}
+            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-[#1351D8] shrink-0" />
-                <span className="font-bold text-[#0B1E48]">Thử nghiệm đăng ký thành viên:</span>
-              </div>
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <select
-                  value={testRegMemberCode}
-                  onChange={(e) => setTestRegMemberCode(e.target.value)}
-                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs cursor-pointer"
-                >
-                  {members.map((m) => (
-                    <option key={m.member_code} value={m.member_code}>
-                      {m.full_name} ({m.department_name})
-                    </option>
-                  ))}
-                </select>
-                <span className="text-[10px] text-slate-500 whitespace-nowrap hidden sm:inline">Ấn Đăng ký ở từng thẻ bên dưới</span>
+                <Users className="w-4 h-4 text-[#1351D8] shrink-0" />
+                <span className="font-bold text-[#0B1E48]">Đồng bộ theo danh sách CLB:</span>
+                <span className="text-slate-600">
+                  Hiện có <strong className="text-[#1351D8] font-bold">{members.length}</strong> thành viên hoạt động. Bấm &quot;Sửa DS Đăng Ký&quot; ở từng sự kiện để chọn hoặc lọc thành viên tham gia theo danh sách CLB thực tế.
+                </span>
               </div>
             </div>
 
@@ -796,7 +855,6 @@ export function SettingsView() {
               ) : (
                 events.map((evt) => {
                 const registeredList = evt.registeredMemberCodes || []
-                const isUserRegistered = registeredList.includes(testRegMemberCode)
                 const isActive = activeEventId === evt.id
                 const categoryLabel =
                   evt.category === 'workshop'
@@ -894,23 +952,27 @@ export function SettingsView() {
 
                       {/* Interactive Buttons */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Thử Đăng ký / Hủy đăng ký */}
-                        {isUserRegistered ? (
+                        {/* Quản lý danh sách đăng ký theo danh sách CLB */}
+                        <button
+                          type="button"
+                          onClick={() => openManageAttendees(evt)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-[#1351D8] border border-blue-200/90 hover:bg-blue-100/80 transition flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+                          title="Quản lý & chỉnh sửa danh sách thành viên đăng ký theo danh sách thành viên thực tế của CLB"
+                        >
+                          <Users className="w-3.5 h-3.5 text-[#1351D8]" />
+                          <span>Sửa DS Đăng Ký ({registeredList.length})</span>
+                        </button>
+
+                        {/* Sửa thông tin sự kiện nếu là BCN */}
+                        {isBCN && (
                           <button
                             type="button"
-                            onClick={() => handleTestUnregister(evt.id, testRegMemberCode)}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300/80 hover:bg-amber-100 transition shadow-2xs cursor-pointer whitespace-nowrap"
+                            onClick={() => openEditEvent(evt)}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/90 transition flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
+                            title="Chỉnh sửa thông tin sự kiện (thời gian, địa điểm, mã PIN, điểm cộng...)"
                           >
-                            Hủy đăng ký cho thành viên
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleTestRegister(evt.id)}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap"
-                          >
-                            <UserPlus className="w-3.5 h-3.5" />
-                            <span>Đăng ký tham gia ngay</span>
+                            <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Sửa sự kiện</span>
                           </button>
                         )}
 
@@ -1468,6 +1530,382 @@ export function SettingsView() {
                 {isSubmittingDelete ? 'Đang xóa...' : 'Xác Nhận Xóa'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL QUẢN LÝ DANH SÁCH ĐĂNG KÝ THEO DANH SÁCH CLB */}
+      {managingAttendeesEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-2xl w-full border border-slate-200/90 shadow-2xl relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                    <Users className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-black text-[#0B1E48]">
+                      Sửa Danh Sách Đăng Ký Theo CLB
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Sự kiện: <strong className="text-slate-800">{managingAttendeesEvent.title}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManagingAttendeesEvent(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stats & Quick Actions */}
+            <div className="py-3 shrink-0 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-blue-50/60 rounded-2xl border border-blue-200/60 text-xs">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-[#1351D8]" />
+                  <span className="text-slate-700">
+                    Đã chọn: <strong className="text-[#1351D8] font-bold">{attendeeSelectedCodes.length}</strong> / {managingAttendeesEvent.maxAttendees || 50} thành viên
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-500">
+                    Tổng CLB: <strong className="text-slate-700 font-bold">{members.length}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentFilteredCodes = filteredClubMembers.map((m) => m.member_code)
+                      setAttendeeSelectedCodes((prev) => Array.from(new Set([...prev, ...currentFilteredCodes])))
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold text-[11px] hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                  >
+                    + Chọn tất cả ({filteredClubMembers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentFilteredCodes = new Set(filteredClubMembers.map((m) => m.member_code))
+                      setAttendeeSelectedCodes((prev) => prev.filter((c) => !currentFilteredCodes.has(c)))
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold text-[11px] hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                  >
+                    Bỏ chọn ({filteredClubMembers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const validCodes = new Set(members.map((m) => m.member_code))
+                      setAttendeeSelectedCodes((prev) => prev.filter((c) => validCodes.has(c)))
+                      setToast({
+                        type: 'success',
+                        message: 'Đã đồng bộ và làm sạch theo danh sách thành viên hiện tại của CLB.',
+                      })
+                      setTimeout(() => setToast(null), 3000)
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[11px] hover:bg-emerald-100 transition cursor-pointer shadow-2xs"
+                    title="Loại bỏ các mã thành viên cũ đã không còn trong danh sách CLB"
+                  >
+                    Làm sạch theo CLB
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter and Search */}
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên hoặc mã thành viên..."
+                    value={attendeeSearchQuery}
+                    onChange={(e) => setAttendeeSearchQuery(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1351D8] focus:bg-white transition"
+                  />
+                </div>
+                <select
+                  value={attendeeFilterDept}
+                  onChange={(e) => setAttendeeFilterDept(e.target.value)}
+                  className="w-full sm:w-auto bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#1351D8] cursor-pointer"
+                >
+                  <option value="ALL">Tất cả các Ban ({members.length})</option>
+                  <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
+                  <option value="Ban Truyền thông">Ban Truyền thông</option>
+                  <option value="Ban Tư vấn">Ban Tư vấn</option>
+                  <option value="Ban Nhân sự">Ban Nhân sự</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Member Selection List */}
+            <div className="flex-1 overflow-y-auto min-h-[220px] max-h-[360px] divide-y divide-slate-100 border border-slate-200/80 rounded-2xl bg-white">
+              {filteredClubMembers.length === 0 ? (
+                <div className="text-center py-10 text-xs text-slate-500">
+                  Không tìm thấy thành viên CLB nào phù hợp với điều kiện tìm kiếm.
+                </div>
+              ) : (
+                filteredClubMembers.map((m) => {
+                  const isSelected = attendeeSelectedCodes.includes(m.member_code)
+                  const hasCheckedIn = managingAttendeesEvent.records?.[m.member_code]
+
+                  return (
+                    <label
+                      key={m.member_code}
+                      className={`flex items-center justify-between p-3 cursor-pointer transition select-none ${
+                        isSelected ? 'bg-blue-50/50 hover:bg-blue-50/80' : 'hover:bg-slate-50/80'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAttendeeSelectedCodes((prev) => [...prev, m.member_code])
+                            } else {
+                              setAttendeeSelectedCodes((prev) => prev.filter((c) => c !== m.member_code))
+                            }
+                          }}
+                          className="w-4 h-4 rounded text-[#1351D8] focus:ring-[#1351D8] cursor-pointer"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-[#0B1E48]">{m.full_name}</span>
+                            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                              {m.member_code}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                            <span>{m.department_name}</span>
+                            <span>•</span>
+                            <span>{m.position || 'Thành viên'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {hasCheckedIn && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Đã điểm danh
+                          </span>
+                        )}
+                        <span
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${
+                            isSelected
+                              ? 'bg-blue-100 text-[#1351D8]'
+                              : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {isSelected ? 'Đã chọn' : 'Chưa chọn'}
+                        </span>
+                      </div>
+                    </label>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 flex items-center justify-between border-t border-slate-100 mt-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setManagingAttendeesEvent(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition cursor-pointer text-xs"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const res = updateEventAttendees(managingAttendeesEvent.id, attendeeSelectedCodes)
+                  setToast({ type: 'success', message: res.message })
+                  setTimeout(() => setToast(null), 4000)
+                  setManagingAttendeesEvent(null)
+                }}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white font-bold transition shadow-xs cursor-pointer text-xs flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>Lưu Danh Sách ({attendeeSelectedCodes.length} TV)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CHỈNH SỬA THÔNG TIN SỰ KIỆN (CHỈ BAN CHỦ NHIỆM) */}
+      {editingEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-2xl w-full border border-slate-200/90 shadow-2xl relative flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                  <Pencil className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-black text-[#0B1E48]">Chỉnh Sửa Thông Tin Sự Kiện</h3>
+                  <p className="text-xs text-slate-500 font-medium">Cập nhật thông tin và đồng bộ tới toàn bộ hệ thống</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingEvent(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditEvent} className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tên sự kiện / Hoạt động *</label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Loại sự kiện</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8]"
+                  >
+                    <option value="meeting">Sinh hoạt định kỳ CLB</option>
+                    <option value="workshop">Workshop chuyên đề</option>
+                    <option value="teambuilding">Teambuilding &amp; Dã ngoại</option>
+                    <option value="external">Sự kiện ĐHQG &amp; Đối ngoại</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ngày diễn ra</label>
+                  <input
+                    type="text"
+                    required
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    placeholder="VD: 28/10/2026"
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Giờ bắt đầu</label>
+                  <input
+                    type="time"
+                    value={editStartTime}
+                    onChange={(e) => setEditStartTime(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Giờ kết thúc</label>
+                  <input
+                    type="time"
+                    value={editEndTime}
+                    onChange={(e) => setEditEndTime(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Mã PIN Check-in</label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={editPin}
+                    onChange={(e) => setEditPin(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-mono font-black text-[#1351D8] tracking-widest text-center focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Địa điểm tổ chức</label>
+                <input
+                  type="text"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Số lượng tối đa</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={editMaxAttendees}
+                    onChange={(e) => setEditMaxAttendees(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Điểm cộng chuyên cần</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={editPointBonus}
+                    onChange={(e) => setEditPointBonus(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <input
+                  type="checkbox"
+                  id="editIsRequired"
+                  checked={editIsRequired}
+                  onChange={(e) => setEditIsRequired(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#1351D8] focus:ring-[#1351D8] cursor-pointer"
+                />
+                <label htmlFor="editIsRequired" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  Buổi sinh hoạt bắt buộc toàn CLB (Vắng không phép trừ điểm)
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Mô tả / Thông báo sự kiện</label>
+                <textarea
+                  rows={3}
+                  value={editEventDescription}
+                  onChange={(e) => setEditEventDescription(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#1351D8] focus:bg-white resize-none"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingEvent(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition cursor-pointer text-xs"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white font-bold transition shadow-xs cursor-pointer text-xs flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Lưu Thông Tin Sự Kiện</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

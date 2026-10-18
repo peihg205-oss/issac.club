@@ -231,6 +231,8 @@ interface ClubContextType {
     pointBonus?: number
     category?: 'meeting' | 'workshop' | 'teambuilding' | 'external'
   }) => { success: boolean; message: string; event?: MeetingEvent }
+  updateEvent: (eventId: string, updates: Partial<MeetingEvent>) => { success: boolean; message: string }
+  updateEventAttendees: (eventId: string, memberCodes: string[]) => { success: boolean; message: string }
   registerForEvent: (eventId: string, memberCode: string) => { success: boolean; message: string }
   unregisterFromEvent: (eventId: string, memberCode: string) => { success: boolean; message: string }
   deleteEvent: (eventId: string) => { success: boolean; message: string }
@@ -2561,13 +2563,73 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       fetch('/api/db/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all', events: updated }),
+        body: JSON.stringify({ action: 'unregister', eventId, memberCode, events: updated }),
       }).catch((e) => console.error('Cloud sync error on unregisterFromEvent:', e))
     }
 
     return {
       success: true,
       message: 'Đã hủy đăng ký sự kiện thành công.',
+    }
+  }
+
+  // Cập nhật thông tin chi tiết sự kiện
+  const updateEvent = (eventId: string, updates: Partial<MeetingEvent>) => {
+    const target = events.find((e) => e.id === eventId)
+    if (!target) return { success: false, message: 'Không tìm thấy sự kiện cần chỉnh sửa!' }
+
+    const updated = events.map((e) => (e.id === eventId ? { ...e, ...updates } : e))
+    setEvents(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
+      } catch (err) {
+        console.error(err)
+      }
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_event',
+          eventId,
+          event: updates,
+          events: updated,
+        }),
+      }).catch((e) => console.error('Cloud sync error on updateEvent:', e))
+    }
+    return { success: true, message: 'Đã cập nhật thông tin sự kiện và đồng bộ tới toàn hệ thống.' }
+  }
+
+  // Cập nhật danh sách thành viên đăng ký theo danh sách CLB
+  const updateEventAttendees = (eventId: string, memberCodes: string[]) => {
+    const target = events.find((e) => e.id === eventId)
+    if (!target) return { success: false, message: 'Không tìm thấy sự kiện!' }
+
+    const uniqueCodes = Array.from(new Set(memberCodes))
+    const updated = events.map((e) =>
+      e.id === eventId ? { ...e, registeredMemberCodes: uniqueCodes } : e
+    )
+    setEvents(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('issac_events_clean_v1', JSON.stringify(updated))
+      } catch (err) {
+        console.error(err)
+      }
+      fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_event_attendees',
+          eventId,
+          registeredMemberCodes: uniqueCodes,
+          events: updated,
+        }),
+      }).catch((e) => console.error('Cloud sync error on updateEventAttendees:', e))
+    }
+    return {
+      success: true,
+      message: `Đã lưu danh sách ${uniqueCodes.length} thành viên tham gia theo danh sách CLB!`,
     }
   }
 
@@ -2643,6 +2705,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         activeEventId,
         setActiveEventId,
         createUpcomingEvent,
+        updateEvent,
+        updateEventAttendees,
         registerForEvent,
         unregisterFromEvent,
         deleteEvent,

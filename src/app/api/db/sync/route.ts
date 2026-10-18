@@ -509,6 +509,49 @@ export async function POST(request: Request) {
       } else if (action === 'create_event' && event) {
         // Đẩy sự kiện mới lên đầu danh sách và giữ nguyên các sự kiện cũ
         updatedEvents = [event, ...updatedEvents.filter((e: any) => e.id !== event.id)]
+      } else if (action === 'update_event' && eventId && (event || body.event)) {
+        // Cập nhật thông tin sự kiện
+        const evUpdates = event || body.event
+        updatedEvents = updatedEvents.map((evt: any) => {
+          if (evt.id === eventId) {
+            return {
+              ...evt,
+              ...evUpdates,
+            }
+          }
+          return evt
+        })
+        if (Array.isArray(events)) {
+          updatedEvents = events
+        }
+      } else if (action === 'update_event_attendees' && eventId && Array.isArray(body.registeredMemberCodes)) {
+        // Cập nhật danh sách thành viên đăng ký theo danh sách CLB
+        updatedEvents = updatedEvents.map((evt: any) => {
+          if (evt.id === eventId) {
+            return {
+              ...evt,
+              registeredMemberCodes: body.registeredMemberCodes,
+            }
+          }
+          return evt
+        })
+        if (Array.isArray(events)) {
+          updatedEvents = events
+        }
+      } else if (action === 'unregister' && eventId && memberCode) {
+        // Hủy đăng ký 1 thành viên
+        updatedEvents = updatedEvents.map((evt: any) => {
+          if (evt.id === eventId) {
+            return {
+              ...evt,
+              registeredMemberCodes: (evt.registeredMemberCodes || []).filter((c: string) => c !== memberCode),
+            }
+          }
+          return evt
+        })
+        if (Array.isArray(events)) {
+          updatedEvents = events
+        }
       } else if (action === 'checkin' && eventId && memberCode) {
         // Cập nhật điểm danh 1 thành viên
         updatedEvents = updatedEvents.map((evt: any) => {
