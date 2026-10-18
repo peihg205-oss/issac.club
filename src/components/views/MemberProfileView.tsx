@@ -83,10 +83,6 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
     return { clubRank: cRank, deptRank: dRank, deptAvg: dAvg, clubAvg: cAvg }
   }, [members, currentMember])
 
-  const octScore = currentMember.current_score
-  const changeValue = currentMember.current_score - 60
-  const rating = getRatingLevel(octScore)
-
   // Danh sách lịch sử điểm thực tế từ đề xuất & sự kiện
   const fullHistory = useMemo(() => {
     const list: Array<{
@@ -178,6 +174,17 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
 
   const bonusTotal = fullHistory.filter((h) => h.type === 'add').reduce((sum, h) => sum + h.points, 0)
   const deductTotal = Math.abs(fullHistory.filter((h) => h.type === 'deduct').reduce((sum, h) => sum + h.points, 0))
+  const netPoints = bonusTotal - deductTotal
+
+  const totalMovement = bonusTotal + deductTotal
+  const bonusPercent = totalMovement > 0 ? Math.round((bonusTotal / totalMovement) * 100) : (bonusTotal > 0 ? 100 : 0)
+  const deductPercent = totalMovement > 0 ? Math.round((deductTotal / totalMovement) * 100) : 0
+
+  // Chuẩn hóa điểm thi đua: Mốc xuất phát chuẩn 60đ + biến động điểm cống hiến/kỷ luật, clamp [0, 100]
+  // Đảm bảo tuyệt đối không có xung đột giữa tổng điểm cộng/trừ (+7) và điểm hiển thị (67)
+  const octScore = Math.max(0, Math.min(100, 60 + netPoints))
+  const changeValue = octScore - 60
+  const rating = getRatingLevel(octScore)
 
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'all') return fullHistory
@@ -538,33 +545,37 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                       strokeWidth="14"
                     />
 
-                    {/* Cung điểm cộng (Xanh lá) - 12/19 ~ 63% */}
-                    <circle
-                      cx="65"
-                      cy="65"
-                      r="48"
-                      fill="none"
-                      stroke="url(#bonusPieGradient)"
-                      strokeWidth="14"
-                      strokeDasharray={`${(bonusTotal / (bonusTotal + deductTotal)) * (2 * Math.PI * 48)} ${2 * Math.PI * 48}`}
-                      strokeDashoffset="0"
-                      strokeLinecap="round"
-                      className="transition-all duration-700 ease-out"
-                    />
+                    {/* Cung điểm cộng (Xanh lá) */}
+                    {bonusTotal > 0 && (
+                      <circle
+                        cx="65"
+                        cy="65"
+                        r="48"
+                        fill="none"
+                        stroke="url(#bonusPieGradient)"
+                        strokeWidth="14"
+                        strokeDasharray={`${totalMovement > 0 ? (bonusTotal / totalMovement) * (2 * Math.PI * 48) : 2 * Math.PI * 48} ${2 * Math.PI * 48}`}
+                        strokeDashoffset="0"
+                        strokeLinecap={deductTotal > 0 ? 'butt' : 'round'}
+                        className="transition-all duration-700 ease-out"
+                      />
+                    )}
 
-                    {/* Cung điểm trừ (Đỏ hồng) - 7/19 ~ 37% */}
-                    <circle
-                      cx="65"
-                      cy="65"
-                      r="48"
-                      fill="none"
-                      stroke="url(#deductPieGradient)"
-                      strokeWidth="14"
-                      strokeDasharray={`${(deductTotal / (bonusTotal + deductTotal)) * (2 * Math.PI * 48)} ${2 * Math.PI * 48}`}
-                      strokeDashoffset={`${-((bonusTotal / (bonusTotal + deductTotal)) * (2 * Math.PI * 48))}`}
-                      strokeLinecap="round"
-                      className="transition-all duration-700 ease-out"
-                    />
+                    {/* Cung điểm trừ (Đỏ hồng) - chỉ vẽ khi có điểm trừ */}
+                    {deductTotal > 0 && (
+                      <circle
+                        cx="65"
+                        cy="65"
+                        r="48"
+                        fill="none"
+                        stroke="url(#deductPieGradient)"
+                        strokeWidth="14"
+                        strokeDasharray={`${(deductTotal / totalMovement) * (2 * Math.PI * 48)} ${2 * Math.PI * 48}`}
+                        strokeDashoffset={`${-((bonusTotal / totalMovement) * (2 * Math.PI * 48))}`}
+                        strokeLinecap="round"
+                        className="transition-all duration-700 ease-out"
+                      />
+                    )}
                   </svg>
 
                   {/* Tâm biểu đồ tròn: Hiển thị điểm chốt ròng */}
@@ -573,11 +584,21 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                       Chốt ròng
                     </span>
                     <span className="text-xl font-black text-[#1351D8] leading-none my-0.5">
-                      +{bonusTotal - deductTotal}đ
+                      {netPoints >= 0 ? `+${netPoints}` : netPoints}đ
                     </span>
-                    <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200/80">
-                      +63%
-                    </span>
+                    {totalMovement > 0 ? (
+                      <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border ${
+                        netPoints >= 0
+                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200/80'
+                          : 'text-rose-700 bg-rose-50 border-rose-200/80'
+                      }`}>
+                        {netPoints >= 0 ? `+${bonusPercent}%` : `-${deductPercent}%`}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-200">
+                        Chuẩn 60đ
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -591,7 +612,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-bold text-emerald-600 bg-white/90 px-1.5 py-0.5 rounded border border-emerald-200/60 shadow-2xs">
-                        63%
+                        {bonusPercent}%
                       </span>
                       <span className="font-black text-emerald-700 text-sm">+{bonusTotal}đ</span>
                     </div>
@@ -605,7 +626,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-bold text-rose-600 bg-white/90 px-1.5 py-0.5 rounded border border-rose-200/60 shadow-2xs">
-                        37%
+                        {deductPercent}%
                       </span>
                       <span className="font-black text-rose-700 text-sm">-{deductTotal}đ</span>
                     </div>
@@ -618,7 +639,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                       <span className="font-semibold text-blue-950">Điểm chốt ròng:</span>
                     </div>
                     <span className="font-black text-blue-700 text-sm">
-                      +{bonusTotal - deductTotal}đ
+                      {netPoints >= 0 ? `+${netPoints}` : netPoints}đ
                     </span>
                   </div>
                 </div>
@@ -635,7 +656,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   {rating.level_name}
                 </span>
                 <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                  Đạt mức sàn {octScore}/100đ chuẩn. Thành viên tích cực tham gia các hoạt động và bảo đảm kỷ luật họp CLB.
+                  Đạt mức {octScore}/100đ ({rating.level_name}). {rating.action_required || 'Thành viên tích cực tham gia các hoạt động và bảo đảm kỷ luật họp CLB.'}
                 </p>
               </div>
             </div>

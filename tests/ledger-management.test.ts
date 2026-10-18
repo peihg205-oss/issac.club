@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { calculateScoreDelta } from '../src/lib/scoring/engine'
 import { CRITERIA_RULES } from '../src/lib/scoring/constants'
-import { mergeProposals, mergeEvents } from '../src/lib/context/ClubContext'
+import { mergeProposals, mergeEvents, reconcileMemberScores } from '../src/lib/context/ClubContext'
 
 describe('Ledger Score Management & BCN Edit/Delete Logic', () => {
   it('correctly categorizes records into Tất cả, Điểm cộng (> 0), and Điểm trừ (< 0)', () => {
@@ -154,5 +154,30 @@ describe('Ledger Score Management & BCN Edit/Delete Logic', () => {
     const merged = mergeEvents(localEvents, incomingEvents, deletedEventIds)
     expect(merged.length).toBe(1)
     expect(merged[0].id).toBe('evt-keep-2')
+  })
+
+  it('reconcileMemberScores accurately computes 60 + net points (e.g. 60 + 7 = 67) and prevents desynchronization', () => {
+    const members = [
+      { member_code: '24310088', full_name: 'Trần Đức Thắng', current_score: 60, department_slug: 'truyen-thong' } as any,
+      { member_code: '23070691', full_name: 'Giang Lê Hiệp', current_score: 60, department_slug: 'bcn' } as any,
+    ]
+
+    const proposals = [
+      { id: 'p1', memberCode: '24310088', points: 4, status: 'approved', periodId: 'month-2026-10' } as any,
+      { id: 'p2', memberCode: '24310088', points: 3, status: 'approved', periodId: 'month-2026-10' } as any,
+      { id: 'p3', memberCode: '24310088', points: 10, status: 'pending_bcn', periodId: 'month-2026-10' } as any, // Not approved
+      { id: 'p4', memberCode: '23070691', points: -5, status: 'approved', periodId: 'month-2026-10', criterionCode: 'T02' } as any,
+    ]
+
+    const reconciled = reconcileMemberScores(members, proposals, 'month-2026-10')
+
+    const thang = reconciled.find((m) => m.member_code === '24310088')
+    const hiep = reconciled.find((m) => m.member_code === '23070691')
+
+    // 60 + 4 + 3 = 67đ (Ignoring unapproved p3)
+    expect(thang?.current_score).toBe(67)
+    // 60 - 5 = 55đ
+    expect(hiep?.current_score).toBe(55)
+    expect(hiep?.absent_count_t02).toBe(1)
   })
 })

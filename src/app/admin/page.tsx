@@ -79,10 +79,10 @@ export default function AdminPage() {
       const bRule = CRITERIA_RULES[newCode as RuleCode]
       const cRule = customRules.find((r) => r.code === newCode)
       if (bRule) {
-        setCustomPoints(bRule.type === 'deduct' ? -bRule.base_points : bRule.base_points)
+        setCustomPoints(bRule.type === 'deduct' ? -Math.abs(bRule.base_points) : Math.abs(bRule.base_points))
       } else if (cRule) {
         const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
-        setCustomPoints(pts)
+        setCustomPoints(cRule.type === 'deduct' ? -Math.abs(pts) : Math.abs(pts))
       }
     }
   }
