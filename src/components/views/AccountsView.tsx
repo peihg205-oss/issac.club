@@ -211,6 +211,28 @@ export function AccountsView() {
     }
   }
 
+  // Khóa truy cập hoàn toàn nếu không phải Ban Chủ nhiệm
+  if (!canManageAccounts && !isBCN) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-8 sm:p-12 text-center max-w-lg mx-auto my-12 shadow-sm space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/90 flex items-center justify-center mx-auto shadow-2xs">
+          <Lock className="w-8 h-8 text-amber-600" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black text-[#0B1E48]">Quyền Hạn Hạn Chế</h2>
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+            Chức năng <strong>Cấp tài khoản Ban</strong> chỉ dành riêng cho Ban Chủ nhiệm CLB iSSAC. Các tài khoản chuyên môn (Ban Nhân sự, Ban Tư vấn, Ban Truyền thông) không có thẩm quyền truy cập hay xem thông tin tài khoản tại đây.
+          </p>
+        </div>
+        <div className="pt-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+            Chỉ Ban Chủ nhiệm mới có quyền cấp tài khoản
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* 1. TOP HEADER TRANG: QUẢN TRỊ TÀI KHOẢN BAN (KHỚP 100% ẢNH CHỤP) */}

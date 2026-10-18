@@ -72,9 +72,22 @@ describe('Role & Scoring Permissions Matrix', () => {
     ...INITIAL_MEMBERS.find((m) => m.department_code === 'B03')!,
   }
 
+  const userDoNgocLy: AuthUser = {
+    id: 'user-ly',
+    name: 'Đỗ Ngọc Ly',
+    role: 'member',
+    roleTitle: 'Thành viên Ban Nhân sự',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    memberCode: '24070685',
+    isCore: false,
+    avatarBg: 'bg-purple-500',
+  }
+
   it('1. Chỉ Ban Chủ nhiệm mới có quyền cấp / sửa / xóa tài khoản cán bộ', () => {
     expect(canUserManageAccounts(userBCN)).toBe(true)
     expect(canUserManageAccounts(userHR)).toBe(false)
+    expect(canUserManageAccounts(userDoNgocLy)).toBe(false)
     expect(canUserManageAccounts(userTruyenThong)).toBe(false)
     expect(canUserManageAccounts(userTuVan)).toBe(false)
     expect(canUserManageAccounts(null)).toBe(false)

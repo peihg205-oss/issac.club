@@ -11,6 +11,9 @@ import {
   Settings,
   KeyRound,
 } from 'lucide-react'
+import { useAuth } from '@/lib/auth/AuthContext'
+import { canUserManageAccounts } from '@/lib/auth/permissions'
+import { useClub } from '@/lib/context/ClubContext'
 
 export type ActiveNavTab =
   | 'dashboard'
@@ -101,6 +104,12 @@ export function Sidebar({
   isOpen = false,
   onToggle,
 }: SidebarProps) {
+  const { currentUser, isBCN, canManageAccounts } = useAuth()
+  const { members } = useClub()
+
+  // Chỉ Ban Chủ nhiệm mới có quyền quản trị và xem Cấp tài khoản Ban
+  const isAccountManager = isBCN || canManageAccounts || canUserManageAccounts(currentUser)
+
   // Theme state: defaults to Royal Blue (#1451D8)
   const [themeId, setThemeId] = useState<string>('blue')
   const menuRef = useRef<HTMLDivElement>(null)
@@ -164,6 +173,7 @@ export function Sidebar({
   ]
 
   // Section 2: CÔNG CỤ & HỆ THỐNG
+  // Chỉ hiển thị tab "Cấp tài khoản Ban" duy nhất cho tài khoản Ban Chủ nhiệm
   const section2Items: Array<{
     id: ActiveNavTab
     label: string
@@ -175,16 +185,20 @@ export function Sidebar({
       id: 'stats',
       label: 'Bảng xếp hạng',
       icon: Trophy,
-      badge: 'TOP 48',
+      badge: `TOP ${members.length || 48}`,
       badgeType: 'pill',
     },
-    {
-      id: 'accounts',
-      label: 'Cấp tài khoản Ban',
-      icon: KeyRound,
-      badge: 'BCN',
-      badgeType: 'pill',
-    },
+    ...(isAccountManager
+      ? [
+          {
+            id: 'accounts' as ActiveNavTab,
+            label: 'Cấp tài khoản Ban',
+            icon: KeyRound,
+            badge: 'BCN',
+            badgeType: 'pill' as const,
+          },
+        ]
+      : []),
     {
       id: 'settings',
       label: 'Cài đặt hệ thống',

@@ -15,12 +15,15 @@ import { MemberProfileView } from '@/components/views/MemberProfileView'
 import { AccountsView } from '@/components/views/AccountsView'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
+import { canUserManageAccounts } from '@/lib/auth/permissions'
 import type { RosterMember } from '@/lib/clubData'
 
 export default function AppHome() {
   const router = useRouter()
   const { currentUser, isAuthChecked, isBCN } = useAuth()
   const { proposals, activeEvent } = useClub()
+
+  const isAccountManager = isBCN || canUserManageAccounts(currentUser)
 
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('dashboard')
   const [selectedMember, setSelectedMember] = useState<RosterMember | null>(null)
@@ -34,6 +37,13 @@ export default function AppHome() {
       router.replace('/login')
     }
   }, [isAuthChecked, currentUser, router])
+
+  // Quyền hạn: Chỉ Ban Chủ nhiệm mới được vào tab accounts. Nếu là Ban Nhân sự / Tư vấn / Truyền thông -> tự động đưa về dashboard
+  useEffect(() => {
+    if (activeTab === 'accounts' && !isAccountManager) {
+      setActiveTab('dashboard')
+    }
+  }, [activeTab, isAccountManager])
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
@@ -121,7 +131,7 @@ export default function AppHome() {
             <RulesView />
           ) : activeTab === 'stats' ? (
             <StatsView onSelectMember={handleSelectMember} />
-          ) : activeTab === 'accounts' ? (
+          ) : activeTab === 'accounts' && isAccountManager ? (
             <AccountsView />
           ) : (
             <SettingsView />
