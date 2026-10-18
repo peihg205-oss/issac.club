@@ -177,7 +177,7 @@ function CheckinContent() {
     }
     setRegFeedback({
       type: 'success',
-      message: `Đã xác thực danh tính: ${member.full_name} (${member.department_name}). Bạn có thể đăng ký giữ chỗ ngay bên dưới!`,
+      message: `Đã xác thực chính chủ: ${member.full_name} (${member.department_name} - MSSV: ${member.student_id || member.member_code}).`,
     })
   }
 
@@ -185,6 +185,9 @@ function CheckinContent() {
   const handleClearVerifiedMember = () => {
     setVerifiedRegMember(null)
     setRegMemberCode('')
+    setCheckinMemberCode('')
+    setMssvInput('')
+    setMssvError(null)
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('issac_verified_member_code')
@@ -248,6 +251,11 @@ function CheckinContent() {
       return
     }
 
+    if (!verifiedRegMember) {
+      alert('Vui lòng nhập MSSV và bấm "Xác thực" danh tính thành viên của bạn trước khi điểm danh!')
+      return
+    }
+
     // 1. Kiểm tra khóa thiết bị (Ngăn điểm danh hộ nhiều người trên cùng 1 điện thoại)
     if (deviceLockedMember && !isKioskMode) {
       alert(
@@ -271,9 +279,10 @@ function CheckinContent() {
 
     setSubmittingCheckin(true)
     setTimeout(() => {
+      const targetCode = verifiedRegMember.member_code
       const res = memberSelfCheckin(
         currentEvent.id,
-        checkinMemberCode,
+        targetCode,
         pinInput.trim(),
         cleanPhoneDigits,
         isKioskMode ? 'kiosk' : 'personal'
@@ -282,8 +291,8 @@ function CheckinContent() {
 
       if (res.success) {
         const lockInfo = {
-          memberCode: currentCheckinMember?.member_code || checkinMemberCode,
-          memberName: currentCheckinMember?.full_name || checkinMemberCode,
+          memberCode: verifiedRegMember.member_code,
+          memberName: verifiedRegMember.full_name,
           timestamp: new Date().toLocaleTimeString('vi-VN', {
             timeZone: 'Asia/Ho_Chi_Minh',
             hour: '2-digit',
@@ -302,14 +311,14 @@ function CheckinContent() {
         }
 
         const isMemberRegistered = Boolean(
-          currentCheckinMember && currentEvent?.registeredMemberCodes?.includes(currentCheckinMember.member_code)
+          currentEvent?.registeredMemberCodes?.includes(verifiedRegMember.member_code)
         )
 
         setCheckinResult({
           success: true,
           message: res.message,
           timestamp: lockInfo.timestamp,
-          member: currentCheckinMember,
+          member: verifiedRegMember,
           event: currentEvent,
           isRegistered: isMemberRegistered,
         })
@@ -375,6 +384,12 @@ function CheckinContent() {
   })
 
   const selectedCheckinMember = members.find((m) => m.member_code === checkinMemberCode) || members[0]
+  const isAlreadyCheckedIn = Boolean(
+    verifiedRegMember && (
+      currentEvent?.records?.[verifiedRegMember.member_code]?.status === 'present_on_time' ||
+      currentEvent?.records?.[verifiedRegMember.member_code]?.status === 'late'
+    )
+  )
 
   return (
     <div className="min-h-screen bg-[#FAFBFC] text-slate-800 antialiased flex flex-col">
@@ -755,93 +770,6 @@ function CheckinContent() {
                 }))}
               </div>
             </div>
-
-            {/* Modal Xác Nhận Danh Tính Khi Nhập MSSV */}
-            {targetConfirmMember && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
-                <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl relative space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-[#1351D8] bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-md inline-block mb-1">
-                        Xác thực thành viên CLB
-                      </span>
-                      <h3 className="text-base sm:text-lg font-black text-[#0B1E48]">
-                        Xác Nhận Danh Tính Của Bạn
-                      </h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setTargetConfirmMember(null)}
-                      className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Chi tiết thành viên tìm thấy */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-[#0B1E48] text-white font-black text-base flex items-center justify-center shadow-xs shrink-0">
-                        {targetConfirmMember.full_name.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-black text-sm sm:text-base text-slate-900 truncate">
-                          {targetConfirmMember.full_name}
-                        </h4>
-                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                          <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200">
-                            {targetConfirmMember.department_name}
-                          </span>
-                          {targetConfirmMember.position && (
-                            <span className="text-xs text-slate-500 font-medium">
-                              • {targetConfirmMember.position}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-200/60 grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-[10.5px] text-slate-400 font-medium block">Mã sinh viên (MSSV):</span>
-                        <span className="font-extrabold text-slate-800">
-                          {targetConfirmMember.student_id || targetConfirmMember.member_code}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10.5px] text-slate-400 font-medium block">Lớp / Chi đoàn:</span>
-                        <span className="font-extrabold text-slate-800">
-                          {targetConfirmMember.class_name || 'Đại sứ sinh viên'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-600 font-medium text-center leading-relaxed">
-                    Vui lòng xác nhận bạn đúng là thành viên trên để hệ thống ghi nhận đăng ký sự kiện chính xác và khách quan.
-                  </p>
-
-                  {/* Nút hành động */}
-                  <div className="flex items-center gap-2.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setTargetConfirmMember(null)}
-                      className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
-                    >
-                      Không phải tôi
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleConfirmIdentity(targetConfirmMember)}
-                      className="flex-1 py-2.5 rounded-xl bg-[#0B1E48] hover:bg-[#1351D8] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer text-center"
-                    >
-                      Xác nhận là tôi
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1208,33 +1136,101 @@ function CheckinContent() {
                   {/* PHƯƠNG THỨC 1: HIỆN MÃ QR VÉ ĐIỂM DANH ĐỂ CORE TEAM QUÉT NHẬN NGAY */}
                   {checkinMethod === 'qr_pass' && (
                     <div className="space-y-4 animate-in fade-in duration-200">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-800 mb-1">
-                          Chọn Họ tên &amp; MSSV của bạn để hiện mã QR cá nhân: <span className="text-rose-500">*</span>
-                        </label>
-                        <select
-                          suppressHydrationWarning
-                          value={checkinMemberCode}
-                          onChange={(e) => setCheckinMemberCode(e.target.value)}
-                          className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 transition shadow-2xs cursor-pointer"
-                        >
-                          {members.map((m) => {
-                            const isCheckedIn =
-                              currentEvent?.records?.[m.member_code]?.status === 'present_on_time' ||
-                              currentEvent?.records?.[m.member_code]?.status === 'late'
-                            return (
-                              <option key={m.member_code} value={m.member_code} suppressHydrationWarning>
-                                {isCheckedIn ? '✓ [ĐÃ ĐIỂM DANH] ' : ''}
-                                {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
-                              </option>
-                            )
-                          })}
-                        </select>
-                      </div>
+                      {/* Khu vực danh tính chính chủ: Nếu đã xác thực MSSV thì hiện thông tin + vé QR, nếu chưa thì yêu cầu nhập MSSV */}
+                      {verifiedRegMember ? (
+                        <div className="space-y-3.5">
+                          {/* Thanh thông tin thành viên đã xác thực chính chủ */}
+                          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white border border-blue-200/80 shadow-2xs">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-xl bg-[#0B1E48] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                                {verifiedRegMember.full_name.charAt(0)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
+                                    {verifiedRegMember.full_name}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200 shrink-0">
+                                    {verifiedRegMember.department_name}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    Chính chủ
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                                  MSSV: <strong className="text-slate-800">{verifiedRegMember.student_id || verifiedRegMember.member_code}</strong>
+                                  {verifiedRegMember.class_name ? ` • Lớp ${verifiedRegMember.class_name}` : ''}
+                                  {verifiedRegMember.position ? ` • ${verifiedRegMember.position}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleClearVerifiedMember}
+                              className="text-xs font-bold text-slate-500 hover:text-rose-600 px-2.5 py-1.5 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition cursor-pointer shrink-0 ml-2"
+                              title="Đổi sang MSSV khác"
+                            >
+                              Đổi MSSV
+                            </button>
+                          </div>
 
-                      {/* Hiển thị Vé QR Check-in Điểm Danh Tức Thì */}
-                      {currentEvent && selectedCheckinMember && (
-                        <QrTicketPass event={currentEvent} member={selectedCheckinMember} />
+                          {/* Hiển thị Vé QR Check-in Điểm Danh Tức Thì của thành viên chính chủ */}
+                          {currentEvent && (
+                            <QrTicketPass event={currentEvent} member={verifiedRegMember} />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-white to-slate-50 border border-blue-200/80 shadow-2xs space-y-3.5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                              Nhập Mã sinh viên (MSSV) của bạn để lấy mã QR cá nhân: <span className="text-rose-500">*</span>
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                id="checkin-qr-mssv-input"
+                                type="text"
+                                value={mssvInput}
+                                onChange={(e) => {
+                                  setMssvInput(e.target.value)
+                                  setMssvError(null)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    handleVerifyMssv()
+                                  }
+                                }}
+                                placeholder="Nhập MSSV (VD: 24310069)..."
+                                className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleVerifyMssv}
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                              >
+                                Xác thực &amp; Lấy vé QR
+                              </button>
+                            </div>
+                          </div>
+
+                          {mssvError && (
+                            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2 shadow-2xs animate-in fade-in duration-200">
+                              <AlertCircle className="w-4 h-4 shrink-0" />
+                              <span>{mssvError}</span>
+                            </div>
+                          )}
+
+                          <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
+                            <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                              <ShieldCheck className="w-4 h-4 text-[#1351D8]" />
+                              <span>Tránh nhầm lẫn vé QR &amp; bảo vệ quyền lợi cá nhân</span>
+                            </p>
+                            <p className="text-[11.5px] leading-relaxed text-slate-500">
+                              Mỗi thành viên sở hữu một mã QR điểm danh gắn liền với MSSV trong danh sách 48 thành viên CLB. Nhập MSSV của bạn để hiện mã QR chính chủ, tránh nhầm lẫn với bạn khác.
+                            </p>
+                          </div>
+                        </div>
                       )}
 
                       <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1 shadow-2xs">
@@ -1252,39 +1248,99 @@ function CheckinContent() {
                   {/* PHƯƠNG THỨC 2: TỰ NHẬP MÃ PIN MÁY CHIẾU (KHÔNG ĐIỀN SẴN/GỢI Ý) */}
                   {checkinMethod === 'pin_form' && (
                     <form onSubmit={handleCheckinSubmit} className="space-y-4 animate-in fade-in duration-200">
-                      {/* Bước 1: Chọn thành viên */}
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-800">
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
-                          Chọn Họ tên &amp; MSSV của bạn trong CLB: <span className="text-rose-500">*</span>
-                        </label>
-                        <select
-                          suppressHydrationWarning
-                          value={checkinMemberCode}
-                          onChange={(e) => setCheckinMemberCode(e.target.value)}
-                          className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 transition shadow-2xs cursor-pointer"
-                        >
-                          {members.map((m) => {
-                            const isCheckedIn =
-                              currentEvent?.records?.[m.member_code]?.status === 'present_on_time' ||
-                              currentEvent?.records?.[m.member_code]?.status === 'late'
-                            return (
-                              <option
-                                key={m.member_code}
-                                value={m.member_code}
-                                suppressHydrationWarning
-                                disabled={isCheckedIn}
-                              >
-                                {isCheckedIn ? '✓ [ĐÃ ĐIỂM DANH] ' : ''}
-                                {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
-                              </option>
-                            )
-                          })}
-                        </select>
-                        <span className="block text-[11px] text-slate-400 mt-1 pl-6">
-                          (Danh sách 48 thành viên CLB. Thành viên đã điểm danh sẽ được đánh dấu và khóa).
-                        </span>
-                      </div>
+                      {/* Bước 1: Xác thực danh tính thành viên bằng MSSV */}
+                      {verifiedRegMember ? (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-bold text-slate-800">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
+                              Thành viên điểm danh:
+                            </label>
+                            <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Đã xác thực chính chủ
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-[#0B1E48] text-white font-black text-xs flex items-center justify-center shrink-0">
+                                {verifiedRegMember.full_name.charAt(0)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-extrabold text-xs text-slate-900 truncate">
+                                    {verifiedRegMember.full_name}
+                                  </span>
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[#1351D8]">
+                                    {verifiedRegMember.department_name}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-medium block">
+                                  MSSV: <strong className="text-slate-800">{verifiedRegMember.student_id || verifiedRegMember.member_code}</strong>
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleClearVerifiedMember}
+                              className="text-[11px] font-bold text-slate-500 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 transition cursor-pointer shrink-0 ml-2"
+                              title="Đổi sang MSSV khác"
+                            >
+                              Đổi MSSV
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-800">
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
+                            Nhập Mã sinh viên (MSSV) của bạn: <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="checkin-pin-mssv-input"
+                              type="text"
+                              value={mssvInput}
+                              onChange={(e) => {
+                                setMssvInput(e.target.value)
+                                setMssvError(null)
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  handleVerifyMssv()
+                                }
+                              }}
+                              placeholder="Nhập MSSV (VD: 24310069)..."
+                              className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleVerifyMssv}
+                              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                            >
+                              Xác thực
+                            </button>
+                          </div>
+                          {mssvError && (
+                            <div className="p-2 px-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold flex items-center gap-1.5 mt-1">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                              <span>{mssvError}</span>
+                            </div>
+                          )}
+                          <span className="block text-[11px] text-slate-400 pl-1">
+                            (Nhập MSSV để xác minh chính chủ trong danh sách 48 thành viên CLB, tránh điểm danh nhầm người).
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Thông báo nếu đã điểm danh */}
+                      {isAlreadyCheckedIn && (
+                        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-2xs animate-in fade-in duration-200">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Bạn đã được ghi nhận có mặt trong sự kiện này!</span>
+                        </div>
+                      )}
 
                       {/* Bước 2: Nhập mã PIN dự phòng do BTC đọc khi không quét được QR */}
                       <div className="space-y-1.5">
@@ -1340,10 +1396,19 @@ function CheckinContent() {
 
                       <button
                         type="submit"
-                        disabled={submittingCheckin}
-                        className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#0B1E48] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white shadow-md shadow-[#1351D8]/20 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                        disabled={submittingCheckin || isAlreadyCheckedIn}
+                        className={`w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
+                          isAlreadyCheckedIn
+                            ? 'bg-emerald-600 text-white cursor-default'
+                            : 'bg-gradient-to-r from-[#0B1E48] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white shadow-[#1351D8]/20 cursor-pointer'
+                        }`}
                       >
-                        {submittingCheckin ? (
+                        {isAlreadyCheckedIn ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Đã Điểm Danh Thành Công</span>
+                          </>
+                        ) : submittingCheckin ? (
                           <>
                             <RefreshCw className="w-4 h-4 animate-spin" />
                             <span>Đang xác thực bảo mật &amp; điểm danh...</span>
@@ -1361,6 +1426,93 @@ function CheckinContent() {
               )}
               </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal Xác Nhận Danh Tính Khi Nhập MSSV (Dùng chung cho cả Đăng ký và Điểm danh) */}
+        {targetConfirmMember && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+            <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl relative space-y-4">
+              {/* Header */}
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#1351D8] bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-md inline-block mb-1">
+                    Xác thực thành viên CLB
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-[#0B1E48]">
+                    Xác Nhận Danh Tính Của Bạn
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTargetConfirmMember(null)}
+                  className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Chi tiết thành viên tìm thấy */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#0B1E48] text-white font-black text-base flex items-center justify-center shadow-xs shrink-0">
+                    {targetConfirmMember.full_name.charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="font-black text-sm sm:text-base text-slate-900 truncate">
+                      {targetConfirmMember.full_name}
+                    </h4>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200">
+                        {targetConfirmMember.department_name}
+                      </span>
+                      {targetConfirmMember.position && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          • {targetConfirmMember.position}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200/60 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-[10.5px] text-slate-400 font-medium block">Mã sinh viên (MSSV):</span>
+                    <span className="font-extrabold text-slate-800">
+                      {targetConfirmMember.student_id || targetConfirmMember.member_code}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-slate-400 font-medium block">Lớp / Chi đoàn:</span>
+                    <span className="font-extrabold text-slate-800">
+                      {targetConfirmMember.class_name || 'Đại sứ sinh viên'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 font-medium text-center leading-relaxed">
+                Vui lòng xác nhận bạn đúng là thành viên trên để hệ thống ghi nhận chính xác và khách quan.
+              </p>
+
+              {/* Nút hành động */}
+              <div className="flex items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setTargetConfirmMember(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Không phải tôi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleConfirmIdentity(targetConfirmMember)}
+                  className="flex-1 py-2.5 rounded-xl bg-[#0B1E48] hover:bg-[#1351D8] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer text-center"
+                >
+                  Xác nhận là tôi
+                </button>
+              </div>
             </div>
           </div>
         )}

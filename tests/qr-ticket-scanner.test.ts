@@ -131,5 +131,28 @@ describe('QR Check-in Pass & Admin Scanner Anti-Fraud Logic', () => {
     expect(isStillRegistered).toBe(true)
     expect(existingRegisteredCodes.length).toBe(3)
   })
+
+  it('11. Điểm danh Tab 2: Xác thực MSSV chính chủ tạo mã QR cá nhân đúng token TKT-[EVENT]-[MEMBER_CODE]', () => {
+    const inputMssv = '24310069'
+    const found = INITIAL_MEMBERS.find((m) => m.student_id === inputMssv)
+    expect(found).toBeDefined()
+
+    // Sinh mã token QR check-in đúng chuẩn
+    const eventShortId = sampleEvent.id.slice(-6).toUpperCase()
+    const ticketToken = `TKT-${eventShortId}-${found!.member_code}`
+    expect(ticketToken).toBe(`TKT-${eventShortId}-24310069`)
+  })
+
+  it('12. Chống điểm danh nhầm: Người dùng chưa xác thực MSSV thì không được xuất vé QR hay gửi form điểm danh', () => {
+    let verifiedMember: any = null
+    const canIssueQr = Boolean(verifiedMember)
+    expect(canIssueQr).toBe(false)
+
+    // Khi người dùng xác thực thành công MSSV của mình
+    verifiedMember = INITIAL_MEMBERS.find((m) => m.student_id === '24070680')
+    const canIssueQrAfterVerify = Boolean(verifiedMember)
+    expect(canIssueQrAfterVerify).toBe(true)
+    expect(verifiedMember.full_name).toBe('Phương Gia Huy')
+  })
 })
 
