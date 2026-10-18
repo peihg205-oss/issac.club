@@ -63,6 +63,12 @@ export default function AdminPage() {
   const [directApply, setDirectApply] = useState(isBCN) // BCN can direct apply
   const [formFeedback, setFormFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+  useEffect(() => {
+    if (isBCN) {
+      setDirectApply(true)
+    }
+  }, [isBCN])
+
   const targetMember = members.find((m) => m.member_code === targetMemberCode) || members[0]
   const rule = CRITERIA_RULES[criterionCode as RuleCode]
   const customRule = customRules.find((r) => r.code === criterionCode)
@@ -135,10 +141,14 @@ export default function AdminPage() {
     })
 
     if (res.success) {
-      setFormFeedback({ type: 'success', message: res.message })
+      const isDirect = isBCN && directApply
+      const detailMsg = isDirect
+        ? `✅ ĐÃ ÁP DỤNG TRỰC TIẾP: ${res.message} Điểm số trên bảng xếp hạng và hồ sơ đã được cập nhật ngay!`
+        : `⏳ ĐÃ GỬI ĐỀ XUẤT: ${res.message} Bản ghi đã được chuyển vào hàng đợi chờ Ban Chủ Nhiệm phê duyệt.`
+      setFormFeedback({ type: 'success', message: detailMsg })
       setReason('')
       setEvidenceUrl('')
-      setTimeout(() => setFormFeedback(null), 3500)
+      setTimeout(() => setFormFeedback(null), 4000)
     } else {
       setFormFeedback({ type: 'error', message: res.message })
     }

@@ -36,7 +36,10 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
     } else if (currentActivePeriodId) {
       setSelectedPeriodId(currentActivePeriodId)
     }
-  }, [initialPeriodId, currentActivePeriodId, isOpen])
+    if (isBCN) {
+      setDirectApply(true)
+    }
+  }, [initialPeriodId, currentActivePeriodId, isOpen, isBCN])
 
   if (!isOpen) return null
 
@@ -61,11 +64,11 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
       const bRule = CRITERIA_RULES[newCode as RuleCode]
       const cRule = customRules.find((r) => r.code === newCode)
       if (bRule) {
-        const defaultPt = bRule.type === 'deduct' ? -bRule.base_points : bRule.base_points
+        const defaultPt = bRule.type === 'deduct' ? -Math.abs(bRule.base_points) : Math.abs(bRule.base_points)
         setCustomPoints(defaultPt)
       } else if (cRule) {
         const pts = typeof cRule.points === 'number' ? cRule.points : parseFloat(String(cRule.points)) || 0
-        setCustomPoints(pts)
+        setCustomPoints(cRule.type === 'deduct' ? -Math.abs(pts) : Math.abs(pts))
       }
     }
   }
@@ -125,13 +128,17 @@ export function ScoreModal({ isOpen, onClose, initialPeriodId }: ScoreModalProps
     })
 
     if (res.success) {
-      setFeedback({ type: 'success', message: res.message })
+      const isDirect = isBCN && directApply
+      const detailMsg = isDirect
+        ? `✅ ĐÃ ÁP DỤNG TRỰC TIẾP: ${res.message} Điểm số trên bảng xếp hạng và hồ sơ đã được cập nhật thành công!`
+        : `⏳ ĐÃ LƯU ĐỀ XUẤT: ${res.message} Bản ghi đã được chuyển vào hàng đợi chờ Ban Chủ Nhiệm phê duyệt.`
+      setFeedback({ type: 'success', message: detailMsg })
       setTimeout(() => {
         setFeedback(null)
         onClose()
         setReason('')
         setEvidenceUrl('')
-      }, 1500)
+      }, 2000)
     } else {
       setFeedback({ type: 'error', message: res.message })
     }

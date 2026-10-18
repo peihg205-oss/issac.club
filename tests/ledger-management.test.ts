@@ -180,4 +180,37 @@ describe('Ledger Score Management & BCN Edit/Delete Logic', () => {
     expect(hiep?.current_score).toBe(55)
     expect(hiep?.absent_count_t02).toBe(1)
   })
+
+  it('reconcileMemberScores clamps scores strictly within [0, 100] for all devices', () => {
+    const members = [
+      { member_code: 'M01', full_name: 'Member Over Max', current_score: 60, department_slug: 'bcn' } as any,
+      { member_code: 'M02', full_name: 'Member Under Min', current_score: 60, department_slug: 'nhan-su' } as any,
+    ]
+
+    const proposals = [
+      { id: 'p-max', memberCode: 'M01', points: 60, status: 'approved', periodId: 'month-2026-10' } as any, // 60 + 60 = 120 -> clamp to 100
+      { id: 'p-min', memberCode: 'M02', points: -80, status: 'approved', periodId: 'month-2026-10' } as any, // 60 - 80 = -20 -> clamp to 0
+    ]
+
+    const reconciled = reconcileMemberScores(members, proposals, 'month-2026-10')
+
+    const m1 = reconciled.find((m) => m.member_code === 'M01')
+    const m2 = reconciled.find((m) => m.member_code === 'M02')
+
+    expect(m1?.current_score).toBe(100)
+    expect(m2?.current_score).toBe(0)
+  })
+
+  it('mergeProposals prioritizes approved status over pending_bcn during multi-device synchronization', () => {
+    const local = [
+      { id: 'prop-sync-1', memberCode: '24070680', points: 5, status: 'approved', reviewedAt: '18/10/2026 13:00' } as any,
+    ]
+    const incomingFromCloud = [
+      { id: 'prop-sync-1', memberCode: '24070680', points: 5, status: 'pending_bcn' } as any, // stale cloud version
+    ]
+
+    const merged = mergeProposals(local, incomingFromCloud)
+    expect(merged.length).toBe(1)
+    expect(merged[0].status).toBe('approved')
+  })
 })

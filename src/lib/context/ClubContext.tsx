@@ -418,6 +418,31 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   const deletedEventIdsRef = useRef<Set<string>>(new Set())
   const deletedPeriodIdsRef = useRef<Set<string>>(new Set())
 
+  // Các Refs chống stale closure và đảm bảo Single Source of Truth
+  const proposalsRef = useRef<ProposalItem[]>(proposals)
+  proposalsRef.current = proposals
+
+  const membersRef = useRef<RosterMember[]>(members)
+  membersRef.current = members
+
+  const eventsRef = useRef<MeetingEvent[]>(events)
+  eventsRef.current = events
+
+  const periodsRef = useRef<PeriodItem[]>(periods)
+  periodsRef.current = periods
+
+  const currentActivePeriodIdRef = useRef<string>(currentActivePeriodId)
+  currentActivePeriodIdRef.current = currentActivePeriodId
+
+  const customRulesRef = useRef<CustomRuleItem[]>(customRules)
+  customRulesRef.current = customRules
+
+  const customPeriodScoresRef = useRef<Record<string, Record<string, number>>>(customPeriodScores)
+  customPeriodScoresRef.current = customPeriodScores
+
+  const disputesRef = useRef<DisputeItem[]>(disputes)
+  disputesRef.current = disputes
+
   // Đổi chu kỳ hoạt động và đồng bộ lập tức đa nền tảng
   const setCurrentActivePeriodId = (newId: string) => {
     _setCurrentActivePeriodId(newId)
@@ -493,9 +518,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             createdAt: normalizeHistoryTimestamp(p.createdAt),
           }))
           setProposals(initialProposalList)
+          proposalsRef.current = initialProposalList
         }
       }
       const reconciled = reconcileMemberScores(initialMemberList, initialProposalList, currentActivePeriodId)
+      membersRef.current = reconciled
       setMembers(reconciled)
     } catch (e) {
       console.error('Error reading members/proposals from localStorage:', e)
@@ -602,7 +629,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Đồng bộ đám mây Supabase (PC <-> Điện thoại) - Tích hợp Hợp Nhất 2 Chiều Chống Mất Dữ Liệu
+  // Đồng bộ đám mây Supabase (PC <-> Điện thoại) - Tích hợp Hợp Nhất 2 Chiều Chống Mất Dữ Liệu & Chống Lag
   const fetchCloudSync = async () => {
     try {
       const res = await fetch('/api/db/sync')
@@ -644,82 +671,111 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
         // 1.2 Đồng bộ activeEventId từ cloud để máy tính và điện thoại chọn cùng 1 sự kiện
         if (data.activeEventId !== undefined && data.activeEventId !== '') {
-          _setActiveEventId(data.activeEventId)
-          try {
-            localStorage.setItem('issac_active_event_id', data.activeEventId)
-          } catch (e) {}
+          _setActiveEventId((prev) => {
+            if (prev !== data.activeEventId) {
+              try {
+                localStorage.setItem('issac_active_event_id', data.activeEventId)
+              } catch (e) {}
+              return data.activeEventId
+            }
+            return prev
+          })
         }
 
         // 2. Hợp nhất Sự kiện (Events) 2 chiều (Lọc bỏ sự kiện đã xóa)
         if (data.events && Array.isArray(data.events)) {
-          setEvents((currentEvents) => {
-            const merged = mergeEvents(currentEvents, data.events, deletedEventIdsRef.current)
+          const currentEvents = eventsRef.current
+          const merged = mergeEvents(currentEvents, data.events, deletedEventIdsRef.current)
+          if (JSON.stringify(merged) !== JSON.stringify(currentEvents)) {
+            eventsRef.current = merged
+            setEvents(merged)
             try {
               localStorage.setItem('issac_events_clean_v1', JSON.stringify(merged))
             } catch (e) {}
-            return merged
-          })
+          }
         }
 
-        // 3. Hợp nhất Proposals 2 chiều (Chống ghi đè mất dữ liệu điểm số)
-        let latestMergedProposals: ProposalItem[] = proposals
+        // 3. Hợp nhất Proposals 2 chiều (Chống ghi đè mất dữ liệu điểm số từ proposalsRef)
+        const currentLocalProps = proposalsRef.current
+        let latestMergedProposals: ProposalItem[] = currentLocalProps
         if (data.proposals && Array.isArray(data.proposals)) {
-          latestMergedProposals = mergeProposals(proposals, data.proposals, deletedProposalIdsRef.current)
-          setProposals(latestMergedProposals)
-          // Nếu local có proposals mà cloud chưa có, đẩy ngay bản hợp nhất lên cloud!
-          if (latestMergedProposals.length > data.proposals.length) {
+          latestMergedProposals = mergeProposals(currentLocalProps, data.proposals, deletedProposalIdsRef.current)
+          
+          const isPropsChanged = JSON.stringify(latestMergedProposals) !== JSON.stringify(currentLocalProps)
+          if (isPropsChanged) {
+            proposalsRef.current = latestMergedProposals
+            setProposals(latestMergedProposals)
+            try {
+              localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(latestMergedProposals))
+            } catch (e) {}
+          }
+
+          // Nếu local có bản ghi mà cloud chưa có, đẩy ngay bản hợp nhất lên cloud!
+          const cloudIds = new Set(data.proposals.map((p: any) => p.id))
+          const hasUnsynced = latestMergedProposals.some((p) => !cloudIds.has(p.id))
+          if (hasUnsynced || latestMergedProposals.length > data.proposals.length) {
             syncToCloud({
               proposals: latestMergedProposals,
               deletedProposalIds: Array.from(deletedProposalIdsRef.current),
             })
           }
-          try {
-            localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(latestMergedProposals))
-          } catch (e) {}
         }
 
         // 4. Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop)
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
-          setMembers((currentMembers) => {
-            const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
-            const merged = data.members.map((cloudM: RosterMember) => {
-              const localM = curMap.get(cloudM.member_code)
-              return {
-                ...(localM || {}),
-                ...cloudM,
-                current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
-                absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
-              }
-            })
-            // Tự động chuẩn hóa điểm số thực tế từ sổ cái proposals
-            const reconciled = reconcileMemberScores(merged, latestMergedProposals, currentActivePeriodId)
+          const currentMembers = membersRef.current
+          const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
+          const merged = data.members.map((cloudM: RosterMember) => {
+            const localM = curMap.get(cloudM.member_code)
+            return {
+              ...(localM || {}),
+              ...cloudM,
+              current_score: cloudM.current_score !== undefined ? cloudM.current_score : (localM?.current_score ?? 60),
+              absent_count_t02: cloudM.absent_count_t02 !== undefined ? cloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
+            }
+          })
+          // Tự động chuẩn hóa điểm số thực tế từ sổ cái proposals
+          const reconciled = reconcileMemberScores(merged, latestMergedProposals, currentActivePeriodIdRef.current)
+          const isMembersChanged = JSON.stringify(reconciled) !== JSON.stringify(currentMembers)
+          if (isMembersChanged) {
+            membersRef.current = reconciled
+            setMembers(reconciled)
             try {
               localStorage.setItem('issac_members_clean_v1', JSON.stringify(reconciled))
             } catch (e) {}
-            return reconciled
-          })
+          }
         } else if (!data.members || data.members.length === 0) {
           // Lưu 48 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
-          syncToCloud({ members })
+          syncToCloud({ members: membersRef.current })
         }
+
         if (data.disputes && Array.isArray(data.disputes)) {
-          setDisputes(data.disputes)
-          try {
-            localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(data.disputes))
-          } catch (e) {}
+          if (JSON.stringify(data.disputes) !== JSON.stringify(disputesRef.current)) {
+            disputesRef.current = data.disputes
+            setDisputes(data.disputes)
+            try {
+              localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(data.disputes))
+            } catch (e) {}
+          }
         }
+
         if (data.periods !== undefined && Array.isArray(data.periods)) {
-          setPeriods(data.periods)
-          try {
-            localStorage.setItem('issac_periods_clean_v1', JSON.stringify(data.periods))
-          } catch (e) {}
+          if (JSON.stringify(data.periods) !== JSON.stringify(periodsRef.current)) {
+            periodsRef.current = data.periods
+            setPeriods(data.periods)
+            try {
+              localStorage.setItem('issac_periods_clean_v1', JSON.stringify(data.periods))
+            } catch (e) {}
+          }
         }
-        if (data.activePeriodId) {
+
+        if (data.activePeriodId && data.activePeriodId !== currentActivePeriodIdRef.current) {
+          currentActivePeriodIdRef.current = data.activePeriodId
           _setCurrentActivePeriodId(data.activePeriodId)
           const allPeriods =
             data.periods && Array.isArray(data.periods)
               ? data.periods
-              : periods
+              : periodsRef.current
           const found = allPeriods.find((p: any) => p.id === data.activePeriodId)
           if (found?.name) {
             setCurrentActiveMonth(found.name)
@@ -728,17 +784,22 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('issac_active_period_id', data.activePeriodId)
           } catch (e) {}
         }
+
         if (data.customPeriodScores) {
-          setCustomPeriodScores(data.customPeriodScores)
-          try {
-            localStorage.setItem('issac_custom_period_scores', JSON.stringify(data.customPeriodScores))
-          } catch (e) {}
+          if (JSON.stringify(data.customPeriodScores) !== JSON.stringify(customPeriodScoresRef.current)) {
+            customPeriodScoresRef.current = data.customPeriodScores
+            setCustomPeriodScores(data.customPeriodScores)
+            try {
+              localStorage.setItem('issac_custom_period_scores', JSON.stringify(data.customPeriodScores))
+            } catch (e) {}
+          }
         }
+
         if (data.customRules && Array.isArray(data.customRules)) {
-          if (data.customRules.length === 0 && customRules.length > 0) {
-            // Đẩy danh sách quy định cục bộ lên cloud lần đầu
-            syncToCloud({ customRules })
-          } else if (data.customRules.length > 0) {
+          if (data.customRules.length === 0 && customRulesRef.current.length > 0) {
+            syncToCloud({ customRules: customRulesRef.current })
+          } else if (data.customRules.length > 0 && JSON.stringify(data.customRules) !== JSON.stringify(customRulesRef.current)) {
+            customRulesRef.current = data.customRules
             setCustomRules(data.customRules)
             try {
               localStorage.setItem('issac_custom_rules_v1', JSON.stringify(data.customRules))
@@ -751,12 +812,36 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Polling định kỳ mỗi 4 giây để điện thoại nhận ngay sự kiện khi máy tính tạo
+  // Polling định kỳ mượt mà, chống lag và tự động tạm dừng khi tab ẩn
   useEffect(() => {
-    const timer = setInterval(() => {
-      fetchCloudSync()
-    }, 4000)
-    return () => clearInterval(timer)
+    let isFetching = false
+    const pollSync = async () => {
+      if (isFetching || (typeof document !== 'undefined' && document.hidden)) return
+      isFetching = true
+      try {
+        await fetchCloudSync()
+      } finally {
+        isFetching = false
+      }
+    }
+
+    const timer = setInterval(pollSync, 4000)
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        pollSync()
+      }
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+
+    return () => {
+      clearInterval(timer)
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
+    }
   }, [])
 
   // Auto-sync state changes to localStorage after initial hydration
@@ -1095,15 +1180,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         periodId: targetPeriod.id,
         periodName: targetPeriod.name,
       }
-      const updatedProps = [record, ...proposals]
+      const updatedProps = [record, ...proposalsRef.current]
+      proposalsRef.current = updatedProps
       setProposals(updatedProps)
 
-      let updatedMembers = members
+      let updatedMembers = membersRef.current
       const isCurrentActive =
-        targetPeriodId === currentActivePeriodId ||
-        Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+        targetPeriodId === currentActivePeriodIdRef.current ||
+        Boolean(periodsRef.current.find((p) => p.id === targetPeriodId)?.isCurrent)
       if (isCurrentActive) {
-        updatedMembers = reconcileMemberScores(members, updatedProps, targetPeriod.id)
+        updatedMembers = reconcileMemberScores(membersRef.current, updatedProps, targetPeriod.id)
+        membersRef.current = updatedMembers
         setMembers(updatedMembers)
       }
 
@@ -1156,7 +1243,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       periodId: targetPeriod.id,
       periodName: targetPeriod.name,
     }
-    const updatedProps = [newProp, ...proposals]
+    const updatedProps = [newProp, ...proposalsRef.current]
+    proposalsRef.current = updatedProps
     setProposals(updatedProps)
     try {
       localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
@@ -1171,18 +1259,19 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Ban Chủ nhiệm duyệt đề xuất
   const approveProposal = (proposalId: string) => {
-    const prop = proposals.find((p) => p.id === proposalId)
+    const currentProps = proposalsRef.current
+    const prop = currentProps.find((p) => p.id === proposalId)
     if (!prop || prop.status !== 'pending_bcn') return
 
-    const targetPeriodId = prop.periodId || currentActivePeriodId || 'month-2026-10'
-    const targetPeriod = periods.find((p) => p.id === targetPeriodId)
+    const targetPeriodId = prop.periodId || currentActivePeriodIdRef.current || 'month-2026-10'
+    const targetPeriod = periodsRef.current.find((p) => p.id === targetPeriodId)
     if (targetPeriod?.status === 'locked') {
       alert(`Chu kỳ "${targetPeriod.name}" đã được Ban Chủ nhiệm KHÓA SỔ. Không thể duyệt điểm!`)
       return
     }
 
     // Đánh dấu approved và cập nhật mốc thời gian duyệt chuẩn giờ Việt Nam
-    const updatedProps = proposals.map((p) =>
+    const updatedProps = currentProps.map((p) =>
       p.id === proposalId
         ? {
             ...p,
@@ -1192,15 +1281,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         : p
     )
+    proposalsRef.current = updatedProps
     setProposals(updatedProps)
 
-    let updatedMembers = members
+    let updatedMembers = membersRef.current
     const isCurrentActive =
-      targetPeriodId === currentActivePeriodId ||
-      Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+      targetPeriodId === currentActivePeriodIdRef.current ||
+      Boolean(periodsRef.current.find((p) => p.id === targetPeriodId)?.isCurrent)
     // Cập nhật điểm thành viên nếu là chu kỳ đang hoạt động
     if (isCurrentActive) {
-      updatedMembers = reconcileMemberScores(members, updatedProps, targetPeriodId)
+      updatedMembers = reconcileMemberScores(membersRef.current, updatedProps, targetPeriodId)
+      membersRef.current = updatedMembers
       setMembers(updatedMembers)
     }
 
@@ -1230,9 +1321,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Ban Chủ nhiệm từ chối đề xuất
   const rejectProposal = (proposalId: string) => {
-    const updatedProps = proposals.map((p) =>
+    const currentProps = proposalsRef.current
+    const updatedProps = currentProps.map((p) =>
       p.id === proposalId ? { ...p, status: 'rejected' as const } : p
     )
+    proposalsRef.current = updatedProps
     setProposals(updatedProps)
     try {
       localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
@@ -1246,20 +1339,21 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     updatedData: { points?: number; reason?: string; criterionCode?: string },
     actorName: string
   ) => {
-    const prop = proposals.find((p) => p.id === proposalId)
+    const currentProps = proposalsRef.current
+    const prop = currentProps.find((p) => p.id === proposalId)
     if (!prop) return { success: false, message: 'Bản ghi điểm không tồn tại' }
 
     const oldPoints = prop.points
     const newPoints = updatedData.points !== undefined ? updatedData.points : oldPoints
     const delta = newPoints - oldPoints
 
-    const targetPeriodId = prop.periodId || currentActivePeriodId || 'month-2026-10'
-    const targetPeriod = periods.find((p) => p.id === targetPeriodId)
+    const targetPeriodId = prop.periodId || currentActivePeriodIdRef.current || 'month-2026-10'
+    const targetPeriod = periodsRef.current.find((p) => p.id === targetPeriodId)
     if (targetPeriod?.status === 'locked') {
       return { success: false, message: `Chu kỳ "${targetPeriod.name}" đã khóa sổ, không thể điều chỉnh điểm!` }
     }
 
-    const updatedProps = proposals.map((p) => {
+    const updatedProps = currentProps.map((p) => {
       if (p.id !== proposalId) return p
 
       let newCriterionName = p.criterionName
@@ -1279,14 +1373,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
+    proposalsRef.current = updatedProps
     setProposals(updatedProps)
-    let updatedMembers = members
+
+    let updatedMembers = membersRef.current
     const isCurrentActive =
-      targetPeriodId === currentActivePeriodId ||
-      Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+      targetPeriodId === currentActivePeriodIdRef.current ||
+      Boolean(periodsRef.current.find((p) => p.id === targetPeriodId)?.isCurrent)
 
     if (isCurrentActive) {
-      updatedMembers = reconcileMemberScores(members, updatedProps, targetPeriodId)
+      updatedMembers = reconcileMemberScores(membersRef.current, updatedProps, targetPeriodId)
+      membersRef.current = updatedMembers
       setMembers(updatedMembers)
     }
 
@@ -1324,25 +1421,28 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Ban Chủ nhiệm xóa / hoàn tác 1 bản ghi điểm nhầm
   const deleteProposal = (proposalId: string, actorName: string) => {
-    const prop = proposals.find((p) => p.id === proposalId)
+    const currentProps = proposalsRef.current
+    const prop = currentProps.find((p) => p.id === proposalId)
     if (!prop) return { success: false, message: 'Bản ghi điểm không tồn tại' }
 
-    const targetPeriodId = prop.periodId || currentActivePeriodId || 'month-2026-10'
-    const targetPeriod = periods.find((p) => p.id === targetPeriodId)
+    const targetPeriodId = prop.periodId || currentActivePeriodIdRef.current || 'month-2026-10'
+    const targetPeriod = periodsRef.current.find((p) => p.id === targetPeriodId)
     if (targetPeriod?.status === 'locked') {
       return { success: false, message: `Chu kỳ "${targetPeriod.name}" đã khóa sổ, không thể xóa bản ghi!` }
     }
 
-    const updatedProps = proposals.filter((p) => p.id !== proposalId)
+    const updatedProps = currentProps.filter((p) => p.id !== proposalId)
+    proposalsRef.current = updatedProps
     setProposals(updatedProps)
 
-    let updatedMembers = members
+    let updatedMembers = membersRef.current
     const isCurrentActive =
-      targetPeriodId === currentActivePeriodId ||
-      Boolean(periods.find((p) => p.id === targetPeriodId)?.isCurrent)
+      targetPeriodId === currentActivePeriodIdRef.current ||
+      Boolean(periodsRef.current.find((p) => p.id === targetPeriodId)?.isCurrent)
 
     if (isCurrentActive) {
-      updatedMembers = reconcileMemberScores(members, updatedProps, targetPeriodId)
+      updatedMembers = reconcileMemberScores(membersRef.current, updatedProps, targetPeriodId)
+      membersRef.current = updatedMembers
       setMembers(updatedMembers)
     }
 
@@ -1621,17 +1721,21 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     })
 
     // Cập nhật danh sách thành viên với bảng xếp hạng mới
-    setMembers(getRankedMembers(updatedMembers))
+    const rankedMembers = getRankedMembers(updatedMembers)
+    membersRef.current = rankedMembers
+    setMembers(rankedMembers)
 
     // Thêm các bản ghi mới vào sổ cái và deduplicate theo id
+    const currentProps = proposalsRef.current
     const combinedProposals = [
       ...newLedgerRecords,
-      ...proposals.filter((p) => !newLedgerRecords.some((r) => r.id === p.id)),
+      ...currentProps.filter((p) => !newLedgerRecords.some((r) => r.id === p.id)),
     ]
+    proposalsRef.current = combinedProposals
     setProposals(combinedProposals)
     try {
       localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(combinedProposals))
-      localStorage.setItem('issac_members_clean_v1', JSON.stringify(getRankedMembers(updatedMembers)))
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(rankedMembers))
     } catch (e) {}
 
     // Đánh dấu buổi họp đã chốt
