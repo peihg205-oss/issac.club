@@ -657,7 +657,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   // Đồng bộ đám mây Supabase (PC <-> Điện thoại) - Tích hợp Hợp Nhất 2 Chiều Chống Mất Dữ Liệu & Chống Lag
   const fetchCloudSync = async () => {
     try {
-      const res = await fetch('/api/db/sync')
+      const res = await fetch(`/api/db/sync?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+        },
+      })
       if (res.ok) {
         const data = await res.json()
 

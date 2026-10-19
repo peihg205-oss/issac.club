@@ -16,8 +16,8 @@ describe('Auth & Login Logic', () => {
     expect(member).toBeDefined()
   })
 
-  it('matches member credentials against the official 48-member club roster', () => {
-    expect(INITIAL_MEMBERS.length).toBe(48)
+  it('matches member credentials against the official club roster', () => {
+    expect(INITIAL_MEMBERS.length).toBe(49)
 
     // Check Giang Le Hiep
     const hiep = INITIAL_MEMBERS.find((m) => m.member_code === '23070691')

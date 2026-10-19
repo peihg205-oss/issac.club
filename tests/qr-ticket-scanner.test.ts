@@ -108,7 +108,7 @@ describe('QR Check-in Pass & Admin Scanner Anti-Fraud Logic', () => {
     expect(found?.position).toBe('Trưởng ban')
   })
 
-  it('9. Từ chối MSSV không tồn tại trong danh sách 48 thành viên CLB', () => {
+  it('9. Từ chối MSSV không tồn tại trong danh sách thành viên CLB', () => {
     const fakeMssv = '99999999'
     const found = INITIAL_MEMBERS.find(
       (m) =>

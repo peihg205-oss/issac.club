@@ -20,7 +20,7 @@ let cachedDeletedAccountIds: string[] | null = null
 let cachedDeletedMemberCodes: string[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = createAdminClient()
 
@@ -250,25 +250,34 @@ export async function GET() {
         }))
       }
 
-      return NextResponse.json({
-        success: true,
-        events: finalEvents,
-        activeEventId: activeEventIdFromDb || cachedActiveEventId || '',
-        proposals: proposalsFromDb || cachedProposals,
-        members: finalMembers,
-        disputes: disputesFromDb || cachedDisputes,
-        periods: safePeriods,
-        activePeriodId: activePeriodFromDb || cachedActivePeriodId || (safePeriods[0]?.id || 'month-2026-10'),
-        customPeriodScores: scoresFromDb || cachedPeriodScores,
-        customRules: customRulesFromDb || cachedCustomRules || [],
-        deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
-        deletedEventIds: deletedEventIdsFromDb || cachedDeletedEventIds || [],
-        deletedPeriodIds: deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [],
-        accounts: finalAccounts,
-        deletedAccountIds: Array.from(activeDeletedAccountIds),
-        deletedMemberCodes: Array.from(activeDeletedMemberCodes),
-        source: 'supabase_cloud',
-      })
+      return NextResponse.json(
+        {
+          success: true,
+          events: finalEvents,
+          activeEventId: activeEventIdFromDb || cachedActiveEventId || '',
+          proposals: proposalsFromDb || cachedProposals,
+          members: finalMembers,
+          disputes: disputesFromDb || cachedDisputes,
+          periods: safePeriods,
+          activePeriodId: activePeriodFromDb || cachedActivePeriodId || (safePeriods[0]?.id || 'month-2026-10'),
+          customPeriodScores: scoresFromDb || cachedPeriodScores,
+          customRules: customRulesFromDb || cachedCustomRules || [],
+          deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
+          deletedEventIds: deletedEventIdsFromDb || cachedDeletedEventIds || [],
+          deletedPeriodIds: deletedPeriodIdsFromDb || cachedDeletedPeriodIds || [],
+          accounts: finalAccounts,
+          deletedAccountIds: Array.from(activeDeletedAccountIds),
+          deletedMemberCodes: Array.from(activeDeletedMemberCodes),
+          source: 'supabase_cloud',
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
+      )
     }
 
     const fallbackDeletedEventIds = new Set(cachedDeletedEventIds || [])
@@ -300,24 +309,33 @@ export async function GET() {
       fallbackAccounts = fallbackAccounts.filter((a: any) => !fallbackDeletedAccountIds.has(a.id))
     }
 
-    return NextResponse.json({
-      success: true,
-      events: fallbackEvents,
-      activeEventId: cachedActiveEventId || '',
-      proposals: cachedProposals,
-      members: cachedMembers,
-      disputes: cachedDisputes,
-      periods: safeFallbackPeriods,
-      activePeriodId: cachedActivePeriodId || (safeFallbackPeriods[0]?.id || 'month-2026-10'),
-      customPeriodScores: cachedPeriodScores,
-      customRules: cachedCustomRules || [],
-      deletedProposalIds: cachedDeletedProposalIds || [],
-      deletedEventIds: cachedDeletedEventIds || [],
-      deletedPeriodIds: cachedDeletedPeriodIds || [],
-      accounts: fallbackAccounts,
-      deletedAccountIds: Array.from(fallbackDeletedAccountIds),
-      source: 'cache_memory',
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        events: fallbackEvents,
+        activeEventId: cachedActiveEventId || '',
+        proposals: cachedProposals,
+        members: cachedMembers,
+        disputes: cachedDisputes,
+        periods: safeFallbackPeriods,
+        activePeriodId: cachedActivePeriodId || (safeFallbackPeriods[0]?.id || 'month-2026-10'),
+        customPeriodScores: cachedPeriodScores,
+        customRules: cachedCustomRules || [],
+        deletedProposalIds: cachedDeletedProposalIds || [],
+        deletedEventIds: cachedDeletedEventIds || [],
+        deletedPeriodIds: cachedDeletedPeriodIds || [],
+        accounts: fallbackAccounts,
+        deletedAccountIds: Array.from(fallbackDeletedAccountIds),
+        source: 'cache_memory',
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    )
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Sync error'
     const errorFallbackDeletedEventIds = new Set(cachedDeletedEventIds || [])

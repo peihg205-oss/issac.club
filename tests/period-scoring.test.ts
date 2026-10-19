@@ -15,24 +15,24 @@ describe('Period Scoring & Monthly Reset Engine', () => {
     expect(STANDARD_MONTHLY_BASELINE).toBe(60)
   })
 
-  it('2. Tra cứu điểm Tháng 10 (Hiện tại) tính đúng điểm bắt đầu chuẩn 60đ cho toàn bộ 48 thành viên', () => {
+  it('2. Tra cứu điểm Tháng 10 (Hiện tại) tính đúng điểm bắt đầu chuẩn 60đ cho toàn bộ thành viên', () => {
     const active = getActiveRosterMembers(INITIAL_MEMBERS)
     const rankings = calculatePeriodLeaderboard('month-2025-10', active)
 
-    expect(rankings.length).toBe(48)
+    expect(rankings.length).toBe(active.length)
     expect(rankings[0].baseScore).toBe(60)
-    // Toàn bộ 48 thành viên bắt đầu ở mốc chuẩn 60 điểm (Quy chế P01)
+    // Toàn bộ thành viên bắt đầu ở mốc chuẩn 60 điểm (Quy chế P01)
     expect(rankings[0].finalScore).toBe(60)
     expect(rankings[0].earnedDelta).toBe(0)
-    expect(rankings[47].finalScore).toBe(60)
-    expect(rankings[47].earnedDelta).toBe(0)
+    expect(rankings[rankings.length - 1].finalScore).toBe(60)
+    expect(rankings[rankings.length - 1].earnedDelta).toBe(0)
   })
 
   it('3. Tra cứu điểm Tháng 09/2025 (Đã chốt) - Hạng 1 Nguyễn Thị Hồng Hân (95đ)', () => {
     const active = getActiveRosterMembers(INITIAL_MEMBERS)
     const rankings = calculatePeriodLeaderboard('month-2025-09', active)
 
-    expect(rankings.length).toBe(48)
+    expect(rankings.length).toBe(active.length)
     expect(rankings[0].member.full_name).toBe('Nguyễn Thị Hồng Hân')
     expect(rankings[0].finalScore).toBe(95)
     expect(rankings[0].earnedDelta).toBe(35)
@@ -43,7 +43,7 @@ describe('Period Scoring & Monthly Reset Engine', () => {
     const active = getActiveRosterMembers(INITIAL_MEMBERS)
     const rankings = calculatePeriodLeaderboard('month-2025-08', active)
 
-    expect(rankings.length).toBe(48)
+    expect(rankings.length).toBe(active.length)
     expect(rankings[0].member.full_name).toBe('Trần Đức Thắng')
     expect(rankings[0].finalScore).toBe(94)
     expect(rankings[0].earnedDelta).toBe(34)
@@ -54,7 +54,7 @@ describe('Period Scoring & Monthly Reset Engine', () => {
     const active = getActiveRosterMembers(INITIAL_MEMBERS)
     const rankings = calculatePeriodLeaderboard('quarter-2025-q3', active)
 
-    expect(rankings.length).toBe(48)
+    expect(rankings.length).toBe(active.length)
     // Điểm TB Quý của Top 1 >= 90
     expect(rankings[0].finalScore).toBeGreaterThanOrEqual(90)
     expect(rankings[0].earnedDelta).toBeGreaterThan(0)
@@ -64,7 +64,7 @@ describe('Period Scoring & Monthly Reset Engine', () => {
     const active = getActiveRosterMembers(INITIAL_MEMBERS)
     const rankings = calculatePeriodLeaderboard('year-2025-2026', active)
 
-    expect(rankings.length).toBe(48)
+    expect(rankings.length).toBe(active.length)
     expect(rankings[0].finalScore).toBeGreaterThanOrEqual(80)
     expect(rankings[0].earnedDelta).toBeGreaterThan(50)
   })
@@ -102,7 +102,7 @@ describe('Period Scoring & Monthly Reset Engine', () => {
 
     const rankings = calculatePeriodLeaderboard('month-2026-10', active, [newPeriod, ...AVAILABLE_PERIODS], customDeltas)
 
-    expect(rankings.length).toBe(48)
+    expect(rankings.length).toBe(active.length)
     expect(rankings[0].member.full_name).toBe('Giang Lê Hiệp')
     expect(rankings[0].baseScore).toBe(60)
     expect(rankings[0].earnedDelta).toBe(15)

@@ -79,6 +79,7 @@ export const INITIAL_MEMBERS: RosterMember[] = [
   { source_stt: 38, member_code: '25070857', full_name: 'Trần Mỹ Ngọc', department_name: 'Ban Tư vấn', department_code: 'B02', department_slug: 'tu-van', position: 'Thành viên', is_core: false, class_name: 'IB2025B', student_id: '25070857', email: 'ngoctran26052007@gmail.com', phone: '0398669527', current_score: 60, absent_count_t02: 0, delta_rank: 0 },
   { source_stt: 39, member_code: '25070863', full_name: 'Nguyễn Duy Khánh', department_name: 'Ban Tư vấn', department_code: 'B02', department_slug: 'tu-van', position: 'Thành viên', is_core: false, class_name: 'IB2025B', student_id: '25070863', email: 'duykhanh17092007@gmail.com', phone: '0832087568', current_score: 60, absent_count_t02: 0, delta_rank: -1 },
   { source_stt: 40, member_code: '25070193', full_name: 'Phạm Thị Phương Thảo', department_name: 'Ban Tư vấn', department_code: 'B02', department_slug: 'tu-van', position: 'Thành viên', is_core: false, class_name: 'DB2025B', student_id: '25070193', email: 'phuongthao07112007@gmail.com', phone: '0339598858', current_score: 60, absent_count_t02: 0, delta_rank: 0 },
+  { source_stt: 49, member_code: '25070098', full_name: 'Lưu Hải Anh', department_name: 'Ban Tư vấn', department_code: 'B02', department_slug: 'tu-van', position: 'Thành viên', is_core: false, class_name: 'ISEL2025', student_id: '25070098', email: 'luuhaianh2810@gmail.com', phone: '0353900182', current_score: 60, absent_count_t02: 0, delta_rank: 0, updated_at: '2026-10-18T14:17:50.594Z' },
 
   // Ban Nhân sự (8)
   { source_stt: 41, member_code: '23070764', full_name: 'Vũ Thị Minh Ngọc', department_name: 'Ban Nhân sự', department_code: 'B03', department_slug: 'nhan-su', position: 'Trưởng ban', is_core: true, class_name: 'MIS2023C', student_id: '23070764', email: 'minhngocvu1302@gmail.com', phone: '0372863920', current_score: 60, absent_count_t02: 0, delta_rank: 2 },
@@ -91,7 +92,7 @@ export const INITIAL_MEMBERS: RosterMember[] = [
   { source_stt: 48, member_code: '26070772', full_name: 'Bùi Phương Linh', department_name: 'Ban Nhân sự', department_code: 'B03', department_slug: 'nhan-su', position: 'Thành viên', is_core: false, class_name: 'BEL2026', student_id: '26070772', email: 'linhbp2209@gmail.com', phone: '0868846328', current_score: 60, absent_count_t02: 0, delta_rank: -3 },
 ]
 
-// Sẵn sàng vận hành thật: Tất cả 48 thành viên xuất phát từ điểm chuẩn 60đ theo Quy chế P01
+// Sẵn sàng vận hành thật: Tất cả thành viên xuất phát từ điểm chuẩn 60đ theo Quy chế P01
 export const INITIAL_ACTIVITY_DELTAS: Record<string, number> = {}
 
 

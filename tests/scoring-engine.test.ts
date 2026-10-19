@@ -17,8 +17,8 @@ import {
 import { MONTHLY_INTERACTION_QUOTA } from '@/lib/scoring/constants'
 
 describe('iSSAC Scoring Engine - 24 Canonical Spec Test Cases', () => {
-  it('1. Seed 48 người, nhóm 3/14/23/8, core 11, baseline 60', () => {
-    expect(INITIAL_MEMBERS.length).toBe(48)
+  it('1. Seed 49 người, nhóm 3/14/24/8, core 11, baseline 60', () => {
+    expect(INITIAL_MEMBERS.length).toBe(49)
     const bcn = INITIAL_MEMBERS.filter((m) => m.department_slug === 'bcn')
     const tt = INITIAL_MEMBERS.filter((m) => m.department_slug === 'truyen-thong')
     const tv = INITIAL_MEMBERS.filter((m) => m.department_slug === 'tu-van')
@@ -26,7 +26,7 @@ describe('iSSAC Scoring Engine - 24 Canonical Spec Test Cases', () => {
 
     expect(bcn.length).toBe(3)
     expect(tt.length).toBe(14)
-    expect(tv.length).toBe(23)
+    expect(tv.length).toBe(24)
     expect(ns.length).toBe(8)
 
     const coreList = INITIAL_MEMBERS.filter((m) => m.is_core)
@@ -358,7 +358,7 @@ describe('iSSAC Scoring Engine - 24 Canonical Spec Test Cases', () => {
 
   it('21. PII: Không chứa email, SĐT, MSSV trên public bảng xếp hạng', () => {
     const publicList = getPublicRankedMembers()
-    expect(publicList.length).toBe(48)
+    expect(publicList.length).toBe(INITIAL_MEMBERS.length)
     for (const m of publicList) {
       expect((m as any).email).toBeUndefined()
       expect((m as any).phone).toBeUndefined()
@@ -384,7 +384,7 @@ describe('iSSAC Scoring Engine - 24 Canonical Spec Test Cases', () => {
 
   it('24. Dashboard sau approved/amended phản ánh điểm thật; rank ties và thống kê ban đúng mẫu số', () => {
     const members = getRankedMembers()
-    expect(members.length).toBe(48)
+    expect(members.length).toBe(INITIAL_MEMBERS.length)
     expect(members[0].rank_in_club).toBe(1)
   })
 })
