@@ -531,6 +531,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           ...m,
           avatar_url: sanitizeMemberAvatar(m.avatar_url),
         }))
+
+      // Tự động bổ sung các thành viên trong danh sách chuẩn mà thiết bị này còn thiếu do bộ nhớ đệm cũ (chưa từng bị xóa)
+      const existingCodes = new Set(initialMemberList.map((m) => m.member_code))
+      const missingInitial = INITIAL_MEMBERS.filter(
+        (m) => !existingCodes.has(m.member_code) && !deletedMemberCodesRef.current.has(m.member_code)
+      )
+      if (missingInitial.length > 0) {
+        initialMemberList = [...initialMemberList, ...missingInitial]
+      }
       let initialProposalList: ProposalItem[] = []
       if (savedProposals) {
         const parsed = JSON.parse(savedProposals)

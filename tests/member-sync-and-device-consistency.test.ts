@@ -70,4 +70,24 @@ describe('Member Sync & Cross-Device Consistency Engine', () => {
     expect(phoneMerged.length).toBe(2)
     expect(phoneMerged.find((m) => m.member_code === 'ISSAC-049')?.full_name).toBe('Thành viên mới thêm trên Laptop')
   })
+
+  it('should auto-heal older device local caches with missing members from INITIAL_MEMBERS', () => {
+    const oldPhoneCache: Partial<RosterMember>[] = [
+      { member_code: '23070691', full_name: 'Giang Lê Hiệp' },
+    ]
+    const initialList: Partial<RosterMember>[] = [
+      { member_code: '23070691', full_name: 'Giang Lê Hiệp' },
+      { member_code: '25070098', full_name: 'Lưu Hải Anh' },
+    ]
+    const deletedCodes = new Set<string>()
+
+    const existingCodes = new Set(oldPhoneCache.map((m) => m.member_code))
+    const missingInitial = initialList.filter(
+      (m) => !existingCodes.has(m.member_code!) && !deletedCodes.has(m.member_code!)
+    )
+
+    const healed = [...oldPhoneCache, ...missingInitial]
+    expect(healed.length).toBe(2)
+    expect(healed.some((m) => m.member_code === '25070098')).toBe(true)
+  })
 })

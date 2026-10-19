@@ -259,7 +259,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Tải và hợp nhất tài khoản đám mây (Chống hồi sinh tài khoản đã xóa khi chuyển giữa ĐT và Máy tính)
   const fetchCloudAccounts = useCallback(async () => {
     try {
-      const res = await fetch('/api/db/sync')
+      const res = await fetch(`/api/db/sync?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+        },
+      })
       if (res.ok) {
         const data = await res.json()
 
