@@ -194,23 +194,21 @@ export function ScoreModal({
     }
   }
 
-  // Lọc danh sách tiêu chí theo từ khóa tìm kiếm (Mã hoặc Tên)
-  const filteredCriteria = useMemo(() => {
-    const q = criterionSearch.trim().toLowerCase()
-    const isDeduct = criterionCategory === 'deduct'
-    const builtinList = isDeduct ? builtinDeductRules : builtinAddRules
-    const customList = isDeduct ? customDeductRules : customAddRules
+  // Lọc danh sách tiêu chí theo từ khóa tìm kiếm (Mã hoặc Tên) - Tính toán thuần túy không dùng Hook sau early return
+  const q = criterionSearch.trim().toLowerCase()
+  const isDeductCriteria = criterionCategory === 'deduct'
+  const builtinList = isDeductCriteria ? builtinDeductRules : builtinAddRules
+  const customList = isDeductCriteria ? customDeductRules : customAddRules
 
-    const matchFilter = (r: { code: string; name: string }) => {
-      if (!q) return true
-      return r.code.toLowerCase().includes(q) || r.name.toLowerCase().includes(q)
-    }
+  const matchFilter = (r: { code: string; name: string }) => {
+    if (!q) return true
+    return r.code.toLowerCase().includes(q) || r.name.toLowerCase().includes(q)
+  }
 
-    return {
-      builtin: builtinList.filter(matchFilter),
-      custom: customList.filter(matchFilter),
-    }
-  }, [criterionSearch, criterionCategory, builtinDeductRules, builtinAddRules, customDeductRules, customAddRules])
+  const filteredCriteria = {
+    builtin: builtinList.filter(matchFilter),
+    custom: customList.filter(matchFilter),
+  }
 
   const handleCriterionChange = (newCode: string) => {
     setCriterionCode(newCode)
