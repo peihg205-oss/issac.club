@@ -13,7 +13,7 @@ export function RulesGuide() {
 
   const principles = [
     { code: 'P01', title: 'Thang điểm khép kín [0, 100]', desc: 'Mọi điểm số luôn nằm trong khoảng 0 đến 100. Điểm ban đầu là 60. Phạt khi ở 0 vẫn là 0, cộng khi ở 100 vẫn là 100.' },
-    { code: 'P02', title: 'Chế tài Core Team nhân đôi (×2)', desc: '11 nhân sự nòng cốt (BCN, Trưởng/Phó ban) bị trừ điểm gấp đôi đối với các lỗi vi phạm nhằm nêu cao tinh thần gương mẫu. Điểm cộng giữ nguyên hệ số 1.' },
+    { code: 'P02', title: 'Chế tài Core Team nhân đôi (×2)', desc: 'Nhân sự Core Team (BCN, Trưởng/Phó ban) bị trừ điểm gấp đôi đối với các lỗi vi phạm nhằm nêu cao tinh thần gương mẫu. Điểm cộng giữ nguyên hệ số 1.' },
     { code: 'P03', title: 'Ngăn chặn tự duyệt (Anti-Self-Approval)', desc: 'Không ai được phép tự duyệt điểm của chính mình trong mọi trường hợp, kể cả Chủ nhiệm CLB.' },
     { code: 'P04', title: 'Điểm tương tác tối đa 15 điểm/tháng', desc: 'Tổng điểm cộng từ nhóm tương tác C01 + C02 + C03 không vượt quá 15 điểm/tháng/người. Quota tự động làm mới vào đầu tháng.' },
     { code: 'P05', title: 'Quy tắc thay thế & mức cao nhất', desc: 'C02 thay thế C01; T02 thay thế T01; T08 thay thế T07; T09 thay thế T07/T08. Trong cùng một đóng góp chỉ nhận mức cao nhất.' },

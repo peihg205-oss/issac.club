@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import {
   BarChart3,
   Flag,
@@ -18,9 +18,12 @@ import {
   ChevronDown,
   ArrowUpRight,
   ArrowDownRight,
+  Calendar,
+  Check,
 } from 'lucide-react'
 import { useClub } from '@/lib/context/ClubContext'
 import { calculatePeriodLeaderboard } from '@/lib/periodData'
+import { useLanguage } from '@/lib/context/LanguageContext'
 
 type ComparisonMode = 'dept_score' | 'plus_vs_minus' | 'monthly_trend'
 type SortOption = 'default' | 'high_to_low' | 'low_to_high' | 'attendance'
@@ -56,7 +59,7 @@ function CircularProgress({ value, color }: { value: number; color: string }) {
           className="transition-all duration-700 ease-out"
         />
       </svg>
-      <span className="absolute text-[10px] font-black text-slate-800 tracking-tight">
+      <span className="absolute text-[10px] font-black text-[#061651] tracking-tight">
         {value}%
       </span>
     </div>
@@ -99,6 +102,7 @@ export function ComparisonChart({
   periodName: propPeriodName,
 }: ComparisonChartProps = {}) {
   const { members, periods, customPeriodScores, currentActivePeriodId, setCurrentActivePeriodId } = useClub()
+  const { language, t } = useLanguage()
   const [mode, setMode] = useState<ComparisonMode>('dept_score')
   const [sortBy, setSortBy] = useState<SortOption>('default')
   const [hoveredDept, setHoveredDept] = useState<string | null>(null)
@@ -107,6 +111,27 @@ export function ComparisonChart({
   const [internalPeriodId, setInternalPeriodId] = useState<string>(() => {
     return propPeriodId || currentActivePeriodId || periods.find((p) => p.isCurrent)?.id || periods[0]?.id || 'month-2026-10'
   })
+
+  const [periodDropdownOpen, setPeriodDropdownOpen] = useState(false)
+  const periodDropdownRef = useRef<HTMLDivElement>(null)
+
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
+  const sortDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (periodDropdownRef.current && !periodDropdownRef.current.contains(event.target as Node)) {
+        setPeriodDropdownOpen(false)
+      }
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
+        setSortDropdownOpen(false)
+      }
+    }
+    if (periodDropdownOpen || sortDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [periodDropdownOpen, sortDropdownOpen])
 
   useEffect(() => {
     if (propPeriodId) {
@@ -129,8 +154,8 @@ export function ComparisonChart({
   const rawDeptComparisons: DeptComparisonItem[] = useMemo(() => {
     const deptConfigs = [
       {
-        name: 'Ban Truyền thông',
-        shortName: 'Truyền thông',
+        name: language === 'vi' ? 'Ban Truyền thông' : 'Communications Dept',
+        shortName: language === 'vi' ? 'Truyền thông' : 'Communications',
         code: 'B01',
         icon: Megaphone,
         color: '#2563EB',
@@ -142,8 +167,8 @@ export function ComparisonChart({
         defaultAttendance: 92.8,
       },
       {
-        name: 'Ban Tư vấn',
-        shortName: 'Tư vấn',
+        name: language === 'vi' ? 'Ban Tư vấn' : 'Advisory Dept',
+        shortName: language === 'vi' ? 'Tư vấn' : 'Advisory',
         code: 'B02',
         icon: Users,
         color: '#EC4899',
@@ -155,8 +180,8 @@ export function ComparisonChart({
         defaultAttendance: 95.6,
       },
       {
-        name: 'Ban Nhân sự',
-        shortName: 'Nhân sự',
+        name: language === 'vi' ? 'Ban Nhân sự' : 'HR Dept',
+        shortName: language === 'vi' ? 'Nhân sự' : 'HR',
         code: 'B03',
         icon: User,
         color: '#6366F1',
@@ -168,8 +193,8 @@ export function ComparisonChart({
         defaultAttendance: 88.0,
       },
       {
-        name: 'Ban Chủ nhiệm',
-        shortName: 'BCN',
+        name: language === 'vi' ? 'Ban Chủ nhiệm' : 'Executive Board',
+        shortName: language === 'vi' ? 'BCN' : 'Exec Board',
         code: 'B04',
         icon: Crown,
         color: '#F59E0B',
@@ -231,12 +256,15 @@ export function ComparisonChart({
       if (allEqual) {
         return {
           ...dept,
-          rankBadge: 'Khởi đầu',
+          rankBadge: language === 'vi' ? 'Khởi đầu' : 'Starting',
           rankBadgeColor: 'bg-slate-100 text-slate-700 border-slate-200',
-          rankBadgeIcon: '🎯',
-          rankText: 'Xuất phát 60đ',
+          rankBadgeIcon: '',
+          rankText: language === 'vi' ? 'Xuất phát 60đ' : 'Start 60pts',
           rankNumber: 1,
-          description: 'Chu kỳ mới khởi tạo - Toàn ban đang ở mốc xuất phát 60 điểm chuẩn bị thi đua.',
+          description:
+            language === 'vi'
+              ? 'Chu kỳ mới khởi tạo - Toàn ban đang ở mốc xuất phát 60 điểm chuẩn bị thi đua.'
+              : 'New cycle initialized - Entire dept is at the starting baseline of 60 points.',
         }
       }
 
@@ -246,47 +274,59 @@ export function ComparisonChart({
       if (rank === 1) {
         return {
           ...dept,
-          rankBadge: 'Dẫn đầu',
+          rankBadge: language === 'vi' ? 'Dẫn đầu' : 'Leader',
           rankBadgeColor: 'bg-amber-100/80 text-amber-900 border-amber-200',
           rankBadgeIcon: '🏆',
-          rankText: 'Dẫn đầu',
+          rankText: language === 'vi' ? 'Dẫn đầu' : 'Leader',
           rankNumber: 1,
-          description: `Dẫn đầu điểm thi đua phong trào kỳ này (${dept.avgScore}đ)`,
+          description:
+            language === 'vi'
+              ? `Dẫn đầu điểm thi đua phong trào kỳ này (${dept.avgScore}đ)`
+              : `Leading emulation score this period (${dept.avgScore} pts)`,
         }
       }
       if (rank === 2) {
         return {
           ...dept,
-          rankBadge: 'Xếp thứ 2',
+          rankBadge: language === 'vi' ? 'Xếp thứ 2' : '2nd Place',
           rankBadgeColor: 'bg-rose-100/80 text-rose-900 border-rose-200',
           rankBadgeIcon: '🥈',
-          rankText: 'Xếp thứ 2',
+          rankText: language === 'vi' ? 'Xếp thứ 2' : '2nd Place',
           rankNumber: 2,
-          description: `Điểm trung bình toàn ban đạt ${dept.avgScore}đ`,
+          description:
+            language === 'vi'
+              ? `Điểm trung bình toàn ban đạt ${dept.avgScore}đ`
+              : `Department average score reached ${dept.avgScore} pts`,
         }
       }
       if (rank === 3) {
         return {
           ...dept,
-          rankBadge: 'Xếp thứ 3',
+          rankBadge: language === 'vi' ? 'Xếp thứ 3' : '3rd Place',
           rankBadgeColor: 'bg-purple-100/80 text-purple-900 border-purple-200',
           rankBadgeIcon: '🥉',
-          rankText: 'Xếp thứ 3',
+          rankText: language === 'vi' ? 'Xếp thứ 3' : '3rd Place',
           rankNumber: 3,
-          description: `Điểm trung bình toàn ban đạt ${dept.avgScore}đ`,
+          description:
+            language === 'vi'
+              ? `Điểm trung bình toàn ban đạt ${dept.avgScore}đ`
+              : `Department average score reached ${dept.avgScore} pts`,
         }
       }
       return {
         ...dept,
-        rankBadge: 'Xếp thứ 4',
-        rankBadgeColor: 'bg-slate-100 text-slate-800 border-slate-200',
+        rankBadge: language === 'vi' ? 'Xếp thứ 4' : '4th Place',
+        rankBadgeColor: 'bg-slate-100 text-[#061651] border-slate-200',
         rankBadgeIcon: '🎖️',
-        rankText: 'Xếp thứ 4',
+        rankText: language === 'vi' ? 'Xếp thứ 4' : '4th Place',
         rankNumber: 4,
-        description: `Điểm trung bình toàn ban đạt ${dept.avgScore}đ`,
+        description:
+          language === 'vi'
+            ? `Điểm trung bình toàn ban đạt ${dept.avgScore}đ`
+            : `Department average score reached ${dept.avgScore} pts`,
       }
     })
-  }, [periodRankings])
+  }, [periodRankings, language])
 
   // Sắp xếp linh hoạt theo lựa chọn của người dùng
   const sortedDepts = useMemo(() => {
@@ -350,337 +390,403 @@ export function ComparisonChart({
     })
   }, [periods, members, customPeriodScores])
 
+  const sortOptions: Array<{ value: SortOption; label: string }> = useMemo(
+    () => [
+      { value: 'default', label: t('chart.sort_default') },
+      { value: 'high_to_low', label: t('chart.sort_highest') },
+      { value: 'low_to_high', label: t('chart.sort_lowest') },
+      { value: 'attendance', label: t('chart.sort_attendance') },
+    ],
+    [t]
+  )
+  const currentSortLabel = sortOptions.find((o) => o.value === sortBy)?.label || t('chart.sort_default')
+
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-sm space-y-6">
-      {/* 1. Header bar with Title, Tabs & Semester Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#1351D8] border border-blue-200/70 shadow-2xs flex items-center justify-center shrink-0">
-            <BarChart3 className="w-5 h-5" />
+    <div className="space-y-6">
+      {/* 1. THẺ 1: So sánh Thi đua & Hiệu suất Hoạt động (Header + 4 Thẻ Mốc Chuẩn) */}
+      <div className="bg-white rounded-xl border border-slate-200/70 p-5 sm:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-5">
+        {/* Header bar with Title, Tabs & Semester Selector */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#0284C7] border border-sky-200/60 shadow-2xs flex items-center justify-center shrink-0">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-[#061651] tracking-tight">
+                {t('chart.title')}
+              </h2>
+              <p className="text-xs text-[#64748B] font-normal mt-0.5">
+                {t('chart.subtitle')}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
-              So sánh Thi đua &amp; Hiệu suất Hoạt động
-            </h2>
-            <p className="text-xs text-[#64748B] font-medium mt-0.5">
-              Phân tích đối sánh giữa các ban, tỷ lệ tích lũy điểm và xu hướng theo thời gian thực
-            </p>
+
+          {/* Tab Switcher & Dropdown (Luôn giữ trên 1 hàng ngang cân xứng) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0 self-start lg:self-center">
+            <div className="inline-flex items-center gap-0.5 sm:gap-1 p-1 bg-[#F1F5F9] rounded-xl text-xs font-medium shrink-0">
+              <button
+                type="button"
+                onClick={() => setMode('dept_score')}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                  mode === 'dept_score'
+                    ? 'bg-[#0284C7] text-white shadow-xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 font-medium'
+                }`}
+              >
+                <span>{t('chart.mode_dept_score')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode('plus_vs_minus')}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                  mode === 'plus_vs_minus'
+                    ? 'bg-[#0284C7] text-white shadow-xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 font-medium'
+                }`}
+              >
+                <span>{t('chart.mode_plus_vs_minus')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode('monthly_trend')}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                  mode === 'monthly_trend'
+                    ? 'bg-[#0284C7] text-white shadow-xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 font-medium'
+                }`}
+              >
+                <span>{t('chart.mode_monthly_trend')}</span>
+              </button>
+            </div>
+
+            {/* Hiển thị chu kỳ đang chọn */}
+            {propPeriodId ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 text-[#0284C7] border border-sky-200/80 text-xs font-semibold shadow-2xs whitespace-nowrap shrink-0">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>{displayPeriodName}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+            ) : (
+              <div ref={periodDropdownRef} className="relative inline-flex items-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPeriodDropdownOpen((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7] shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>
+                    {activePeriod?.name}{' '}
+                    <span className="font-medium text-slate-500">
+                      {activePeriod?.status === 'locked' ? '(Đã khóa)' : activePeriod?.isCurrent ? '(Hiện tại)' : ''}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                      periodDropdownOpen ? 'rotate-180 text-[#0284C7]' : ''
+                    }`}
+                  />
+                </button>
+
+                {periodDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 min-w-[280px] w-max max-w-sm bg-white border border-slate-200/90 rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-fadeIn">
+                    {periods.map((p) => {
+                      const isSelected = p.id === activePeriodId
+                      const statusLabel =
+                        p.status === 'locked' ? ' (Đã khóa)' : p.isCurrent ? ' (Hiện tại)' : ''
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setInternalPeriodId(p.id)
+                            setCurrentActivePeriodId(p.id)
+                            setPeriodDropdownOpen(false)
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-[13px] transition-colors cursor-pointer flex items-center ${
+                            isSelected
+                              ? 'bg-[#3B82F6] text-white font-medium shadow-xs'
+                              : 'text-slate-800 hover:bg-slate-100/80 font-normal pl-8'
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="w-4 h-4 mr-2 shrink-0 stroke-[2.5]" />
+                          )}
+                          <span className="truncate">{p.name}{statusLabel}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Tab Switcher & Dropdown / Chu kỳ Indicator */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setMode('dept_score')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                mode === 'dept_score'
-                  ? 'bg-[#2563EB] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              <span>Điểm TB các Ban</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode('plus_vs_minus')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                mode === 'plus_vs_minus'
-                  ? 'bg-[#2563EB] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              <span>Điểm Cộng vs Trừ</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode('monthly_trend')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                mode === 'monthly_trend'
-                  ? 'bg-[#2563EB] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              <span>Xu hướng 3 Tháng</span>
-            </button>
+        {/* HÀNG 4 THẺ CHỈ SỐ MỐC CHUẨN */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
+          {/* Card 1: Mục tiêu Tốt */}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="w-9 h-9 rounded-lg bg-emerald-100/70 text-[#16A34A] flex items-center justify-center shrink-0">
+              <Flag className="w-4.5 h-4.5 fill-current" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-slate-500 block">
+                {language === 'vi' ? 'Mục tiêu Tốt' : 'Club Target'}
+              </span>
+              <span className="text-base sm:text-lg font-black text-[#16A34A] block">
+                {language === 'vi' ? '80 điểm' : '80 points'}
+              </span>
+              <span className="text-[11px] text-[#16A34A] font-semibold block">
+                {language === 'vi' ? 'Xuất sắc' : 'Excellent'}
+              </span>
+            </div>
           </div>
 
-          {/* Hiển thị chu kỳ đang chọn */}
-          {propPeriodId ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/80 text-xs font-bold shadow-2xs whitespace-nowrap">
-              <span>{displayPeriodName}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          {/* Card 2: Mức chuẩn CLB */}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="w-9 h-9 rounded-lg bg-sky-100/70 text-[#0284C7] flex items-center justify-center shrink-0">
+              <Target className="w-4.5 h-4.5" />
             </div>
-          ) : (
-            <select
-              value={internalPeriodId}
-              onChange={(e) => {
-                setInternalPeriodId(e.target.value)
-                setCurrentActivePeriodId(e.target.value)
-              }}
-              className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2563EB] shadow-2xs transition cursor-pointer"
-            >
-              {periods.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} {p.status === 'locked' ? '(Đã khóa)' : p.id === activePeriodId ? '(Hiện tại)' : ''}
-                </option>
-              ))}
-            </select>
-          )}
+            <div>
+              <span className="text-xs font-medium text-slate-500 block">
+                {language === 'vi' ? 'Mức chuẩn CLB' : 'Club Standard'}
+              </span>
+              <span className="text-base sm:text-lg font-black text-[#0284C7] block">
+                {language === 'vi' ? '70 điểm' : '70 points'}
+              </span>
+              <span className="text-[11px] text-[#0284C7] font-semibold block">
+                {language === 'vi' ? 'Đạt yêu cầu' : 'Qualified'}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Mốc xuất phát */}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="w-9 h-9 rounded-lg bg-amber-100/70 text-[#D97706] flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-slate-500 block">
+                {language === 'vi' ? 'Mốc xuất phát' : 'Starting Baseline'}
+              </span>
+              <span className="text-base sm:text-lg font-black text-[#D97706] block">
+                {language === 'vi' ? '60 điểm' : '60 points'}
+              </span>
+              <span className="text-[11px] text-[#D97706] font-semibold block">
+                {language === 'vi' ? 'Cần cố gắng' : 'Needs Effort'}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 4: Thang điểm */}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-[#F8FAFC] flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <Gauge className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-slate-500 block">
+                {t('chart.scale_label')}
+              </span>
+              <span className="text-base sm:text-lg font-black text-[#061651] block">
+                {language === 'vi' ? '0 - 100 điểm' : '0 - 100 points'}
+              </span>
+              <span className="text-[11px] text-slate-400 font-normal block">
+                {t('chart.scale_standard')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 2. MODE 1: So sánh Điểm TB các Ban (Chuẩn xác theo Ảnh 1) */}
+      {/* 2. THẺ 2: Điểm trung bình các ban (Thẻ riêng biệt bên dưới theo đúng thiết kế ảnh mẫu) */}
       {mode === 'dept_score' && (
         <div className="space-y-6">
-          {/* HÀNG 4 THẺ CHỈ SỐ MỐC CHUẨN (Benchmark Metrics Row - Đúng chuẩn Ảnh 1) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {/* Card 1: Mục tiêu Tốt */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0FDF4] border border-[#DCFCE7] flex items-center gap-3.5 shadow-2xs hover:shadow-xs transition">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100/80 text-emerald-600 flex items-center justify-center shrink-0">
-                <Flag className="w-5 h-5 fill-current" />
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold text-slate-500 block">
-                  Mục tiêu Tốt
-                </span>
-                <span className="text-base sm:text-lg font-black text-emerald-700">
-                  80 điểm
-                </span>
-                <span className="text-[10.5px] text-emerald-600/90 font-medium block">
-                  Xuất sắc
-                </span>
-              </div>
-            </div>
-
-            {/* Card 2: Mức chuẩn CLB */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#EFF6FF] border border-[#DBEAFE] flex items-center gap-3.5 shadow-2xs hover:shadow-xs transition">
-              <div className="w-10 h-10 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center shrink-0">
-                <Target className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold text-slate-500 block">
-                  Mức chuẩn CLB
-                </span>
-                <span className="text-base sm:text-lg font-black text-blue-700">
-                  70 điểm
-                </span>
-                <span className="text-[10.5px] text-blue-600/90 font-medium block">
-                  Đạt yêu cầu
-                </span>
-              </div>
-            </div>
-
-            {/* Card 3: Mốc xuất phát */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FFFBEB] border border-[#FEF3C7] flex items-center gap-3.5 shadow-2xs hover:shadow-xs transition">
-              <div className="w-10 h-10 rounded-xl bg-amber-100/80 text-amber-600 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold text-slate-500 block">
-                  Mốc xuất phát
-                </span>
-                <span className="text-base sm:text-lg font-black text-amber-700">
-                  60 điểm
-                </span>
-                <span className="text-[10.5px] text-amber-600/90 font-medium block">
-                  Cần cố gắng
-                </span>
-              </div>
-            </div>
-
-            {/* Card 4: Thang điểm */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center gap-3.5 shadow-2xs hover:shadow-xs transition">
-              <div className="w-10 h-10 rounded-xl bg-slate-200/70 text-slate-700 flex items-center justify-center shrink-0">
-                <Gauge className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-[11px] font-semibold text-slate-500 block">
-                  Thang điểm
-                </span>
-                <span className="text-base sm:text-lg font-black text-slate-800">
-                  0 – 100 điểm
-                </span>
-                <span className="text-[10.5px] text-slate-400 font-medium block">
-                  Thang điểm chuẩn
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* KHỐI BIỂU ĐỒ THANH NGANG (Horizontal Benchmark Bar Chart - Đúng chuẩn Ảnh 1) */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-4 shadow-2xs">
+          <div className="bg-white rounded-xl border border-slate-200/70 p-5 sm:p-6 space-y-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
             {/* Header trong biểu đồ */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm sm:text-base font-black text-[#0F172A] tracking-tight">
-                  Điểm trung bình các ban
-                </h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  So sánh điểm thi đua hiện tại và mức mục tiêu
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#0284C7] border border-sky-200/60 shadow-2xs flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-[#061651] tracking-tight">
+                    {t('chart.mode_dept_score')}
+                  </h3>
+                  <p className="text-xs text-[#64748B] font-normal mt-0.5">
+                    {language === 'vi' ? 'So sánh điểm thi đua hiện tại và mức mục tiêu' : 'Compare current emulation scores and targets'}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-4 flex-wrap">
-                {/* Dropdown sắp xếp */}
+                {/* Dropdown sắp xếp cân đối, đồng bộ thiết kế */}
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                  <span>Sắp xếp theo:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="bg-slate-50 hover:bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition cursor-pointer"
-                  >
-                    <option value="default">Thứ tự mặc định</option>
-                    <option value="high_to_low">Điểm cao → thấp</option>
-                    <option value="low_to_high">Điểm thấp → cao</option>
-                    <option value="attendance">Tỷ lệ chuyên cần</option>
-                  </select>
+                  <span>{language === 'vi' ? 'Sắp xếp theo:' : 'Sort by:'}</span>
+                  <div ref={sortDropdownRef} className="relative inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setSortDropdownOpen((prev) => !prev)}
+                      className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7] shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      <span>{currentSortLabel}</span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                          sortDropdownOpen ? 'rotate-180 text-[#0284C7]' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {sortDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 min-w-[170px] w-max bg-white border border-slate-200/90 rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-fadeIn">
+                        {sortOptions.map((opt) => {
+                          const isSelected = opt.value === sortBy
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => {
+                                setSortBy(opt.value)
+                                setSortDropdownOpen(false)
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-between ${
+                                isSelected
+                                  ? 'bg-[#3B82F6] text-white font-medium shadow-xs'
+                                  : 'text-slate-800 hover:bg-slate-100/80 font-normal'
+                              }`}
+                            >
+                              <span>{opt.label}</span>
+                              {isSelected && (
+                                <Check className="w-3.5 h-3.5 ml-2 shrink-0 stroke-[2.5]" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Legend mốc 80đ */}
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-                  <span className="w-4 border-b-2 border-dashed border-emerald-500" />
-                  <span>Mục tiêu: 80 điểm</span>
-                  <Info className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-1 text-xs font-extrabold text-[#15803D]">
+                  <span className="tracking-tight">{language === 'vi' ? 'Mục tiêu: 80 điểm' : 'Target: 80 points'}</span>
+                  <Info className="w-3.5 h-3.5 text-emerald-600/80 shrink-0" />
                 </div>
               </div>
             </div>
 
             {/* Vùng thanh ngang & Đường mục tiêu 80đ */}
-            <div className="pt-2">
-              <div className="relative">
-                {/* ĐƯỜNG MỤC TIÊU 80 ĐIỂM (Dashed Vertical Target Line at 80%) */}
-                <div
-                  className="absolute top-0 bottom-7 border-r-2 border-dashed border-emerald-500 pointer-events-none z-20 hidden sm:block"
-                  style={{
-                    left: 'calc(12rem + (100% - 12rem - 5.5rem) * 0.8)',
-                  }}
-                >
-                  <span className="absolute -top-3.5 -translate-x-1/2 bg-[#059669] text-white text-[10px] font-black px-2 py-0.5 rounded shadow-xs whitespace-nowrap">
-                    Mục tiêu 80đ
-                  </span>
-                </div>
+            <div className="pt-3 pb-1">
+              <div className="space-y-4">
+                {sortedDepts.map((dept, index) => {
+                  const rank = index + 1
+                  const rankPillStyle =
+                    rank === 1
+                      ? 'bg-[#EFF6FF] text-[#2563EB]'
+                      : rank === 2
+                      ? 'bg-pink-50 text-pink-600'
+                      : rank === 3
+                      ? 'bg-purple-50 text-purple-600'
+                      : 'bg-amber-50 text-amber-700'
 
-                {/* 4 Dòng biểu đồ thanh ngang */}
-                <div className="space-y-4 pt-2">
-                  {sortedDepts.map((dept, index) => {
-                    const rank = index + 1
-                    const rankCircleStyle =
-                      rank === 1
-                        ? 'bg-blue-100 text-blue-600'
-                        : rank === 2
-                        ? 'bg-pink-100 text-pink-600'
-                        : rank === 3
-                        ? 'bg-indigo-100 text-indigo-600'
-                        : 'bg-amber-100 text-amber-700'
+                  const IconComponent = dept.icon
+                  const isHovered = hoveredDept === dept.code
 
-                    const IconComponent = dept.icon
-                    const isHovered = hoveredDept === dept.code
-
-                    return (
-                      <div
-                        key={dept.code}
-                        onMouseEnter={() => setHoveredDept(dept.code)}
-                        onMouseLeave={() => setHoveredDept(null)}
-                        className={`flex items-center gap-3 sm:gap-4 p-1.5 rounded-xl transition-all duration-200 ${
-                          isHovered ? 'bg-slate-50/80 -translate-x-0.5' : ''
-                        }`}
+                  return (
+                    <div
+                      key={dept.code}
+                      onMouseEnter={() => setHoveredDept(dept.code)}
+                      onMouseLeave={() => setHoveredDept(null)}
+                      className={`flex items-center gap-3 sm:gap-4 p-1.5 rounded-xl transition-all duration-200 ${
+                        isHovered ? 'bg-slate-50/80 -translate-x-0.5' : ''
+                      }`}
+                    >
+                      {/* Số thứ hạng (1), (2), (3), (4) */}
+                      <span
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${rankPillStyle}`}
                       >
-                        {/* Số thứ hạng (1), (2), (3), (4) */}
-                        <span
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${rankCircleStyle}`}
+                        {rank}
+                      </span>
+
+                      {/* Icon & Tên Ban */}
+                      <div className="flex items-center gap-2.5 w-32 sm:w-40 shrink-0">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${dept.color}15`, color: dept.color }}
                         >
-                          {rank}
-                        </span>
-
-                        {/* Icon & Tên Ban */}
-                        <div className="flex items-center gap-2.5 w-40 sm:w-44 shrink-0">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: `${dept.color}15`, color: dept.color }}
-                          >
-                            <IconComponent className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="font-bold text-xs sm:text-sm text-slate-900 block truncate">
-                              {dept.shortName}
-                            </span>
-                            <span className="text-[11px] text-slate-400 font-medium block truncate">
-                              {dept.memberCount} thành viên
-                            </span>
-                          </div>
+                          <IconComponent className="w-4 h-4" />
                         </div>
-
-                        {/* Thanh Ngang (Horizontal Progress Bar) */}
-                        <div className="flex-1 relative flex items-center">
-                          <div className="w-full h-7 bg-slate-100/90 rounded-md overflow-hidden relative shadow-inner">
-                            <div
-                              className="h-full rounded-md transition-all duration-700 ease-out shadow-xs"
-                              style={{
-                                width: `${(dept.avgScore / 100) * 100}%`,
-                                backgroundColor: dept.color,
-                              }}
-                            />
-                          </div>
-
-                          {/* Điểm số & Biến động ở cạnh phải thanh */}
-                          <div className="w-20 sm:w-22 pl-3 shrink-0 flex items-center gap-1.5 text-xs font-bold">
-                            <span className="text-slate-900 font-black text-sm">
-                              {dept.avgScore}
-                            </span>
-                            {dept.deltaPrevMonth === '0.0' || dept.deltaPrevMonth === '0' || dept.deltaPrevMonth === '+0.0' ? (
-                              <span className="text-[11px] font-bold text-slate-400">
-                                0.0
-                              </span>
-                            ) : (
-                              <span
-                                className={`text-[11px] font-extrabold flex items-center ${
-                                  dept.deltaPrevMonth.startsWith('+')
-                                    ? 'text-emerald-600'
-                                    : 'text-rose-500'
-                                }`}
-                              >
-                                {dept.deltaPrevMonth.startsWith('+') ? '▲' : '▼'}{' '}
-                                {dept.deltaPrevMonth}
-                              </span>
-                            )}
-                          </div>
+                        <div className="min-w-0">
+                          <span className="font-bold text-xs sm:text-sm text-[#061651] block truncate">
+                            {dept.shortName}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-normal block truncate">
+                            {dept.memberCount} {language === 'vi' ? 'thành viên' : 'members'}
+                          </span>
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
 
-                {/* Trục Hoành X (X-Axis: 0, 20, 40, 60, 80, 100) */}
-                <div
-                  className="pt-3 text-[11px] text-slate-400 font-medium select-none"
-                  style={{
-                    paddingLeft: 'calc(12rem + 1rem)',
-                    paddingRight: '5.5rem',
-                  }}
-                >
-                  <div className="flex justify-between border-t border-slate-200/80 pt-1.5">
-                    <span>0</span>
-                    <span>20</span>
-                    <span>40</span>
-                    <span>60</span>
-                    <span className="text-emerald-600 font-bold">80</span>
-                    <span>100</span>
-                  </div>
-                </div>
+                      {/* Thanh Ngang (Thanh bo tròn hoàn toàn rounded-full kèm vạch mục tiêu 80đ) */}
+                      <div className="flex-1 relative flex items-center py-2">
+                        <div className="w-full h-7 bg-[#EFF2F6] rounded-full overflow-hidden relative shadow-inner">
+                          <div
+                            className="h-full rounded-full transition-all duration-700 ease-out shadow-xs"
+                            style={{
+                              width: `${(dept.avgScore / 100) * 100}%`,
+                              backgroundColor: dept.color,
+                            }}
+                          />
+                        </div>
+
+                        {/* Vạch mục tiêu 80đ đặt ngay trên từng thanh ngang */}
+                        <div
+                          className="absolute top-[-6px] bottom-[-6px] border-r-2 border-dashed border-[#10B981] pointer-events-none z-10 hidden sm:block"
+                          style={{ left: '80%' }}
+                        >
+                          {index === 0 && (
+                            <span className="absolute -top-3.5 -translate-x-1/2 bg-[#059669] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap">
+                              {t('chart.target_80')}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Điểm số & Biến động ở cạnh phải thanh */}
+                        <div className="w-20 sm:w-24 pl-3 shrink-0 flex items-center gap-1.5 text-xs font-bold">
+                          <span className="text-[#061651] font-black text-sm">
+                            {dept.avgScore}
+                          </span>
+                          {dept.deltaPrevMonth === '0.0' || dept.deltaPrevMonth === '0' || dept.deltaPrevMonth === '+0.0' ? (
+                            <span className="text-[11px] font-bold text-slate-400">
+                              0.0
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-[11px] font-extrabold flex items-center ${
+                                dept.deltaPrevMonth.startsWith('+')
+                                  ? 'text-emerald-600'
+                                  : 'text-rose-500'
+                              }`}
+                            >
+                              {dept.deltaPrevMonth.startsWith('+') ? '▲' : '▼'}{' '}
+                              {dept.deltaPrevMonth}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
 
           {/* PHẦN DƯỚI: CHI TIẾT TỪNG BAN & BẢNG SO SÁNH NHANH (Hai khối chuẩn xác theo Ảnh 1) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 pt-1">
-            {/* CỘT TRÁI (8 cols): Chi tiết từng ban (4 Thẻ con có gauge tròn & danh hiệu) */}
+            {/* CỘT TRÁI (8 cols): Chi tiết từng ban */}
             <div className="lg:col-span-8 space-y-3">
-              <h4 className="text-sm font-black text-[#0F172A] tracking-tight">
-                Chi tiết từng ban
+              <h4 className="text-sm font-black text-[#061651] tracking-tight">
+                {t('chart.dept_details_heading')}
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
@@ -710,7 +816,7 @@ export function ComparisonChart({
                         >
                           <IconComponent className="w-3.5 h-3.5" />
                         </div>
-                        <span className="font-bold text-xs text-slate-900">
+                        <span className="font-bold text-xs text-[#061651]">
                           {dept.shortName}
                         </span>
                       </div>
@@ -718,7 +824,7 @@ export function ComparisonChart({
                       {/* Điểm TB & Tag biến động */}
                       <div className="flex items-baseline justify-between pt-0.5">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-black text-slate-900">
+                          <span className="text-xl font-black text-[#061651]">
                             {dept.avgScore}
                           </span>
                           <span className="text-[11px] font-normal text-slate-400">
@@ -748,7 +854,7 @@ export function ComparisonChart({
                       <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                         <div>
                           <span className="text-[10.5px] text-slate-400 font-medium block">
-                            Tỷ lệ chuyên cần
+                            {t('chart.attendance_rate_label')}
                           </span>
                           <span
                             className="text-sm font-black block mt-0.5"
@@ -770,7 +876,7 @@ export function ComparisonChart({
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold w-full justify-center border shadow-2xs ${dept.rankBadgeColor}`}
                         >
-                          <span>{dept.rankBadgeIcon}</span>
+                          {dept.rankBadgeIcon ? <span>{dept.rankBadgeIcon}</span> : null}
                           <span>{dept.rankText}</span>
                         </span>
                       </div>
@@ -780,14 +886,14 @@ export function ComparisonChart({
               </div>
             </div>
 
-            {/* CỘT PHẢI (4 cols): Bảng So sánh nhanh (Quick Comparison Table) */}
+            {/* CỘT PHẢI (4 cols): Bảng So sánh nhanh */}
             <div className="lg:col-span-4 p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-white space-y-3.5 shadow-2xs">
               <div>
-                <h4 className="text-sm font-black text-[#0F172A] tracking-tight">
-                  So sánh nhanh
+                <h4 className="text-sm font-black text-[#061651] tracking-tight">
+                  {t('chart.quick_compare_heading')}
                 </h4>
                 <p className="text-xs text-slate-400 font-medium mt-0.5">
-                  Điểm thi đua và tỷ lệ chuyên cần của các ban
+                  {t('chart.quick_compare_desc')}
                 </p>
               </div>
 
@@ -796,13 +902,13 @@ export function ComparisonChart({
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-slate-400 border-b border-slate-100 font-semibold text-[11px]">
-                      <th className="text-left pb-2.5 font-medium">Ban</th>
-                      <th className="text-center pb-2.5 font-medium">Điểm TB</th>
+                      <th className="text-left pb-2.5 font-medium">{t('chart.col_dept')}</th>
+                      <th className="text-center pb-2.5 font-medium">{t('chart.col_avg_score')}</th>
                       <th className="text-center pb-2.5 font-medium">
-                        So với kỳ trước
+                        {t('chart.col_vs_prev')}
                       </th>
                       <th className="text-right pb-2.5 font-medium">
-                        Tỷ lệ chuyên cần
+                        {t('chart.col_attendance')}
                       </th>
                     </tr>
                   </thead>
@@ -821,7 +927,7 @@ export function ComparisonChart({
                           }`}
                         >
                           {/* Cột 1: Ban */}
-                          <td className="py-2.5 flex items-center gap-2 font-bold text-slate-900">
+                          <td className="py-2.5 flex items-center gap-2 font-bold text-[#061651]">
                             <div
                               className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                               style={{
@@ -835,7 +941,7 @@ export function ComparisonChart({
                           </td>
 
                           {/* Cột 2: Điểm TB */}
-                          <td className="py-2.5 text-center font-black text-slate-900">
+                          <td className="py-2.5 text-center font-black text-[#061651]">
                             {dept.avgScore}
                           </td>
 
@@ -879,15 +985,15 @@ export function ComparisonChart({
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-[#10B981]"></span>
-                <span>Điểm cộng thi đua (C01-C09)</span>
+                <span>{t('chart.bonus_rules_tag')}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-[#EF4444]"></span>
-                <span>Điểm trừ kỷ luật (T01-T13)</span>
+                <span>{t('chart.penalty_rules_tag')}</span>
               </span>
             </div>
             <span className="text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full text-xs font-black border border-emerald-300">
-              Tỷ lệ tuân thủ toàn CLB: 93.4%
+              {t('chart.compliance_rate')}
             </span>
           </div>
 
@@ -913,20 +1019,20 @@ export function ComparisonChart({
                         className="w-3.5 h-3.5 rounded-md"
                         style={{ backgroundColor: dept.color }}
                       ></span>
-                      <span className="font-bold text-sm text-[#0F172A]">
+                      <span className="font-bold text-sm text-[#061651]">
                         {dept.name}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3 text-xs font-black">
                       <span className="text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                        Cộng: +{dept.positivePoints}đ ({plusPct}%)
+                        {t('chart.bonus_label')}: +{dept.positivePoints}đ ({plusPct}%)
                       </span>
                       <span className="text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
-                        Trừ: {dept.negativePoints}đ ({minusPct}%)
+                        {t('chart.penalty_label')}: {dept.negativePoints}đ ({minusPct}%)
                       </span>
-                      <span className="px-3 py-1 rounded-lg bg-[#0F172A] text-white text-xs font-black">
-                        Thực nhận: +{dept.positivePoints + dept.negativePoints}đ
+                      <span className="px-3 py-1 rounded-lg bg-[#061651] text-white text-xs font-black">
+                        {t('chart.net_received')}: +{dept.positivePoints + dept.negativePoints}đ
                       </span>
                     </div>
                   </div>
@@ -937,21 +1043,21 @@ export function ComparisonChart({
                       <div
                         className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-l-full transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white"
                         style={{ width: `${plusPct}%` }}
-                        title={`Điểm cộng: ${dept.positivePoints}đ (${plusPct}%)`}
+                        title={`${t('chart.bonus_label')}: ${dept.positivePoints}đ (${plusPct}%)`}
                       >
                         {plusPct > 15 && `+${dept.positivePoints}đ`}
                       </div>
                       <div
                         className="bg-gradient-to-r from-rose-500 to-red-600 h-full rounded-r-full transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white"
                         style={{ width: `${minusPct}%` }}
-                        title={`Điểm trừ: ${dept.negativePoints}đ (${minusPct}%)`}
+                        title={`${t('chart.penalty_label')}: ${dept.negativePoints}đ (${minusPct}%)`}
                       >
                         {minusPct > 15 && `${dept.negativePoints}đ`}
                       </div>
                     </div>
                   ) : (
                     <div className="w-full h-6 bg-slate-100/90 rounded-full flex items-center justify-center text-[11px] font-bold text-slate-400 shadow-inner">
-                      Chu kỳ mới khởi tạo - Mốc xuất phát 60đ (chưa phát sinh điểm cộng/trừ)
+                      {t('chart.new_cycle_note')}
                     </div>
                   )}
                 </div>
@@ -971,20 +1077,20 @@ export function ComparisonChart({
                 className="p-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 space-y-3 relative overflow-hidden shadow-2xs hover:bg-white hover:shadow-xs transition"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-[#0F172A]">
+                  <span className="text-xs font-black text-[#061651]">
                     {item.month}
                   </span>
                   <span className="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
-                    Kỳ 1 (2025 - 2026)
+                    {t('chart.term_period_note')}
                   </span>
                 </div>
 
                 <div className="space-y-1">
                   <span className="text-xs text-[#64748B] block">
-                    Điểm trung bình CLB
+                    {t('chart.month_club_avg')}
                   </span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-[#0F172A]">
+                    <span className="text-3xl font-black text-[#061651]">
                       {item.avgScore}đ
                     </span>
                     {idx > 0 && (
@@ -1010,13 +1116,13 @@ export function ComparisonChart({
 
                 <div className="pt-2 border-t border-slate-200/60 grid grid-cols-2 gap-2 text-[11px]">
                   <div>
-                    <span className="text-slate-500 block">Chuyên cần:</span>
-                    <span className="font-bold text-[#0F172A]">
+                    <span className="text-slate-500 block">{t('chart.attendance_short')}:</span>
+                    <span className="font-bold text-[#061651]">
                       {item.attendance}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Tổng điểm cộng:</span>
+                    <span className="text-slate-500 block">{t('chart.total_bonus')}:</span>
                     <span className="font-bold text-emerald-600">
                       +{item.positiveSum}đ
                     </span>
@@ -1030,12 +1136,11 @@ export function ComparisonChart({
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#059669] shrink-0" />
               <span className="font-bold">
-                Đánh giá tổng kết: Toàn Câu Lạc bộ duy trì đà tăng trưởng chuyên
-                cần và điểm rèn luyện liên tục qua 3 tháng (+6.2 điểm tích luỹ).
+                {t('chart.growth_summary')}
               </span>
             </div>
             <span className="font-black text-[#047857] uppercase tracking-wider shrink-0">
-              Nhiệm kỳ 2025 - 2026
+              {t('chart.term_tag')}
             </span>
           </div>
         </div>

@@ -29,6 +29,7 @@ export const PRESET_USERS: AuthUser[] = [
     memberCode: '23070691',
     isCore: true,
     avatarBg: 'bg-blue-600',
+    avatarUrl: '/giang-le-hiep-avatar.png',
   },
   {
     id: 'user-bcn',
@@ -62,7 +63,7 @@ export const PRESET_USERS: AuthUser[] = [
     memberCode: '24310088',
     isCore: true,
     avatarBg: 'bg-blue-500',
-    avatarUrl: '/avatars/duc-thang.jpg',
+    avatarUrl: '/duc-thang-avatar.png',
   },
   {
     id: 'user-member',
@@ -93,6 +94,7 @@ export interface IssuedAccount {
   passwordPlain: string
   status: 'active' | 'suspended'
   isFixed?: boolean
+  avatarUrl?: string
   createdAt: string
 }
 
@@ -124,6 +126,7 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     roleTitle: 'Phó ban Tư vấn',
     passwordPlain: 'ISSAC2026@tuvan',
     status: 'active',
+    avatarUrl: '/nguyen-ngoc-anh-avatar.png',
     createdAt: '15/10/2025',
   },
   {
@@ -152,6 +155,7 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     roleTitle: 'Trưởng Ban Nhân sự',
     passwordPlain: 'ISSAC2026@nhansu',
     status: 'active',
+    avatarUrl: '/ngo-phuong-hoa-avatar.png',
     createdAt: '15/10/2025',
   },
   {
@@ -166,6 +170,7 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     roleTitle: 'Trưởng ban Truyền thông',
     passwordPlain: 'ISSAC2026@truyenthong',
     status: 'active',
+    avatarUrl: '/phuong-gia-huy-avatar.png',
     createdAt: '15/10/2025',
   },
   {
@@ -180,6 +185,7 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     roleTitle: 'Trưởng ban Tư vấn',
     passwordPlain: 'ISSAC2026@tuvan2',
     status: 'active',
+    avatarUrl: '/phung-thi-thu-hien-avatar.png',
     createdAt: '15/10/2025',
   },
   {
@@ -208,6 +214,81 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     roleTitle: 'Trưởng Ban Nhân sự (HR)',
     passwordPlain: 'ISSAC2026@ngoc',
     status: 'active',
+    createdAt: '15/10/2025',
+  },
+  {
+    id: 'acc-9',
+    fullName: 'Trần Thanh Hiền',
+    email: 'hien.danity.k@gmail.com',
+    studentId: '24310150',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    departmentSlug: 'nhan-su',
+    role: 'hr',
+    roleTitle: 'Phó Ban Nhân sự (HR)',
+    passwordPlain: 'ISSAC2026@hien',
+    status: 'active',
+    avatarUrl: '/tran-thanh-hien-avatar.png',
+    createdAt: '15/10/2025',
+  },
+  {
+    id: 'acc-10',
+    fullName: 'Nguyễn Thu Thảo',
+    email: 'nthuthao2011@gmail.com',
+    studentId: '23071234',
+    departmentCode: 'B02',
+    departmentName: 'Ban Tư vấn',
+    departmentSlug: 'tu-van',
+    role: 'member',
+    roleTitle: 'Cố vấn Ban Tư vấn',
+    passwordPlain: 'ISSAC2026@thao',
+    status: 'active',
+    avatarUrl: '/nguyen-thu-thao-avatar.png',
+    createdAt: '15/10/2025',
+  },
+  {
+    id: 'acc-11',
+    fullName: 'Lâm Thị Bình Dương',
+    email: 'lamduong200907@gmail.com',
+    studentId: '25070345',
+    departmentCode: 'B01',
+    departmentName: 'Ban Truyền thông',
+    departmentSlug: 'truyen-thong',
+    role: 'dept_head',
+    roleTitle: 'Phó Ban Truyền thông',
+    passwordPlain: 'ISSAC2026@duong',
+    status: 'active',
+    avatarUrl: '/lam-thi-binh-duong-avatar.png',
+    createdAt: '15/10/2025',
+  },
+  {
+    id: 'acc-12',
+    fullName: 'Vũ Đình Hải',
+    email: 'vudinhhai542007@gmail.com',
+    studentId: '25070407',
+    departmentCode: 'B01',
+    departmentName: 'Ban Truyền thông',
+    departmentSlug: 'truyen-thong',
+    role: 'dept_head',
+    roleTitle: 'Phó Ban Truyền thông',
+    passwordPlain: 'ISSAC2026@hai',
+    status: 'active',
+    avatarUrl: '/vu-dinh-hai-avatar.png',
+    createdAt: '15/10/2025',
+  },
+  {
+    id: 'acc-13',
+    fullName: 'Vũ Hồng Hải Yến',
+    email: 'vhhyen24@gmail.com',
+    studentId: '25073060',
+    departmentCode: 'B02',
+    departmentName: 'Ban Tư vấn',
+    departmentSlug: 'tu-van',
+    role: 'member',
+    roleTitle: 'Thành viên Ban Tư vấn',
+    passwordPlain: 'ISSAC2026@yen',
+    status: 'active',
+    avatarUrl: '/vu-hong-hai-yen-avatar.png',
     createdAt: '15/10/2025',
   },
 ]
@@ -418,8 +499,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchCloudAccounts()
       }
     }
+    const handleFocus = () => {
+      fetchCloudAccounts()
+    }
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'issac_issued_accounts' || e.key === 'issac_active_user' || e.key === 'issac_deleted_account_ids') {
+        fetchCloudAccounts()
+      }
+    }
+
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', handleVisibility)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleFocus)
+      window.addEventListener('storage', handleStorage)
     }
     const timer = setInterval(() => {
       if (typeof document !== 'undefined' && !document.hidden) {
@@ -430,6 +524,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibility)
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleFocus)
+        window.removeEventListener('storage', handleStorage)
       }
       clearInterval(timer)
     }

@@ -1,11 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useAuth, type IssuedAccount } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
+import { getMemberAvatarUrl } from '@/lib/clubData'
 import type { DepartmentCode, DepartmentSlug, UserRole } from '@/types/database'
 import {
-  ShieldCheck,
+  UserCog,
   Plus,
   Eye,
   EyeOff,
@@ -18,14 +20,11 @@ import {
   Check,
   Search,
   KeyRound,
-  ExternalLink,
   Users,
-  Smartphone,
-  Info,
-  RefreshCw,
 } from 'lucide-react'
 
 export function AccountsView() {
+  const { language } = useLanguage()
   const {
     issuedAccounts,
     createIssuedAccount,
@@ -33,9 +32,36 @@ export function AccountsView() {
     deleteIssuedAccount,
     isBCN,
     canManageAccounts,
-    switchUser,
   } = useAuth()
   const { members } = useClub()
+
+  // Mascot động & Lời thoại tương tác
+  const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
+  const [mascotQuoteIdx, setMascotQuoteIdx] = useState<number>(0)
+  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
+  const mascotBubbleTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  const mascotQuotes = language === 'vi' ? [
+    'Bảo mật tài khoản CLB iSSAC!',
+    'Phân quyền minh bạch, an toàn!',
+    'Hỗ trợ cán bộ chuyên trách!',
+  ] : [
+    'Secure iSSAC Club Accounts!',
+    'Transparent & Safe Access!',
+    'Empowering Department Staff!',
+  ]
+
+  const handleMascotClick = () => {
+    setIsMascotCheering(true)
+    setShowMascotBubble(true)
+    setMascotQuoteIdx((prev) => (prev + 1) % mascotQuotes.length)
+    setTimeout(() => setIsMascotCheering(false), 850)
+
+    if (mascotBubbleTimeout.current) clearTimeout(mascotBubbleTimeout.current)
+    mascotBubbleTimeout.current = setTimeout(() => {
+      setShowMascotBubble(false)
+    }, 2800)
+  }
 
   // State hiển thị mật khẩu từng dòng (toggle eye)
   const [revealedPasswords, setRevealedPasswords] = useState<Record<string, boolean>>({})
@@ -109,7 +135,10 @@ export function AccountsView() {
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newFullName.trim() || !newEmail.trim() || !newPassword.trim()) {
-      setAddFeedback({ type: 'error', message: 'Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu!' })
+      setAddFeedback({
+        type: 'error',
+        message: language === 'vi' ? 'Vui lòng điền đầy đủ Họ tên, Email và Mật khẩu!' : 'Please fill in Name, Email and Password!',
+      })
       return
     }
 
@@ -174,7 +203,10 @@ export function AccountsView() {
   }
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa tài khoản của cán bộ "${name}" không?`)) {
+    const confirmMsg = language === 'vi'
+      ? `Bạn có chắc chắn muốn xóa tài khoản của cán bộ "${name}" không?`
+      : `Are you sure you want to delete the account for "${name}"?`
+    if (confirm(confirmMsg)) {
       const res = deleteIssuedAccount(id)
       if (!res.success) {
         alert(res.message)
@@ -195,19 +227,19 @@ export function AccountsView() {
     )
   })
 
-  // Style huy hiệu Ban chuyên môn chuẩn nhận diện (bo tròn, không icon trước tên Ban)
+  // Style huy hiệu Ban chuyên môn chuẩn nhận diện đồng bộ với MembersView & StatsView
   const getDeptBadgeStyle = (slug: DepartmentSlug) => {
     switch (slug) {
       case 'bcn':
-        return 'bg-amber-50/80 text-amber-900 border-amber-300/90 font-semibold'
+        return 'bg-amber-50 text-amber-800 border-amber-200/80 font-bold'
       case 'truyen-thong':
-        return 'bg-blue-50/80 text-[#1351D8] border-blue-200/90 font-semibold'
+        return 'bg-blue-50 text-[#0284C7] border-blue-200/80 font-bold'
       case 'tu-van':
-        return 'bg-emerald-50/80 text-emerald-800 border-emerald-300/90 font-semibold'
+        return 'bg-pink-50 text-pink-700 border-pink-200/80 font-bold'
       case 'nhan-su':
-        return 'bg-purple-50/80 text-purple-800 border-purple-300/90 font-semibold'
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200/80 font-bold'
       default:
-        return 'bg-slate-50 text-slate-700 border-slate-200 font-semibold'
+        return 'bg-slate-50 text-slate-700 border-slate-200 font-bold'
     }
   }
 
@@ -219,14 +251,18 @@ export function AccountsView() {
           <Lock className="w-8 h-8 text-amber-600" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-black text-[#0B1E48]">Quyền Hạn Hạn Chế</h2>
+          <h2 className="text-xl font-black text-[#061651]">
+            {language === 'vi' ? 'Quyền Hạn Hạn Chế' : 'Restricted Access'}
+          </h2>
           <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-            Chức năng <strong>Cấp tài khoản Ban</strong> chỉ dành riêng cho Ban Chủ nhiệm CLB iSSAC. Các tài khoản chuyên môn (Ban Nhân sự, Ban Tư vấn, Ban Truyền thông) không có thẩm quyền truy cập hay xem thông tin tài khoản tại đây.
+            {language === 'vi'
+              ? 'Chức năng Quản trị tài khoản chỉ dành riêng cho Ban Chủ nhiệm CLB iSSAC. Các tài khoản chuyên môn không có thẩm quyền truy cập hay xem thông tin tài khoản tại đây.'
+              : 'Account management is reserved exclusively for the Executive Board of iSSAC Club. Department staff do not have authorization to view or edit accounts.'}
           </p>
         </div>
         <div className="pt-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-            Chỉ Ban Chủ nhiệm mới có quyền cấp tài khoản
+            {language === 'vi' ? 'Chỉ Ban Chủ nhiệm mới có quyền cấp tài khoản' : 'Executive Board Permission Required'}
           </span>
         </div>
       </div>
@@ -235,19 +271,48 @@ export function AccountsView() {
 
   return (
     <div className="space-y-6">
-      {/* 1. TOP HEADER TRANG: QUẢN TRỊ TÀI KHOẢN BAN (KHỚP 100% ẢNH CHỤP) */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1351D8] border border-blue-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-            <ShieldCheck className="w-6 h-6 text-[#1351D8]" />
-          </div>
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black text-[#0B1E48] tracking-tight">
-              Quản trị Tài khoản Ban Tuyển Quân
+      {/* 1. TOP HEADER TRANG: QUẢN TRỊ TÀI KHOẢN CLB (CHUẨN NHẬN DIỆN DỰ ÁN) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
+        <div className="flex items-center gap-3.5 sm:gap-4.5">
+          <div>
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight">
+              {language === 'vi' ? 'Quản trị tài khoản & phân quyền CLB' : 'Club Accounts & Permissions'}
             </h1>
-            <p className="text-xs sm:text-[13px] text-slate-500 font-medium leading-relaxed">
-              Ban Chủ nhiệm có toàn quyền cấp tài khoản, đổi mật khẩu và phân quyền cho Ban Chủ nhiệm và các Ban chuyên môn.
+            <p className="text-xs sm:text-[13px] text-[#64748B] mt-1 font-normal">
+              {language === 'vi'
+                ? 'Ban Chủ nhiệm có toàn quyền quản lý và cấp tài khoản cho các Ban.'
+                : 'The Executive Board holds full authority to manage and issue accounts for all departments.'}
             </p>
+          </div>
+
+          {/* Mascot Hoạt Động & Bóng Thoại Đồng Bộ Các Trang */}
+          <div
+            onClick={handleMascotClick}
+            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+          >
+            <img
+              src="/accounts-mascot.png"
+              alt="iSSAC Account Mascot"
+              className={`w-12 h-14 sm:w-14 sm:h-16 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
+                isMascotCheering
+                  ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
+                  : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+              }`}
+            />
+
+            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style */}
+            <div
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-md whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 pointer-events-none ${
+                isMascotCheering || showMascotBubble
+                  ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
+                  : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+              }`}
+            >
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0284C7] rotate-45 border-l border-b border-white/25" />
+              <span className="relative z-10 select-none tracking-tight">
+                {mascotQuotes[mascotQuoteIdx]}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -258,28 +323,37 @@ export function AccountsView() {
               setIsAddModalOpen(true)
               setAddFeedback(null)
             }}
-            className="self-start md:self-center px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-xs hover:shadow transition active:scale-95 cursor-pointer flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-2 active:scale-95 cursor-pointer shrink-0 self-start md:self-center"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Cấp tài khoản mới</span>
+            <span>{language === 'vi' ? 'Cấp tài khoản mới' : 'Issue New Account'}</span>
           </button>
         ) : (
-          <div className="self-start md:self-center px-4 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/90 flex items-center gap-2 shrink-0 shadow-2xs">
+          <div className="px-4 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/90 flex items-center gap-2 shrink-0 shadow-2xs self-start md:self-center">
             <Lock className="w-3.5 h-3.5 text-amber-600" />
-            <span>Chỉ Ban Chủ nhiệm mới có quyền cấp tài khoản</span>
+            <span>{language === 'vi' ? 'Chỉ BCN có quyền cấp' : 'Exec Board Only'}</span>
           </div>
         )}
       </div>
 
-      {/* 2. MAIN TABLE CARD: DANH SÁCH CÁN BỘ TUYỂN QUÂN */}
+      {/* 2. MAIN TABLE CARD: DANH SÁCH TÀI KHOẢN CÁN BỘ */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
         {/* Table Top Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#1351D8]" />
-            <h3 className="text-base font-black text-[#0B1E48]">
-              Danh sách Cán bộ Tuyển quân ({filteredAccounts.length})
-            </h3>
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center border border-sky-200/60 shadow-2xs">
+              <UserCog className="w-4 h-4 text-[#0284C7]" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-extrabold text-[#061651]">
+                {language === 'vi' ? 'Danh sách tài khoản cán bộ' : 'Staff Accounts Roster'} ({filteredAccounts.length})
+              </h3>
+              <p className="text-[11px] text-[#64748B] hidden sm:block">
+                {language === 'vi'
+                  ? 'Bao gồm Ban Chủ nhiệm & các Ban chuyên môn CLB iSSAC'
+                  : 'Includes Executive Board & Departmental Staff'}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -287,15 +361,12 @@ export function AccountsView() {
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Tìm tên, email, ban..."
+                placeholder={language === 'vi' ? 'Tìm tên, email, ban...' : 'Search name, email, dept...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-full pl-8.5 pr-3 py-1.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8.5 pr-3 py-1.5 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#0284C7] transition shadow-2xs"
               />
             </div>
-            <span className="text-xs text-slate-500 font-medium hidden md:inline">
-              Bao gồm Ban Chủ nhiệm &amp; các Ban chuyên môn
-            </span>
           </div>
         </div>
 
@@ -303,33 +374,40 @@ export function AccountsView() {
         <div className="block md:hidden p-3 space-y-3">
           {filteredAccounts.map((account) => {
             const isPasswordRevealed = revealedPasswords[account.id] || false
+            const memberObj = members.find((m) => (account.studentId && (m.student_id === account.studentId || m.member_code === account.studentId)) || m.full_name === account.fullName || m.email === account.email)
+            const avatarUrl = account.avatarUrl || getMemberAvatarUrl(memberObj || { full_name: account.fullName, email: account.email, member_code: account.studentId })
+
             return (
               <div
                 key={account.id}
                 className="p-3.5 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-extrabold text-slate-900 text-sm">
-                        {account.fullName}
-                      </span>
-                      {account.isFixed && (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                          Cố định
-                        </span>
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/80 font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs overflow-hidden">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt={account.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{account.fullName.charAt(0)}</span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-                      {account.roleTitle}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono block">
-                      {account.email}
-                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-extrabold text-[#061651] text-sm">
+                          {account.fullName}
+                        </span>
+                        {account.isFixed && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            {language === 'vi' ? 'Cố định' : 'Fixed'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-mono truncate">{account.email}</p>
+                    </div>
                   </div>
 
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] border shrink-0 ${getDeptBadgeStyle(
+                    className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] border shrink-0 ${getDeptBadgeStyle(
                       account.departmentSlug
                     )}`}
                   >
@@ -337,44 +415,19 @@ export function AccountsView() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-xs font-bold text-slate-800 bg-white px-2 py-1 rounded-lg border border-slate-200">
-                      {isPasswordRevealed ? account.passwordPlain : '••••••••'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => togglePasswordReveal(account.id)}
-                      className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
-                    >
-                      {isPasswordRevealed ? (
-                        <EyeOff className="w-3.5 h-3.5" />
-                      ) : (
-                        <Eye className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyText(account.passwordPlain, `pass-${account.id}`)}
-                      className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
-                    >
-                      {copiedId === `pass-${account.id}` ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200/70">
+                    {account.roleTitle}
+                  </span>
                   {account.status === 'active' ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>Hoạt động</span>
+                      <span>{language === 'vi' ? 'Hoạt động' : 'Active'}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/80">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      <span>Tạm khóa</span>
+                      <span>{language === 'vi' ? 'Tạm khóa' : 'Suspended'}</span>
                     </span>
                   )}
                 </div>
@@ -390,16 +443,16 @@ export function AccountsView() {
                         setEditStatus(account.status)
                         setEditFeedback(null)
                       }}
-                      className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 font-bold text-xs transition flex items-center gap-1 shadow-2xs"
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-[#061651] font-bold text-xs transition flex items-center gap-1 shadow-2xs"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Sửa thông tin</span>
+                      <Edit3 className="w-3.5 h-3.5 text-[#0284C7]" />
+                      <span>{language === 'vi' ? 'Sửa thông tin' : 'Edit'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(account.id, account.fullName)}
-                      className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                      title="Xóa tài khoản"
+                      className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      title={language === 'vi' ? 'Xóa tài khoản' : 'Delete account'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -413,46 +466,58 @@ export function AccountsView() {
         {/* Table Content (Desktop >= md) */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/90 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-5">TÀI KHOẢN / NGƯỜI ĐẠI DIỆN</th>
-                <th className="py-3 px-4">BAN ĐƯỢC PHÂN CÔNG</th>
-                <th className="py-3 px-4">MẬT KHẨU</th>
-                <th className="py-3 px-4">TRẠNG THÁI</th>
-                <th className="py-3 px-5 text-right">HÀNH ĐỘNG</th>
+            <thead className="bg-[#0284C7] text-xs font-bold text-white uppercase tracking-wider select-none shadow-xs">
+              <tr className="divide-x divide-white/15">
+                <th className="py-3 px-5 font-bold text-white whitespace-nowrap">{language === 'vi' ? 'TÀI KHOẢN / NGƯỜI ĐẠI DIỆN' : 'ACCOUNT / REPRESENTATIVE'}</th>
+                <th className="py-3 px-4 font-bold text-sky-100 whitespace-nowrap">{language === 'vi' ? 'BAN ĐƯỢC PHÂN CÔNG' : 'ASSIGNED DEPARTMENT'}</th>
+                <th className="py-3 px-4 font-bold text-sky-100 whitespace-nowrap">{language === 'vi' ? 'MẬT KHẨU' : 'PASSWORD'}</th>
+                <th className="py-3 px-4 font-bold text-sky-100 whitespace-nowrap">{language === 'vi' ? 'TRẠNG THÁI' : 'STATUS'}</th>
+                <th className="py-3 px-5 text-right font-bold text-white whitespace-nowrap">{language === 'vi' ? 'HÀNH ĐỘNG' : 'ACTIONS'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredAccounts.map((account) => {
                 const isPasswordRevealed = revealedPasswords[account.id] || false
+                const memberObj = members.find((m) => (account.studentId && (m.student_id === account.studentId || m.member_code === account.studentId)) || m.full_name === account.fullName || m.email === account.email)
+                const avatarUrl = account.avatarUrl || getMemberAvatarUrl(memberObj || { full_name: account.fullName, email: account.email, member_code: account.studentId })
+
                 return (
                   <tr
                     key={account.id}
                     className="hover:bg-slate-50/70 transition-colors group"
                   >
-                    {/* Cột 1: Tên & Email */}
+                    {/* Cột 1: Avatar + Tên & Email */}
                     <td className="py-3.5 px-5">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-extrabold text-slate-900 text-[13px]">
-                            {account.fullName}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/70">
-                            {account.roleTitle}
-                          </span>
-                          {account.isFixed && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                              Cố định
-                            </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/80 font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs overflow-hidden">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt={account.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{account.fullName.charAt(0)}</span>
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-400 font-mono">
-                          {account.email}
-                        </p>
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-extrabold text-[#061651] text-[13px]">
+                              {account.fullName}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200/70">
+                              {account.roleTitle}
+                            </span>
+                            {account.isFixed && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                                {language === 'vi' ? 'Cố định' : 'Fixed'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            {account.email}
+                          </p>
+                        </div>
                       </div>
                     </td>
 
-                    {/* Cột 2: Ban phân công (Không có icon trước tên Ban) */}
+                    {/* Cột 2: Ban phân công */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs border ${getDeptBadgeStyle(
@@ -472,8 +537,8 @@ export function AccountsView() {
                         <button
                           type="button"
                           onClick={() => togglePasswordReveal(account.id)}
-                          className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-md hover:bg-slate-100"
-                          title={isPasswordRevealed ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                          className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-md hover:bg-slate-100 transition-colors"
+                          title={isPasswordRevealed ? (language === 'vi' ? 'Ẩn mật khẩu' : 'Hide password') : (language === 'vi' ? 'Hiển thị mật khẩu' : 'Show password')}
                         >
                           {isPasswordRevealed ? (
                             <EyeOff className="w-3.5 h-3.5" />
@@ -484,8 +549,8 @@ export function AccountsView() {
                         <button
                           type="button"
                           onClick={() => handleCopyText(account.passwordPlain, `pass-${account.id}`)}
-                          className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-md hover:bg-slate-100"
-                          title="Sao chép mật khẩu"
+                          className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-md hover:bg-slate-100 transition-colors"
+                          title={language === 'vi' ? 'Sao chép mật khẩu' : 'Copy password'}
                         >
                           {copiedId === `pass-${account.id}` ? (
                             <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -501,12 +566,12 @@ export function AccountsView() {
                       {account.status === 'active' ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span>Hoạt động</span>
+                          <span>{language === 'vi' ? 'Hoạt động' : 'Active'}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/80">
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          <span>Tạm khóa</span>
+                          <span>{language === 'vi' ? 'Tạm khóa' : 'Suspended'}</span>
                         </span>
                       )}
                     </td>
@@ -515,8 +580,8 @@ export function AccountsView() {
                     <td className="py-3.5 px-5 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
                         {account.isFixed ? (
-                          <span className="text-[11px] text-slate-400 font-semibold px-2 py-1 bg-slate-100 rounded-lg">
-                            Khóa bảo vệ BCN
+                          <span className="text-[11px] text-slate-400 font-semibold px-2.5 py-1 bg-slate-50 border border-slate-200/70 rounded-lg">
+                            {language === 'vi' ? 'Khóa bảo vệ BCN' : 'Protected BCN'}
                           </span>
                         ) : canManageAccounts ? (
                           <>
@@ -529,26 +594,21 @@ export function AccountsView() {
                                 setEditStatus(account.status)
                                 setEditFeedback(null)
                               }}
-                              className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900 font-bold text-xs transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                              className="px-3 py-1.5 rounded-xl border border-slate-200/90 hover:border-slate-300 bg-white hover:bg-slate-50 text-[#061651] font-bold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
                             >
-                              <Edit3 className="w-3.5 h-3.5 text-amber-700" />
-                              <span>Sửa thông tin</span>
+                              <Edit3 className="w-3.5 h-3.5 text-[#0284C7]" />
+                              <span>{language === 'vi' ? 'Sửa thông tin' : 'Edit'}</span>
                             </button>
-
                             <button
                               type="button"
                               onClick={() => handleDelete(account.id, account.fullName)}
                               className="p-1.5 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                              title="Xóa tài khoản"
+                              title={language === 'vi' ? 'Xóa tài khoản' : 'Delete account'}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </>
-                        ) : (
-                          <span className="text-[11px] text-slate-400 font-medium px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
-                            Chỉ BCN quản lý
-                          </span>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -567,13 +627,15 @@ export function AccountsView() {
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 border border-slate-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shadow-2xs">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center font-bold shadow-2xs border border-sky-200/70">
                   <Plus className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-[#0B1E48]">Cấp Tài Khoản Cán Bộ Mới</h3>
+                  <h3 className="text-base font-extrabold text-[#061651]">
+                    {language === 'vi' ? 'Cấp Tài Khoản Cán Bộ Mới' : 'Issue New Staff Account'}
+                  </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Tài khoản được cấp có thể đăng nhập ngay trên trang /login
+                    {language === 'vi' ? 'Tài khoản được cấp có thể đăng nhập ngay trên hệ thống' : 'Account will be able to log in immediately'}
                   </p>
                 </div>
               </div>
@@ -607,14 +669,14 @@ export function AccountsView() {
               {/* Chọn từ 48 thành viên CLB */}
               <div className="space-y-1">
                 <label className="block font-bold text-slate-700">
-                  Chọn thành viên CLB để tự điền nhanh thông tin:
+                  {language === 'vi' ? 'Chọn thành viên CLB để tự điền nhanh thông tin:' : 'Select club member for quick autofill:'}
                 </label>
                 <select
                   value={selectedMemberCode}
                   onChange={(e) => handleSelectMemberForAccount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] shadow-2xs cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-[#0284C7] shadow-2xs cursor-pointer"
                 >
-                  <option value="">-- Hoặc nhập thủ công bên dưới --</option>
+                  <option value="">{language === 'vi' ? '-- Hoặc nhập thủ công bên dưới --' : '-- Or enter manually below --'}</option>
                   {members.map((m) => (
                     <option key={m.member_code} value={m.member_code}>
                       {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
@@ -626,7 +688,7 @@ export function AccountsView() {
               {/* Họ tên */}
               <div className="space-y-1">
                 <label className="block font-bold text-slate-700">
-                  Họ và tên cán bộ: <span className="text-rose-500">*</span>
+                  {language === 'vi' ? 'Họ và tên cán bộ:' : 'Staff Full Name:'} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -634,14 +696,14 @@ export function AccountsView() {
                   placeholder="Ví dụ: Nguyễn Văn A"
                   value={newFullName}
                   onChange={(e) => setNewFullName(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs"
                 />
               </div>
 
               {/* Email đăng nhập */}
               <div className="space-y-1">
                 <label className="block font-bold text-slate-700">
-                  Email đăng nhập VNU / VNU-IS: <span className="text-rose-500">*</span>
+                  {language === 'vi' ? 'Email đăng nhập VNU / VNU-IS:' : 'Login Email:'} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -649,62 +711,62 @@ export function AccountsView() {
                   placeholder="Ví dụ: 24070622@vnu.edu.vn"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs"
                 />
               </div>
 
               {/* MSSV */}
               <div className="space-y-1">
-                <label className="block font-bold text-slate-700">Mã số sinh viên (MSSV):</label>
+                <label className="block font-bold text-slate-700">{language === 'vi' ? 'Mã số sinh viên (MSSV):' : 'Student ID:'}</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: 24070622"
                   value={newStudentId}
                   onChange={(e) => setNewStudentId(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs"
                 />
               </div>
 
               {/* Ban phân công & Quyền hạn */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="block font-bold text-slate-700">Ban được phân công:</label>
+                  <label className="block font-bold text-slate-700">{language === 'vi' ? 'Ban được phân công:' : 'Assigned Department:'}</label>
                   <select
                     value={newDeptCode}
                     onChange={(e) => setNewDeptCode(e.target.value as DepartmentCode)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs"
                   >
-                    <option value="B04">Ban Chủ nhiệm</option>
-                    <option value="B01">Ban Truyền thông</option>
-                    <option value="B02">Ban Tư vấn</option>
-                    <option value="B03">Ban Nhân sự</option>
+                    <option value="B04">{language === 'vi' ? 'Ban Chủ nhiệm' : 'Executive Board'}</option>
+                    <option value="B01">{language === 'vi' ? 'Ban Truyền thông' : 'Communications Dept'}</option>
+                    <option value="B02">{language === 'vi' ? 'Ban Tư vấn' : 'Advisory Dept'}</option>
+                    <option value="B03">{language === 'vi' ? 'Ban Nhân sự' : 'HR Dept'}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block font-bold text-slate-700">Phân quyền vai trò:</label>
+                  <label className="block font-bold text-slate-700">{language === 'vi' ? 'Phân quyền vai trò:' : 'Role Permission:'}</label>
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs"
                   >
-                    <option value="member">Thành viên</option>
-                    <option value="dept_head">Trưởng / Phó Ban</option>
-                    <option value="hr">Ban Nhân sự (HR)</option>
-                    <option value="bcn">Ban Chủ nhiệm (BCN)</option>
+                    <option value="member">{language === 'vi' ? 'Thành viên' : 'Member'}</option>
+                    <option value="dept_head">{language === 'vi' ? 'Trưởng / Phó Ban' : 'Dept Head / Vice'}</option>
+                    <option value="hr">{language === 'vi' ? 'Ban Nhân sự (HR)' : 'HR Board'}</option>
+                    <option value="bcn">{language === 'vi' ? 'Ban Chủ nhiệm (BCN)' : 'Executive Board'}</option>
                   </select>
                 </div>
               </div>
 
               {/* Chức danh hiển thị */}
               <div className="space-y-1">
-                <label className="block font-bold text-slate-700">Chức vụ / Chức danh cụ thể:</label>
+                <label className="block font-bold text-slate-700">{language === 'vi' ? 'Chức vụ / Chức danh cụ thể:' : 'Specific Title:'}</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Phó ban Tư vấn"
                   value={newRoleTitle}
                   onChange={(e) => setNewRoleTitle(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs"
                 />
               </div>
 
@@ -712,14 +774,14 @@ export function AccountsView() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="block font-bold text-slate-700">
-                    Mật khẩu khởi tạo: <span className="text-rose-500">*</span>
+                    {language === 'vi' ? 'Mật khẩu khởi tạo:' : 'Initial Password:'} <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={handleGenerateRandomPassword}
-                    className="text-[11px] font-bold text-[#1351D8] hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-[#0284C7] hover:underline cursor-pointer"
                   >
-                    Tạo ngẫu nhiên
+                    {language === 'vi' ? 'Tạo ngẫu nhiên' : 'Randomize'}
                   </button>
                 </div>
                 <div className="relative">
@@ -728,11 +790,11 @@ export function AccountsView() {
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#0284C7] shadow-2xs"
                   />
                 </div>
                 <span className="block text-[10.5px] text-slate-400">
-                  Mật khẩu này sẽ dùng để đăng nhập tại <code>/login</code>.
+                  {language === 'vi' ? 'Mật khẩu này sẽ dùng để đăng nhập hệ thống.' : 'This password will be used to sign in.'}
                 </span>
               </div>
 
@@ -742,14 +804,14 @@ export function AccountsView() {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                 >
-                  Hủy bỏ
+                  {language === 'vi' ? 'Hủy bỏ' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-xs transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#0284C7] hover:bg-[#0369A1] shadow-xs transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Xác Nhận Cấp Tài Khoản</span>
+                  <span>{language === 'vi' ? 'Xác Nhận Cấp Tài Khoản' : 'Confirm Issue'}</span>
                 </button>
               </div>
             </form>
@@ -764,9 +826,11 @@ export function AccountsView() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2 text-[#0B1E48]">
-                <Edit3 className="w-5 h-5 text-amber-600" />
-                <h3 className="text-base font-black">Sửa Thông Tin Tài Khoản</h3>
+              <div className="flex items-center gap-2 text-[#061651]">
+                <Edit3 className="w-5 h-5 text-[#0284C7]" />
+                <h3 className="text-base font-extrabold">
+                  {language === 'vi' ? 'Sửa Thông Tin Tài Khoản' : 'Edit Account Info'}
+                </h3>
               </div>
               <button
                 type="button"
@@ -792,41 +856,49 @@ export function AccountsView() {
 
             <form onSubmit={handleEditSubmit} className="space-y-3.5 text-xs">
               <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Cán bộ</span>
-                <p className="font-bold text-slate-900 text-sm">{editingAccount.fullName}</p>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  {language === 'vi' ? 'Cán bộ' : 'Staff'}
+                </span>
+                <p className="font-bold text-[#061651] text-sm">{editingAccount.fullName}</p>
                 <p className="text-slate-500 font-mono text-[11px]">{editingAccount.email}</p>
               </div>
 
               <div className="space-y-1">
-                <label className="block font-bold text-slate-700">Chức danh / Vai trò:</label>
+                <label className="block font-bold text-slate-700">
+                  {language === 'vi' ? 'Chức danh / Vai trò:' : 'Role / Title:'}
+                </label>
                 <input
                   type="text"
                   value={editRoleTitle}
                   onChange={(e) => setEditRoleTitle(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8]"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block font-bold text-slate-700">Mật khẩu mới (bỏ trống nếu không đổi):</label>
+                <label className="block font-bold text-slate-700">
+                  {language === 'vi' ? 'Mật khẩu mới (bỏ trống nếu không đổi):' : 'New password (leave blank to keep):'}
+                </label>
                 <input
                   type="text"
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder={language === 'vi' ? 'Nhập mật khẩu mới' : 'Enter new password'}
                   value={editPassword}
                   onChange={(e) => setEditPassword(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-[#1351D8]"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-[#0284C7]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block font-bold text-slate-700">Trạng thái tài khoản:</label>
+                <label className="block font-bold text-slate-700">
+                  {language === 'vi' ? 'Trạng thái tài khoản:' : 'Account Status:'}
+                </label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as 'active' | 'suspended')}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7]"
                 >
-                  <option value="active">🟢 Hoạt động bình thường</option>
-                  <option value="suspended">🔴 Tạm khóa (không cho phép đăng nhập)</option>
+                  <option value="active">{language === 'vi' ? '🟢 Hoạt động bình thường' : '🟢 Active'}</option>
+                  <option value="suspended">{language === 'vi' ? '🔴 Tạm khóa (không cho phép đăng nhập)' : '🔴 Suspended'}</option>
                 </select>
               </div>
 
@@ -836,14 +908,14 @@ export function AccountsView() {
                   onClick={() => setEditingAccount(null)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                 >
-                  Đóng
+                  {language === 'vi' ? 'Đóng' : 'Close'}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#1351D8] hover:bg-[#0B1E48] transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#0284C7] hover:bg-[#0369A1] transition shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>Lưu Thay Đổi</span>
+                  <span>{language === 'vi' ? 'Lưu Thay Đổi' : 'Save Changes'}</span>
                 </button>
               </div>
             </form>

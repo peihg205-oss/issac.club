@@ -1,8 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
+import { getMemberAvatarUrl } from '@/lib/clubData'
 import { ScoreModal } from '@/components/admin/ScoreModal'
 import {
   Download,
@@ -12,6 +14,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Crown,
   FileCheck,
   AlertCircle,
@@ -48,6 +51,7 @@ const INITIAL_HISTORY: Array<{
 }> = []
 
 export function HistoryView() {
+  const { language, t } = useLanguage()
   const { isBCN, isHR, currentUser } = useAuth()
   const {
     members,
@@ -59,6 +63,7 @@ export function HistoryView() {
     disputes,
     createDispute,
     resolveDisputeByBCN,
+    reviewDisputeByHR,
     periods,
     currentActivePeriodId,
     customRules,
@@ -103,6 +108,105 @@ export function HistoryView() {
   const [disputePoints, setDisputePoints] = useState(-5)
   const [disputeReason, setDisputeReason] = useState('')
   const [disputeEvidence, setDisputeEvidence] = useState('')
+
+  // State Ban Chủ nhiệm & Ban Nhân sự xét duyệt khiếu nại
+  const [verdictModalOpen, setVerdictModalOpen] = useState(false)
+  const [selectedDispute, setSelectedDispute] = useState<any>(null)
+  const [isApproveVerdict, setIsApproveVerdict] = useState(true)
+  const [verdictText, setVerdictText] = useState('')
+  const [verdictActionLoading, setVerdictActionLoading] = useState(false)
+
+  const [hrReviewModalOpen, setHrReviewModalOpen] = useState(false)
+  const [hrNoteText, setHrNoteText] = useState('')
+
+  const openBcnVerdictModal = (disp: any, approve: boolean) => {
+    setSelectedDispute(disp)
+    setIsApproveVerdict(approve)
+    setVerdictText(
+      approve
+        ? 'Hồ sơ khiếu nại hợp lệ. Ban Chủ nhiệm đồng ý chấp thuận và hoàn trả lại số điểm đã trừ.'
+        : 'Bác khiếu nại do minh chứng chưa đầy đủ hoặc không thỏa mãn quy định.'
+    )
+    setVerdictModalOpen(true)
+  }
+
+  const handleConfirmBcnVerdict = () => {
+    if (!selectedDispute) return
+    setVerdictActionLoading(true)
+    resolveDisputeByBCN(
+      selectedDispute.id,
+      isApproveVerdict,
+      verdictText.trim() || (isApproveVerdict ? 'Chấp thuận khiếu nại' : 'Bác khiếu nại')
+    )
+    setVerdictActionLoading(false)
+    setVerdictModalOpen(false)
+    setSelectedDispute(null)
+  }
+
+  const handleOpenHrReview = (disp: any) => {
+    setSelectedDispute(disp)
+    setHrNoteText('Đã kiểm tra sơ bộ minh chứng hợp lệ, chuyển Ban Chủ nhiệm xem xét phán quyết.')
+    setHrReviewModalOpen(true)
+  }
+
+  const handleConfirmHrReview = () => {
+    if (!selectedDispute) return
+    reviewDisputeByHR(selectedDispute.id, hrNoteText.trim())
+    setHrReviewModalOpen(false)
+    setSelectedDispute(null)
+  }
+
+  // Helper avatar đồng bộ với MembersView & StatsView
+  const getMemberAvatar = (name: string, memberCode?: string) => {
+    const found = members.find((m) => m.full_name === name || (memberCode && m.member_code === memberCode))
+    return getMemberAvatarUrl(found || { full_name: name, member_code: memberCode })
+  }
+
+  // Helper dịch phòng ban sang tiếng Anh
+  const translateDept = (deptName?: string) => {
+    if (!deptName || language === 'vi') return deptName || ''
+    if (deptName.includes('Tư vấn')) return 'Advisory Dept'
+    if (deptName.includes('Truyền thông')) return 'Communications Dept'
+    if (deptName.includes('Nhân sự')) return 'HR Dept'
+    if (deptName.includes('Chủ nhiệm') || deptName.includes('BCN')) return 'Executive Board'
+    return deptName
+  }
+
+  // Mascot Chibi tương tác & danh ngôn động viên iSSAC
+  const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
+  const [mascotMessageIdx, setMascotMessageIdx] = useState<number>(0)
+  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
+  const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const historyMascotQuotesVi = [
+    'Chào iSSACer! Cùng theo dõi sổ điểm nhé!',
+    'Mọi cống hiến đều được ghi nhận công bằng!',
+    'Minh bạch - Kịp thời - Chuẩn mực!',
+    'Khiếu nại Q06 được xử lý nhanh chóng!',
+    'Năng động - Sáng tạo - Dẫn đầu!',
+    'Tự hào VNU-IS Ambassadors!',
+  ]
+
+  const historyMascotQuotesEn = [
+    'Hello iSSACer! Tracking emulation ledger!',
+    'Every contribution is fairly recognized!',
+    'Transparent - Prompt - Standardized!',
+    'Q06 appeals are resolved quickly!',
+    'Dynamic - Creative - Leading!',
+    'Proud VNU-IS Ambassadors!',
+  ]
+
+  const handleMascotClick = () => {
+    setIsMascotCheering(true)
+    setShowMascotBubble(true)
+    setMascotMessageIdx((prev) => (prev + 1) % historyMascotQuotesVi.length)
+    setTimeout(() => setIsMascotCheering(false), 850)
+
+    if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
+    bubbleTimeoutRef.current = setTimeout(() => {
+      setShowMascotBubble(false)
+    }, 2800)
+  }
 
   const pendingList = proposals.filter((p) => p.status === 'pending_bcn')
   const pendingDisputesCount = disputes.filter((d) => d.status === 'pending_bcn' || d.status === 'pending_hr_review').length
@@ -266,20 +370,48 @@ export function HistoryView() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header trang chuẩn nhận diện dự án CLB */}
+      {/* 1. Header trang chuẩn nhận diện dự án CLB (Ảnh 2) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
-              Lịch Sử &amp; Khiếu Nại Điểm
+        <div className="flex items-center gap-3.5 sm:gap-4.5">
+          <div>
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight whitespace-nowrap">
+              {t('history.title')}
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#0B1E48]/5 text-[#1351D8] border border-blue-200/80 whitespace-nowrap shrink-0">
-              Quy chế Q06
-            </span>
+            <p className="text-xs sm:text-[13px] text-[#64748B] mt-1 font-normal">
+              {t('history.subtitle')}
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Sổ cái ghi nhận điểm thi đua, tiếp nhận &amp; xử lý hồ sơ khiếu nại của các thành viên CLB
-          </p>
+
+          {/* Mascot Chibi - Cách 1 khoảng thoáng và căn giữa cân đối theo cả 2 dòng chữ */}
+          <div
+            onClick={handleMascotClick}
+            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+            title={t('history.mascot_tooltip')}
+          >
+            <img
+              src="/history-mascot.png"
+              alt="iSSAC Chibi Mascot"
+              className={`w-11 h-14 sm:w-12 sm:h-15 object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
+                isMascotCheering
+                  ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(0,132,200,0.4)]'
+                  : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+              }`}
+            />
+
+            {/* Bubble tooltip nằm bên cạnh mascot */}
+            <div
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
+                isMascotCheering || showMascotBubble
+                  ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
+                  : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+              }`}
+            >
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-b border-white/25" />
+              <span className="relative z-10 select-none tracking-tight">
+                {language === 'vi' ? historyMascotQuotesVi[mascotMessageIdx] : historyMascotQuotesEn[mascotMessageIdx]}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Primary Action Buttons */}
@@ -288,10 +420,10 @@ export function HistoryView() {
           <button
             type="button"
             onClick={() => setDisputeModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 shadow-2xs transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#FAF5FF] text-[#9333EA] border border-purple-200 hover:bg-purple-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
           >
-            <AlertCircle className="w-4 h-4 text-purple-600 shrink-0" />
-            <span>Gửi khiếu nại (Q06)</span>
+            <AlertCircle className="w-4 h-4 text-[#9333EA] shrink-0" />
+            <span>{t('history.btn_dispute')}</span>
           </button>
 
           {/* Score proposal action button */}
@@ -299,10 +431,10 @@ export function HistoryView() {
             <button
               type="button"
               onClick={() => setScoreModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white shadow-sm shadow-[#1351D8]/25 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-xs shadow-sky-600/30 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
             >
               <PlusCircle className="w-4 h-4 shrink-0" />
-              <span>{isBCN ? 'Chấm / Duyệt điểm' : 'Đề xuất điểm (HR)'}</span>
+              <span>{isBCN ? t('history.btn_score') : t('history.btn_propose')}</span>
             </button>
           )}
 
@@ -310,12 +442,109 @@ export function HistoryView() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-2xs transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-2xs transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
             title="Xuất dữ liệu lịch sử ra file CSV"
           >
             <Download className="w-4 h-4 text-slate-500 shrink-0" />
-            <span>Xuất file (.CSV)</span>
+            <span>{t('history.btn_export')}</span>
           </button>
+        </div>
+      </div>
+
+      {/* 2. Bốn Thẻ Chỉ Số KPI Sổ Điểm Chuẩn Style Ảnh 2 (Pastel Nhạt, Bo góc rounded-xl, Đổ bóng nổi rõ khối box) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: Tổng số bản ghi (Sky Pastel #F0F9FF) */}
+        <div
+          onClick={() => setActiveTab('all')}
+          className={`p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+            activeTab === 'all' ? 'ring-2 ring-[#0284C7]' : ''
+          }`}
+        >
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('history.kpi_total')}
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#0284C7] block tracking-tight leading-none py-0.5">
+              {combinedHistory.length}
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#0284C7] block hover:underline">
+              {t('history.kpi_total_desc')}
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 bg-white/60 flex items-center justify-center text-[#0284C7] shrink-0">
+            <Layers className="w-4.5 h-4.5 stroke-[1.75]" />
+          </div>
+        </div>
+
+        {/* Card 2: Lượt cộng điểm (Emerald Pastel #F0FDF4) */}
+        <div
+          onClick={() => setActiveTab('add')}
+          className={`p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+            activeTab === 'add' ? 'ring-2 ring-[#16A34A]' : ''
+          }`}
+        >
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('history.kpi_bonus')}
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] block tracking-tight leading-none py-0.5">
+              {countAdd}
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#16A34A] block hover:underline">
+              {t('history.kpi_bonus_desc')}
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 flex items-center justify-center text-[#16A34A] shrink-0">
+            <TrendingUp className="w-4.5 h-4.5 stroke-[1.75]" />
+          </div>
+        </div>
+
+        {/* Card 3: Lượt trừ điểm (Amber Pastel #FFFBEB) */}
+        <div
+          onClick={() => setActiveTab('deduct')}
+          className={`p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+            activeTab === 'deduct' ? 'ring-2 ring-[#D97706]' : ''
+          }`}
+        >
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('history.kpi_penalty')}
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#D97706] block tracking-tight leading-none py-0.5">
+              {countDeduct}
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#D97706] block hover:underline">
+              {t('history.kpi_penalty_desc')}
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 bg-white/60 flex items-center justify-center text-[#D97706] shrink-0">
+            <TrendingDown className="w-4.5 h-4.5 stroke-[1.75]" />
+          </div>
+        </div>
+
+        {/* Card 4: Khiếu nại Q06 (Purple Pastel #FAF5FF) */}
+        <div
+          onClick={() => setActiveTab('disputes')}
+          className={`p-3.5 sm:p-4 rounded-xl bg-[#FAF5FF] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+            activeTab === 'disputes' ? 'ring-2 ring-[#9333EA]' : ''
+          }`}
+        >
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('history.kpi_disputes')}
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#9333EA] block tracking-tight leading-none py-0.5">
+              {disputes.length}
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#9333EA] block hover:underline">
+              {pendingDisputesCount > 0
+                ? (language === 'vi' ? `${pendingDisputesCount} đơn cần xử lý` : `${pendingDisputesCount} pending review`)
+                : t('history.kpi_disputes_desc')}
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-purple-300/70 bg-white/60 flex items-center justify-center text-[#9333EA] shrink-0">
+            <MessageSquare className="w-4.5 h-4.5 stroke-[1.75]" />
+          </div>
         </div>
       </div>
 
@@ -434,128 +663,211 @@ export function HistoryView() {
         </div>
       )}
 
-      {/* Balanced Toolbar Box: Subtabs on the Left & Period Selectors on the Right */}
-      <div className="bg-white p-2.5 sm:p-3 rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-3 border border-slate-200/90 shadow-2xs overflow-x-auto">
-        {/* Subtabs: Tất cả | Điểm cộng | Điểm trừ | Khiếu nại Q06 */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/70 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('all')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'all'
-                ? 'bg-white text-[#1351D8] shadow-2xs border border-slate-200/60'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">Tất cả</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold leading-none ${
-              activeTab === 'all' ? 'bg-blue-100/80 text-[#1351D8]' : 'bg-slate-200/70 text-slate-600'
-            }`}>
-              {combinedHistory.length}
-            </span>
-          </button>
+      {/* KHỐI CONTAINER TRẮNG: Subtabs (Pills bo tròn) + Bộ điều khiển chu kỳ + Thanh tìm kiếm & Tiêu chí lọc (Khớp 100% Ảnh 1) */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-4 sm:p-5 space-y-3.5">
+        {/* Hàng 1: Subtabs (Dạng Pill bo tròn mềm mại) + Bộ điều khiển Kỳ & Tháng */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          {/* Subtabs dạng Pill độc lập chuẩn Ảnh 1 */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-full pb-1 sm:pb-0">
+            {[
+              {
+                id: 'all' as const,
+                label: t('history.tab_all'),
+                count: combinedHistory.length,
+                icon: Layers,
+              },
+              {
+                id: 'add' as const,
+                label: t('history.tab_add'),
+                count: countAdd,
+                icon: TrendingUp,
+              },
+              {
+                id: 'deduct' as const,
+                label: t('history.tab_deduct'),
+                count: countDeduct,
+                icon: TrendingDown,
+              },
+              {
+                id: 'disputes' as const,
+                label: t('history.tab_disputes'),
+                count: pendingDisputesCount > 0 ? pendingDisputesCount : disputes.length,
+                icon: MessageSquare,
+                isAlert: pendingDisputesCount > 0,
+              },
+            ].map((tab) => {
+              const isSelected = activeTab === tab.id
+              const TabIcon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.id)
+                    setCurrentPage(1)
+                  }}
+                  className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#0284C7] text-white font-bold shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium'
+                  }`}
+                >
+                  <TabIcon className="w-3.5 h-3.5 shrink-0" />
+                  <span>{tab.label}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : tab.isAlert
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-slate-200/90 text-slate-700'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('add')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'add'
-                ? 'bg-white text-emerald-700 shadow-2xs border border-emerald-200/60'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span className="whitespace-nowrap">Điểm cộng</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold leading-none ${
-              activeTab === 'add' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200/70 text-slate-600'
-            }`}>
-              {countAdd}
-            </span>
-          </button>
+          {/* Period & Month Controls */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+            {/* Semester selector */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)}
+                className="appearance-none pl-3.5 pr-8 py-1.5 bg-white hover:bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                <option value="ky1_2026_2027">
+                  {language === 'vi' ? 'Kỳ 1 năm học 2026 - 2027' : 'Semester 1 AY 2026 - 2027'}
+                </option>
+                <option value="ky2_2025_2026">
+                  {language === 'vi' ? 'Kỳ 2 năm học 2025 - 2026' : 'Semester 2 AY 2025 - 2026'}
+                </option>
+                <option value="ky1_2025_2026">
+                  {language === 'vi' ? 'Kỳ 1 năm học 2025 - 2026' : 'Semester 1 AY 2025 - 2026'}
+                </option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('deduct')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'deduct'
-                ? 'bg-white text-rose-700 shadow-2xs border border-rose-200/60'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <TrendingDown className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-            <span className="whitespace-nowrap">Điểm trừ</span>
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold leading-none ${
-              activeTab === 'deduct' ? 'bg-rose-100 text-rose-700' : 'bg-slate-200/70 text-slate-600'
-            }`}>
-              {countDeduct}
-            </span>
-          </button>
+            {/* Month selector using periods - Clean name without redundant text */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedPeriodId}
+                onChange={(e) => setSelectedPeriodId(e.target.value)}
+                className="appearance-none pl-3.5 pr-8 py-1.5 bg-white hover:bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer whitespace-nowrap"
+              >
+                {monthPeriods.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {language === 'en'
+                      ? p.name.replace('Tháng ', 'Month ').replace('Năm ', 'Year ')
+                      : p.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('disputes')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'disputes'
-                ? 'bg-white text-purple-700 shadow-2xs border border-purple-200/60'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">Khiếu nại Q06</span>
-            {pendingDisputesCount > 0 ? (
-              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-black flex items-center justify-center shadow-2xs shrink-0">
-                {pendingDisputesCount}
+            {/* Status Badge */}
+            {selectedPeriodObj?.status === 'locked' ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/90 shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                <span>{t('history.status_locked')}</span>
               </span>
             ) : (
-              <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold leading-none ${
-                activeTab === 'disputes' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200/70 text-slate-600'
-              }`}>
-                {disputes.length}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span>{t('history.status_open')}</span>
               </span>
             )}
-          </button>
+          </div>
         </div>
 
-        {/* Period & Month Controls */}
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
-          {/* Semester selector */}
-          <select
-            value={selectedSemester}
-            onChange={(e) => setSelectedSemester(e.target.value)}
-            className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <option value="ky1_2026_2027">Kỳ 1 năm học 2026–2027</option>
-            <option value="ky2_2025_2026">Kỳ 2 năm học 2025–2026</option>
-            <option value="ky1_2025_2026">Kỳ 1 năm học 2025–2026</option>
-          </select>
+        {/* Hàng 2: Thanh tìm kiếm (Bo tròn dài rounded-full) & Chip tiêu chí lọc ban (Chuẩn 100% Ảnh 1) */}
+        {activeTab !== 'disputes' && (
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-0.5">
+            {/* Search Input (rounded-full) */}
+            <div className="relative flex-1 sm:max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder={t('history.search_placeholder')}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="w-full pl-9.5 pr-8 py-2 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
-          {/* Month selector using periods - Clean name without redundant text */}
-          <select
-            value={selectedPeriodId}
-            onChange={(e) => setSelectedPeriodId(e.target.value)}
-            className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap shrink-0"
-          >
-            {monthPeriods.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            {/* Chip filter theo Ban & Dropdown Số bản ghi/trang */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 text-xs flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-500 font-bold text-[11px] whitespace-nowrap flex items-center gap-1 pr-1">
+                  <Filter className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{language === 'vi' ? 'Tiêu chí:' : 'Criteria:'}</span>
+                </span>
+                {[
+                  { id: 'ALL', label: language === 'vi' ? 'Tất cả' : 'All' },
+                  { id: 'Ban Chủ nhiệm', label: language === 'vi' ? 'Ban Chủ nhiệm' : 'Exec Board' },
+                  { id: 'Ban Truyền thông', label: language === 'vi' ? 'Truyền thông' : 'Communications' },
+                  { id: 'Ban Tư vấn', label: language === 'vi' ? 'Tư vấn' : 'Advisory' },
+                  { id: 'Ban Nhân sự', label: language === 'vi' ? 'Nhân sự' : 'HR' },
+                ].map((chip) => {
+                  const isSelected = deptFilter === chip.id
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => {
+                        setDeptFilter(chip.id)
+                        setCurrentPage(1)
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                        isSelected
+                          ? 'bg-[#0284C7] text-white font-bold'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-medium'
+                      }`}
+                    >
+                      <span>{chip.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
 
-          {/* Status Badge - Crisp SVG dot indicator, always beside the month selector */}
-          {selectedPeriodObj?.status === 'locked' ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/90 shadow-2xs whitespace-nowrap shrink-0">
-              <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-              <span>Đã khóa sổ</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs whitespace-nowrap shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span>Đang mở chấm điểm</span>
-            </span>
-          )}
-        </div>
+              {/* Page size dropdown */}
+              <div className="relative shrink-0 ml-1">
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className="appearance-none pl-3 pr-7 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] transition shadow-2xs cursor-pointer whitespace-nowrap"
+                >
+                  <option value={10}>10 {t('history.records_per_page')}</option>
+                  <option value={15}>15 {t('history.records_per_page')}</option>
+                  <option value={25}>25 {t('history.records_per_page')}</option>
+                  <option value={50}>50 {t('history.records_per_page')}</option>
+                  <option value={0}>{t('history.all_records')} ({filteredHistory.length})</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* View Tab 4: Khiếu nại Q06 */}
@@ -576,7 +888,7 @@ export function HistoryView() {
               </div>
             </div>
             <p className="text-xs text-purple-900/85 leading-relaxed pl-10.5">
-              Thành viên có quyền khiếu nại điểm trong vòng 7 ngày kể từ khi có biến động điểm. Ban Nhân sự tiến hành thẩm định sơ bộ, sau đó Ban Chủ nhiệm ra phán quyết cuối cùng (Hoàn trả điểm hoặc Bác khiếu nại).
+              Thành viên có quyền khiếu nại điểm trong vòng 7 ngày kể từ khi có biến động điểm. Ban Nhân sự thẩm định sơ bộ hoặc Ban Chủ nhiệm có toàn quyền trực tiếp kiểm tra và ra phán quyết cuối cùng (Hoàn trả điểm hoặc Bác khiếu nại).
             </p>
           </div>
 
@@ -654,34 +966,46 @@ export function HistoryView() {
                   )}
                 </div>
 
-                {/* BCN Action Buttons */}
-                {isBCN && disp.status === 'pending_bcn' && (
-                  <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+                {/* Quyền Ban Chủ nhiệm: Trực tiếp thẩm định & ra quyết định ngay ở mọi giai đoạn */}
+                {isBCN && (disp.status === 'pending_bcn' || disp.status === 'pending_hr_review') && (
+                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200/70 inline-flex items-center gap-1.5 w-fit">
+                      <Crown className="w-3.5 h-3.5 text-amber-500" />
+                      Quyền Ban Chủ nhiệm: Trực tiếp kiểm tra &amp; ra quyết định
+                    </span>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => openBcnVerdictModal(disp, false)}
+                        className="px-3.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-xl transition shadow-2xs cursor-pointer active:scale-95"
+                      >
+                        Bác khiếu nại
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openBcnVerdictModal(disp, true)}
+                        className="px-4 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-xs shadow-emerald-600/30 transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Chấp thuận &amp; Hoàn điểm</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ban Nhân sự thẩm định sơ bộ khi BCN chưa trực tiếp duyệt */}
+                {isHR && !isBCN && disp.status === 'pending_hr_review' && (
+                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <span className="text-xs text-slate-500 font-medium">
+                      Ban Nhân sự thẩm định hồ sơ trước khi chuyển Ban Chủ nhiệm phê duyệt.
+                    </span>
                     <button
                       type="button"
-                      onClick={() =>
-                        resolveDisputeByBCN(
-                          disp.id,
-                          false,
-                          'Bác khiếu nại do minh chứng chưa đầy đủ hoặc vượt quá thời hạn 7 ngày quy định'
-                        )
-                      }
-                      className="px-3.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 rounded-xl transition shadow-2xs cursor-pointer"
+                      onClick={() => handleOpenHrReview(disp)}
+                      className="px-3.5 py-1.5 text-xs font-bold text-[#0284C7] bg-sky-50 hover:bg-sky-100 border border-sky-200/80 rounded-xl transition shadow-2xs cursor-pointer active:scale-95"
                     >
-                      Bác khiếu nại
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        resolveDisputeByBCN(
-                          disp.id,
-                          true,
-                          'Hồ sơ hợp lệ, hoàn trả lại số điểm đã trừ và cập nhật hồ sơ'
-                        )
-                      }
-                      className="px-4 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-2xs shadow-emerald-600/20 transition cursor-pointer"
-                    >
-                      Chấp thuận khiếu nại (Hoàn điểm)
+                      Thẩm định &amp; Chuyển BCN
                     </button>
                   </div>
                 )}
@@ -691,158 +1015,146 @@ export function HistoryView() {
         </div>
       ) : (
         <>
-          {/* 3. Toolbar Tìm Kiếm & Lọc Ban & Số bản ghi/trang */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm theo tên thành viên, MSSV, mã tiêu chí, người chấm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9.5 pr-8 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
-                >
-                  <XCircle className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <select
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-                className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200/90 bg-white text-slate-700 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap"
-              >
-                <option value="ALL">Tất cả các ban</option>
-                <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
-                <option value="Ban Truyền thông">Ban Truyền thông</option>
-                <option value="Ban Tư vấn">Ban Tư vấn</option>
-                <option value="Ban Nhân sự">Ban Nhân sự</option>
-              </select>
-
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200/90 bg-white text-slate-700 focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer whitespace-nowrap"
-              >
-                <option value={10}>10 bản ghi/trang</option>
-                <option value={15}>15 bản ghi/trang</option>
-                <option value={25}>25 bản ghi/trang</option>
-                <option value={50}>50 bản ghi/trang</option>
-                <option value={0}>Tất cả ({filteredHistory.length})</option>
-              </select>
-            </div>
-          </div>
-
           {/* Mobile Card List for phones (< md) */}
           <div className="block md:hidden space-y-3">
             {paginatedHistory.length === 0 ? (
               <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center text-slate-400">
-                <p className="font-semibold text-xs">Không có dữ liệu lịch sử điểm</p>
+                <p className="font-semibold text-xs">{t('history.no_data')}</p>
               </div>
             ) : (
-              paginatedHistory.map((item, index) => (
-                <div
-                  key={item.id || index}
-                  className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1351D8] border border-blue-200/80 font-bold flex items-center justify-center text-xs shrink-0">
-                        {item.name.charAt(0)}
+              paginatedHistory.map((item, index) => {
+                const avatar = getMemberAvatar(item.name, item.memberCode)
+                return (
+                  <div
+                    key={item.id || index}
+                    className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {avatar ? (
+                          <img
+                            src={avatar}
+                            alt={item.name}
+                            className="w-8 h-8 rounded-full object-cover border border-sky-200/80 shrink-0 shadow-2xs"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/80 font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                            {item.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <span className="font-bold text-[#061651] text-xs sm:text-sm block truncate">
+                            {item.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block truncate">
+                            {translateDept(item.dept)} • {item.time}
+                          </span>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <span className="font-bold text-slate-900 text-xs sm:text-sm block truncate">
-                          {item.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium block truncate">
-                          {item.dept} • {item.time}
+
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
+                            item.points > 0
+                              ? 'bg-[#F0FDF4] text-[#16A34A] border-emerald-200'
+                              : item.points < 0
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {item.points > 0 ? `+${item.points}` : item.points}đ
                         </span>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
+                    <div className="p-2 bg-slate-50/70 rounded-xl border border-slate-200/60 text-xs text-slate-700 flex items-start gap-1.5">
+                      <span className="font-mono font-bold text-[10px] text-[#0284C7] bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200 shrink-0">
+                        {item.code}
+                      </span>
+                      <span className="leading-snug">{item.title}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                      <span>
+                        {t('history.th_scorer')}: <strong className="text-slate-700">{item.scorer}</strong>
+                      </span>
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
-                          item.points > 0
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : item.points < 0
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          item.points > 0 ? 'text-[#16A34A]' : item.points < 0 ? 'text-rose-700' : 'text-slate-600'
                         }`}
                       >
-                        {item.points > 0 ? `+${item.points}` : item.points}đ
+                        {item.type}
                       </span>
                     </div>
-                  </div>
 
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-200/60 text-xs text-slate-700 flex items-start gap-1.5">
-                    <span className="font-mono font-bold text-[10px] text-[#1351D8] bg-white px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
-                      {item.code}
-                    </span>
-                    <span className="leading-snug">{item.title}</span>
+                    {/* Quyền Sửa/Xóa của Ban Chủ nhiệm trên Mobile */}
+                    {isBCN && item.rawProposal && (
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(item.rawProposal)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-[#0284C7] bg-sky-50 hover:bg-sky-100 border border-sky-200/80 rounded-lg transition active:scale-95 cursor-pointer"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          <span>{t('history.edit_score')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDelete(item.rawProposal)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-lg transition active:scale-95 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>{t('history.delete_score')}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                    <span>
-                      Người chấm: <strong className="text-slate-700">{item.scorer}</strong>
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        item.points > 0 ? 'text-emerald-700' : item.points < 0 ? 'text-rose-700' : 'text-slate-600'
-                      }`}
-                    >
-                      {item.type}
-                    </span>
-                  </div>
-
-                  {/* Quyền Sửa/Xóa của Ban Chủ nhiệm trên Mobile */}
-                  {isBCN && item.rawProposal && (
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(item.rawProposal)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition active:scale-95 cursor-pointer"
-                      >
-                        <Pencil className="w-3 h-3" />
-                        <span>Sửa điểm</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDelete(item.rawProposal)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-lg transition active:scale-95 cursor-pointer"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span>Xóa</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))
+                )
+              })
             )}
           </div>
 
-          {/* Regular Table: Signature iSSAC Deep Navy Header (Desktop >= md) */}
+          {/* Regular Table: Signature iSSAC Blue Header (Desktop >= md) */}
           <div className="hidden md:block bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
             <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse">
-              <thead className="bg-[#0B1E48] text-xs font-bold text-white uppercase tracking-wider border-b border-[#071533] select-none">
-                <tr className="divide-x divide-white/10">
-                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-blue-100">Thời gian</th>
-                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-white min-w-[200px]">Thành viên</th>
-                  <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-blue-100 w-16">Mã</th>
-                  <th className="py-3 px-4 text-left font-bold text-white">Nội dung</th>
-                  <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-white w-20">Điểm</th>
-                  <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-blue-100 w-16">Loại</th>
-                  <th className="py-3 px-4 text-left whitespace-nowrap font-bold text-blue-100">Người chấm</th>
+            <table className="w-full text-left text-xs text-slate-700 border-collapse table-fixed min-w-[1020px]">
+              <colgroup>
+                <col className="w-[145px]" style={{ width: '145px' }} />
+                <col className="w-[220px]" style={{ width: '220px' }} />
+                <col className="w-[55px]" style={{ width: '55px' }} />
+                <col />
+                <col className="w-[60px]" style={{ width: '60px' }} />
+                <col className="w-[64px]" style={{ width: '64px' }} />
+                <col className="w-[155px]" style={{ width: '155px' }} />
+                {isBCN && <col className="w-[86px]" style={{ width: '86px' }} />}
+              </colgroup>
+              <thead className="bg-[#0284C7] text-xs font-bold text-white uppercase tracking-wider select-none shadow-xs">
+                <tr className="divide-x divide-white/15">
+                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-sky-100 w-[145px]">
+                    {t('history.th_time')}
+                  </th>
+                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-white w-[220px]">
+                    {t('history.th_member')}
+                  </th>
+                  <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-sky-100 w-[55px]">
+                    {t('history.th_code')}
+                  </th>
+                  <th className="py-3 px-4 text-left font-bold text-white min-w-[280px]">
+                    {t('history.th_content')}
+                  </th>
+                  <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-white w-[60px]">
+                    {t('history.th_points')}
+                  </th>
+                  <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-sky-100 w-[64px]">
+                    {t('history.th_type')}
+                  </th>
+                  <th className="py-3 px-3.5 text-left whitespace-nowrap font-bold text-sky-100 w-[155px]">
+                    {t('history.th_scorer')}
+                  </th>
                   {isBCN && (
-                    <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-amber-200 w-24">Thao tác</th>
+                    <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-amber-200 w-[86px]">
+                      {t('history.th_action')}
+                    </th>
                   )}
                 </tr>
               </thead>
@@ -850,106 +1162,124 @@ export function HistoryView() {
                 {paginatedHistory.length === 0 ? (
                   <tr>
                     <td colSpan={isBCN ? 8 : 7} className="py-10 text-center text-slate-400">
-                      <p className="font-semibold text-xs">Không tìm thấy bản ghi lịch sử điểm nào phù hợp</p>
+                      <p className="font-semibold text-xs">{t('history.no_data')}</p>
                     </td>
                   </tr>
                 ) : (
-                  paginatedHistory.map((item, index) => (
-                    <tr key={item.id || index} className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100">
-                      {/* Thời gian */}
-                      <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap text-xs">
-                        {item.time}
-                      </td>
+                  paginatedHistory.map((item, index) => {
+                    const avatar = getMemberAvatar(item.name, item.memberCode)
+                    return (
+                      <tr key={item.id || index} className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100">
+                        {/* Thời gian (Rộng rãi, có đệm thoáng, không bị sát viền) */}
+                        <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap text-xs">
+                          {item.time}
+                        </td>
 
-                      {/* Thành viên + avatar (whitespace-nowrap enforced) */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5 whitespace-nowrap">
-                          {item.name === 'Trần Đức Thắng' ? (
-                            <img
-                              src="/avatars/duc-thang.jpg"
-                              alt={item.name}
-                              className="w-8 h-8 rounded-full object-cover border border-slate-200 flex-shrink-0 shadow-2xs"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1351D8] border border-blue-200/80 font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs group-hover:bg-[#1351D8] group-hover:text-white transition-all">
-                              {item.name.charAt(0)}
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <span className="font-bold text-slate-900 group-hover:text-[#1351D8] transition-colors whitespace-nowrap block text-[13px]">
-                              {item.name}
-                            </span>
-                            {item.dept && (
-                              <span className="text-[10.5px] text-slate-400 font-medium block whitespace-nowrap">
-                                {item.dept}
-                              </span>
+                        {/* Thành viên + avatar (Đầy đủ họ tên, không bị cắt dấu ...) */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {avatar ? (
+                              <img
+                                src={avatar}
+                                alt={item.name}
+                                className="w-8 h-8 rounded-full object-cover border border-sky-200/80 shrink-0 shadow-2xs"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/80 font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs group-hover:bg-[#0284C7] group-hover:text-white transition-all">
+                                {item.name.charAt(0)}
+                              </div>
                             )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Mã tiêu chí */}
-                      <td className="py-3.5 px-3 text-center font-mono font-black text-xs text-[#1351D8]">
-                        {item.code}
-                      </td>
-
-                      {/* Nội dung */}
-                      <td className="py-3.5 px-4 text-slate-700 font-medium text-xs max-w-md leading-relaxed">
-                        {item.title}
-                      </td>
-
-                      {/* Điểm */}
-                      <td className="py-3.5 px-3 text-center">
-                        <span
-                          className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
-                            item.points > 0
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                              : item.points < 0
-                              ? 'bg-rose-50 text-rose-700 border-rose-200/80'
-                              : 'bg-slate-100 text-slate-700 border-slate-200/80'
-                          }`}
-                        >
-                          {item.points > 0 ? `+${item.points}` : item.points}
-                        </span>
-                      </td>
-
-                      {/* Loại */}
-                      <td className="py-3.5 px-3 text-center font-bold text-xs">
-                        <span className={item.points > 0 ? 'text-emerald-700' : item.points < 0 ? 'text-rose-700' : 'text-slate-600'}>
-                          {item.type}
-                        </span>
-                      </td>
-
-                      {/* Người chấm */}
-                      <td className="py-3.5 px-4 text-slate-600 font-semibold text-xs whitespace-nowrap">
-                        {item.scorer}
-                      </td>
-
-                      {/* Thao tác BCN (Sửa / Xóa bản ghi điểm nhầm) */}
-                      {isBCN && (
-                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEdit(item.rawProposal)}
-                              className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-blue-200/70 transition shadow-2xs cursor-pointer"
-                              title="Sửa điểm / lý do"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDelete(item.rawProposal)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200/70 transition shadow-2xs cursor-pointer"
-                              title="Xóa / Hoàn tác điểm"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="min-w-0">
+                              <span className="font-bold text-[#061651] group-hover:text-[#0284C7] transition-colors whitespace-nowrap block text-[13px]">
+                                {item.name}
+                              </span>
+                              {item.dept && (
+                                <span className="text-[10.5px] text-slate-400 font-medium block whitespace-nowrap">
+                                  {translateDept(item.dept)}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ))
+
+                        {/* Mã tiêu chí (căn giữa, vừa vặn) */}
+                        <td className="py-3.5 px-1 text-center whitespace-nowrap">
+                          <span className="font-mono font-bold text-xs text-[#0284C7] inline-block">
+                            {item.code}
+                          </span>
+                        </td>
+
+                        {/* Nội dung (rộng rãi, hiển thị rõ ràng không bị đè lên ô khác) */}
+                        <td className="py-3.5 px-4 text-slate-800 font-medium text-xs sm:text-[13px] leading-relaxed break-words">
+                          {item.title}
+                        </td>
+
+                        {/* Điểm */}
+                        <td className="py-3.5 px-1 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold shadow-2xs border ${
+                              item.points > 0
+                                ? 'bg-[#F0FDF4] text-[#16A34A] border-emerald-200'
+                                : item.points < 0
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-slate-50 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            {item.points > 0 ? `+${item.points}` : item.points}
+                          </span>
+                        </td>
+
+                        {/* Loại */}
+                        <td className="py-3.5 px-1 text-center font-bold text-xs whitespace-nowrap">
+                          <span className={item.points > 0 ? 'text-[#16A34A]' : item.points < 0 ? 'text-rose-700' : 'text-slate-600'}>
+                            {item.type}
+                          </span>
+                        </td>
+
+                        {/* Người chấm (Định dạng gọn gàng 2 dòng nếu có ghi chú, không bị tràn chèn ô thao tác) */}
+                        <td className="py-3.5 px-3.5 text-slate-600 font-medium text-xs overflow-hidden">
+                          {item.scorer.includes('(') ? (
+                            <div className="leading-snug min-w-0">
+                              <span className="font-bold text-slate-800 block truncate text-[12px]">
+                                {item.scorer.split('(')[0].trim()}
+                              </span>
+                              <span className="text-[10.5px] text-slate-400 font-medium block truncate">
+                                ({item.scorer.split('(')[1]}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="font-medium text-slate-700 block truncate" title={item.scorer}>
+                              {item.scorer}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Thao tác BCN (Khoảng cách thoáng đãng, không bị xén lề phải) */}
+                        {isBCN && (
+                          <td className="py-3.5 px-2 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(item.rawProposal)}
+                                className="w-7 h-7 rounded-lg text-blue-600 hover:text-white hover:bg-blue-600 bg-white border border-blue-200 transition-all shadow-2xs flex items-center justify-center cursor-pointer"
+                                title={t('history.edit_score')}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDelete(item.rawProposal)}
+                                className="w-7 h-7 rounded-lg text-rose-500 hover:text-white hover:bg-rose-500 bg-white border border-rose-200 transition-all shadow-2xs flex items-center justify-center cursor-pointer"
+                                title={t('history.delete_score')}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>
@@ -958,7 +1288,15 @@ export function HistoryView() {
           {/* Pagination footer chuẩn hóa đầy đủ */}
           <div className="bg-slate-50/80 px-5 py-3.5 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span className="text-xs font-medium text-slate-500">
-              Hiển thị <span className="font-bold text-slate-800">{filteredHistory.length > 0 ? (currentPage - 1) * (pageSize || filteredHistory.length) + 1 : 0}</span> - <span className="font-bold text-slate-800">{pageSize ? Math.min(currentPage * pageSize, filteredHistory.length) : filteredHistory.length}</span> trên tổng số <span className="font-bold text-slate-800">{filteredHistory.length}</span> bản ghi
+              {language === 'vi' ? (
+                <>
+                  Hiển thị <span className="font-bold text-[#061651]">{filteredHistory.length > 0 ? (currentPage - 1) * (pageSize || filteredHistory.length) + 1 : 0}</span> - <span className="font-bold text-[#061651]">{pageSize ? Math.min(currentPage * pageSize, filteredHistory.length) : filteredHistory.length}</span> trên tổng số <span className="font-bold text-[#061651]">{filteredHistory.length}</span> bản ghi
+                </>
+              ) : (
+                <>
+                  Showing <span className="font-bold text-[#061651]">{filteredHistory.length > 0 ? (currentPage - 1) * (pageSize || filteredHistory.length) + 1 : 0}</span> - <span className="font-bold text-[#061651]">{pageSize ? Math.min(currentPage * pageSize, filteredHistory.length) : filteredHistory.length}</span> of <span className="font-bold text-[#061651]">{filteredHistory.length}</span> records
+                </>
+              )}
             </span>
 
             {totalPages > 1 && (
@@ -972,7 +1310,7 @@ export function HistoryView() {
                       ? 'text-slate-300 bg-slate-50 cursor-not-allowed'
                       : 'text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-900 cursor-pointer'
                   }`}
-                  title="Trang trước"
+                  title={language === 'vi' ? 'Trang trước' : 'Previous page'}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -990,7 +1328,7 @@ export function HistoryView() {
                         onClick={() => setCurrentPage(page)}
                         className={`w-7 h-7 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer ${
                           currentPage === page
-                            ? 'bg-[#0B1E48] text-white'
+                            ? 'bg-[#0284C7] text-white shadow-xs'
                             : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
                         }`}
                       >
@@ -1016,7 +1354,7 @@ export function HistoryView() {
                       ? 'text-slate-300 bg-slate-50 cursor-not-allowed'
                       : 'text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-900 cursor-pointer'
                   }`}
-                  title="Trang kế tiếp"
+                  title={language === 'vi' ? 'Trang kế tiếp' : 'Next page'}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

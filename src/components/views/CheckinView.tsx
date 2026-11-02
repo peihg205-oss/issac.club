@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   QrCode,
   CheckCircle2,
@@ -28,13 +28,17 @@ import {
   Crown,
   ChevronDown,
   Plus,
+  FileText,
 } from 'lucide-react'
 import { useClub, type CheckinStatus } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
 import type { DepartmentCode } from '@/types/database'
+import { getMemberAvatarUrl } from '@/lib/clubData'
 import { AdminQrScannerModal } from '@/components/checkin/AdminQrScannerModal'
 
 export function CheckinView() {
+  const { language, t } = useLanguage()
   const {
     members,
     events,
@@ -48,6 +52,34 @@ export function CheckinView() {
   } = useClub()
 
   const { isBCN, isHR, currentUser } = useAuth()
+
+  // Helper dịch tên Ban & chức vụ
+  const getDeptName = (slugOrName: string) => {
+    if (language === 'vi') {
+      if (slugOrName === 'bcn' || slugOrName === 'Ban Chủ nhiệm') return 'Ban Chủ nhiệm'
+      if (slugOrName === 'truyen-thong' || slugOrName === 'Ban Truyền thông') return 'Ban Truyền thông'
+      if (slugOrName === 'tu-van' || slugOrName === 'Ban Tư vấn') return 'Ban Tư vấn'
+      if (slugOrName === 'nhan-su' || slugOrName === 'Ban Nhân sự') return 'Ban Nhân sự'
+      return slugOrName
+    } else {
+      if (slugOrName === 'bcn' || slugOrName === 'Ban Chủ nhiệm') return 'Executive Board'
+      if (slugOrName === 'truyen-thong' || slugOrName === 'Ban Truyền thông') return 'Communications'
+      if (slugOrName === 'tu-van' || slugOrName === 'Ban Tư vấn') return 'Advisory'
+      if (slugOrName === 'nhan-su' || slugOrName === 'Ban Nhân sự') return 'HR Dept'
+      return slugOrName
+    }
+  }
+
+  const getPositionName = (pos: string) => {
+    if (language === 'vi') return pos
+    if (pos === 'Chủ nhiệm') return 'President'
+    if (pos === 'Phó chủ nhiệm') return 'Vice President'
+    if (pos === 'Trưởng ban') return 'Head of Dept'
+    if (pos === 'Phó ban') return 'Deputy Head'
+    if (pos === 'Cố vấn') return 'Advisor'
+    if (pos === 'Thành viên') return 'Member'
+    return pos
+  }
 
   // Modal tạo sự kiện mới trực tiếp tại màn hình Check-in
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -83,15 +115,49 @@ export function CheckinView() {
 
   // Form tự điểm danh Kiosk
   const [kioskMemberCode, setKioskMemberCode] = useState(members[3]?.member_code || '')
-  const [kioskPin, setKioskPin] = useState('')
+  const [kioskPhoneDigits, setKioskPhoneDigits] = useState('')
   const [kioskFeedback, setKioskFeedback] = useState<{
     type: 'success' | 'error'
     text: string
   } | null>(null)
   const [isSimulatingCamera, setIsSimulatingCamera] = useState(false)
 
+  // Thông tin thành viên đang chọn trong Kiosk (xác thực nội bộ)
+  const currentKioskMember = members.find((m) => m.member_code === kioskMemberCode) || members[0]
+  const expectedPhoneDigits = currentKioskMember?.phone
+    ? currentKioskMember.phone.replace(/\D/g, '').slice(-4)
+    : ''
+
   const [copiedPin, setCopiedPin] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
+
+  // Mascot điểm danh tương tác & các câu nhắc nhở sự kiện
+  const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
+  const [mascotMessageIdx, setMascotMessageIdx] = useState<number>(0)
+  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
+  const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const checkinMascotMessages = language === 'vi' ? [
+    'Đăng kí sự kiện ngay',
+    'Check - in đúng giờ',
+    'Đừng đi muộn nhé iSARIS ơi',
+  ] : [
+    'Register for event now',
+    'Check-in on time',
+    "Don't be late iSARIS!",
+  ]
+
+  const handleMascotClick = () => {
+    setIsMascotCheering(true)
+    setShowMascotBubble(true)
+    setMascotMessageIdx((prev) => (prev + 1) % checkinMascotMessages.length)
+    setTimeout(() => setIsMascotCheering(false), 850)
+
+    if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
+    bubbleTimeoutRef.current = setTimeout(() => {
+      setShowMascotBubble(false)
+    }, 2800)
+  }
 
   const currentEvt = activeEvent || events[0] || null
 
@@ -132,7 +198,7 @@ export function CheckinView() {
       case 'bcn':
         return 'bg-amber-50 text-amber-700 border border-amber-200/80'
       case 'truyen-thong':
-        return 'bg-blue-50 text-[#1351D8] border border-blue-200/80'
+        return 'bg-blue-50 text-blue-600 border border-blue-200/80'
       case 'tu-van':
         return 'bg-pink-50 text-pink-700 border border-pink-200/80'
       case 'nhan-su':
@@ -208,22 +274,29 @@ export function CheckinView() {
     }
   }
 
-  // Submit Kiosk
+  // Submit Kiosk (Xác thực 4 số cuối số điện thoại cá nhân)
   const handleKioskSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentEvt) {
       setKioskFeedback({ type: 'error', text: 'Hiện tại chưa có phiên điểm danh nào đang mở!' })
       return
     }
-    if (!kioskPin.trim()) {
-      setKioskFeedback({ type: 'error', text: 'Vui lòng nhập mã PIN máy chiếu!' })
+    const cleanDigits = kioskPhoneDigits.trim()
+    if (!cleanDigits || cleanDigits.length !== 4) {
+      setKioskFeedback({ type: 'error', text: 'Vui lòng nhập đúng 4 số cuối số điện thoại của người chuẩn bị điểm danh!' })
       return
     }
 
-    const res = memberSelfCheckin(currentEvt.id, kioskMemberCode, kioskPin)
+    const res = memberSelfCheckin(
+      currentEvt.id,
+      kioskMemberCode,
+      currentEvt.pinCode,
+      cleanDigits,
+      'kiosk'
+    )
     if (res.success) {
       setKioskFeedback({ type: 'success', text: res.message })
-      setKioskPin('')
+      setKioskPhoneDigits('')
     } else {
       setKioskFeedback({ type: 'error', text: res.message })
     }
@@ -274,17 +347,98 @@ export function CheckinView() {
     document.body.removeChild(link)
   }
 
+  // Xuất file CSV điểm danh cho một sự kiện cụ thể trong lịch sử
+  const handleExportEventCSV = (targetEvt: any) => {
+    if (!targetEvt) return
+
+    const evtRecs = targetEvt.records || {}
+    const headers = ['STT', 'Mã TV', 'MSSV', 'Họ và tên', 'Ban', 'Chức vụ', 'Trạng thái', 'Giờ điểm danh', 'Ghi chú']
+    const rows = members.map((m, idx) => {
+      const rec = evtRecs[m.member_code]
+      const statusText =
+        rec?.status === 'present_on_time'
+          ? 'Đúng giờ (+1 C07)'
+          : rec?.status === 'late'
+            ? 'Đi muộn >15p (-1 T04)'
+            : rec?.status === 'excused'
+              ? 'Có phép (-2 T01)'
+              : 'Vắng không phép (-5 T02)'
+
+      return [
+        idx + 1,
+        m.member_code,
+        m.student_id || '-',
+        m.full_name,
+        m.department_name,
+        m.position,
+        statusText,
+        rec?.checkinTime || '-',
+        rec?.note || '',
+      ]
+    })
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((e) => e.map((val) => `"${val}"`).join(','))].join('\n')
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute(
+      'download',
+      `DiemDanh_CLB_${targetEvt.title.replace(/\s+/g, '_')}_${targetEvt.date.replace(/\//g, '-')}.csv`
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-1">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
-            Quản Lý Điểm Danh & Kiểm Soát Chuyên Cần
-          </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Hệ thống kiểm soát chuyên cần thời gian thực
-          </p>
+        <div className="flex items-center gap-3 sm:gap-3.5">
+          <div>
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight">
+              {t('checkin.title', 'Quản lý điểm danh sự kiện iSSAC')}
+            </h1>
+            <p className="text-xs sm:text-[13px] text-[#64748B] mt-1 font-normal">
+              {t('checkin.subtitle', 'Hệ thống kiểm soát chuyên cần thời gian thực')}
+            </p>
+          </div>
+
+          {/* Mascot tương tác kèm lời nhắc nhở điểm danh */}
+          <div
+            onClick={handleMascotClick}
+            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+            title={t('checkin.mascot_tooltip', 'Bấm vào tớ để xem lời nhắc nhé!')}
+          >
+            {/* Ảnh Mascot chibi năng động cùng linh thú điện */}
+            <img
+              src="/checkin-mascot.png"
+              alt="iSSAC Check-in Mascot"
+              className={`w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.25)] transition-all duration-300 ${
+                isMascotCheering
+                  ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
+                  : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+              }`}
+            />
+
+            {/* Bubble lời nhắc nhở động - Chỉ hiện khi chạm hoặc hover */}
+            <div
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-md whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 pointer-events-none ${
+                isMascotCheering || showMascotBubble
+                  ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
+                  : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+              }`}
+            >
+              {/* Mũi tên chỉ về phía mascot */}
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0284C7] rotate-45 border-l border-b border-white/25" />
+              <span className="relative z-10 select-none tracking-tight">
+                {checkinMascotMessages[mascotMessageIdx]}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Sub-tabs + Nút Máy Quét QR: 1 hàng ngang duy nhất, gọn gàng và không rớt dòng */}
@@ -294,48 +448,48 @@ export function CheckinView() {
               type="button"
               onClick={() => setSubTab('admin_roster')}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${subTab === 'admin_roster'
-                  ? 'bg-[#1351D8] text-white shadow-xs'
+                  ? 'bg-[#0084c8] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                 }`}
             >
               <Users className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Sĩ số ({members.length})</span>
+              <span>{t('checkin.tab_roster', 'Sĩ số')} ({members.length})</span>
             </button>
 
             <button
               type="button"
               onClick={() => setSubTab('registered_attendees')}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${subTab === 'registered_attendees'
-                  ? 'bg-purple-700 text-white shadow-xs'
+                  ? 'bg-[#0084c8] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                 }`}
             >
               <Ticket className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Vé ({currentEvt?.registeredMemberCodes?.length || 0})</span>
+              <span>{t('checkin.tab_tickets', 'Vé')} ({currentEvt?.registeredMemberCodes?.length || 0})</span>
             </button>
 
             <button
               type="button"
               onClick={() => setSubTab('member_kiosk')}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${subTab === 'member_kiosk'
-                  ? 'bg-[#0B1E48] text-white shadow-xs'
+                  ? 'bg-[#0084c8] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                 }`}
             >
               <Smartphone className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Cổng Kiosk</span>
+              <span>{t('checkin.tab_kiosk', 'Cổng Kiosk')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setSubTab('history')}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${subTab === 'history'
-                  ? 'bg-slate-800 text-white shadow-xs'
+                  ? 'bg-[#0084c8] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                 }`}
             >
               <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Lịch sử</span>
+              <span>{t('checkin.tab_history', 'Lịch sử')}</span>
             </button>
           </div>
 
@@ -344,7 +498,7 @@ export function CheckinView() {
             type="button"
             onClick={() => {
               if (!currentEvt) {
-                alert('Vui lòng khởi tạo một phiên sự kiện trước khi mở máy quét QR!')
+                alert(language === 'vi' ? 'Vui lòng khởi tạo một phiên sự kiện trước khi mở máy quét QR!' : 'Please initialize an event session before opening the QR scanner!')
                 return
               }
               setIsScannerOpen(true)
@@ -352,7 +506,7 @@ export function CheckinView() {
             className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm shadow-emerald-600/25 transition active:scale-95 cursor-pointer whitespace-nowrap flex-shrink-0"
           >
             <QrCode className="w-4 h-4 text-emerald-200" />
-            <span>MÁY QUÉT QR</span>
+            <span>{t('checkin.btn_qr_scanner', 'MÁY QUÉT QR')}</span>
             <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
           </button>
         </div>
@@ -362,7 +516,7 @@ export function CheckinView() {
       {subTab === 'admin_roster' && (
         !currentEvt ? (
           <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-12 text-center shadow-xs space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1351D8] border border-blue-100 flex items-center justify-center mx-auto shadow-2xs">
+            <div className="w-16 h-16 rounded-2xl bg-[#F0F9FF] text-[#0284C7] border border-sky-100 flex items-center justify-center mx-auto shadow-2xs">
               <Calendar className="w-8 h-8" />
             </div>
             <div className="max-w-md mx-auto space-y-2">
@@ -377,7 +531,7 @@ export function CheckinView() {
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tạo sự kiện mới ngay</span>
@@ -402,30 +556,30 @@ export function CheckinView() {
                       }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${currentEvt.isFinalized ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'}`} />
-                    <span>{currentEvt.isFinalized ? 'ĐÃ CHỐT SỔ ĐIỂM DANH' : 'PHIÊN ĐIỂM DANH ĐANG DIỄN RA'}</span>
+                    <span>{currentEvt.isFinalized ? t('checkin.status_finalized', 'ĐÃ CHỐT SỔ ĐIỂM DANH') : t('checkin.status_live', 'PHIÊN ĐIỂM DANH ĐANG DIỄN RA')}</span>
                   </span>
-                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/90">
                     {currentEvt.category === 'workshop'
-                      ? 'Workshop chuyên đề'
+                      ? t('checkin.cat_workshop', 'Workshop chuyên đề')
                       : currentEvt.category === 'teambuilding'
-                        ? 'Teambuilding'
+                        ? t('checkin.cat_teambuilding', 'Teambuilding')
                         : currentEvt.category === 'external'
-                          ? 'Sự kiện ĐHQG'
-                          : 'Sinh hoạt định kỳ CLB'}
+                          ? t('checkin.cat_external', 'Sự kiện ĐHQG')
+                          : t('checkin.cat_meeting', 'Sinh hoạt định kỳ CLB')}
                   </span>
                   {currentEvt.isRequired ? (
                     <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200/80">
-                      Bắt buộc tham gia
+                      {t('checkin.required_badge', 'Bắt buộc tham gia')}
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                      Mở đăng ký (+{currentEvt.pointBonus || 2}đ)
+                      {t('checkin.optional_badge', 'Mở đăng ký')} (+{currentEvt.pointBonus || 2}{language === 'vi' ? 'đ' : ' pts'})
                     </span>
                   )}
                   {currentEvt.allowRegistration && (
                     <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-50 text-purple-700 border border-purple-200/80 flex items-center gap-1">
                       <Ticket className="w-3 h-3 text-purple-600" />
-                      <span>Đã đăng ký trước: {currentEvt.registeredMemberCodes?.length || 0} / {currentEvt.maxAttendees || 50}</span>
+                      <span>{t('checkin.registered_badge', 'Đã đăng ký trước')}: {currentEvt.registeredMemberCodes?.length || 0} / {currentEvt.maxAttendees || 50}</span>
                     </span>
                   )}
                 </div>
@@ -433,18 +587,18 @@ export function CheckinView() {
                 {/* Dropdown chuyển phiên tích hợp tinh tế & nút tạo sự kiện mới */}
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                   <span className="text-xs font-bold text-slate-500 whitespace-nowrap hidden md:inline">
-                    Đổi phiên:
+                    {t('checkin.switch_session', 'Đổi phiên:')}
                   </span>
                   <div className="relative">
                     <select
                       suppressHydrationWarning
                       value={currentEvt.id}
                       onChange={(e) => setActiveEventId(e.target.value)}
-                      className="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]/20 transition shadow-2xs cursor-pointer max-w-[240px] sm:max-w-xs truncate"
+                      className="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer max-w-[240px] sm:max-w-xs truncate"
                     >
                       {events.map((e) => (
                         <option key={e.id} value={e.id} suppressHydrationWarning>
-                          {e.title} ({e.date}) {e.isFinalized ? '• [Chốt sổ]' : '• [Đang mở]'}
+                          {e.title} ({e.date}) {e.isFinalized ? (language === 'vi' ? '[Chốt sổ]' : '[Closed]') : (language === 'vi' ? '[Đang mở]' : '[Open]')}
                         </option>
                       ))}
                     </select>
@@ -455,11 +609,11 @@ export function CheckinView() {
                     <button
                       type="button"
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95"
-                      title="Khởi tạo phiên điểm danh / sự kiện mới"
+                      className="px-3 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95"
+                      title={t('checkin.create_event', 'Khởi tạo phiên điểm danh / sự kiện mới')}
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Tạo sự kiện mới</span>
+                      <span>{t('checkin.create_event', 'Tạo sự kiện mới')}</span>
                     </button>
                   )}
                 </div>
@@ -469,7 +623,7 @@ export function CheckinView() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center pt-2 border-t border-slate-100">
                 {/* Cột trái rộng rãi: Tiêu đề, mô tả và chip địa điểm/thời gian */}
                 <div className="lg:col-span-7 xl:col-span-8 space-y-2.5">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">
+                  <h2 className="text-xl sm:text-2xl font-black text-[#061651] tracking-tight leading-snug">
                     {currentEvt.title}
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed max-w-3xl">
@@ -478,15 +632,15 @@ export function CheckinView() {
 
                   <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 font-bold text-slate-700">
-                      <Calendar className="w-3.5 h-3.5 text-[#1351D8] flex-shrink-0" />
+                      <Calendar className="w-3.5 h-3.5 text-[#0284C7] flex-shrink-0" />
                       <span>{currentEvt.date}</span>
                     </div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 font-bold text-slate-700">
-                      <Clock className="w-3.5 h-3.5 text-[#1351D8] flex-shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-[#0284C7] flex-shrink-0" />
                       <span>{currentEvt.startTime} - {currentEvt.endTime}</span>
                     </div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 font-bold text-slate-700">
-                      <MapPin className="w-3.5 h-3.5 text-[#1351D8] flex-shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-[#0284C7] flex-shrink-0" />
                       <span>{currentEvt.location}</span>
                     </div>
                   </div>
@@ -494,11 +648,11 @@ export function CheckinView() {
 
                 {/* Cột phải: Trạm Chiếu PIN & QR Check-in Navy Phong Cách Chuyên Nghiệp */}
                 <div className="lg:col-span-5 xl:col-span-4">
-                  <div className="bg-gradient-to-br from-[#0B1E48] via-[#0F2A66] to-[#122A5E] text-white rounded-2xl p-4 sm:p-4.5 border border-blue-900/60 shadow-md flex items-center gap-4">
+                  <div className="bg-gradient-to-br from-[#0284C7] via-[#0369A1] to-[#075985] text-white rounded-2xl p-4 sm:p-4.5 border border-sky-400/30 shadow-md flex items-center gap-4">
                     {/* QR Code Graphic */}
-                    <div className="w-20 h-20 sm:w-22 sm:h-22 bg-[#071533] rounded-xl p-2 flex flex-col items-center justify-center relative overflow-hidden text-white flex-shrink-0 border border-white/10 shadow-inner">
-                      <QrCode className="w-12 h-12 sm:w-14 sm:h-14 text-emerald-400" />
-                      <span className="text-[9px] font-mono font-bold tracking-widest mt-0.5 text-blue-200">
+                    <div className="w-20 h-20 sm:w-22 sm:h-22 bg-[#024970] rounded-xl p-2 flex flex-col items-center justify-center relative overflow-hidden text-white flex-shrink-0 border border-white/20 shadow-inner">
+                      <QrCode className="w-12 h-12 sm:w-14 sm:h-14 text-emerald-300" />
+                      <span className="text-[9px] font-mono font-bold tracking-widest mt-0.5 text-sky-200">
                         SCAN ME
                       </span>
                     </div>
@@ -506,26 +660,26 @@ export function CheckinView() {
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">
-                          Mã PIN máy chiếu
+                          {t('checkin.pin_title', 'Mã PIN máy chiếu')}
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[10px] font-bold text-emerald-300 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
                           Kiosk Live
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-white/10 rounded-xl border border-white/15 tracking-[0.2em] font-mono font-black text-2xl sm:text-3xl text-white shadow-inner">
+                        <span className="px-3 py-1 bg-white/15 rounded-xl border border-white/20 tracking-[0.2em] font-mono font-black text-2xl sm:text-3xl text-white shadow-inner">
                           {currentEvt.pinCode}
                         </span>
                         <button
                           type="button"
                           onClick={handleCopyPin}
-                          title="Sao chép mã PIN"
-                          className="p-2 hover:bg-white/15 rounded-xl text-slate-200 hover:text-white transition active:scale-95 cursor-pointer border border-white/10"
+                          title={t('checkin.pin_copy_title', 'Sao chép mã PIN')}
+                          className="p-2 hover:bg-white/20 rounded-xl text-sky-100 hover:text-white transition active:scale-95 cursor-pointer border border-white/15"
                         >
                           {copiedPin ? (
-                            <Check className="w-4 h-4 text-emerald-400" />
+                            <Check className="w-4 h-4 text-emerald-300" />
                           ) : (
                             <Copy className="w-4 h-4" />
                           )}
@@ -540,16 +694,16 @@ export function CheckinView() {
                           className="text-amber-300 hover:text-amber-200 hover:underline flex items-center gap-1 truncate"
                         >
                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                          <span>Cổng Mobile</span>
+                          <span>{t('checkin.mobile_portal', 'Cổng Mobile')}</span>
                         </a>
-                        <span className="text-white/30 text-xs">|</span>
+                        <span className="text-white/40 text-xs">|</span>
                         <button
                           type="button"
                           onClick={handleCopyCheckinLink}
-                          className="text-blue-200 hover:text-white flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                          className="text-sky-100 hover:text-white flex items-center gap-1 cursor-pointer whitespace-nowrap"
                         >
                           <Copy className="w-3 h-3 flex-shrink-0" />
-                          <span>{copiedLink ? 'Đã copy!' : 'Copy link Zalo'}</span>
+                          <span>{copiedLink ? t('checkin.copied', 'Đã copy!') : t('checkin.copy_zalo', 'Copy link Zalo')}</span>
                         </button>
                       </div>
                     </div>
@@ -558,25 +712,25 @@ export function CheckinView() {
               </div>
             </div>
 
-          {/* 4 Khối thống kê: Viền mỏng 1px + Màu pastel chuẩn bộ nhận diện */}
+          {/* 4 Khối thống kê: Không viền mờ + Màu pastel chuẩn bộ nhận diện */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* Card 1: Đúng giờ (C07) */}
             <div
               onClick={() => setStatusFilter(statusFilter === 'present_on_time' ? 'ALL' : 'present_on_time')}
-              className={`p-4 rounded-2xl border border-emerald-200/90 bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all shadow-2xs ${statusFilter === 'present_on_time'
+              className={`p-4 rounded-2xl bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)] ${statusFilter === 'present_on_time'
                   ? 'ring-2 ring-emerald-500 shadow-md scale-[1.01]'
                   : 'hover:shadow-md hover:-translate-y-0.5'
                 }`}
             >
               <div>
-                <span className="text-xs font-bold text-emerald-800 block">Đúng giờ (C07)</span>
+                <span className="text-xs font-bold text-emerald-800 block">{t('checkin.card_on_time', 'Đúng giờ (C07)')}</span>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-black text-emerald-700">{countOnTime}</span>
-                  <span className="text-xs font-bold text-emerald-600">+1 điểm / TV</span>
+                  <span className="text-xs font-bold text-emerald-600">{t('checkin.card_on_time_pts', '+1 điểm / TV')}</span>
                 </div>
-                <p className="text-[11px] text-emerald-700/80 mt-1 font-medium">Đến trước hoặc đúng giờ</p>
+                <p className="text-[11px] text-emerald-700/80 mt-1 font-medium">{t('checkin.card_on_time_desc', 'Đến trước hoặc đúng giờ')}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-white text-emerald-600 shadow-2xs border border-emerald-200/60 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-white text-emerald-600 shadow-2xs border border-emerald-300 flex items-center justify-center flex-shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
             </div>
@@ -584,20 +738,20 @@ export function CheckinView() {
             {/* Card 2: Đi muộn (T04) */}
             <div
               onClick={() => setStatusFilter(statusFilter === 'late' ? 'ALL' : 'late')}
-              className={`p-4 rounded-2xl border border-amber-200/90 bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all shadow-2xs ${statusFilter === 'late'
+              className={`p-4 rounded-2xl bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)] ${statusFilter === 'late'
                   ? 'ring-2 ring-amber-500 shadow-md scale-[1.01]'
                   : 'hover:shadow-md hover:-translate-y-0.5'
                 }`}
             >
               <div>
-                <span className="text-xs font-bold text-amber-800 block">Đi muộn (T04)</span>
+                <span className="text-xs font-bold text-amber-800 block">{t('checkin.card_late', 'Đi muộn (T04)')}</span>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-black text-amber-700">{countLate}</span>
-                  <span className="text-xs font-bold text-amber-600">-1 điểm / TV</span>
+                  <span className="text-xs font-bold text-amber-600">{t('checkin.card_late_pts', '-1 điểm / TV')}</span>
                 </div>
-                <p className="text-[11px] text-amber-700/80 mt-1 font-medium">Muộn trên 15 phút</p>
+                <p className="text-[11px] text-amber-700/80 mt-1 font-medium">{t('checkin.card_late_desc', 'Muộn trên 15 phút')}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-white text-amber-600 shadow-2xs border border-amber-200/60 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-white text-amber-600 shadow-2xs border border-amber-300 flex items-center justify-center flex-shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
             </div>
@@ -605,20 +759,20 @@ export function CheckinView() {
             {/* Card 3: Có phép (T01) */}
             <div
               onClick={() => setStatusFilter(statusFilter === 'excused' ? 'ALL' : 'excused')}
-              className={`p-4 rounded-2xl border border-blue-200/90 bg-[#EFF6FF] flex items-center justify-between cursor-pointer transition-all shadow-2xs ${statusFilter === 'excused'
-                  ? 'ring-2 ring-blue-500 shadow-md scale-[1.01]'
+              className={`p-4 rounded-2xl bg-[#F0F9FF] flex items-center justify-between cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)] ${statusFilter === 'excused'
+                  ? 'ring-2 ring-[#0284C7] shadow-md scale-[1.01]'
                   : 'hover:shadow-md hover:-translate-y-0.5'
                 }`}
             >
               <div>
-                <span className="text-xs font-bold text-blue-800 block">Có phép (T01)</span>
+                <span className="text-xs font-bold text-sky-800 block">{t('checkin.card_excused', 'Có phép (T01)')}</span>
                 <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-[#1351D8]">{countExcused}</span>
-                  <span className="text-xs font-bold text-blue-600">-2 điểm / TV</span>
+                  <span className="text-2xl sm:text-3xl font-black text-[#0284C7]">{countExcused}</span>
+                  <span className="text-xs font-bold text-sky-600">{t('checkin.card_excused_pts', '-2 điểm / TV')}</span>
                 </div>
-                <p className="text-[11px] text-blue-700/80 mt-1 font-medium">Gửi đơn trước &gt;12h</p>
+                <p className="text-[11px] text-sky-700/80 mt-1 font-medium">{t('checkin.card_excused_desc', 'Gửi đơn trước >12h')}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-white text-[#1351D8] shadow-2xs border border-blue-200/60 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-white text-[#0284C7] shadow-2xs border border-sky-300 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
             </div>
@@ -626,20 +780,20 @@ export function CheckinView() {
             {/* Card 4: Không phép (T02) */}
             <div
               onClick={() => setStatusFilter(statusFilter === 'unexcused' ? 'ALL' : 'unexcused')}
-              className={`p-4 rounded-2xl border border-rose-200/90 bg-[#FEF2F2] flex items-center justify-between cursor-pointer transition-all shadow-2xs ${statusFilter === 'unexcused'
+              className={`p-4 rounded-2xl bg-[#FEF2F2] flex items-center justify-between cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)] ${statusFilter === 'unexcused'
                   ? 'ring-2 ring-rose-500 shadow-md scale-[1.01]'
                   : 'hover:shadow-md hover:-translate-y-0.5'
                 }`}
             >
               <div>
-                <span className="text-xs font-bold text-rose-800 block">Không phép (T02)</span>
+                <span className="text-xs font-bold text-rose-800 block">{t('checkin.card_unexcused', 'Không phép (T02)')}</span>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-black text-rose-700">{countUnexcused}</span>
-                  <span className="text-xs font-bold text-rose-600">-5 điểm / TV</span>
+                  <span className="text-xs font-bold text-rose-600">{t('checkin.card_unexcused_pts', '-5 điểm / TV')}</span>
                 </div>
-                <p className="text-[11px] text-rose-600 font-semibold mt-1">Báo động kỷ luật</p>
+                <p className="text-[11px] text-rose-600 font-semibold mt-1">{t('checkin.card_unexcused_desc', 'Báo động kỷ luật')}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-white text-rose-600 shadow-2xs border border-rose-200/60 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-white text-rose-600 shadow-2xs border border-rose-300 flex items-center justify-center flex-shrink-0">
                 <XCircle className="w-5 h-5" />
               </div>
             </div>
@@ -653,10 +807,10 @@ export function CheckinView() {
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Tìm thành viên, MSSV..."
+                  placeholder={t('checkin.search_placeholder', 'Tìm thành viên, MSSV...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-7 py-2 bg-slate-50 hover:bg-slate-50/80 border border-slate-200/90 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]/20 transition shadow-2xs"
+                  className="w-full pl-8 pr-7 py-2 bg-slate-50 hover:bg-slate-50/80 border border-slate-200/90 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs"
                 />
                 {searchQuery && (
                   <button
@@ -669,30 +823,36 @@ export function CheckinView() {
               </div>
 
               {/* Bộ lọc Ban */}
-              <select
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value as any)}
-                className="px-3 py-2 bg-slate-50 hover:bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]/20 transition shadow-2xs"
-              >
-                <option value="ALL">Tất cả các ban</option>
-                <option value="B04">Ban Chủ nhiệm</option>
-                <option value="B01">Ban Truyền thông</option>
-                <option value="B02">Ban Tư vấn</option>
-                <option value="B03">Ban Nhân sự</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={deptFilter}
+                  onChange={(e) => setDeptFilter(e.target.value as any)}
+                  className="appearance-none pl-3.5 pr-8 py-2 bg-slate-50 hover:bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer"
+                >
+                  <option value="ALL">{t('checkin.dept_all', 'Tất cả các ban')}</option>
+                  <option value="B04">{getDeptName('bcn')}</option>
+                  <option value="B01">{getDeptName('truyen-thong')}</option>
+                  <option value="B02">{getDeptName('tu-van')}</option>
+                  <option value="B03">{getDeptName('nhan-su')}</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
 
               {/* Bộ lọc Trạng thái */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="px-3 py-2 bg-slate-50 hover:bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]/20 transition shadow-2xs"
-              >
-                <option value="ALL">Mọi trạng thái</option>
-                <option value="present_on_time">Đúng giờ (+1 C07)</option>
-                <option value="late">Đi muộn (-1 T04)</option>
-                <option value="excused">Có phép (-2 T01)</option>
-                <option value="unexcused">Không phép (-5 T02)</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="appearance-none pl-3.5 pr-8 py-2 bg-slate-50 hover:bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer"
+                >
+                  <option value="ALL">{t('checkin.status_all', 'Mọi trạng thái')}</option>
+                  <option value="present_on_time">{language === 'vi' ? 'Đúng giờ (+1 C07)' : 'On Time (+1 C07)'}</option>
+                  <option value="late">{language === 'vi' ? 'Đi muộn (-1 T04)' : 'Late (-1 T04)'}</option>
+                  <option value="excused">{language === 'vi' ? 'Có phép (-2 T01)' : 'Excused (-2 T01)'}</option>
+                  <option value="unexcused">{language === 'vi' ? 'Không phép (-5 T02)' : 'Unexcused (-5 T02)'}</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
             <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
@@ -700,10 +860,10 @@ export function CheckinView() {
                 type="button"
                 onClick={handleExportCSV}
                 className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 font-bold text-xs transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                title="Xuất danh sách điểm danh buổi họp"
+                title={language === 'vi' ? 'Xuất danh sách điểm danh buổi họp' : 'Export meeting attendance list'}
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Xuất CSV</span>
+                <span>{t('checkin.export_csv', 'Xuất CSV')}</span>
               </button>
 
               {/* Nút Chốt buổi họp chuẩn nhận diện BCN */}
@@ -712,27 +872,26 @@ export function CheckinView() {
                   type="button"
                   disabled={currentEvt.isFinalized || isFinalizing}
                   onClick={handleFinalizeMeeting}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl text-white shadow-xs transition-all active:scale-95 cursor-pointer ${currentEvt.isFinalized
+                  className={`flex items-center justify-center px-4 py-2 text-xs font-bold rounded-xl text-white shadow-xs transition-all active:scale-95 cursor-pointer ${currentEvt.isFinalized
                       ? 'bg-slate-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] shadow-sm'
+                      : 'bg-[#0284C7] hover:bg-[#0369A1] shadow-sm'
                     }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-blue-200" />
                   <span>
                     {currentEvt.isFinalized
-                      ? 'Đã chốt sổ điểm'
+                      ? t('checkin.btn_finalized', 'Đã chốt sổ điểm')
                       : isFinalizing
-                        ? 'Đang xử lý...'
-                        : 'Chốt buổi họp & Áp dụng điểm (Quyền BCN)'}
+                        ? t('checkin.btn_finalizing', 'Đang xử lý...')
+                        : t('checkin.btn_finalize', 'Chốt buổi họp & Áp dụng điểm (Quyền BCN)')}
                   </span>
                 </button>
               ) : (
                 <div
-                  title="Chỉ Ban Chủ nhiệm có thẩm quyền chốt sổ điểm danh và cộng/trừ điểm chính thức"
+                  title={language === 'vi' ? 'Chỉ Ban Chủ nhiệm có thẩm quyền chốt sổ điểm danh và cộng/trừ điểm chính thức' : 'Only the Executive Board has authority to finalize attendance and apply official points'}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/80"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>Chốt buổi (Chỉ BCN)</span>
+                  <span>{t('checkin.btn_finalize_bcn_only', 'Chốt buổi (Chỉ BCN)')}</span>
                 </div>
               )}
             </div>
@@ -743,16 +902,16 @@ export function CheckinView() {
             {filteredMembers.length === 0 ? (
               <div className="bg-white p-8 rounded-2xl border border-slate-200/90 text-center text-slate-400 space-y-2">
                 <Search className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="font-semibold text-xs">Không tìm thấy thành viên nào phù hợp</p>
+                <p className="font-semibold text-xs">{t('checkin.no_members', 'Không tìm thấy thành viên nào phù hợp')}</p>
                 <button
                   onClick={() => {
                     setSearchQuery('')
                     setDeptFilter('ALL')
                     setStatusFilter('ALL')
                   }}
-                  className="text-xs text-[#1351D8] font-bold hover:underline"
+                  className="text-xs text-[#0284C7] font-bold hover:underline"
                 >
-                  Xóa bộ lọc
+                  {t('checkin.reset_filter', 'Xóa bộ lọc')}
                 </button>
               </div>
             ) : (
@@ -771,19 +930,19 @@ export function CheckinView() {
                     {/* Top: Avatar, Tên, MSSV, Ban, Huy hiệu trạng thái */}
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        {m.avatar_url || m.full_name === 'Trần Đức Thắng' ? (
+                        {getMemberAvatarUrl(m) ? (
                           <img
-                            src={m.avatar_url || '/avatars/duc-thang.jpg'}
+                            src={getMemberAvatarUrl(m)!}
                             alt={m.full_name}
                             className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-blue-50 text-[#1351D8] font-bold flex items-center justify-center text-sm shrink-0 border border-blue-200/60">
+                          <div className="w-10 h-10 rounded-full bg-[#F0F9FF] text-[#0284C7] font-bold flex items-center justify-center text-sm shrink-0 border border-sky-200/80">
                             {m.full_name.charAt(0)}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="font-bold text-[#0F172A] text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
+                          <div className="font-bold text-[#061651] text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
                             <span className="truncate">{m.full_name}</span>
                             {m.is_core && (
                               <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 text-[9px] font-bold rounded border border-amber-200/80">
@@ -793,9 +952,9 @@ export function CheckinView() {
                           </div>
                           <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 flex-wrap mt-0.5">
                             <span>{m.student_id || m.member_code}</span>
-                            <span>•</span>
+                            <span>-</span>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${getDeptBadgeStyle(m.department_slug)}`}>
-                              {m.department_name}
+                              {getDeptName(m.department_slug)}
                             </span>
                           </div>
                         </div>
@@ -806,25 +965,25 @@ export function CheckinView() {
                         {status === 'present_on_time' && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] inline-flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3 text-[#059669]" />
-                            <span>Đúng giờ (+1)</span>
+                            <span>{language === 'vi' ? 'Đúng giờ (+1)' : 'On time (+1)'}</span>
                           </span>
                         )}
                         {status === 'late' && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 inline-flex items-center gap-1">
                             <Clock className="w-3 h-3 text-amber-600" />
-                            <span>Muộn (-1)</span>
+                            <span>{language === 'vi' ? 'Muộn (-1)' : 'Late (-1)'}</span>
                           </span>
                         )}
                         {status === 'excused' && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 inline-flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3 text-blue-600" />
-                            <span>Phép (-2)</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F0F9FF] text-[#0284C7] border border-sky-200/90 inline-flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-[#0284C7]" />
+                            <span>{language === 'vi' ? 'Phép (-2)' : 'Excused (-2)'}</span>
                           </span>
                         )}
                         {status === 'unexcused' && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 inline-flex items-center gap-1">
                             <XCircle className="w-3 h-3 text-rose-600" />
-                            <span>Vắng (-5)</span>
+                            <span>{language === 'vi' ? 'Vắng (-5)' : 'Absent (-5)'}</span>
                           </span>
                         )}
                       </div>
@@ -841,7 +1000,7 @@ export function CheckinView() {
                             : 'text-slate-700 hover:bg-white hover:text-emerald-700'
                         }`}
                       >
-                        Đúng giờ
+                        {t('checkin.btn_ontime', 'Đúng giờ')}
                       </button>
                       <button
                         type="button"
@@ -852,18 +1011,18 @@ export function CheckinView() {
                             : 'text-slate-700 hover:bg-white hover:text-amber-700'
                         }`}
                       >
-                        Muộn
+                        {t('checkin.btn_late', 'Muộn')}
                       </button>
                       <button
                         type="button"
                         onClick={() => updateCheckinRecord(currentEvt.id, m.member_code, 'excused')}
                         className={`py-2 text-[11px] font-bold rounded-lg transition-all text-center cursor-pointer ${
                           status === 'excused'
-                            ? 'bg-blue-600 text-white shadow-xs'
-                            : 'text-slate-700 hover:bg-white hover:text-blue-700'
+                            ? 'bg-[#0284C7] text-white shadow-xs'
+                            : 'text-slate-700 hover:bg-white hover:text-[#0284C7]'
                         }`}
                       >
-                        Phép
+                        {t('checkin.btn_excused', 'Phép')}
                       </button>
                       <button
                         type="button"
@@ -874,7 +1033,7 @@ export function CheckinView() {
                             : 'text-slate-700 hover:bg-white hover:text-rose-700'
                         }`}
                       >
-                        Vắng
+                        {t('checkin.btn_unexcused', 'Vắng')}
                       </button>
                     </div>
 
@@ -888,12 +1047,12 @@ export function CheckinView() {
                       )}
                       <input
                         type="text"
-                        placeholder="Ghi chú (lý do muộn/vắng)..."
+                        placeholder={t('checkin.note_placeholder', 'Ghi chú (lý do muộn/vắng)...')}
                         defaultValue={rec.note || ''}
                         onBlur={(e) =>
                           updateCheckinRecord(currentEvt.id, m.member_code, status, e.target.value)
                         }
-                        className="flex-1 text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#1351D8] shadow-2xs"
+                        className="flex-1 text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:border-[#0284C7] shadow-2xs"
                       />
                     </div>
                   </div>
@@ -906,16 +1065,16 @@ export function CheckinView() {
           <div className="hidden md:block bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm text-slate-700 border-collapse">
-                {/* Header Navy sang trọng của dự án */}
-                <thead className="bg-[#0B1E48] text-xs font-bold text-white uppercase tracking-wider border-b border-[#071533] select-none">
-                  <tr className="divide-x divide-white/10">
-                    <th className="py-3 px-3 w-12 text-center font-bold text-blue-100 whitespace-nowrap">STT</th>
-                    <th className="py-3 px-4 min-w-[260px] font-bold text-white whitespace-nowrap">Thành viên</th>
-                    <th className="py-3 px-3 min-w-[130px] font-bold text-blue-100 whitespace-nowrap">Ban</th>
-                    <th className="py-3 px-3 min-w-[130px] font-bold text-blue-100 whitespace-nowrap">Giờ Check-in</th>
-                    <th className="py-3 px-3 min-w-[170px] font-bold text-white whitespace-nowrap">Trạng thái điểm danh</th>
-                    <th className="py-3 px-3 min-w-[250px] text-center font-bold text-blue-100 whitespace-nowrap">Thao tác nhanh 1 chạm</th>
-                    <th className="py-3 px-4 min-w-[180px] font-bold text-blue-100 whitespace-nowrap">Ghi chú</th>
+                {/* Header màu xanh tươi #0284C7 đồng bộ ảnh 1 */}
+                <thead className="bg-[#0284C7] text-xs font-bold text-white uppercase tracking-wider select-none shadow-xs">
+                  <tr className="divide-x divide-white/15">
+                    <th className="py-3 px-3 w-12 text-center font-bold text-sky-100 whitespace-nowrap">{t('checkin.th_stt', 'STT')}</th>
+                    <th className="py-3 px-4 min-w-[260px] font-bold text-white whitespace-nowrap">{t('checkin.th_member', 'Thành viên')}</th>
+                    <th className="py-3 px-3 min-w-[130px] font-bold text-sky-100 whitespace-nowrap">{t('checkin.th_dept', 'Ban')}</th>
+                    <th className="py-3 px-3 min-w-[130px] text-center font-bold text-sky-100 whitespace-nowrap">{t('checkin.th_time', 'Giờ Check-in')}</th>
+                    <th className="py-3 px-3 min-w-[170px] font-bold text-white whitespace-nowrap">{t('checkin.th_status', 'Trạng thái điểm danh')}</th>
+                    <th className="py-3 px-3 min-w-[250px] text-center font-bold text-sky-100 whitespace-nowrap">{t('checkin.th_actions', 'Thao tác nhanh 1 chạm')}</th>
+                    <th className="py-3 px-4 min-w-[180px] font-bold text-sky-100 whitespace-nowrap">{t('checkin.th_note', 'Ghi chú')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -924,16 +1083,16 @@ export function CheckinView() {
                       <td colSpan={7} className="py-12 text-center text-slate-400">
                         <div className="space-y-2">
                           <Search className="w-8 h-8 text-slate-300 mx-auto" />
-                          <p className="font-semibold text-xs sm:text-sm">Không tìm thấy thành viên nào phù hợp với bộ lọc</p>
+                          <p className="font-semibold text-xs sm:text-sm">{t('checkin.no_members', 'Không tìm thấy thành viên nào phù hợp với bộ lọc')}</p>
                           <button
                             onClick={() => {
                               setSearchQuery('')
                               setDeptFilter('ALL')
                               setStatusFilter('ALL')
                             }}
-                            className="text-xs sm:text-sm text-[#1351D8] font-semibold hover:underline"
+                            className="text-xs sm:text-sm text-[#0284C7] font-semibold hover:underline"
                           >
-                            Xóa bộ lọc tìm kiếm
+                            {t('checkin.reset_filter', 'Xóa bộ lọc tìm kiếm')}
                           </button>
                         </div>
                       </td>
@@ -953,19 +1112,19 @@ export function CheckinView() {
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-2.5 whitespace-nowrap">
-                              {m.avatar_url || m.full_name === 'Trần Đức Thắng' ? (
+                              {getMemberAvatarUrl(m) ? (
                                 <img
-                                  src={m.avatar_url || '/avatars/duc-thang.jpg'}
+                                  src={getMemberAvatarUrl(m)!}
                                   alt={m.full_name}
                                   className="w-9 h-9 rounded-full object-cover border border-slate-200 flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1351D8] font-bold flex items-center justify-center text-xs flex-shrink-0 border border-blue-200/60">
+                                <div className="w-9 h-9 rounded-full bg-[#F0F9FF] text-[#0284C7] font-bold flex items-center justify-center text-xs flex-shrink-0 border border-sky-200/80">
                                   {m.full_name.charAt(0)}
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <div className="font-bold text-[#0F172A] flex items-center gap-1.5 whitespace-nowrap">
+                                <div className="font-bold text-[#061651] flex items-center gap-1.5 whitespace-nowrap">
                                   <span className="whitespace-nowrap">{m.full_name}</span>
                                   {m.is_core && (
                                     <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 text-[9px] font-bold rounded border border-amber-200/80 whitespace-nowrap">
@@ -976,17 +1135,17 @@ export function CheckinView() {
                                     currentEvt.registeredMemberCodes?.includes(m.member_code) ? (
                                       <span
                                         className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] font-bold rounded border border-emerald-200/80 whitespace-nowrap"
-                                        title="Thành viên đã đăng ký tham gia sự kiện này"
+                                        title={language === 'vi' ? 'Thành viên đã đăng ký tham gia sự kiện này' : 'Member has registered for this event'}
                                       >
                                         <Ticket className="w-2.5 h-2.5" />
-                                        Đã ĐK
+                                        {t('checkin.badge_reg', 'Đã ĐK')}
                                       </span>
                                     ) : (
                                       <span
                                         className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-100 text-slate-400 text-[9px] rounded border border-slate-200/60 whitespace-nowrap"
-                                        title="Chưa đăng ký trước"
+                                        title={language === 'vi' ? 'Chưa đăng ký trước' : 'Not pre-registered'}
                                       >
-                                        Chưa ĐK
+                                        {t('checkin.badge_unreg', 'Chưa ĐK')}
                                       </span>
                                     )
                                   )}
@@ -994,58 +1153,58 @@ export function CheckinView() {
                                 <div className="font-normal text-slate-500 text-[11px] mt-0.5 whitespace-nowrap">
                                   {m.student_id ? `${m.student_id} - ` : ''}
                                   {m.class_name ? `${m.class_name} - ` : ''}
-                                  {m.position}
+                                  {getPositionName(m.position)}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="py-3 px-3">
                             <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap ${getDeptBadgeStyle(m.department_slug)}`}>
-                              {m.department_name}
+                              {getDeptName(m.department_slug)}
                             </span>
                           </td>
-                          <td className="py-3 px-3">
-                            <span className="font-mono text-[11px] text-[#334155]">
+                          <td className="py-3 px-3 text-center">
+                            <div className="flex items-center justify-center">
                               {rec.checkinTime ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-lg text-xs">
-                                  <Clock className="w-3 h-3 text-emerald-600" />
+                                <span className="inline-flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-lg text-xs whitespace-nowrap">
+                                  <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
                                   <span>{rec.checkinTime}</span>
                                 </span>
                               ) : (
-                                <span className="text-slate-400 italic text-xs">Chưa điểm danh</span>
+                                <span className="text-slate-400 italic text-xs whitespace-nowrap">{t('checkin.not_checked_in', 'Chưa điểm danh')}</span>
                               )}
-                            </span>
+                            </div>
                           </td>
                           <td className="py-3 px-3">
                             {status === 'present_on_time' && (
                               currentEvt.allowRegistration && !currentEvt.registeredMemberCodes?.includes(m.member_code) ? (
-                                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-flex items-center gap-1 whitespace-nowrap" title="Chưa đăng ký trước sự kiện nên không cộng điểm thi đua">
+                                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-flex items-center gap-1 whitespace-nowrap" title={language === 'vi' ? 'Chưa đăng ký trước sự kiện nên không cộng điểm thi đua' : 'Not registered beforehand, no activity points added'}>
                                   <Clock className="w-3 h-3 text-slate-500" />
-                                  <span>Đúng giờ (0đ - Chưa ĐK)</span>
+                                  <span>{language === 'vi' ? 'Đúng giờ (0đ - Chưa ĐK)' : 'On Time (0pt - Not Reg)'}</span>
                                 </span>
                               ) : (
                                 <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] inline-flex items-center gap-1 whitespace-nowrap">
                                   <CheckCircle2 className="w-3 h-3 text-[#059669]" />
-                                  <span>Đúng giờ (+{currentEvt.pointBonus !== undefined ? currentEvt.pointBonus : 1} C07)</span>
+                                  <span>{language === 'vi' ? `Đúng giờ (+${currentEvt.pointBonus !== undefined ? currentEvt.pointBonus : 1} C07)` : `On Time (+${currentEvt.pointBonus !== undefined ? currentEvt.pointBonus : 1} C07)`}</span>
                                 </span>
                               )
                             )}
                             {status === 'late' && (
                               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 inline-flex items-center gap-1 whitespace-nowrap">
                                 <Clock className="w-3 h-3 text-amber-600" />
-                                <span>Đi muộn (-1 T04)</span>
+                                <span>{language === 'vi' ? 'Đi muộn (-1 T04)' : 'Late (-1 T04)'}</span>
                               </span>
                             )}
                             {status === 'excused' && (
                               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 inline-flex items-center gap-1 whitespace-nowrap">
                                 <AlertTriangle className="w-3 h-3 text-blue-600" />
-                                <span>Có phép (-2 T01)</span>
+                                <span>{language === 'vi' ? 'Có phép (-2 T01)' : 'Excused (-2 T01)'}</span>
                               </span>
                             )}
                             {status === 'unexcused' && (
                               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 inline-flex items-center gap-1 whitespace-nowrap">
                                 <XCircle className="w-3 h-3 text-rose-600" />
-                                <span>Không phép (-5 T02)</span>
+                                <span>{language === 'vi' ? 'Không phép (-5 T02)' : 'Unexcused (-5 T02)'}</span>
                               </span>
                             )}
                           </td>
@@ -1058,52 +1217,52 @@ export function CheckinView() {
                                 onClick={() =>
                                   updateCheckinRecord(currentEvt.id, m.member_code, 'present_on_time')
                                 }
-                                title="Ghi nhận đúng giờ (+1 C07)"
+                                title={language === 'vi' ? 'Ghi nhận đúng giờ (+1 C07)' : 'Mark on time (+1 C07)'}
                                 className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all ${status === 'present_on_time'
                                     ? 'bg-emerald-600 text-white shadow-xs'
                                     : 'text-slate-600 hover:text-emerald-700 hover:bg-white'
                                   }`}
                               >
-                                Đúng giờ
+                                {t('checkin.btn_ontime', 'Đúng giờ')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() =>
                                   updateCheckinRecord(currentEvt.id, m.member_code, 'late')
                                 }
-                                title="Ghi nhận đi muộn (-1 T04)"
+                                title={language === 'vi' ? 'Ghi nhận đi muộn (-1 T04)' : 'Mark late (-1 T04)'}
                                 className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all ${status === 'late'
                                     ? 'bg-amber-600 text-white shadow-xs'
                                     : 'text-slate-600 hover:text-amber-700 hover:bg-white'
                                   }`}
                               >
-                                Muộn
+                                {t('checkin.btn_late', 'Muộn')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() =>
                                   updateCheckinRecord(currentEvt.id, m.member_code, 'excused')
                                 }
-                                title="Ghi nhận vắng có phép (-2 T01)"
+                                title={language === 'vi' ? 'Ghi nhận vắng có phép (-2 T01)' : 'Mark excused absence (-2 T01)'}
                                 className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all ${status === 'excused'
                                     ? 'bg-blue-600 text-white shadow-xs'
                                     : 'text-slate-600 hover:text-blue-700 hover:bg-white'
                                   }`}
                               >
-                                Phép
+                                {t('checkin.btn_excused', 'Phép')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() =>
                                   updateCheckinRecord(currentEvt.id, m.member_code, 'unexcused')
                                 }
-                                title="Ghi nhận vắng không phép (-5 T02)"
+                                title={language === 'vi' ? 'Ghi nhận vắng không phép (-5 T02)' : 'Mark unexcused absence (-5 T02)'}
                                 className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all ${status === 'unexcused'
                                     ? 'bg-rose-600 text-white shadow-xs'
                                     : 'text-slate-600 hover:text-rose-700 hover:bg-white'
                                   }`}
                               >
-                                Vắng
+                                {t('checkin.btn_unexcused', 'Vắng')}
                               </button>
                             </div>
                           </td>
@@ -1111,7 +1270,7 @@ export function CheckinView() {
                           <td className="py-3 px-4">
                             <input
                               type="text"
-                              placeholder="Ghi chú lý do..."
+                              placeholder={t('checkin.note_placeholder', 'Ghi chú lý do...')}
                               defaultValue={rec.note || ''}
                               onBlur={(e) =>
                                 updateCheckinRecord(
@@ -1121,7 +1280,7 @@ export function CheckinView() {
                                   e.target.value
                                 )
                               }
-                              className="w-full text-xs font-medium px-2.5 py-1.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]/20 rounded-lg focus:outline-none transition shadow-2xs"
+                              className="w-full text-xs font-medium px-2.5 py-1.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 rounded-lg focus:outline-none transition shadow-2xs"
                             />
                           </td>
                         </tr>
@@ -1143,29 +1302,35 @@ export function CheckinView() {
             <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center mx-auto">
               <Ticket className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-slate-800">Chưa có sự kiện nào</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">Vui lòng khởi tạo sự kiện có mở đăng ký để theo dõi danh sách vé và đối soát QR.</p>
+            <h3 className="text-base font-bold text-slate-800">
+              {language === 'vi' ? 'Chưa có sự kiện nào' : 'No Events Available'}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {language === 'vi' ? 'Vui lòng khởi tạo sự kiện có mở đăng ký để theo dõi danh sách vé và đối soát QR.' : 'Please create an event with open registration to track tickets and reconcile QR codes.'}
+            </p>
           </div>
         ) : (
         <div className="space-y-6 animate-fadeIn">
           {/* Header Card đối soát */}
-          <div className="bg-gradient-to-r from-[#0B1E48] via-[#103E8F] to-[#1351D8] text-white rounded-3xl p-6 sm:p-7 border border-blue-900/40 shadow-lg space-y-4">
+          <div className="bg-[#0084c8] text-white rounded-3xl p-6 sm:p-7 border border-white/20 shadow-xl space-y-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
-                    Bảo đảm công bằng & chống gian lận 100%
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#FFCD38] text-[#061651] shadow-xs">
+                    {language === 'vi' ? 'Bảo đảm công bằng & chống gian lận 100%' : '100% Fair & Anti-Fraud Guarantee'}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-blue-200">
-                    Phiên: {currentEvt.title}
+                  <span className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-white/20 text-white border border-white/25">
+                    {language === 'vi' ? 'Phiên: ' : 'Session: '}{currentEvt.title}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2.5">
-                  <Ticket className="w-6 h-6 text-[#F5B301]" />
-                  Danh Sách Đăng Ký Trước &amp; Bảng Đối Soát Vé QR
+                <h3 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2.5 text-white">
+                  <Ticket className="w-6 h-6 text-[#FFCD38]" />
+                  {language === 'vi' ? 'Danh Sách Đăng Ký Trước & Bảng Đối Soát Vé QR' : 'Pre-Registration List & QR Ticket Reconciliation'}
                 </h3>
-                <p className="text-xs text-blue-100/80 max-w-2xl leading-relaxed">
-                  Khi thành viên đến hội trường, Admin/Ban Nhân sự tại bàn tiếp đón sử dụng <strong>Máy quét QR</strong> để quét mã trên màn hình điện thoại của thành viên. Hệ thống tự động so khớp danh sách đã giữ chỗ, ngăn chặn hoàn toàn việc điểm danh hộ.
+                <p className="text-xs sm:text-[13px] text-white/95 max-w-2xl leading-relaxed font-normal text-justify">
+                  {language === 'vi'
+                    ? 'Khi thành viên đến hội trường, Admin/Ban Nhân sự tại bàn tiếp đón sử dụng Máy quét QR để quét mã trên màn hình điện thoại của thành viên. Hệ thống tự động so khớp danh sách đã giữ chỗ, ngăn chặn hoàn toàn việc điểm danh hộ.'
+                    : 'When members arrive at the venue, Admin/HR desk officers scan the QR ticket on member phones. The system automatically reconciles against the reserved list, preventing proxy attendance.'}
                 </p>
               </div>
 
@@ -1173,35 +1338,43 @@ export function CheckinView() {
                 <button
                   type="button"
                   onClick={() => setIsScannerOpen(true)}
-                  className="px-5 py-3 rounded-2xl bg-[#F5B301] hover:bg-[#e0a400] text-[#0B1E48] font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer active:scale-95"
+                  className="px-5 py-3 rounded-2xl bg-[#FFCD38] hover:bg-[#F8C327] text-[#061651] font-black text-xs sm:text-[13px] transition shadow-lg shadow-black/10 flex items-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <QrCode className="w-5 h-5 text-[#0B1E48]" />
-                  <span>MỞ MÁY QUÉT QR BÀN TRỰC</span>
+                  <QrCode className="w-5 h-5 text-[#061651]" />
+                  <span>{language === 'vi' ? 'MỞ MÁY QUÉT QR BÀN TRỰC' : 'OPEN DESK QR SCANNER'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Quick counters */}
-            <div className="pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                <span className="text-slate-300 block text-[11px]">Tổng số đã giữ chỗ:</span>
-                <span className="text-xl font-black text-white">
+            {/* Quick counters - Độ tương phản cao, rõ ràng và sắc nét */}
+            <div className="pt-4 border-t border-white/20 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="bg-white/15 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-white/25 shadow-sm">
+                <span className="text-white/90 block text-xs font-medium mb-1">
+                  {language === 'vi' ? 'Tổng số đã giữ chỗ:' : 'Total Reserved:'}
+                </span>
+                <span className="text-2xl sm:text-[26px] font-black text-white tracking-tight">
                   {currentEvt.registeredMemberCodes?.length || 0} / {currentEvt.maxAttendees || 50}
                 </span>
               </div>
-              <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                <span className="text-slate-300 block text-[11px]">Đã quét vé có mặt:</span>
-                <span className="text-xl font-black text-emerald-400">
+
+              <div className="bg-white/15 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-white/25 shadow-sm">
+                <span className="text-white/90 block text-xs font-medium mb-1">
+                  {language === 'vi' ? 'Đã quét vé có mặt:' : 'Scanned & Present:'}
+                </span>
+                <span className="text-2xl sm:text-[26px] font-black text-[#A7F3D0] tracking-tight">
                   {
                     (currentEvt.registeredMemberCodes || []).filter(
                       (c) => records[c]?.status === 'present_on_time' || records[c]?.status === 'late'
                     ).length
-                  } TV
+                  } {language === 'vi' ? 'TV' : 'members'}
                 </span>
               </div>
-              <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                <span className="text-slate-300 block text-[11px]">Chưa đến hội trường:</span>
-                <span className="text-xl font-black text-amber-300">
+
+              <div className="bg-white/15 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-white/25 shadow-sm">
+                <span className="text-white/90 block text-xs font-medium mb-1">
+                  {language === 'vi' ? 'Chưa đến hội trường:' : 'Not Arrived Yet:'}
+                </span>
+                <span className="text-2xl sm:text-[26px] font-black text-[#FEF08A] tracking-tight">
                   {
                     Math.max(
                       0,
@@ -1210,12 +1383,15 @@ export function CheckinView() {
                         (c) => records[c]?.status === 'present_on_time' || records[c]?.status === 'late'
                       ).length
                     )
-                  } TV
+                  } {language === 'vi' ? 'TV' : 'members'}
                 </span>
               </div>
-              <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-                <span className="text-slate-300 block text-[11px]">Tỷ lệ có mặt:</span>
-                <span className="text-xl font-black text-white">
+
+              <div className="bg-white/15 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-white/25 shadow-sm">
+                <span className="text-white/90 block text-xs font-medium mb-1">
+                  {language === 'vi' ? 'Tỷ lệ có mặt:' : 'Attendance Rate:'}
+                </span>
+                <span className="text-2xl sm:text-[26px] font-black text-white tracking-tight">
                   {currentEvt.registeredMemberCodes?.length
                     ? Math.round(
                       ((currentEvt.registeredMemberCodes || []).filter(
@@ -1236,10 +1412,14 @@ export function CheckinView() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <h4 className="text-sm font-black text-slate-800">
-                  Bảng Danh Sách Người Đăng Ký ({currentEvt.registeredMemberCodes?.length || 0} người)
+                  {language === 'vi'
+                    ? `Bảng Danh Sách Người Đăng Ký (${currentEvt.registeredMemberCodes?.length || 0} người)`
+                    : `Registered Attendees List (${currentEvt.registeredMemberCodes?.length || 0} members)`}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  Danh sách chính xác từng thành viên đã đăng ký trước khi sự kiện diễn ra
+                  {language === 'vi'
+                    ? 'Danh sách chính xác từng thành viên đã đăng ký trước khi sự kiện diễn ra'
+                    : 'Verified list of members who registered prior to the session'}
                 </p>
               </div>
 
@@ -1250,7 +1430,7 @@ export function CheckinView() {
                   className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  <span>Quét QR nhanh</span>
+                  <span>{language === 'vi' ? 'Quét QR nhanh' : 'Quick QR Scan'}</span>
                 </button>
               </div>
             </div>
@@ -1258,24 +1438,28 @@ export function CheckinView() {
             {(!currentEvt.registeredMemberCodes || currentEvt.registeredMemberCodes.length === 0) ? (
               <div className="p-12 text-center text-slate-400 space-y-3">
                 <Ticket className="w-10 h-10 mx-auto text-slate-300" />
-                <p className="font-bold text-sm text-slate-600">Chưa có thành viên nào đăng ký sự kiện này.</p>
+                <p className="font-bold text-sm text-slate-600">
+                  {language === 'vi' ? 'Chưa có thành viên nào đăng ký sự kiện này.' : 'No members registered for this event yet.'}
+                </p>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Thành viên có thể đăng ký giữ chỗ trước tại <strong>Cổng Thành Viên (/checkin?tab=register)</strong> để nhận mã vé QR cá nhân.
+                  {language === 'vi'
+                    ? 'Thành viên có thể đăng ký giữ chỗ trước tại Cổng Thành Viên (/checkin?tab=register) để nhận mã vé QR cá nhân.'
+                    : 'Members can reserve their spot via Member Portal to receive their personal QR ticket.'}
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto border border-slate-100 rounded-xl">
                 <table className="w-full text-left text-xs sm:text-sm">
-                  <thead className="bg-[#0B1E48] text-white text-xs font-bold uppercase tracking-wider">
+                  <thead className="bg-[#0284C7] text-white text-xs font-bold uppercase tracking-wider select-none shadow-xs">
                     <tr>
-                      <th className="py-3 px-3 w-12 text-center">STT</th>
-                      <th className="py-3 px-4">Mã Vé Điện Tử</th>
-                      <th className="py-3 px-4 min-w-[200px]">Thành viên</th>
-                      <th className="py-3 px-3">MSSV</th>
-                      <th className="py-3 px-3">Ban</th>
-                      <th className="py-3 px-3 text-center">Trạng thái vé</th>
-                      <th className="py-3 px-3 text-right">Giờ quét QR</th>
-                      <th className="py-3 px-3 text-center">Thao tác</th>
+                      <th className="py-3 px-3 w-12 text-center">{t('checkin.th_stt', 'STT')}</th>
+                      <th className="py-3 px-4">{language === 'vi' ? 'Mã Vé Điện Tử' : 'E-Ticket Code'}</th>
+                      <th className="py-3 px-4 min-w-[200px]">{t('checkin.th_member', 'Thành viên')}</th>
+                      <th className="py-3 px-3">{language === 'vi' ? 'MSSV' : 'Student ID'}</th>
+                      <th className="py-3 px-3">{t('checkin.th_dept', 'Ban')}</th>
+                      <th className="py-3 px-3 text-center">{language === 'vi' ? 'Trạng thái vé' : 'Ticket Status'}</th>
+                      <th className="py-3 px-3 text-right">{language === 'vi' ? 'Giờ quét QR' : 'Scan Time'}</th>
+                      <th className="py-3 px-3 text-center">{language === 'vi' ? 'Thao tác' : 'Actions'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1312,18 +1496,18 @@ export function CheckinView() {
                             {m.student_id || m.member_code}
                           </td>
                           <td className="py-3 px-3 text-slate-600 text-xs">
-                            {m.department_name}
+                            {getDeptName(m.department_slug)}
                           </td>
                           <td className="py-3 px-3 text-center">
                             {isChecked ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                 <Check className="w-3.5 h-3.5 text-emerald-700 font-black" />
-                                ĐÃ CHECK-IN
+                                {language === 'vi' ? 'ĐÃ CHECK-IN' : 'CHECKED IN'}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                 <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                CHƯA ĐẾN
+                                {language === 'vi' ? 'CHƯA ĐẾN' : 'NOT ARRIVED'}
                               </span>
                             )}
                           </td>
@@ -1336,7 +1520,9 @@ export function CheckinView() {
                           </td>
                           <td className="py-3 px-3 text-center">
                             {isChecked ? (
-                              <span className="text-[11px] font-semibold text-emerald-700">✓ Hoàn tất</span>
+                              <span className="text-[11px] font-semibold text-emerald-700">
+                                {language === 'vi' ? '✓ Hoàn tất' : '✓ Completed'}
+                              </span>
                             ) : (
                               <button
                                 type="button"
@@ -1351,13 +1537,15 @@ export function CheckinView() {
                                     currentEvt.id,
                                     code,
                                     'present_on_time',
-                                    `Quét vé QR xác thực tại bàn đón tiếp lúc ${scanTime}`
+                                    language === 'vi'
+                                      ? `Quét vé QR xác thực tại bàn đón tiếp lúc ${scanTime}`
+                                      : `Scanned QR ticket verified at desk at ${scanTime}`
                                   )
                                 }}
                                 className="px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
                               >
                                 <QrCode className="w-3 h-3" />
-                                <span>Quét vé</span>
+                                <span>{language === 'vi' ? 'Quét vé' : 'Scan ticket'}</span>
                               </button>
                             )}
                           </td>
@@ -1375,53 +1563,62 @@ export function CheckinView() {
 
       {/* Sub-tab 2: Cổng Check-in Thành viên (Kiosk / Mobile Portal) */}
       {subTab === 'member_kiosk' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-          {/* Mobile Mockup Kiosk Card */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xl max-w-md mx-auto w-full relative overflow-hidden">
-            {/* Top speaker notch mockup */}
-            <div className="w-32 h-4 bg-slate-900 rounded-b-xl mx-auto -mt-6 mb-4 flex items-center justify-center">
-              <div className="w-10 h-1 bg-slate-700 rounded-full"></div>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          {/* Cột Trái: Cổng Kiosk Điểm Danh Tự Phục Vụ */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col justify-between h-full space-y-5">
+            <div>
+              {/* Header đồng bộ chuẩn format dự án (ảnh 2) */}
+              <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-2xl bg-[#F0F9FF] text-[#0084c8] border border-sky-300/80 shadow-2xs flex items-center justify-center shrink-0">
+                    <Smartphone className="w-5.5 h-5.5 stroke-[2.2] text-[#0084c8]" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#061651] tracking-tight">
+                      {language === 'vi' ? 'Điểm Danh Sinh Hoạt CLB' : 'Club Meeting Check-in'}
+                    </h3>
+                    <p className="text-xs text-[#64748B] mt-0.5 truncate">
+                      {currentEvt?.title || 'iSSAC FIRST MEETING GEN 3.0'}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="text-center space-y-1 mb-6">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#1351D8] border border-blue-200/80 inline-block">
-                Cổng Check-in Điện Tử CLB
-              </span>
-              <h3 className="text-xl font-extrabold text-[#0F172A]">
-                Điểm Danh Sinh Hoạt CLB
-              </h3>
-              <p className="text-xs text-[#64748B]">
-                {currentEvt?.title || 'Sinh hoạt định kỳ CLB'}
-              </p>
-            </div>
-
-            {/* Simulated QR Scanner view toggle */}
-            <div className="mb-6">
-              <div className="flex justify-center gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setIsSimulatingCamera(false)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${!isSimulatingCamera
-                      ? 'bg-[#1351D8] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                    }`}
-                >
-                  Nhập mã PIN
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsSimulatingCamera(true)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${isSimulatingCamera
-                      ? 'bg-[#1351D8] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                    }`}
-                >
-                  Camera quét QR
-                </button>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F0F9FF] text-[#0084c8] border border-sky-200/80 shrink-0">
+                  {language === 'vi' ? 'Cổng Kiosk' : 'Kiosk Portal'}
+                </span>
               </div>
 
+              {/* Segmented Switcher Pill */}
+              <div className="flex justify-center pt-4 mb-4">
+                <div className="inline-flex items-center p-1 bg-[#F1F5F9] rounded-xl text-xs font-medium w-full max-w-xs border border-slate-200/60">
+                  <button
+                    type="button"
+                    onClick={() => setIsSimulatingCamera(false)}
+                    className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      !isSimulatingCamera
+                        ? 'bg-[#0084c8] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-[#061651] hover:bg-white/60'
+                    }`}
+                  >
+                    {language === 'vi' ? 'Nhập mã PIN' : 'Enter PIN'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsSimulatingCamera(true)}
+                    className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      isSimulatingCamera
+                        ? 'bg-[#0084c8] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-[#061651] hover:bg-white/60'
+                    }`}
+                  >
+                    {language === 'vi' ? 'Camera quét QR' : 'QR Scanner'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Nội dung Form Kiosk */}
               {isSimulatingCamera ? (
-                <div className="aspect-square bg-slate-950 rounded-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 border border-slate-800">
+                <div className="aspect-square max-w-sm mx-auto bg-slate-950 rounded-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 border border-slate-800">
                   <div className="w-48 h-48 border border-emerald-400/80 rounded-xl relative flex items-center justify-center">
                     <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-400"></div>
                     <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-400"></div>
@@ -1436,57 +1633,66 @@ export function CheckinView() {
                     type="button"
                     onClick={() => {
                       if (currentEvt) {
-                        setKioskPin(currentEvt.pinCode)
+                        setKioskPhoneDigits(expectedPhoneDigits || currentEvt.pinCode)
                         setIsSimulatingCamera(false)
                       }
                     }}
-                    className="mt-4 px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow hover:bg-emerald-700 transition"
+                    className="mt-4 px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow hover:bg-emerald-700 transition cursor-pointer active:scale-95"
                   >
-                    Mô phỏng: Đã bắt được QR Code
+                    {language === 'vi' ? 'Mô phỏng: Đã bắt được QR Code' : 'Simulate: QR Code Captured'}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleKioskSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Chọn thành viên điểm danh:
+                    <label className="block text-xs font-bold text-[#061651] mb-1.5">
+                      {language === 'vi' ? 'Chọn thành viên điểm danh:' : 'Select member to check-in:'}
                     </label>
-                    <select
-                      value={kioskMemberCode}
-                      onChange={(e) => setKioskMemberCode(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200/90 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#1351D8] focus:bg-white"
-                    >
-                      {members.map((m) => (
-                        <option key={m.member_code} value={m.member_code}>
-                          {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={kioskMemberCode}
+                        onChange={(e) => {
+                          setKioskMemberCode(e.target.value)
+                          setKioskPhoneDigits('')
+                        }}
+                        className="appearance-none w-full pl-3.5 pr-8 py-2.5 bg-slate-50 hover:bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0084c8] focus:ring-1 focus:ring-[#0084c8]/20 transition shadow-2xs cursor-pointer"
+                      >
+                        {members.map((m) => (
+                          <option key={m.member_code} value={m.member_code}>
+                            {m.full_name} ({getDeptName(m.department_slug)} - {m.student_id || m.member_code})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Mã PIN máy chiếu (4 số):
+                    <label className="block text-xs font-bold text-[#061651] mb-1.5">
+                      {language === 'vi' ? '4 số cuối số điện thoại cá nhân (Xác thực):' : 'Last 4 digits of personal phone (Verification):'}
                     </label>
                     <input
                       type="text"
                       maxLength={4}
-                      placeholder="e.g. 8899"
-                      value={kioskPin}
-                      onChange={(e) => setKioskPin(e.target.value)}
-                      className="w-full p-3 text-center tracking-widest font-mono text-xl font-bold bg-slate-50 border border-slate-200/90 rounded-xl focus:border-[#1351D8] focus:bg-white focus:outline-none"
+                      placeholder="••••"
+                      value={kioskPhoneDigits}
+                      onChange={(e) => setKioskPhoneDigits(e.target.value.replace(/\D/g, ''))}
+                      className="w-full p-3 text-center tracking-[0.35em] font-mono text-xl font-black text-[#061651] bg-slate-50 border border-slate-200/90 rounded-xl focus:border-[#0084c8] focus:bg-white focus:outline-none transition shadow-2xs placeholder:text-slate-300"
                     />
-                    <span className="block text-[10px] text-slate-500 text-center mt-1">
-                      (Mã PIN hiện tại đang hiển thị: <strong className="text-[#1351D8] font-mono">{currentEvt ? currentEvt.pinCode : 'Chưa có'}</strong>)
-                    </span>
+                    <p className="text-[11px] text-slate-500 text-center mt-1.5 font-normal">
+                      {language === 'vi'
+                        ? 'Nhập đúng 4 số cuối SĐT đã đăng ký trong hồ sơ CLB để xác nhận có mặt'
+                        : 'Enter the last 4 digits of phone number registered in club records'}
+                    </p>
                   </div>
 
                   {kioskFeedback && (
                     <div
-                      className={`p-3 rounded-xl text-xs font-semibold ${kioskFeedback.type === 'success'
+                      className={`p-3 rounded-xl text-xs font-semibold ${
+                        kioskFeedback.type === 'success'
                           ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                           : 'bg-rose-50 text-rose-800 border border-rose-200'
-                        }`}
+                      }`}
                     >
                       {kioskFeedback.text}
                     </div>
@@ -1494,78 +1700,125 @@ export function CheckinView() {
 
                   <button
                     type="submit"
-                    className="w-full py-3 bg-[#1351D8] hover:bg-[#0E40AF] text-white font-bold text-xs rounded-xl shadow-xs transition active:scale-95"
+                    className="w-full py-3 bg-[#0084c8] hover:bg-[#0074b0] text-white font-bold text-xs sm:text-[13px] rounded-xl shadow-xs hover:shadow transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    Xác nhận Điểm danh Ngay
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{language === 'vi' ? 'Xác nhận Điểm danh Ngay' : 'Confirm Check-in Now'}</span>
                   </button>
                 </form>
               )}
             </div>
           </div>
 
-          {/* Guide & Rules for Check-in */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 space-y-5 shadow-sm">
-            <h4 className="text-base font-bold text-[#0F172A] flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#1351D8]" />
-              <span>Quy chế Điểm danh & Tính điểm CLB</span>
-            </h4>
-
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 flex items-start gap-3">
-                <span className="p-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs">
-                  C07
-                </span>
-                <div>
-                  <h5 className="font-bold text-xs text-emerald-900">
-                    Đúng giờ: +1 điểm hoạt động
-                  </h5>
-                  <p className="text-[11px] text-emerald-700 leading-relaxed">
-                    Có mặt tại phòng họp và check-in trong khung giờ quy định (trước hoặc trong vòng 15 phút đầu).
-                  </p>
+          {/* Cột Phải: Quy chế Điểm danh & Tính điểm CLB - Format Card KPI đồng bộ chuẩn ảnh 2 */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col justify-between h-full space-y-5">
+            <div>
+              {/* Header đồng bộ format ảnh 2 */}
+              <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-2xl bg-[#EBFBF2] text-[#059669] border border-emerald-300/80 shadow-2xs flex items-center justify-center shrink-0">
+                    <Shield className="w-5.5 h-5.5 stroke-[2.2] text-[#059669]" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-base sm:text-lg font-extrabold text-[#061651] tracking-tight">
+                      {language === 'vi' ? 'Quy chế Điểm danh & Tính điểm CLB' : 'Attendance & Scoring Rules'}
+                    </h4>
+                    <p className="text-xs text-[#64748B] mt-0.5 truncate">
+                      {language === 'vi' ? 'Quy chế chấm điểm check - in cho thành viên iSSAC' : 'Check-in scoring regulations for iSSAC members'}
+                    </p>
+                  </div>
                 </div>
+
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F0FDF4] text-[#16A34A] border border-emerald-200/80 shrink-0">
+                  {language === 'vi' ? 'Áp dụng Gen 3.0' : 'Gen 3.0 Applied'}
+                </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-3">
-                <span className="p-1.5 rounded-lg bg-amber-600 text-white font-bold text-xs">
-                  T04
-                </span>
-                <div>
-                  <h5 className="font-bold text-xs text-amber-900">
-                    Đi muộn &gt;15 phút: -1 điểm
-                  </h5>
-                  <p className="text-[11px] text-amber-700 leading-relaxed">
-                    Check-in sau 19:45 mà không có lý do bất khả kháng được duyệt trước.
-                  </p>
+              {/* 4 Thẻ Quy Chế Điểm Danh Chuẩn Style Theo Yêu Cầu */}
+              <div className="space-y-3 pt-3">
+                {/* Thẻ C07: Đúng giờ */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-100/70 flex items-start gap-3.5 sm:gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <span className="px-3 py-1.5 rounded-xl bg-[#00875A] text-white font-black text-xs sm:text-[13px] shrink-0 tracking-wide shadow-2xs">
+                    C07
+                  </span>
+                  <div className="space-y-1">
+                    <h5 className="font-extrabold text-xs sm:text-[13.5px] text-[#064E3B] tracking-tight">
+                      {language === 'vi' ? 'Đúng giờ: +1 điểm hoạt động' : 'On Time: +1 activity point'}
+                    </h5>
+                    <p className="text-xs text-[#047857] leading-relaxed font-normal">
+                      {language === 'vi'
+                        ? 'Có mặt tại phòng họp và check-in trong khung giờ quy định (trước hoặc trong vòng 15 phút đầu).'
+                        : 'Present and check-in within designated window (before or within first 15 mins).'}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
-                <span className="p-1.5 rounded-lg bg-[#1351D8] text-white font-bold text-xs">
-                  T01
-                </span>
-                <div>
-                  <h5 className="font-bold text-xs text-blue-900">
-                    Vắng có phép hợp lệ: -2 điểm
-                  </h5>
-                  <p className="text-[11px] text-blue-700 leading-relaxed">
-                    Gửi đơn xin phép trước tối thiểu 12 tiếng qua email CLB kèm minh chứng lịch thi hoặc lý do chính đáng.
-                  </p>
+                {/* Thẻ T04: Đi muộn */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FFFDF0] border border-amber-100/70 flex items-start gap-3.5 sm:gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <span className="px-3 py-1.5 rounded-xl bg-[#E67E00] text-white font-black text-xs sm:text-[13px] shrink-0 tracking-wide shadow-2xs">
+                    T04
+                  </span>
+                  <div className="space-y-1">
+                    <h5 className="font-extrabold text-xs sm:text-[13.5px] text-[#78350F] tracking-tight">
+                      {language === 'vi' ? 'Đi muộn >15 phút: -1 điểm' : 'Late >15 mins: -1 point'}
+                    </h5>
+                    <p className="text-xs text-[#B45309] leading-relaxed font-normal">
+                      {language === 'vi'
+                        ? 'Check-in sau 19:45 mà không có lý do bất khả kháng được duyệt trước.'
+                        : 'Check-in after 19:45 without approved force majeure reason.'}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
-                <span className="p-1.5 rounded-lg bg-rose-600 text-white font-bold text-xs">
-                  T02
-                </span>
-                <div>
-                  <h5 className="font-bold text-xs text-rose-900">
-                    Vắng không phép: -5 điểm & Báo động kỷ luật
-                  </h5>
-                  <p className="text-[11px] text-rose-700 leading-relaxed">
-                    Tích luỹ 3 lần vắng không phép trong nhiệm kỳ sẽ kích hoạt quy trình xem xét khai trừ khỏi Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế.
-                  </p>
+                {/* Thẻ T01: Vắng có phép */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0F7FF] border border-blue-100/70 flex items-start gap-3.5 sm:gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <span className="px-3 py-1.5 rounded-xl bg-[#1D68CD] text-white font-black text-xs sm:text-[13px] shrink-0 tracking-wide shadow-2xs">
+                    T01
+                  </span>
+                  <div className="space-y-1">
+                    <h5 className="font-extrabold text-xs sm:text-[13.5px] text-[#1E3A8A] tracking-tight">
+                      {language === 'vi' ? 'Vắng có phép hợp lệ: -2 điểm' : 'Excused Absence: -2 points'}
+                    </h5>
+                    <p className="text-xs text-[#2563EB] leading-relaxed font-normal">
+                      {language === 'vi'
+                        ? 'Gửi đơn xin phép trước tối thiểu 12 tiếng qua email CLB kèm minh chứng lịch thi hoặc lý do chính đáng.'
+                        : 'Submit leave request >=12h prior via Club email with exam schedule or valid reason.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Thẻ T02: Vắng không phép */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FFF1F2] border border-rose-100/70 flex items-start gap-3.5 sm:gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <span className="px-3 py-1.5 rounded-xl bg-[#E11D48] text-white font-black text-xs sm:text-[13px] shrink-0 tracking-wide shadow-2xs">
+                    T02
+                  </span>
+                  <div className="space-y-1">
+                    <h5 className="font-extrabold text-xs sm:text-[13.5px] text-[#881337] tracking-tight">
+                      {language === 'vi' ? 'Vắng không phép: -5 điểm & Báo động kỷ luật' : 'Unexcused Absence: -5 points & Disciplinary Alert'}
+                    </h5>
+                    <p className="text-xs text-[#BE123C] leading-relaxed font-normal">
+                      {language === 'vi'
+                        ? 'Tích luỹ 3 lần vắng không phép trong nhiệm kỳ sẽ kích hoạt quy trình xem xét khai trừ khỏi Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế.'
+                        : 'Accumulating 3 unexcused absences triggers expulsion review from VNU-IS Student Ambassadors Club.'}
+                    </p>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            {/* Note dưới cùng đồng bộ format chuẩn */}
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between text-xs text-slate-600 mt-auto">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[#0084c8] shrink-0" />
+                <span>
+                  {language === 'vi'
+                    ? 'Điểm chuyên cần sinh hoạt được tính trực tiếp vào Bảng xếp hạng thi đua tháng.'
+                    : 'Attendance scores are calculated directly into the monthly performance leaderboard.'}
+                </span>
+              </div>
+              <span className="font-semibold text-[#0084c8] shrink-0">
+                {language === 'vi' ? 'Quy chế CLB' : 'Club Rules'}
+              </span>
             </div>
           </div>
         </div>
@@ -1574,52 +1827,199 @@ export function CheckinView() {
       {/* Sub-tab 3: Lịch sử các buổi sinh hoạt */}
       {subTab === 'history' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm">
-            <h3 className="text-base font-bold text-[#0F172A] mb-4">
-              Các kỳ sinh hoạt CLB trong nhiệm kỳ 2026 - 2027
-            </h3>
-            <div className="space-y-3">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] space-y-5">
+            {/* Header của Khối Lịch sử */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F0F9FF] text-[#0084c8] flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#061651] tracking-tight">
+                    {language === 'vi' ? 'Các kỳ sinh hoạt CLB trong nhiệm kỳ 2026 - 2027' : 'Club Meeting Sessions in Term 2026 - 2027'}
+                  </h3>
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    {language === 'vi'
+                      ? 'Hồ sơ chuyên cần, danh sách đối soát và biên bản chốt điểm chính thức'
+                      : 'Attendance logs, reconciliation lists and official finalized point minutes'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                  {language === 'vi' ? 'Tổng số: ' : 'Total: '}<strong className="text-[#061651]">{events.length}</strong> {language === 'vi' ? 'phiên sinh hoạt' : 'meeting sessions'}
+                </span>
+              </div>
+            </div>
+
+            {/* Danh sách các buổi sinh hoạt */}
+            <div className="space-y-3.5">
               {events.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  <p className="font-semibold text-xs">Chưa có buổi sinh hoạt nào được lưu trong lịch sử</p>
+                <div className="p-12 text-center text-slate-400 space-y-2">
+                  <Calendar className="w-10 h-10 mx-auto text-slate-300 stroke-[1.5]" />
+                  <p className="font-bold text-sm text-slate-600">
+                    {language === 'vi' ? 'Chưa có buổi sinh hoạt nào được lưu trong lịch sử' : 'No meeting sessions saved in history'}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {language === 'vi'
+                      ? 'Các phiên điểm danh sau khi kết thúc sẽ được lưu trữ tự động tại đây'
+                      : 'Attendance sessions will be automatically archived here upon conclusion'}
+                  </p>
                 </div>
               ) : (
-                events.map((evt) => (
-                <div
-                  key={evt.id}
-                  className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/60 hover:bg-white hover:border-blue-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition shadow-2xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-[#0F172A]">
-                        {evt.title}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${evt.isFinalized
-                            ? 'bg-slate-100 text-slate-700 border-slate-200'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                          }`}
-                      >
-                        {evt.isFinalized ? 'Đã chốt sổ điểm' : 'Đang diễn ra'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium">{evt.description}</p>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
-                      <span>📅 {evt.date}</span>
-                      <span>⏰ {evt.startTime} - {evt.endTime}</span>
-                      <span>📍 {evt.location}</span>
-                    </div>
-                  </div>
+                events.map((evt) => {
+                  const evtRecords = evt.records || {}
+                  let onTime = 0
+                  let late = 0
+                  let excused = 0
+                  let unexcused = 0
 
-                  <div className="flex items-center gap-2">
-                    {evt.finalizedBy && (
-                      <span className="text-[10px] text-slate-500 italic">
-                        Chốt bởi: {evt.finalizedBy} ({evt.finalizedAt})
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )))}
+                  members.forEach((m) => {
+                    const st = evtRecords[m.member_code]?.status || 'unexcused'
+                    if (st === 'present_on_time') onTime++
+                    else if (st === 'late') late++
+                    else if (st === 'excused') excused++
+                    else unexcused++
+                  })
+
+                  const totalPresent = onTime + late
+                  const attendanceRate = members.length
+                    ? Math.round((totalPresent / members.length) * 100)
+                    : 0
+
+                  return (
+                    <div
+                      key={evt.id}
+                      className="p-4 sm:p-5 rounded-xl border border-slate-200/90 bg-white hover:border-[#0084c8]/50 hover:shadow-xs transition-all duration-200 space-y-4"
+                    >
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-extrabold text-sm sm:text-base text-[#061651]">
+                              {evt.title}
+                            </span>
+                            <span
+                              className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full flex items-center gap-1 border ${
+                                evt.isFinalized
+                                   ? 'bg-[#F0FDF4] text-[#16A34A] border-emerald-200/80'
+                                  : 'bg-[#F0F9FF] text-[#0084c8] border-sky-200/80'
+                              }`}
+                            >
+                              {evt.isFinalized ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3 text-[#16A34A]" />
+                                  <span>{t('checkin.btn_finalized', 'Đã chốt sổ điểm')}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#0084c8] animate-pulse" />
+                                  <span>{language === 'vi' ? 'Đang mở điểm danh' : 'Live Check-in'}</span>
+                                </>
+                              )}
+                            </span>
+                          </div>
+
+                          {evt.description && (
+                            <p className="text-xs text-slate-600 font-normal leading-relaxed">
+                              {evt.description}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 font-medium pt-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{evt.date}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{evt.startTime} - {evt.endTime}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{evt.location}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Thống kê nhanh chuyên cần & Nút thao tác */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 lg:pt-0 shrink-0">
+                          {/* 4 Thẻ KPI mini chuyên cần */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="px-2.5 py-1.5 rounded-lg bg-[#F0FDF4] text-center">
+                              <span className="block text-[10px] text-slate-500 font-medium">
+                                {language === 'vi' ? 'Có mặt' : 'Present'}
+                              </span>
+                              <strong className="text-xs font-bold text-[#16A34A]">{totalPresent}/{members.length}</strong>
+                            </div>
+                            <div className="px-2.5 py-1.5 rounded-lg bg-[#F0F9FF] text-center">
+                              <span className="block text-[10px] text-slate-500 font-medium">
+                                {language === 'vi' ? 'Tỷ lệ' : 'Rate'}
+                              </span>
+                              <strong className="text-xs font-bold text-[#0084c8]">{attendanceRate}%</strong>
+                            </div>
+                            <div className="px-2.5 py-1.5 rounded-lg bg-[#FFFBEB] text-center">
+                              <span className="block text-[10px] text-slate-500 font-medium">
+                                {language === 'vi' ? 'Muộn' : 'Late'}
+                              </span>
+                              <strong className="text-xs font-bold text-[#D97706]">{late}</strong>
+                            </div>
+                            <div className="px-2.5 py-1.5 rounded-lg bg-[#FEF2F2] text-center">
+                              <span className="block text-[10px] text-slate-500 font-medium">
+                                {language === 'vi' ? 'Vắng' : 'Absent'}
+                              </span>
+                              <strong className="text-xs font-bold text-[#DC2626]">{unexcused}</strong>
+                            </div>
+                          </div>
+
+                          {/* Nhóm nút thao tác */}
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveEventId(evt.id)
+                                setSubTab('admin_roster')
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-[#0084c8] hover:bg-[#0074b0] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                              title={language === 'vi' ? 'Xem danh sách chi tiết điểm danh của buổi sinh hoạt này' : 'View detailed attendance roster for this session'}
+                            >
+                              <Users className="w-3.5 h-3.5" />
+                              <span>{language === 'vi' ? 'Xem danh sách' : 'View Roster'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleExportEventCSV(evt)}
+                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-[#061651] text-xs font-bold transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                              title={language === 'vi' ? 'Tải file CSV kết quả điểm danh' : 'Download attendance CSV file'}
+                            >
+                              <Download className="w-3.5 h-3.5 text-slate-500" />
+                              <span>{t('checkin.export_csv', 'Xuất CSV')}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer chốt sổ */}
+                      {evt.finalizedBy && (
+                        <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-normal">
+                          <div className="flex items-center gap-1.5">
+                            <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>
+                              {language === 'vi' ? 'Biên bản chốt điểm chính thức bởi: ' : 'Official point finalization by: '}
+                              <strong className="text-[#061651] font-semibold">{evt.finalizedBy}</strong>
+                              {language === 'vi' ? ' lúc ' : ' at '}{evt.finalizedAt}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {language === 'vi' ? 'Đã đồng bộ vào sổ điểm CLB' : 'Synced with Club Scorebook'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
             </div>
           </div>
         </div>
@@ -1633,44 +2033,46 @@ export function CheckinView() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
 
-            <h3 className="text-xl font-extrabold text-[#0F172A]">
-              Chốt Sổ Điểm Danh Thành Công!
+            <h3 className="text-xl font-extrabold text-[#061651]">
+              {language === 'vi' ? 'Chốt Sổ Điểm Danh Thành Công!' : 'Attendance Successfully Finalized!'}
             </h3>
             <p className="text-xs text-[#64748B]">
-              Hệ thống đã tính toán và tự động cập nhật điểm chính thức cho toàn bộ thành viên Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế.
+              {language === 'vi'
+                ? 'Hệ thống đã tính toán và tự động cập nhật điểm chính thức cho toàn bộ thành viên Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế.'
+                : 'The system has calculated and updated official performance scores for all members of the VNU-IS Student Ambassadors Club.'}
             </p>
 
             <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-3 text-left border border-slate-200">
               <div>
                 <span className="text-[10px] text-slate-500 uppercase font-bold block">
-                  Đúng giờ (+1 C07)
+                  {t('checkin.card_on_time', 'Đúng giờ (C07)')}
                 </span>
                 <span className="text-lg font-black text-emerald-600">
-                  {finalizeSuccessModal.present} TV
+                  {finalizeSuccessModal.present} {language === 'vi' ? 'TV' : 'members'}
                 </span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 uppercase font-bold block">
-                  Đi muộn (-1 T04)
+                  {t('checkin.card_late', 'Đi muộn (T04)')}
                 </span>
                 <span className="text-lg font-black text-amber-600">
-                  {finalizeSuccessModal.late} TV
+                  {finalizeSuccessModal.late} {language === 'vi' ? 'TV' : 'members'}
                 </span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 uppercase font-bold block">
-                  Có phép (-2 T01)
+                  {t('checkin.card_excused', 'Có phép (T01)')}
                 </span>
-                <span className="text-lg font-black text-[#1351D8]">
-                  {finalizeSuccessModal.excused} TV
+                <span className="text-lg font-black text-[#0284C7]">
+                  {finalizeSuccessModal.excused} {language === 'vi' ? 'TV' : 'members'}
                 </span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 uppercase font-bold block">
-                  Không phép (-5 T02)
+                  {t('checkin.card_unexcused', 'Không phép (T02)')}
                 </span>
                 <span className="text-lg font-black text-rose-600">
-                  {finalizeSuccessModal.unexcused} TV
+                  {finalizeSuccessModal.unexcused} {language === 'vi' ? 'TV' : 'members'}
                 </span>
               </div>
             </div>
@@ -1678,9 +2080,9 @@ export function CheckinView() {
             <button
               type="button"
               onClick={() => setFinalizeSuccessModal(null)}
-              className="w-full py-3 bg-[#1351D8] hover:bg-[#0E40AF] text-white text-xs font-bold rounded-xl shadow transition active:scale-95 cursor-pointer"
+              className="w-full py-3 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl shadow transition active:scale-95 cursor-pointer"
             >
-              Hoàn tất & Xem bảng điểm mới
+              {language === 'vi' ? 'Hoàn tất & Xem bảng điểm mới' : 'Done & View Leaderboard'}
             </button>
           </div>
         </div>
@@ -1706,14 +2108,18 @@ export function CheckinView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden border border-slate-200">
             {/* Header */}
-            <div className="bg-[#0B1E48] px-6 py-4 flex items-center justify-between text-white border-b border-[#071533]">
+            <div className="bg-gradient-to-r from-[#0284C7] via-[#0369A1] to-[#075985] px-6 py-4 flex items-center justify-between text-white border-b border-sky-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-600/30 border border-blue-400/30">
-                  <Calendar className="w-5 h-5 text-blue-300" />
+                <div className="p-2 rounded-xl bg-white/20 border border-white/20">
+                  <Calendar className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base leading-snug">Khởi tạo sự kiện / Phiên điểm danh mới</h3>
-                  <p className="text-xs text-blue-200 font-medium">Thiết lập buổi họp, workshop hoặc teambuilding cho CLB</p>
+                  <h3 className="font-bold text-base leading-snug">
+                    {language === 'vi' ? 'Khởi tạo sự kiện / Phiên điểm danh mới' : 'Create Event / Attendance Session'}
+                  </h3>
+                  <p className="text-xs text-sky-100 font-medium">
+                    {language === 'vi' ? 'Thiết lập buổi họp, workshop hoặc teambuilding cho CLB' : 'Set up meeting, workshop or teambuilding for the club'}
+                  </p>
                 </div>
               </div>
               <button
@@ -1729,35 +2135,37 @@ export function CheckinView() {
             <form onSubmit={handleCreateEventSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Tên sự kiện / Buổi họp <span className="text-rose-500">*</span>
+                  {language === 'vi' ? 'Tên sự kiện / Buổi họp ' : 'Event / Meeting Name '}<span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Vd: Họp Thường Niên Tháng 11 CLB iSSAC"
+                  placeholder={language === 'vi' ? 'Vd: Họp Thường Niên Tháng 11 CLB iSSAC' : 'e.g. November Regular Meeting iSSAC'}
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium focus:outline-none focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Danh mục</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'vi' ? 'Danh mục' : 'Category'}
+                  </label>
                   <select
                     value={newCategory}
                     onChange={(e: any) => setNewCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#1351D8]"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#0284C7]"
                   >
-                    <option value="meeting">Buổi họp CLB / Ban</option>
-                    <option value="workshop">Workshop đào tạo</option>
-                    <option value="teambuilding">Teambuilding nội bộ</option>
-                    <option value="external">Sự kiện đối ngoại / Hợp tác</option>
+                    <option value="meeting">{language === 'vi' ? 'Buổi họp CLB / Ban' : 'Club / Dept Meeting'}</option>
+                    <option value="workshop">{language === 'vi' ? 'Workshop đào tạo' : 'Training Workshop'}</option>
+                    <option value="teambuilding">{language === 'vi' ? 'Teambuilding nội bộ' : 'Internal Teambuilding'}</option>
+                    <option value="external">{language === 'vi' ? 'Sự kiện đối ngoại / Hợp tác' : 'External / Partnership Event'}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Ngày diễn ra <span className="text-rose-500">*</span>
+                    {language === 'vi' ? 'Ngày diễn ra ' : 'Date '}<span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -1765,53 +2173,63 @@ export function CheckinView() {
                     placeholder="DD/MM/YYYY"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#1351D8]"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#0284C7]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Giờ bắt đầu</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'vi' ? 'Giờ bắt đầu' : 'Start Time'}
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="19:30"
                     value={newStartTime}
                     onChange={(e) => setNewStartTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#1351D8]"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#0284C7]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Giờ kết thúc</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {language === 'vi' ? 'Giờ kết thúc' : 'End Time'}
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="21:00"
                     value={newEndTime}
                     onChange={(e) => setNewEndTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#1351D8]"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#0284C7]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Địa điểm tổ chức</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {language === 'vi' ? 'Địa điểm tổ chức' : 'Location'}
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="Vd: Phòng Hội thảo 202 - Nhà G4 hoặc Online"
+                  placeholder={language === 'vi' ? 'Vd: Phòng Hội thảo 202 - Nhà G4 hoặc Online' : 'e.g. Conference Room 202 - G4 or Online'}
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium focus:outline-none focus:border-[#1351D8]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium focus:outline-none focus:border-[#0284C7]"
                 />
               </div>
 
               {/* PIN Code Generator */}
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-bold text-slate-700 block">Mã PIN máy chiếu Check-in</span>
-                  <span className="text-[11px] text-slate-500">Mã 4 số hiển thị trên màn hình lớn để thành viên tự nhập</span>
+                  <span className="text-xs font-bold text-slate-700 block">
+                    {language === 'vi' ? 'Mã PIN máy chiếu Check-in' : 'Projector Check-in PIN'}
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    {language === 'vi' ? 'Mã 4 số hiển thị trên màn hình lớn để thành viên tự nhập' : '4-digit code displayed on big screen for member self-checkin'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -1819,13 +2237,13 @@ export function CheckinView() {
                     maxLength={6}
                     value={newPin}
                     onChange={(e) => setNewPin(e.target.value)}
-                    className="w-20 px-2 py-1.5 font-mono text-center font-black text-sm bg-white border border-slate-300 rounded-lg text-[#1351D8]"
+                    className="w-20 px-2 py-1.5 font-mono text-center font-black text-sm bg-white border border-slate-300 rounded-lg text-[#0284C7]"
                   />
                   <button
                     type="button"
                     onClick={() => setNewPin(String(Math.floor(1000 + Math.random() * 9000)))}
                     className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 cursor-pointer"
-                    title="Đổi mã PIN ngẫu nhiên khác"
+                    title={language === 'vi' ? 'Đổi mã PIN ngẫu nhiên khác' : 'Generate new random PIN'}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -1839,11 +2257,15 @@ export function CheckinView() {
                     type="checkbox"
                     checked={newIsRequired}
                     onChange={(e) => setNewIsRequired(e.target.checked)}
-                    className="w-4 h-4 text-[#1351D8] rounded focus:ring-0 cursor-pointer"
+                    className="w-4 h-4 text-[#0284C7] rounded focus:ring-0 cursor-pointer"
                   />
                   <div className="text-xs">
-                    <span className="font-bold text-slate-800 block">Bắt buộc tham dự</span>
-                    <span className="text-slate-500 text-[10px]">Vắng không phép trừ điểm T02</span>
+                    <span className="font-bold text-slate-800 block">
+                      {language === 'vi' ? 'Bắt buộc tham dự' : 'Mandatory Attendance'}
+                    </span>
+                    <span className="text-slate-500 text-[10px]">
+                      {language === 'vi' ? 'Vắng không phép trừ điểm T02' : 'Unexcused absence deducts T02 points'}
+                    </span>
                   </div>
                 </label>
 
@@ -1852,18 +2274,22 @@ export function CheckinView() {
                     type="checkbox"
                     checked={newAllowReg}
                     onChange={(e) => setNewAllowReg(e.target.checked)}
-                    className="w-4 h-4 text-[#1351D8] rounded focus:ring-0 cursor-pointer"
+                    className="w-4 h-4 text-[#0284C7] rounded focus:ring-0 cursor-pointer"
                   />
                   <div className="text-xs">
-                    <span className="font-bold text-slate-800 block">Mở cổng đăng ký trước</span>
-                    <span className="text-slate-500 text-[10px]">Cấp vé điện tử QR cá nhân</span>
+                    <span className="font-bold text-slate-800 block">
+                      {language === 'vi' ? 'Mở cổng đăng ký trước' : 'Open Pre-Registration'}
+                    </span>
+                    <span className="text-slate-500 text-[10px]">
+                      {language === 'vi' ? 'Cấp vé điện tử QR cá nhân' : 'Issues personal digital QR ticket'}
+                    </span>
                   </div>
                 </label>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Điểm cộng khi tham dự đúng giờ (+điểm)
+                  {language === 'vi' ? 'Điểm cộng khi tham dự đúng giờ (+điểm)' : 'Points for on-time attendance (+pts)'}
                 </label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3].map((pts) => (
@@ -1873,11 +2299,11 @@ export function CheckinView() {
                       onClick={() => setNewPointBonus(pts)}
                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                         newPointBonus === pts
-                          ? 'bg-[#1351D8] text-white shadow-2xs'
+                          ? 'bg-[#0284C7] text-white shadow-2xs'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                     >
-                      +{pts} điểm
+                      +{pts} {language === 'vi' ? 'điểm' : 'pts'}
                     </button>
                   ))}
                 </div>
@@ -1889,13 +2315,13 @@ export function CheckinView() {
                   onClick={() => setIsCreateModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                 >
-                  Hủy bỏ
+                  {language === 'vi' ? 'Hủy bỏ' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white text-xs font-bold shadow transition active:scale-95 cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow transition active:scale-95 cursor-pointer"
                 >
-                  Khởi tạo & Kích hoạt phiên ngay
+                  {language === 'vi' ? 'Khởi tạo & Kích hoạt phiên ngay' : 'Create & Activate Session Now'}
                 </button>
               </div>
             </form>

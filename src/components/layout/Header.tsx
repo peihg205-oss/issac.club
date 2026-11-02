@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
 import {
   Search,
   Bell,
@@ -32,9 +33,22 @@ export function Header({
   onHomeClick,
 }: HeaderProps) {
   const { currentUser, logout } = useAuth()
+  const { language, setLanguage, t } = useLanguage()
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
-  const [language, setLanguage] = useState<'vi' | 'en'>('vi')
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const roleDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target as Node)) {
+        setRoleDropdownOpen(false)
+      }
+    }
+    if (roleDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [roleDropdownOpen])
 
   // Notification count: chỉ hiển thị huy hiệu khi có đề xuất/thông báo chờ xử lý thực tế
   const badgeDisplay = pendingCount > 0 ? pendingCount : 0
@@ -45,7 +59,7 @@ export function Header({
     : ''
 
   return (
-    <header className="h-14 sm:h-15 bg-white border-b border-slate-200/90 px-3 sm:px-6 md:px-10 lg:px-16 xl:px-20 flex items-center justify-between sticky top-0 z-30 select-none shadow-2xs">
+    <header className="w-full shrink-0 h-14 sm:h-15 bg-white border-b border-slate-200/90 px-3 sm:px-6 md:px-10 lg:px-16 xl:px-20 flex items-center justify-between sticky top-0 z-30 select-none shadow-2xs">
       {/* Khi mở ô tìm kiếm trên mobile: Hiển thị thanh search toàn phần */}
       {isMobileSearchOpen ? (
         <div className="flex items-center gap-2 w-full animate-fadeIn sm:hidden">
@@ -114,7 +128,7 @@ export function Header({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Tìm kiếm..."
+                placeholder={t('header.search_placeholder')}
                 className="w-full h-8 sm:h-9 rounded-full bg-white border border-slate-200/90 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 pl-4 pr-9 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none transition shadow-2xs"
               />
               <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -139,7 +153,7 @@ export function Header({
               <button
                 type="button"
                 onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
-                className="p-1 rounded hover:bg-slate-100 transition cursor-pointer flex items-center gap-1"
+                className="p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer flex items-center gap-1"
                 title={`Đang chọn: ${language === 'vi' ? 'Tiếng Việt' : 'English'}. Bấm để chuyển đổi.`}
               >
                 <img
@@ -150,39 +164,39 @@ export function Header({
               </button>
             </div>
 
-            {/* Desktop: Cả 2 cờ Việt Nam và UK */}
+            {/* Desktop: Cả 2 cờ Việt Nam và UK chuẩn Ảnh 1 (Không có viền bọc ngoài) */}
             <div className="hidden sm:flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setLanguage('vi')}
-                className={`p-0.5 rounded transition cursor-pointer ${
+                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
                   language === 'vi'
-                    ? 'ring-1.5 ring-blue-500 shadow-xs'
-                    : 'opacity-70 hover:opacity-100'
+                    ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-105'
+                    : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50'
                 }`}
                 title="Tiếng Việt (Vietnamese)"
               >
                 <img
                   src="/flag-vn.svg"
                   alt="Vietnam Flag"
-                  className="w-6 h-4 object-cover rounded-[2px] border border-slate-200/60 shadow-2xs block"
+                  className="w-6 h-4 object-cover rounded-[2px] block"
                 />
               </button>
 
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
-                className={`p-0.5 rounded transition cursor-pointer ${
+                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
                   language === 'en'
-                    ? 'ring-1.5 ring-blue-500 shadow-xs'
-                    : 'opacity-70 hover:opacity-100'
+                    ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-105'
+                    : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50'
                 }`}
                 title="English (United Kingdom)"
               >
                 <img
                   src="/flag-uk.svg"
                   alt="UK Flag"
-                  className="w-6 h-4 object-cover rounded-[2px] border border-slate-200/60 shadow-2xs block"
+                  className="w-6 h-4 object-cover rounded-[2px] block"
                 />
               </button>
             </div>
@@ -190,7 +204,7 @@ export function Header({
             {/* Divider line */}
             <div className="hidden sm:block h-4 w-px bg-slate-200" />
 
-            {/* Home Navigation: "Trang chủ" */}
+            {/* Home Navigation */}
             <button
               type="button"
               onClick={onHomeClick}
@@ -198,10 +212,10 @@ export function Header({
               title="Về Trang chủ Dashboard"
             >
               <Home className="w-4 h-4 text-slate-600 shrink-0" />
-              <span>Trang chủ</span>
+              <span>{t('header.home')}</span>
             </button>
 
-            {/* News & Notification: "Tin tức" with red badge */}
+            {/* News & Notification */}
             <button
               type="button"
               onClick={onNotificationClick}
@@ -216,15 +230,15 @@ export function Header({
                   </span>
                 )}
               </div>
-              <span className="hidden sm:inline ml-1.5">Tin tức</span>
+              <span className="hidden sm:inline ml-1.5">{t('header.news')}</span>
             </button>
 
             {/* User Account Profile Pill */}
-            <div className="relative">
+            <div ref={roleDropdownRef} className="relative">
               {!currentUser ? (
                 <a
                   href="/login"
-                  className="flex items-center gap-1.5 py-1 px-2.5 sm:py-1.5 sm:px-3.5 rounded-xl bg-[#1351D8] text-white hover:bg-blue-700 transition font-bold text-xs shadow-xs"
+                  className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#0284C7] text-white hover:bg-[#0369a1] transition font-bold text-xs shadow-xs"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>Đăng nhập</span>
@@ -234,11 +248,11 @@ export function Header({
                   <button
                     type="button"
                     onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                    className="flex items-center gap-1.5 sm:gap-2 py-1 px-1.5 sm:px-2 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition cursor-pointer select-none group"
+                    className="flex items-center gap-2 py-1 px-1.5 sm:px-2 rounded-xl hover:bg-slate-50 transition cursor-pointer select-none group focus:outline-none"
                     title="Tài khoản cá nhân"
                   >
                     {/* Circular Avatar */}
-                    <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-slate-300">
+                    <div className="w-7 h-7 rounded-full bg-[#E2E8F0] text-slate-400 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-slate-300">
                       {currentUser.avatarUrl ? (
                         <img
                           src={currentUser.avatarUrl}
@@ -246,63 +260,92 @@ export function Header({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-slate-400 text-slate-400" />
+                        <User className="w-4 h-4 fill-slate-400 text-slate-400" />
                       )}
                     </div>
 
-                    {/* Username: Rút gọn trên mobile, đầy đủ trên tablet/desktop */}
-                    <span className="sm:hidden text-xs font-bold text-slate-800 tracking-tight uppercase max-w-[55px] truncate">
+                    {/* Username in all-caps uppercase matching Image 1 */}
+                    <span className="sm:hidden text-xs font-bold text-[#061651] tracking-tight uppercase max-w-[65px] truncate">
                       {shortName}
                     </span>
-                    <span className="hidden sm:inline text-xs sm:text-sm font-bold text-slate-800 tracking-tight uppercase truncate max-w-[140px] md:max-w-none">
+                    <span className="hidden sm:inline text-xs sm:text-sm font-bold text-[#061651] tracking-tight uppercase truncate max-w-[140px] md:max-w-none">
                       {currentUser.name}
                     </span>
 
                     {/* Downward Caret */}
-                    <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500 group-hover:text-slate-800 transition" />
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-800 transition-transform duration-200 ${
+                        roleDropdownOpen ? 'rotate-180 text-slate-800' : ''
+                      }`}
+                    />
                   </button>
 
                   {/* User Account Dropdown Modal */}
                   {roleDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-3 space-y-2 z-50 animate-fadeIn text-xs">
-                      <div className="px-3.5 py-2.5 border border-blue-100 bg-gradient-to-br from-blue-50/70 to-slate-50/90 rounded-xl space-y-1">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">
-                          Tài khoản đang đăng nhập
-                        </span>
-                        <p className="font-black text-slate-900 text-sm tracking-tight">
-                          {currentUser.name}
-                        </p>
-                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1351D8] text-white shadow-2xs">
-                            <Crown className="w-2.5 h-2.5 text-amber-300" />
-                            {currentUser.roleTitle}
-                          </span>
-                          {currentUser.memberCode && (
-                            <span className="text-[10px] text-slate-500 font-medium">
-                              MSV: {currentUser.memberCode}
-                            </span>
-                          )}
+                    <div className="absolute right-0 mt-2 w-76 sm:w-80 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-3 space-y-2.5 z-50 animate-fadeIn text-xs">
+                      {/* Card thông tin người dùng cân đối & mềm mại */}
+                      <div className="p-3 bg-slate-50/90 rounded-xl space-y-2.5 border border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-sky-100 text-[#0284C7] flex items-center justify-center font-bold text-sm overflow-hidden ring-2 ring-white shadow-xs">
+                              {currentUser.avatarUrl ? (
+                                <img
+                                  src={currentUser.avatarUrl}
+                                  alt={currentUser.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>{currentUser.name.slice(0, 1).toUpperCase()}</span>
+                              )}
+                            </div>
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[#061651] text-sm tracking-tight truncate">
+                              {currentUser.name}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-[#0284C7] border border-sky-200/60">
+                                <Crown className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                                {currentUser.roleTitle}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        {currentUser.departmentName && (
-                          <p className="text-[10px] text-slate-500 font-medium pt-0.5">
-                            Đơn vị: <strong className="text-slate-700">{currentUser.departmentName}</strong>
-                          </p>
-                        )}
+
+                        {/* Thông tin phụ: MSV & Đơn vị dạng cột cân bằng */}
+                        <div className="pt-2 border-t border-slate-200/60 grid grid-cols-2 gap-2 text-[11px]">
+                          <div>
+                            <span className="text-slate-400 block font-normal text-[10px]">{t('header.student_id')}</span>
+                            <span className="font-semibold text-slate-700 truncate block">
+                              {currentUser.memberCode || '23070691'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block font-normal text-[10px]">{t('header.department')}</span>
+                            <span className="font-semibold text-slate-700 truncate block">
+                              {currentUser.departmentName || 'Ban Chủ nhiệm'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Quick Link to Member Portal */}
-                      <div className="py-1">
+                      <div>
                         <a
                           href="/checkin"
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center justify-between px-3 py-2 rounded-xl text-blue-600 hover:bg-blue-50 font-bold transition"
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-700 hover:text-[#0284C7] hover:bg-sky-50/80 font-semibold transition group cursor-pointer"
                         >
-                          <span className="flex items-center gap-1.5">
-                            <Smartphone className="w-3.5 h-3.5" />
-                            <span>Cổng Thành Viên Check-in</span>
+                          <span className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#0284C7] flex items-center justify-center">
+                              <Smartphone className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs">Cổng Thành Viên Check-in</span>
                           </span>
-                          <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0284C7] transition" />
                         </a>
                       </div>
 
@@ -315,11 +358,13 @@ export function Header({
                             logout()
                             window.location.href = '/login'
                           }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition text-left cursor-pointer"
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-semibold transition text-left cursor-pointer group"
                         >
-                          <span className="flex items-center gap-1.5">
-                            <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                            <span>Đăng xuất hệ thống</span>
+                          <span className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                              <LogOut className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs">{t('header.logout')}</span>
                           </span>
                         </button>
                       </div>

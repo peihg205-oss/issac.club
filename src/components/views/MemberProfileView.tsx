@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import type { RosterMember } from '@/lib/clubData'
+import { type RosterMember, getMemberAvatarUrl } from '@/lib/clubData'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { getRatingLevel } from '@/lib/scoring/constants'
@@ -41,6 +41,18 @@ import {
   MapPin,
   Users,
   LayoutGrid,
+  Flag,
+  Target,
+  Gauge,
+  Medal,
+  Plus,
+  Minus,
+  AlertCircle,
+  UserCheck,
+  Layers,
+  Filter,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react'
 
 interface MemberProfileViewProps {
@@ -180,11 +192,13 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   const bonusPercent = totalMovement > 0 ? Math.round((bonusTotal / totalMovement) * 100) : (bonusTotal > 0 ? 100 : 0)
   const deductPercent = totalMovement > 0 ? Math.round((deductTotal / totalMovement) * 100) : 0
 
-  // Chuẩn hóa điểm thi đua: Mốc xuất phát chuẩn 60đ + biến động điểm cống hiến/kỷ luật, clamp [0, 100]
-  // Đảm bảo tuyệt đối không có xung đột giữa tổng điểm cộng/trừ (+7) và điểm hiển thị (67)
-  const octScore = Math.max(0, Math.min(100, 60 + netPoints))
-  const changeValue = octScore - 60
-  const rating = getRatingLevel(octScore)
+  // Chuẩn hóa điểm thi đua: Lấy điểm hiện tại của thành viên hoặc từ biến động đề xuất
+  const displayScore = currentMember.current_score !== undefined && currentMember.current_score !== 60
+    ? currentMember.current_score
+    : (netPoints !== 0 ? Math.max(0, Math.min(100, 60 + netPoints)) : currentMember.current_score || 60)
+  const octScore = displayScore
+  const changeValue = displayScore - 60
+  const rating = getRatingLevel(displayScore)
 
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'all') return fullHistory
@@ -192,7 +206,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   }, [fullHistory, historyFilter])
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto animate-fadeIn">
+    <div className="space-y-4 sm:space-y-5 max-w-5xl mx-auto animate-fadeIn">
       {/* 1. Top Navigation Bar (Nút quay lại & Bộ chọn View) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
@@ -205,147 +219,139 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
           </button>
           <div>
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <h2 className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
               HỒ SƠ THÀNH VIÊN ĐẠI SỨ
             </h2>
-            <p className="text-2xl font-black text-slate-900 tracking-tight leading-tight mt-0.5">
+            <p className="text-2xl sm:text-[26px] font-black text-[#061651] tracking-tight leading-tight mt-0.5">
               {currentMember.full_name}
             </p>
           </div>
         </div>
 
-        {/* View Switcher Tabs matching Image 1 */}
+        {/* View Switcher Tabs matching Reference Image */}
         <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 rounded-full border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+            className={`px-4 py-2 rounded-full border text-xs sm:text-[13px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
               activeTab === 'profile'
-                ? 'bg-white border-[#2563EB] text-[#2563EB]'
-                : 'bg-white border-slate-200/80 text-slate-600 hover:text-slate-900'
+                ? 'bg-white border-[#0284C7] text-[#0284C7]'
+                : 'bg-white/60 border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
-            <User className="w-4 h-4 text-[#2563EB]" />
+            <User className={`w-4 h-4 ${activeTab === 'profile' ? 'text-[#0284C7]' : 'text-slate-400'}`} />
             <span>Thông tin hồ sơ</span>
           </button>
-
-          <div className="h-4 w-px bg-slate-200 hidden sm:block mx-0.5" />
 
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`px-3 py-2 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-4 py-2 rounded-full border text-xs sm:text-[13px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
               activeTab === 'overview'
-                ? 'text-[#2563EB] font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white border-[#0284C7] text-[#0284C7]'
+                : 'bg-white/60 border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
-            <LayoutGrid className="w-4 h-4 text-slate-400" />
-            <span>Điểm thi đua ({octScore}đ)</span>
+            <LayoutGrid className={`w-4 h-4 ${activeTab === 'overview' ? 'text-[#0284C7]' : 'text-slate-400'}`} />
+            <span>Điểm thi đua ({displayScore}đ)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`px-3 py-2 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-4 py-2 rounded-full border text-xs sm:text-[13px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
               activeTab === 'history'
-                ? 'text-[#2563EB] font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white border-[#0284C7] text-[#0284C7]'
+                : 'bg-white/60 border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-white'
             }`}
           >
-            <Clock className="w-4 h-4 text-slate-400" />
+            <Clock className={`w-4 h-4 ${activeTab === 'history' ? 'text-[#0284C7]' : 'text-slate-400'}`} />
             <span>Lịch sử điểm</span>
           </button>
         </div>
       </div>
 
       {/* ========================================================= */}
-      {/* VIEW 1: FIGMA PROTOTYPE PROFILE CARD (CHUẨN HÀI HÒA THEO ẢNH 1) */}
+      {/* VIEW 1: FIGMA PROTOTYPE PROFILE (TÁCH 2 CARD ĐỘC LẬP CHUẨN ẢNH MẪU) */}
       {/* ========================================================= */}
       {activeTab === 'profile' && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs overflow-hidden">
-          {/* Top Airy Pastel Gradient Cover Banner matching Image 1 */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-blue-50/70 via-sky-50/40 to-indigo-50/40 border-b border-slate-100/90 px-6 sm:px-8 py-8 sm:py-9">
-            {/* Soft decorative concentric curves in top-right */}
-            <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-blue-100/40 blur-2xl pointer-events-none" />
-            <div className="absolute top-2 right-12 w-48 h-48 rounded-full border border-blue-200/40 pointer-events-none" />
-            <div className="absolute top-8 right-20 w-32 h-32 rounded-full border border-blue-200/30 pointer-events-none" />
-
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
-                {/* Circular Avatar with Logo Badge & Camera indicator */}
-                <div
-                  className="relative group cursor-pointer shrink-0"
-                  onClick={() => setIsEditModalOpen(true)}
-                  title="Bấm để thay đổi ảnh đại diện"
+        <div className="space-y-4 sm:space-y-5">
+          {/* CARD 1: Hero Profile Summary Card */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/70 shadow-xs p-6 sm:p-7 relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+              {/* Circular Avatar with Logo Badge & Camera indicator */}
+              <div
+                className="relative group cursor-pointer shrink-0"
+                onClick={() => setIsEditModalOpen(true)}
+                title="Bấm để thay đổi ảnh đại diện"
+              >
+                <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center overflow-hidden">
+                  <img
+                    src={getMemberAvatarUrl(currentMember) || '/logo-badge.png'}
+                    alt={currentMember.full_name}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsEditModalOpen(true)
+                  }}
+                  className="absolute bottom-0 right-0 w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white border-2 border-white shadow-xs flex items-center justify-center cursor-pointer active:scale-90 transition"
+                  title="Thay đổi ảnh đại diện"
                 >
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center overflow-hidden p-1">
-                    <img
-                      src={currentMember.avatar_url || '/logo-badge.png'}
-                      alt={currentMember.full_name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsEditModalOpen(true)
-                    }}
-                    className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-[#1351D8] hover:bg-[#0F3282] text-white border-2 border-white shadow-xs flex items-center justify-center cursor-pointer active:scale-90 transition"
-                    title="Thay đổi ảnh đại diện"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {/* Identity info */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      {currentMember.full_name}
-                    </h2>
-                    {currentMember.is_core && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs">
-                        <Crown className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Core Team</span>
-                      </span>
-                    )}
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100/70 text-[#1351D8] border border-blue-200/60 shadow-2xs">
-                      {currentMember.department_name}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-400 font-medium">
-                    {currentMember.email}
-                  </p>
-                </div>
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              {/* Blue "Chỉnh sửa" Button matching Image 1 */}
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(true)}
-                className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs sm:text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer self-start sm:self-auto shrink-0"
-              >
-                <Pencil className="w-4 h-4 text-white" />
-                <span>Chỉnh sửa</span>
-              </button>
+              {/* Identity info */}
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-2xl sm:text-[26px] font-black text-[#061651] tracking-tight">
+                    {currentMember.full_name}
+                  </h2>
+                  {currentMember.is_core && (
+                    <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] shadow-2xs">
+                      <Crown className="w-3.5 h-3.5 text-[#D97706]" />
+                      <span>Core Team</span>
+                    </span>
+                  )}
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-[#F0F9FF] text-[#0284C7] border border-sky-200 shadow-2xs">
+                    {currentMember.department_name}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-400 font-normal">
+                  {currentMember.email}
+                </p>
+              </div>
             </div>
+
+            {/* Nút Chỉnh sửa màu xanh dương #0284C7 chuẩn ảnh 1 */}
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer relative z-10 self-start sm:self-auto shrink-0"
+            >
+              <Pencil className="w-4 h-4 text-white" />
+              <span>Chỉnh sửa</span>
+            </button>
           </div>
 
-          {/* Form Fields: 2-Column Clean Grid With Blue Circular Icons (Y hệt ảnh 1) */}
-          <div className="px-6 sm:px-8 py-8 space-y-8">
+          {/* CARD 2: Detailed Information & Verified Email Card */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/70 shadow-xs p-6 sm:p-8 space-y-7">
+            {/* Lưới 6 trường thông tin 2 cột chuẩn ảnh 1 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-7">
               {/* Field 1: Họ và tên */}
               <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center shrink-0 border border-blue-100/70 shadow-2xs">
-                  <User className="w-5 h-5 text-[#2563EB]" />
+                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs">
+                  <User className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     Họ và tên
                   </span>
-                  <span className="text-base font-bold text-slate-900 truncate block mt-0.5">
+                  <span className="text-base font-extrabold text-[#061651] truncate block mt-0.5">
                     {currentMember.full_name}
                   </span>
                 </div>
@@ -353,14 +359,14 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
 
               {/* Field 2: Mã số sinh viên (MSSV) */}
               <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center shrink-0 border border-blue-100/70 shadow-2xs">
-                  <CreditCard className="w-5 h-5 text-[#2563EB]" />
+                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs">
+                  <CreditCard className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     Mã số sinh viên (MSSV)
                   </span>
-                  <span className="text-base font-bold text-slate-900 truncate block mt-0.5">
+                  <span className="text-base font-extrabold text-[#061651] truncate block mt-0.5">
                     {currentMember.student_id || currentMember.member_code} {currentMember.class_name ? `(${currentMember.class_name})` : ''}
                   </span>
                 </div>
@@ -372,14 +378,14 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                 className="flex items-center gap-4 cursor-pointer group"
                 title="Bấm để thay đổi ban trực thuộc"
               >
-                <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center shrink-0 border border-blue-100/70 shadow-2xs group-hover:bg-blue-100/80 transition-colors">
-                  <Users className="w-5 h-5 text-[#2563EB]" />
+                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs group-hover:bg-sky-100/80 group-hover:border-sky-300 transition-colors">
+                  <Users className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     Ban trực thuộc
                   </span>
-                  <span className="text-base font-bold text-slate-900 group-hover:text-[#2563EB] transition-colors truncate block mt-0.5">
+                  <span className="text-base font-extrabold text-[#061651] group-hover:text-[#0284C7] transition-colors truncate block mt-0.5">
                     {currentMember.department_name}
                   </span>
                 </div>
@@ -391,14 +397,14 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                 className="flex items-center gap-4 cursor-pointer group"
                 title="Bấm để thay đổi vị trí chức vụ"
               >
-                <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center shrink-0 border border-blue-100/70 shadow-2xs group-hover:bg-blue-100/80 transition-colors">
-                  <Award className="w-5 h-5 text-[#2563EB]" />
+                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs group-hover:bg-sky-100/80 group-hover:border-sky-300 transition-colors">
+                  <Award className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     Vị trí chức vụ
                   </span>
-                  <span className="text-base font-bold text-slate-900 group-hover:text-[#2563EB] transition-colors truncate block mt-0.5">
+                  <span className="text-base font-extrabold text-[#061651] group-hover:text-[#0284C7] transition-colors truncate block mt-0.5">
                     {currentMember.position}
                   </span>
                 </div>
@@ -406,15 +412,15 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
 
               {/* Field 5: Số điện thoại */}
               <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center shrink-0 border border-blue-100/70 shadow-2xs">
-                  <Phone className="w-5 h-5 text-[#2563EB]" />
+                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs">
+                  <Phone className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     Số điện thoại
                   </span>
-                  <span className="text-base font-bold text-slate-900 truncate block mt-0.5 font-mono">
-                    {currentMember.phone || '0374140705'}
+                  <span className="text-base font-extrabold text-[#061651] truncate block mt-0.5 font-mono">
+                    {currentMember.phone || '0912158734'}
                   </span>
                 </div>
               </div>
@@ -425,41 +431,41 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                 className="flex items-center gap-4 cursor-pointer group"
                 title="Bấm để xem chi tiết thi đua"
               >
-                <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center shrink-0 border border-blue-100/70 shadow-2xs group-hover:bg-blue-100/80 transition-colors">
-                  <Trophy className="w-5 h-5 text-[#2563EB]" />
+                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs group-hover:bg-sky-100/80 group-hover:border-sky-300 transition-colors">
+                  <Trophy className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs text-slate-500 font-medium block">
+                  <span className="text-xs text-slate-400 font-medium block">
                     Trạng thái thi đua & Xếp hạng
                   </span>
-                  <span className="text-base font-bold text-[#1351D8] group-hover:text-blue-700 transition-colors truncate block mt-0.5">
-                    {octScore}đ ({rating.level_name} - Hạng #{clubRank})
+                  <span className="text-base font-extrabold text-[#0284C7] group-hover:underline transition-colors truncate block mt-0.5">
+                    {displayScore}đ ({rating.level_name} - Hạng #{clubRank})
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Section: EMAIL LIÊN HỆ */}
-            <div className="pt-6 border-t border-slate-100 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-slate-700 tracking-wider">
+            <div className="pt-6 border-t border-slate-100/90 space-y-3">
+              <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
                 EMAIL LIÊN HỆ
               </h4>
 
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center justify-between p-4 sm:p-5 rounded-2xl bg-[#F8FAFC]/70 border border-slate-200/70 shadow-2xs">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-11 h-11 rounded-full bg-blue-50/80 text-[#2563EB] flex items-center justify-center border border-blue-100/70 shrink-0">
-                    <Mail className="w-5 h-5 text-[#2563EB]" />
+                  <div className="w-11 h-11 rounded-2xl bg-[#F0F9FF] border border-sky-200/80 text-[#0284C7] flex items-center justify-center shrink-0">
+                    <Mail className="w-5 h-5 text-[#0284C7]" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">{currentMember.email}</p>
-                    <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
+                    <p className="text-sm sm:text-base font-extrabold text-[#061651] truncate">{currentMember.email}</p>
+                    <p className="text-xs text-slate-400 font-normal truncate mt-0.5">
                       Tài khoản chính thức - Đã xác thực hồ sơ
                     </p>
                   </div>
                 </div>
 
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200/80 flex items-center gap-1.5 shadow-2xs shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span className="text-xs font-bold text-[#059669] bg-[#ECFDF5] px-3.5 py-1.5 rounded-full border border-[#A7F3D0] flex items-center gap-1.5 shadow-2xs shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" />
                   <span>Verified</span>
                 </span>
               </div>
@@ -472,56 +478,91 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
       {/* VIEW 2: TỔNG QUAN THI ĐUA & BẢNG ĐIỂM (OVERVIEW) */}
       {/* ========================================================= */}
       {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="stat-card-deep-blue p-5 text-center space-y-1">
-              <span className="text-[11px] font-black uppercase text-blue-600 block">
-                Điểm Thi Đua T10
-              </span>
-              <div className="text-3xl font-black text-slate-900">{octScore}đ</div>
-              <span className="text-[11px] font-bold text-emerald-600">
-                +{changeValue}đ trong tháng
-              </span>
+        <div className="space-y-5 sm:space-y-6">
+          {/* 1. Quick Metrics Cards (Format KPI Pastel Nhạt Khớp 100% Dashboard & Ảnh 2) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+            {/* Card 1: Điểm Thi Đua T10 */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#F0F9FF] flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+              <div className="space-y-1">
+                <span className="text-xs sm:text-[13px] font-semibold text-slate-600 block">
+                  Điểm Thi Đua T10
+                </span>
+                <span className="text-2xl sm:text-[32px] font-black text-[#0284C7] block tracking-tight leading-none py-0.5">
+                  {octScore}đ
+                </span>
+                <span className="text-[11.5px] font-bold text-emerald-600 flex items-center gap-1">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>+{changeValue}đ trong tháng</span>
+                </span>
+              </div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-sky-300 bg-white flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
+                <Award className="w-5 h-5 stroke-[1.75]" />
+              </div>
             </div>
 
-            <div className="stat-card-amber p-5 text-center space-y-1">
-              <span className="text-[11px] font-black uppercase text-amber-600 block">
-                Xếp Hạng Toàn CLB
-              </span>
-              <div className="text-3xl font-black text-slate-900">#{clubRank}</div>
-              <span className="text-[11px] font-bold text-slate-500">
-                Top 48 Đại sứ sinh viên
-              </span>
+            {/* Card 2: Xếp Hạng Toàn CLB */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#FFFBEB] flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+              <div className="space-y-1">
+                <span className="text-xs sm:text-[13px] font-semibold text-slate-600 block">
+                  Xếp Hạng Toàn CLB
+                </span>
+                <span className="text-2xl sm:text-[32px] font-black text-[#D97706] block tracking-tight leading-none py-0.5">
+                  #{clubRank}
+                </span>
+                <span className="text-[11.5px] font-semibold text-[#D97706]/90 block">
+                  Top {members.length} Đại sứ sinh viên
+                </span>
+              </div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-amber-300 bg-white flex items-center justify-center text-[#D97706] shrink-0 shadow-2xs">
+                <Trophy className="w-5 h-5 stroke-[1.75]" />
+              </div>
             </div>
 
-            <div className="stat-card-sky p-5 text-center space-y-1">
-              <span className="text-[11px] font-black uppercase text-sky-600 block">
-                Xếp Hạng Trong Ban
-              </span>
-              <div className="text-3xl font-black text-slate-900">#{deptRank}</div>
-              <span className="text-[11px] font-bold text-slate-500">
-                {currentMember.department_name}
-              </span>
+            {/* Card 3: Xếp Hạng Trong Ban */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#F0FDF4] flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+              <div className="space-y-1">
+                <span className="text-xs sm:text-[13px] font-semibold text-slate-600 block">
+                  Xếp Hạng Trong Ban
+                </span>
+                <span className="text-2xl sm:text-[32px] font-black text-[#16A34A] block tracking-tight leading-none py-0.5">
+                  #{deptRank}
+                </span>
+                <span className="text-[11.5px] font-semibold text-[#16A34A]/90 block">
+                  {currentMember.department_name}
+                </span>
+              </div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-emerald-300 bg-white flex items-center justify-center text-[#16A34A] shrink-0 shadow-2xs">
+                <Users className="w-5 h-5 stroke-[1.75]" />
+              </div>
             </div>
           </div>
 
-          {/* Biến động chi tiết */}
+          {/* 2. Hai Khối Phân Tích & Xếp Loại Chuẩn Format Dashboard */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="card-clean p-6 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <h4 className="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-blue-600" />
-                  <span>Phân Bổ Biến Động Điểm</span>
-                </h4>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/70">
+            {/* Card Left: Phân Bổ Biến Động Điểm */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-6 sm:p-7 space-y-5">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#F0F9FF] border border-sky-100 flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
+                    <Activity className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-[#061651] tracking-tight">
+                      Phân Bổ Biến Động Điểm
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium">
+                      Tỷ lệ đóng góp điểm cộng và trừ kỷ luật trong kỳ
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F0F9FF] text-[#0284C7] border border-sky-200/80 shrink-0">
                   Biểu đồ tròn
                 </span>
               </div>
 
-              {/* Biểu đồ hình tròn SVG Donut Chart & Thống kê chi tiết */}
+              {/* Biểu đồ Donut SVG & Chi tiết */}
               <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6 pt-1">
-                {/* 1. Biểu đồ hình tròn SVG Donut Chart */}
+                {/* Donut Chart */}
                 <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 130 130">
                     <defs>
@@ -545,7 +586,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                       strokeWidth="14"
                     />
 
-                    {/* Cung điểm cộng (Xanh lá) */}
+                    {/* Cung điểm cộng */}
                     {bonusTotal > 0 && (
                       <circle
                         cx="65"
@@ -561,7 +602,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                       />
                     )}
 
-                    {/* Cung điểm trừ (Đỏ hồng) - chỉ vẽ khi có điểm trừ */}
+                    {/* Cung điểm trừ */}
                     {deductTotal > 0 && (
                       <circle
                         cx="65"
@@ -578,12 +619,12 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                     )}
                   </svg>
 
-                  {/* Tâm biểu đồ tròn: Hiển thị điểm chốt ròng */}
+                  {/* Tâm biểu đồ tròn */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Chốt ròng
                     </span>
-                    <span className="text-xl font-black text-[#1351D8] leading-none my-0.5">
+                    <span className="text-xl font-black text-[#0284C7] leading-none my-0.5">
                       {netPoints >= 0 ? `+${netPoints}` : netPoints}đ
                     </span>
                     {totalMovement > 0 ? (
@@ -602,16 +643,16 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   </div>
                 </div>
 
-                {/* 2. Ba khối thống kê chi tiết */}
+                {/* 3 Khối thống kê chi tiết chuẩn thẻ pastel */}
                 <div className="flex-1 w-full space-y-2.5 text-xs">
                   {/* Điểm cộng cống hiến */}
-                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 shadow-2xs">
-                    <div className="flex items-center gap-2">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-[#F0FDF4] border border-emerald-200/60 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="font-semibold text-emerald-950">Tổng điểm cộng cống hiến:</span>
+                      <span className="font-bold text-emerald-950">Tổng điểm cộng cống hiến:</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-emerald-600 bg-white/90 px-1.5 py-0.5 rounded border border-emerald-200/60 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200/80 shadow-2xs">
                         {bonusPercent}%
                       </span>
                       <span className="font-black text-emerald-700 text-sm">+{bonusTotal}đ</span>
@@ -619,13 +660,13 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   </div>
 
                   {/* Điểm trừ kỷ luật */}
-                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-rose-50/70 border border-rose-200/80 shadow-2xs">
-                    <div className="flex items-center gap-2">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-[#FFF1F2] border border-rose-200/60 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-                      <span className="font-semibold text-rose-950">Tổng điểm trừ kỷ luật:</span>
+                      <span className="font-bold text-rose-950">Tổng điểm trừ kỷ luật:</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-rose-600 bg-white/90 px-1.5 py-0.5 rounded border border-rose-200/60 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-rose-700 bg-white px-2 py-0.5 rounded border border-rose-200/80 shadow-2xs">
                         {deductPercent}%
                       </span>
                       <span className="font-black text-rose-700 text-sm">-{deductTotal}đ</span>
@@ -633,12 +674,12 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   </div>
 
                   {/* Điểm chốt ròng */}
-                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
-                      <span className="font-semibold text-blue-950">Điểm chốt ròng:</span>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-[#F0F9FF] border border-sky-200/60 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#0284C7] shrink-0" />
+                      <span className="font-bold text-slate-800">Điểm chốt ròng tháng:</span>
                     </div>
-                    <span className="font-black text-blue-700 text-sm">
+                    <span className="font-black text-[#0284C7] text-sm">
                       {netPoints >= 0 ? `+${netPoints}` : netPoints}đ
                     </span>
                   </div>
@@ -646,18 +687,104 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
               </div>
             </div>
 
-            <div className="card-clean p-6 space-y-4">
-              <h4 className="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-500" />
-                <span>Xếp Loại Thi Đua Định Kỳ</span>
-              </h4>
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/50 to-orange-50/30 border border-amber-200/80 text-center space-y-2">
-                <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+            {/* Card Right: Xếp Loại Thi Đua Định Kỳ */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-6 sm:p-7 space-y-5 flex flex-col justify-between">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-2xs">
+                    <Award className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-[#061651] tracking-tight">
+                      Xếp Loại Thi Đua Định Kỳ
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium">
+                      Đánh giá theo khung tiêu chuẩn thi đua iSSAC
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3.5 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs shrink-0">
                   {rating.level_name}
                 </span>
-                <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                  Đạt mức {octScore}/100đ ({rating.level_name}). {rating.action_required || 'Thành viên tích cực tham gia các hoạt động và bảo đảm kỷ luật họp CLB.'}
-                </p>
+              </div>
+
+              {/* Khối Banner Đánh Giá Chuẩn Style Dashboard */}
+              <div className="p-4 sm:p-4.5 rounded-2xl bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 border border-amber-200/70 shadow-2xs space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8.5 h-8.5 rounded-full bg-white border border-amber-300 text-amber-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                    <Medal className="w-4.5 h-4.5 stroke-[1.8]" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-amber-900">
+                        Đạt mức <strong className="text-amber-950 font-black text-sm">{octScore}/100đ</strong>
+                      </span>
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-900">
+                        {rating.level_name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      {rating.action_required || 'Thành viên tích cực tham gia các hoạt động và bảo đảm kỷ luật họp CLB.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Thanh đo trực quan tiến độ điểm */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between text-[11px] font-bold text-slate-500">
+                    <span>Mức hoàn thành</span>
+                    <span className="text-[#0284C7] font-extrabold">{octScore}% (Điểm tối đa 100đ)</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-slate-100 relative overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-sky-500 to-[#0284C7] transition-all duration-700"
+                      style={{ width: `${Math.min(100, Math.max(0, octScore))}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 Khối Chỉ Số Chuẩn Định Kỳ Khớp 100% Ảnh 2 */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-2.5 sm:p-3 rounded-xl bg-[#F0FDF4] border border-emerald-200/70 flex items-center gap-2.5">
+                  <div className="w-7.5 h-7.5 rounded-full bg-white border border-emerald-300 flex items-center justify-center text-emerald-600 shrink-0 shadow-2xs">
+                    <Flag className="w-3.5 h-3.5 stroke-[1.8]" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-semibold block truncate">Mục tiêu CLB</span>
+                    <span className="text-xs font-bold text-emerald-800 block truncate">80đ ({octScore >= 80 ? 'Đạt' : 'Chưa đạt'})</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 sm:p-3 rounded-xl bg-[#F0F9FF] border border-sky-200/70 flex items-center gap-2.5">
+                  <div className="w-7.5 h-7.5 rounded-full bg-white border border-sky-300 flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
+                    <Target className="w-3.5 h-3.5 stroke-[1.8]" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-semibold block truncate">Chuẩn thi đua</span>
+                    <span className="text-xs font-bold text-[#0284C7] block truncate">70đ ({octScore >= 70 ? 'Đạt' : 'Chưa đạt'})</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 sm:p-3 rounded-xl bg-[#FFFBEB] border border-amber-200/70 flex items-center gap-2.5">
+                  <div className="w-7.5 h-7.5 rounded-full bg-white border border-amber-300 flex items-center justify-center text-[#D97706] shrink-0 shadow-2xs">
+                    <TrendingUp className="w-3.5 h-3.5 stroke-[1.8]" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-semibold block truncate">Mốc khởi đầu</span>
+                    <span className="text-xs font-bold text-amber-800 block truncate">60đ ({changeValue >= 0 ? `+${changeValue}đ` : `${changeValue}đ`})</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center gap-2.5">
+                  <div className="w-7.5 h-7.5 rounded-full bg-white border border-slate-300 flex items-center justify-center text-slate-600 shrink-0 shadow-2xs">
+                    <Gauge className="w-3.5 h-3.5 stroke-[1.8]" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-slate-500 font-semibold block truncate">Thang điểm</span>
+                    <span className="text-xs font-bold text-slate-700 block truncate">0 - 100đ</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -668,86 +795,212 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
       {/* VIEW 3: LỊCH SỬ CHẤM ĐIỂM & SỔ CÁI (HISTORY) */}
       {/* ========================================================= */}
       {activeTab === 'history' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-            <div>
-              <h3 className="text-sm font-black text-slate-800">
-                Lịch Sử Điểm Cá Nhân
-              </h3>
-              <p className="text-xs text-slate-400 font-medium">
-                Ghi nhận chi tiết toàn bộ điểm cộng cống hiến và trừ kỷ luật
-              </p>
+        <div className="space-y-4 sm:space-y-5">
+          {/* 1. Quick Stats Row for History */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* Box 1: Tổng bản ghi */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0F9FF] border border-sky-100/80 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <div className="space-y-0.5">
+                <span className="text-xs font-semibold text-slate-500 block">Tổng bản ghi ghi nhận</span>
+                <span className="text-2xl font-black text-[#0284C7] block leading-none py-0.5">
+                  {fullHistory.length}
+                </span>
+                <span className="text-[11px] font-medium text-slate-500">Biến động điểm tháng</span>
+              </div>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-sky-300 bg-white flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
+                <Layers className="w-4.5 h-4.5 stroke-[1.8]" />
+              </div>
             </div>
 
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setHistoryFilter('all')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  historyFilter === 'all' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'
-                }`}
-              >
-                Tất cả ({fullHistory.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setHistoryFilter('add')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  historyFilter === 'add' ? 'bg-white text-emerald-700 shadow-2xs' : 'text-slate-500'
-                }`}
-              >
-                Điểm cộng
-              </button>
-              <button
-                type="button"
-                onClick={() => setHistoryFilter('deduct')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  historyFilter === 'deduct' ? 'bg-white text-rose-700 shadow-2xs' : 'text-slate-500'
-                }`}
-              >
-                Điểm trừ
-              </button>
+            {/* Box 2: Điểm cộng cống hiến */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-100/80 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <div className="space-y-0.5">
+                <span className="text-xs font-semibold text-slate-500 block">Điểm cộng cống hiến</span>
+                <span className="text-2xl font-black text-[#16A34A] block leading-none py-0.5">
+                  +{bonusTotal}đ
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-700">
+                  {fullHistory.filter((h) => h.type === 'add').length} lần ghi nhận
+                </span>
+              </div>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-emerald-300 bg-white flex items-center justify-center text-[#16A34A] shrink-0 shadow-2xs">
+                <ArrowUpRight className="w-5 h-5 stroke-[2]" />
+              </div>
+            </div>
+
+            {/* Box 3: Điểm trừ kỷ luật */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FFF1F2] border border-rose-100/80 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <div className="space-y-0.5">
+                <span className="text-xs font-semibold text-slate-500 block">Điểm trừ kỷ luật</span>
+                <span className="text-2xl font-black text-[#E11D48] block leading-none py-0.5">
+                  -{deductTotal}đ
+                </span>
+                <span className="text-[11px] font-semibold text-rose-700">
+                  {fullHistory.filter((h) => h.type === 'deduct').length} lần vi phạm
+                </span>
+              </div>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-rose-300 bg-white flex items-center justify-center text-[#E11D48] shrink-0 shadow-2xs">
+                <ArrowDownRight className="w-5 h-5 stroke-[2]" />
+              </div>
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100 text-xs">
-            {filteredHistory.length === 0 ? (
-              <div className="py-12 text-center text-slate-400">
-                <p className="font-semibold text-xs">Chưa có bản ghi điểm nào cho thành viên này</p>
-                <p className="text-[11px] text-slate-400 mt-1">Mốc xuất phát chuẩn: 60 điểm (theo Quy chế P01)</p>
+          {/* 2. Main History List Card Container */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-5 sm:p-7 space-y-5">
+            {/* Header + Tabs Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#F0F9FF] border border-sky-100 flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
+                  <Clock className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#061651] tracking-tight">
+                    Lịch Sử Điểm Cá Nhân
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Ghi nhận chi tiết toàn bộ điểm cộng cống hiến và trừ kỷ luật
+                  </p>
+                </div>
               </div>
-            ) : (
-              filteredHistory.map((item) => (
-                <div key={item.id} className="py-3.5 flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-slate-500">{item.code}</span>
-                      <span className="font-bold text-slate-900">{item.title}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-400 text-[11px] flex-wrap">
-                      <span>{item.time}</span>
-                      <span className="text-slate-300">-</span>
-                      <span>{item.category}</span>
-                      <span className="text-slate-300">-</span>
-                      <span className="text-slate-600 font-medium">{item.actor}</span>
-                    </div>
-                  </div>
 
-                  <div className="text-right shrink-0">
-                    <span
-                      className={`font-black text-sm ${
-                        item.type === 'add' ? 'text-emerald-600' : 'text-rose-600'
+              {/* Subtabs filter pills matching project standard */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/70 text-xs font-bold self-start sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setHistoryFilter('all')}
+                  className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    historyFilter === 'all'
+                      ? 'bg-white text-[#0284C7] shadow-2xs border border-slate-200/60 font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Tất cả ({fullHistory.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHistoryFilter('add')}
+                  className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    historyFilter === 'add'
+                      ? 'bg-white text-emerald-700 shadow-2xs border border-emerald-200/60 font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Điểm cộng ({fullHistory.filter((h) => h.type === 'add').length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHistoryFilter('deduct')}
+                  className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    historyFilter === 'deduct'
+                      ? 'bg-white text-rose-700 shadow-2xs border border-rose-200/60 font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Minus className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Điểm trừ ({fullHistory.filter((h) => h.type === 'deduct').length})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Items list with rich styling matching project */}
+            <div className="space-y-2.5">
+              {filteredHistory.length === 0 ? (
+                <div className="py-16 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#F0F9FF] border border-sky-200/80 text-[#0284C7] flex items-center justify-center mx-auto shadow-2xs">
+                    <Clock className="w-6 h-6 stroke-[1.8]" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800">
+                    Chưa có bản ghi điểm nào trong mục này
+                  </h4>
+                  <p className="text-xs text-slate-400 font-medium max-w-sm mx-auto">
+                    Mốc xuất phát chuẩn khởi đầu: 60 điểm (theo Quy chế P01 CLB Đại sứ sinh viên Trường Quốc tế).
+                  </p>
+                </div>
+              ) : (
+                filteredHistory.map((item) => {
+                  const isAdd = item.type === 'add'
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] group ${
+                        isAdd
+                          ? 'bg-white hover:bg-[#F0FDF4]/30 border-slate-200/80 hover:border-emerald-300'
+                          : 'bg-white hover:bg-[#FFF1F2]/30 border-slate-200/80 hover:border-rose-300'
                       }`}
                     >
-                      {item.points > 0 ? `+${item.points}đ` : `${item.points}đ`}
-                    </span>
-                    <span className="block text-[10px] text-slate-400 font-medium">
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+                      {/* Left Side: Avatar Icon & Info */}
+                      <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                        {/* Circular Icon with white bg & border */}
+                        <div
+                          className={`w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs border ${
+                            isAdd
+                              ? 'border-emerald-300 text-emerald-600'
+                              : 'border-rose-300 text-rose-600'
+                          }`}
+                        >
+                          {isAdd ? (
+                            <ArrowUpRight className="w-5 h-5 stroke-[2.2]" />
+                          ) : (
+                            <ArrowDownRight className="w-5 h-5 stroke-[2.2]" />
+                          )}
+                        </div>
+
+                        {/* Text details */}
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`font-mono font-black text-[11px] px-2 py-0.5 rounded-md border shadow-2xs ${
+                                isAdd
+                                  ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200/80'
+                                  : 'bg-[#FFF1F2] text-rose-700 border-rose-200/80'
+                              }`}
+                            >
+                              {item.code}
+                            </span>
+                            <span className="font-bold text-xs sm:text-[13.5px] text-[#061651] group-hover:text-[#0284C7] transition-colors">
+                              {item.title}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 text-[11px] flex-wrap font-medium">
+                            <span className="flex items-center gap-1 text-slate-500">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span>{item.time}</span>
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100/90 text-slate-600 text-[10.5px] font-medium border border-slate-200/60">
+                              {item.category}
+                            </span>
+                            <span className="flex items-center gap-1 text-slate-500">
+                              <UserCheck className="w-3 h-3 text-slate-400" />
+                              <span>{item.actor}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Points & Status Tag */}
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        <span
+                          className={`text-sm sm:text-base font-black px-3.5 py-1 rounded-full border shadow-2xs whitespace-nowrap flex items-center gap-1 ${
+                            isAdd
+                              ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200'
+                              : 'bg-[#FFF1F2] text-rose-700 border-rose-200'
+                          }`}
+                        >
+                          {item.points > 0 ? `+${item.points}đ` : `${item.points}đ`}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1 mt-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                          <span>{item.status}</span>
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
       )}

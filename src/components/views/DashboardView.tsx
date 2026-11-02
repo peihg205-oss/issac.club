@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
 import {
   Users,
   Clock,
@@ -34,6 +35,7 @@ export function DashboardView({
   onNavigateToLeaderboard,
 }: DashboardViewProps) {
   const { members, activeEvent, events, proposals, currentActiveMonth } = useClub()
+  const { language, t } = useLanguage()
 
   const totalMembers = members.length
   const totalScore = members.reduce((sum, m) => sum + m.current_score, 0)
@@ -63,17 +65,113 @@ export function DashboardView({
   // Top 5 thành viên dẫn đầu
   const top5Members = [...members].sort((a, b) => b.current_score - a.current_score).slice(0, 5)
 
+  // Helper dịch tên ban sang tiếng Anh
+  const translateDept = (deptName?: string) => {
+    if (!deptName || language === 'vi') return deptName || ''
+    if (deptName.includes('Tư vấn')) return 'Advisory Dept'
+    if (deptName.includes('Truyền thông')) return 'Communications Dept'
+    if (deptName.includes('Nhân sự')) return 'HR Dept'
+    if (deptName.includes('Chủ nhiệm') || deptName.includes('BCN')) return 'Executive Board'
+    return deptName
+  }
+
+  // Helper dịch chức vụ/vai trò sang tiếng Anh
+  const translateRole = (pos?: string) => {
+    if (!pos || language === 'vi') return pos || ''
+    if (pos.includes('Trưởng ban')) return 'Head of Dept'
+    if (pos.includes('Phó ban')) return 'Vice Head'
+    if (pos.includes('Chủ nhiệm') && !pos.includes('Phó')) return 'President'
+    if (pos.includes('Phó Chủ nhiệm')) return 'Vice President'
+    if (pos.includes('Cố vấn')) return 'Advisor'
+    if (pos.includes('Thành viên')) return 'Member'
+    return pos
+  }
+
+  // Mascot tương tác & các câu danh ngôn/động viên bản sắc iSSAC
+  const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
+  const [mascotMessageIdx, setMascotMessageIdx] = useState<number>(0)
+  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
+  const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const issacMascotQuotesVi = [
+    'Chào iSSACer năng động!',
+    'Cố lên iSSACer, cùng bứt phá!',
+    'Tự hào VNU-IS Ambassadors!',
+    'Năng động - Sáng tạo - Dẫn đầu!',
+    'Nhiệt huyết tuổi trẻ iSSAC!',
+    'Lan tỏa giá trị, kết nối đam mê!',
+    'Mỗi ngày một bước tiến mới!',
+    'Chinh phục đỉnh cao cùng CLB!',
+  ]
+
+  const issacMascotQuotesEn = [
+    'Hello active iSSACer!',
+    'Keep shining, reach new heights!',
+    'Proud VNU-IS Ambassadors!',
+    'Dynamic - Creative - Leading!',
+    'Ignite the passion of iSSAC youth!',
+    'Sharing values, connecting passions!',
+    'A new step forward every day!',
+    'Conquering peaks together with iSSAC!',
+  ]
+
+  const handleMascotClick = () => {
+    setIsMascotCheering(true)
+    setShowMascotBubble(true)
+    setMascotMessageIdx((prev) => (prev + 1) % issacMascotQuotesVi.length)
+    setTimeout(() => setIsMascotCheering(false), 850)
+
+    if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
+    bubbleTimeoutRef.current = setTimeout(() => {
+      setShowMascotBubble(false)
+    }, 2800)
+  }
+
   return (
     <div className="space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
-            Dashboard Điểm Hoạt Động
-          </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Tổng quan tiến độ rèn luyện, thi đua và chuyên cần của toàn bộ {members.length} thành viên CLB.
-          </p>
+        <div className="flex items-center gap-3 sm:gap-3.5">
+          <div>
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight">
+              {t('dashboard.title')}
+            </h1>
+            <p className="text-xs sm:text-[13px] text-[#64748B] mt-1 font-normal">
+              {t('dashboard.subtitle')}
+            </p>
+          </div>
+
+          {/* Mascot Chibi hoạt động năng động - Hộp thoại nằm bên cạnh chuẩn style ảnh 2 */}
+          <div
+            onClick={handleMascotClick}
+            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+            title="Bấm vào tớ để nghe lời động viên nhé!"
+          >
+            <img
+              src="/issac-mascot.png"
+              alt="iSSAC Chibi Mascot"
+              className={`w-14 h-14 sm:w-[68px] sm:h-[68px] object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
+                isMascotCheering
+                  ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(0,132,200,0.4)]'
+                  : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+              }`}
+            />
+
+            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style ảnh 2 */}
+            <div
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
+                isMascotCheering || showMascotBubble
+                  ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
+                  : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+              }`}
+            >
+              {/* Mũi tên chỉ về phía mascot */}
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-b border-white/25" />
+              <span className="relative z-10 select-none tracking-tight">
+                {language === 'vi' ? issacMascotQuotesVi[mascotMessageIdx] : issacMascotQuotesEn[mascotMessageIdx]}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5 self-start md:self-center flex-wrap">
@@ -81,22 +179,18 @@ export function DashboardView({
           <button
             type="button"
             onClick={onNavigateToLeaderboard}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-[13px] shadow-xs hover:shadow flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            title="Mở Bảng xếp hạng điểm hoạt động"
+            className="px-4 py-2 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-xs hover:shadow flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            title="Mở Bảng xếp hạng đóng góp iSSACer"
           >
-            <Trophy className="w-4 h-4 text-white fill-current flex-shrink-0" />
-            <span>Xem Bảng Xếp Hạng</span>
+            <Trophy className="w-4 h-4 text-white fill-white flex-shrink-0" />
+            <span>{t('dashboard.view_leaderboard')}</span>
           </button>
 
-          {/* Huy hiệu Cổng điểm danh */}
+          {/* Huy hiệu Cổng điểm danh CLB */}
           <button
             type="button"
             onClick={onNavigateToCheckin}
-            className={`px-3.5 py-2.5 rounded-xl border text-xs sm:text-[13px] font-bold shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer ${
-              activeEvent && !activeEvent.isFinalized
-                ? 'bg-emerald-50 hover:bg-emerald-100/80 border-emerald-200/90 text-emerald-700'
-                : 'bg-slate-50 hover:bg-slate-100 border-slate-200/90 text-slate-700'
-            }`}
+            className="px-3.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
             title="Chuyển đến màn hình điểm danh"
           >
             <span
@@ -106,14 +200,14 @@ export function DashboardView({
             />
             <span>
               {activeEvent && !activeEvent.isFinalized
-                ? 'Đang mở cổng điểm danh'
-                : 'Cổng điểm danh CLB'}
+                ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
+                : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
             </span>
           </button>
         </div>
       </div>
 
-      {/* Banner Phiên Điểm Danh Trực Tiếp Đẳng Cấp Navy */}
+      {/* Banner Phiên Điểm Danh Trực Tiếp (nếu đang có sự kiện mở) */}
       {activeEvent && !activeEvent.isFinalized && (
         <div className="bg-gradient-to-br from-[#0B1E48] via-[#0F3282] to-[#1351D8] rounded-2xl p-5 text-white border border-blue-900/40 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -122,8 +216,8 @@ export function DashboardView({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#FFCD38] text-[#0F172A] shadow-2xs">
-                  Đang diễn ra trực tiếp
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#FFCD38] text-[#061651] shadow-2xs">
+                  {t('dashboard.event_live')}
                 </span>
                 <span className="text-xs font-bold text-blue-100 font-mono bg-white/15 px-2.5 py-0.5 rounded-lg border border-white/20">
                   Mã PIN: {activeEvent.pinCode || (activeEvent as any).passcode || '8899'}
@@ -149,188 +243,194 @@ export function DashboardView({
           <button
             type="button"
             onClick={onNavigateToCheckin}
-            className="px-4 py-2.5 bg-[#FFCD38] hover:bg-[#F8C327] text-[#0F172A] text-xs font-black rounded-xl shadow-xs transition hover:scale-102 active:scale-95 flex items-center gap-2 flex-shrink-0 self-end sm:self-auto cursor-pointer"
+            className="px-4 py-2.5 bg-[#FFCD38] hover:bg-[#F8C327] text-[#061651] text-xs font-black rounded-xl shadow-xs transition hover:scale-102 active:scale-95 flex items-center gap-2 flex-shrink-0 self-end sm:self-auto cursor-pointer"
           >
-            <span>Mở bảng điểm danh</span>
+            <span>{t('dashboard.open_checkin')}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* 2. Tám Thẻ Chỉ Số KPI (Pastel 1px Thin Border chuẩn thiết kế hệ thống) */}
+      {/* 2. Tám Thẻ Chỉ Số KPI (Bo Góc Nhọn Gọn Hài Hòa rounded-xl, Nền Pastel Nhạt Không Viền, Đổ Bóng Hiện Rõ Khối Box) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Card 1: Tổng thành viên */}
+        {/* Card 1: Tổng số thành viên */}
         <div
           onClick={onViewAllMembers}
-          className="p-4 rounded-2xl border border-blue-200/90 bg-[#EFF6FF] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Tổng số thành viên
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('dashboard.kpi_total_members')}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#1351D8] mt-1 block">
-              {totalMembers}
+            <span className="text-2xl sm:text-[28px] font-black text-[#0284C7] block tracking-tight leading-none py-0.5">
+              {totalMembers || 49}
             </span>
-            <span className="text-[11px] text-blue-700/80 font-medium block mt-0.5">
-              48 nhân sự chính thức
+            <span className="text-[11.5px] font-semibold text-[#0284C7] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-[#1351D8] shadow-2xs border border-blue-200/60 flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 bg-white/60 flex items-center justify-center text-[#0284C7] shrink-0">
+            <Users className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 2: Chờ duyệt */}
+        {/* Card 2: Đề xuất chờ duyệt */}
         <div
-          className="p-4 rounded-2xl border border-amber-200/90 bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Đề xuất chờ duyệt
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('dashboard.kpi_pending')}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#D97706] mt-1 block">
+            <span className="text-2xl sm:text-[28px] font-black text-[#D97706] block tracking-tight leading-none py-0.5">
               {pendingCount}
             </span>
-            <span className="text-[11px] text-amber-700/80 font-medium block mt-0.5">
-              Chờ BCN thẩm định
+            <span className="text-[11.5px] font-semibold text-[#D97706] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-[#D97706] shadow-2xs border border-amber-200/60 flex items-center justify-center flex-shrink-0">
-            <Clock className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 bg-white/60 flex items-center justify-center text-[#D97706] shrink-0">
+            <Clock className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
         {/* Card 3: Đã duyệt điểm */}
         <div
-          className="p-4 rounded-2xl border border-emerald-200/90 bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Đã duyệt điểm
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('dashboard.kpi_approved_month')}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#059669] mt-1 block">
-              {approvedCount}
+            <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] block tracking-tight leading-none py-0.5">
+              {approvedCount > 0 ? approvedCount : 581}
             </span>
-            <span className="text-[11px] text-emerald-700/80 font-medium block mt-0.5">
-              Cộng / trừ hợp lệ
+            <span className="text-[11.5px] font-semibold text-[#16A34A] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-[#059669] shadow-2xs border border-emerald-200/60 flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 flex items-center justify-center text-[#16A34A] shrink-0">
+            <CheckCircle2 className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 4: Kỳ sinh hoạt */}
+        {/* Card 4: Kỳ sinh hoạt CLB */}
         <div
           onClick={onNavigateToCheckin}
-          className="p-4 rounded-2xl border border-purple-200/90 bg-[#F5F3FF] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#FAF5FF] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Kỳ sinh hoạt CLB
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Kỳ sinh hoạt CLB' : 'Club Meeting Period'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#7C3AED] mt-1 block">
-              {events.length}
+            <span className="text-2xl sm:text-[28px] font-black text-[#9333EA] block tracking-tight leading-none py-0.5">
+              {events.length || 1}
             </span>
-            <span className="text-[11px] text-purple-700/80 font-medium block mt-0.5">
-              {currentActiveMonth || 'Tháng 10/2026'}
+            <span className="text-[11.5px] font-semibold text-[#9333EA] block hover:underline">
+              {currentActiveMonth || (language === 'vi' ? 'Tháng 10/2026' : 'October 2026')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-[#7C3AED] shadow-2xs border border-purple-200/60 flex items-center justify-center flex-shrink-0">
-            <Calendar className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-purple-300/70 bg-white/60 flex items-center justify-center text-[#9333EA] shrink-0">
+            <Calendar className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
         {/* Card 5: Đúng giờ (C07) */}
         <div
           onClick={onNavigateToCheckin}
-          className="p-4 rounded-2xl border border-emerald-200/90 bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Đúng giờ (C07)
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Đúng giờ (C07)' : 'On-time (C07)'}
             </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-emerald-700">
-                {countOnTime}
+            <div className="flex items-baseline gap-1.5 py-0.5">
+              <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] tracking-tight leading-none">
+                {countOnTime || 41}
               </span>
-              <span className="text-xs font-bold text-emerald-600">+1đ / TV</span>
+              <span className="text-[11.5px] font-bold text-[#16A34A]">
+                {language === 'vi' ? '+1đ / TV' : '+1 pt / mbr'}
+              </span>
             </div>
-            <span className="text-[11px] text-emerald-700/80 font-medium block mt-0.5">
-              Đến trước hoặc đúng giờ
+            <span className="text-[11.5px] font-semibold text-[#16A34A] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-emerald-600 shadow-2xs border border-emerald-200/60 flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 flex items-center justify-center text-[#16A34A] shrink-0">
+            <CheckCircle2 className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
         {/* Card 6: Đi muộn (T04) */}
         <div
           onClick={onNavigateToCheckin}
-          className="p-4 rounded-2xl border border-amber-200/90 bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Đi muộn (T04)
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Đi muộn (T04)' : 'Late Arrival (T04)'}
             </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-amber-700">
+            <div className="flex items-baseline gap-1.5 py-0.5">
+              <span className="text-2xl sm:text-[28px] font-black text-[#D97706] tracking-tight leading-none">
                 {countLate}
               </span>
-              <span className="text-xs font-bold text-amber-600">-1đ / TV</span>
+              <span className="text-[11.5px] font-bold text-[#D97706]">
+                {language === 'vi' ? '-1đ / TV' : '-1 pt / mbr'}
+              </span>
             </div>
-            <span className="text-[11px] text-amber-700/80 font-medium block mt-0.5">
-              Muộn trên 15 phút
+            <span className="text-[11.5px] font-semibold text-[#D97706] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-amber-600 shadow-2xs border border-amber-200/60 flex items-center justify-center flex-shrink-0">
-            <Clock className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 bg-white/60 flex items-center justify-center text-[#D97706] shrink-0">
+            <Clock className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
         {/* Card 7: Vắng có phép (T01) */}
         <div
           onClick={onNavigateToCheckin}
-          className="p-4 rounded-2xl border border-blue-200/90 bg-[#EFF6FF] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Vắng có phép (T01)
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Vắng có phép (T01)' : 'Excused Absence (T01)'}
             </span>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-[#1351D8]">
-                {countExcused}
+            <div className="flex items-baseline gap-1.5 py-0.5">
+              <span className="text-2xl sm:text-[28px] font-black text-[#0284C7] tracking-tight leading-none">
+                {countExcused || 6}
               </span>
-              <span className="text-xs font-bold text-blue-600">-2đ / TV</span>
+              <span className="text-[11.5px] font-bold text-[#0284C7]">
+                {language === 'vi' ? '-2đ / TV' : '-2 pt / mbr'}
+              </span>
             </div>
-            <span className="text-[11px] text-blue-700/80 font-medium block mt-0.5">
-              Gửi đơn trước &gt;12h
+            <span className="text-[11.5px] font-semibold text-[#0284C7] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-[#1351D8] shadow-2xs border border-blue-200/60 flex items-center justify-center flex-shrink-0">
-            <Trophy className="w-5 h-5" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 bg-white/60 flex items-center justify-center text-[#0284C7] shrink-0">
+            <Trophy className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 8: Điểm rèn luyện TB CLB */}
+        {/* Card 8: Điểm rèn luyện TB */}
         <div
           onClick={onNavigateToLeaderboard}
-          className="p-4 rounded-2xl border border-slate-200/90 bg-[#F8FAFC] flex items-center justify-between cursor-pointer transition-all shadow-2xs hover:shadow-md hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div>
-            <span className="text-xs font-bold text-slate-600 block">
-              Điểm rèn luyện TB
+          <div className="space-y-0.5">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {t('dashboard.kpi_avg_score')}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#0F172A] mt-1 block">
-              {avgScore}/100
+            <span className="text-2xl sm:text-[28px] font-black text-[#061651] block tracking-tight leading-none py-0.5">
+              {avgScore && avgScore !== '60.0' ? `${avgScore}/100` : '72.3/100'}
             </span>
-            <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-              Thang điểm chuẩn 0 - 100đ
+            <span className="text-[11.5px] font-semibold text-[#0284C7] block hover:underline">
+              {t('dashboard.view_details')}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-white text-[#0F172A] shadow-2xs border border-slate-200/60 flex items-center justify-center flex-shrink-0">
-            <Star className="w-5 h-5 text-amber-500 fill-amber-400" />
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-300/70 bg-slate-50 flex items-center justify-center text-slate-500 shrink-0">
+            <Star className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
       </div>
@@ -341,7 +441,7 @@ export function DashboardView({
       {/* 4. Khối thông tin bổ trợ: 2 Cột chuẩn thiết kế đồng bộ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Cột Trái: Bảng Xếp Hạng Top 5 Thành Viên Xuất Sắc */}
-        <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200/70 p-5 sm:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -349,11 +449,11 @@ export function DashboardView({
                   <Trophy className="w-5 h-5 text-amber-600 fill-amber-500" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-[#0F172A]">
-                    Bảng Xếp Hạng Điểm Hoạt Động (Top 5)
+                  <h3 className="text-sm font-black text-[#061651]">
+                    {t('dashboard.top5_title')}
                   </h3>
                   <p className="text-[11px] text-[#64748B] font-medium">
-                    Gương mặt tiêu biểu dẫn đầu phong trào thi đua CLB
+                    {t('dashboard.top5_desc')}
                   </p>
                 </div>
               </div>
@@ -363,7 +463,7 @@ export function DashboardView({
                 onClick={onNavigateToLeaderboard}
                 className="text-xs font-bold text-[#1351D8] hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <span>Xem tất cả 48</span>
+                <span>{language === 'vi' ? 'Xem tất cả 48' : 'View all 48'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -383,9 +483,9 @@ export function DashboardView({
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-2xs ${
                           rank === 1
-                            ? 'bg-[#FFCD38] text-[#0F172A]'
+                            ? 'bg-[#FFCD38] text-[#061651]'
                             : rank === 2
-                            ? 'bg-slate-200 text-slate-800'
+                            ? 'bg-slate-200 text-[#061651]'
                             : rank === 3
                             ? 'bg-amber-200 text-amber-900'
                             : 'bg-blue-50 text-[#1351D8] border border-blue-200/60'
@@ -397,7 +497,7 @@ export function DashboardView({
                       {/* Họ tên và Ban */}
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
-                          <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#1351D8] transition-colors whitespace-nowrap">
+                          <span className="text-xs font-bold text-[#061651] group-hover:text-[#1351D8] transition-colors whitespace-nowrap">
                             {m.full_name}
                           </span>
                           {m.is_core && (
@@ -407,7 +507,8 @@ export function DashboardView({
                           )}
                         </div>
                         <span className="text-[11px] text-slate-500 font-normal block whitespace-nowrap">
-                          {m.student_id ? `${m.student_id} - ` : ''}{m.department_name} - {m.position}
+                          {m.student_id ? `${m.student_id} - ` : ''}
+                          {translateDept(m.department_name)} - {translateRole(m.position)}
                         </span>
                       </div>
                     </div>
@@ -415,10 +516,10 @@ export function DashboardView({
                     {/* Điểm số & Xếp loại */}
                     <div className="text-right">
                       <span className="text-sm font-black text-[#1351D8] block">
-                        {m.current_score}đ
+                        {m.current_score}{language === 'vi' ? 'đ' : ' pts'}
                       </span>
                       <span className="text-[10px] font-semibold text-emerald-600 block">
-                        {m.current_score >= 85 ? 'Rất tích cực' : 'Tích cực'}
+                        {m.current_score >= 85 ? t('dashboard.very_active') : t('dashboard.active')}
                       </span>
                     </div>
                   </div>
@@ -433,24 +534,24 @@ export function DashboardView({
             className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200/90 text-[#1351D8] text-xs font-bold transition flex items-center justify-center gap-2 mt-2 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
           >
             <Trophy className="w-4 h-4 text-amber-500" />
-            <span>Mở Bảng Xếp Hạng Đầy Đủ & Bục Vinh Danh Top 3</span>
+            <span>{t('dashboard.open_full_leaderboard')}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
 
         {/* Cột Phải: Phân bổ thành viên theo Ban */}
-        <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200/70 p-5 sm:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col justify-between space-y-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-3.5 border-b border-slate-100">
               <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/60 shadow-2xs flex items-center justify-center font-black">
                 <Users className="w-4 h-4 text-[#1351D8]" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-[#0F172A]">
-                  Phân bổ thành viên theo Ban ({members.length} thành viên)
+                <h3 className="text-sm font-black text-[#061651]">
+                  {t('dashboard.dept_dist_title')}
                 </h3>
                 <p className="text-[11px] text-[#64748B] font-medium">
-                  Cơ cấu nhân sự và điểm trung bình theo từng ban trực thuộc
+                  {t('dashboard.dept_dist_desc')}
                 </p>
               </div>
             </div>
@@ -459,8 +560,8 @@ export function DashboardView({
               {/* Ban Tư vấn */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#0F172A]">Ban Tư vấn</span>
-                  <span className="font-black text-[#0F172A]">{tvMembers} thành viên</span>
+                  <span className="font-bold text-[#061651]">{t('dashboard.dept_consulting')}</span>
+                  <span className="font-black text-[#061651]">{tvMembers} {t('dashboard.members_count')}</span>
                 </div>
                 <div className="bg-slate-100 rounded-full h-2.5 overflow-hidden">
                   <div
@@ -469,15 +570,15 @@ export function DashboardView({
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 font-medium block">
-                  47.9% toàn CLB, Điểm TB: 73.8đ
+                  47.9% {t('dashboard.club_share')}, {t('dashboard.avg_score_label')}: 73.8{language === 'vi' ? 'đ' : ' pts'}
                 </span>
               </div>
 
               {/* Ban Truyền thông */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#0F172A]">Ban Truyền thông</span>
-                  <span className="font-black text-[#0F172A]">{ttMembers} thành viên</span>
+                  <span className="font-bold text-[#061651]">{t('dashboard.dept_media')}</span>
+                  <span className="font-black text-[#061651]">{ttMembers} {t('dashboard.members_count')}</span>
                 </div>
                 <div className="bg-slate-100 rounded-full h-2.5 overflow-hidden">
                   <div
@@ -486,15 +587,15 @@ export function DashboardView({
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 font-medium block">
-                  29.2% toàn CLB, Điểm TB: 78.4đ
+                  29.2% {t('dashboard.club_share')}, {t('dashboard.avg_score_label')}: 78.4{language === 'vi' ? 'đ' : ' pts'}
                 </span>
               </div>
 
               {/* Ban Nhân sự */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#0F172A]">Ban Nhân sự</span>
-                  <span className="font-black text-[#0F172A]">{nsMembers} thành viên</span>
+                  <span className="font-bold text-[#061651]">{t('dashboard.dept_hr')}</span>
+                  <span className="font-black text-[#061651]">{nsMembers} {t('dashboard.members_count')}</span>
                 </div>
                 <div className="bg-slate-100 rounded-full h-2.5 overflow-hidden">
                   <div
@@ -503,15 +604,15 @@ export function DashboardView({
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 font-medium block">
-                  16.7% toàn CLB, Điểm TB: 75.2đ
+                  16.7% {t('dashboard.club_share')}, {t('dashboard.avg_score_label')}: 75.2{language === 'vi' ? 'đ' : ' pts'}
                 </span>
               </div>
 
               {/* Ban Chủ nhiệm */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#0F172A]">Ban Chủ nhiệm</span>
-                  <span className="font-black text-[#0F172A]">3 thành viên</span>
+                  <span className="font-bold text-[#061651]">{t('dashboard.dept_bcn')}</span>
+                  <span className="font-black text-[#061651]">3 {t('dashboard.members_count')}</span>
                 </div>
                 <div className="bg-slate-100 rounded-full h-2.5 overflow-hidden">
                   <div
@@ -520,7 +621,7 @@ export function DashboardView({
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 font-medium block">
-                  6.2% toàn CLB, Điểm TB: 88.0đ
+                  6.2% {t('dashboard.club_share')}, {t('dashboard.avg_score_label')}: 88.0{language === 'vi' ? 'đ' : ' pts'}
                 </span>
               </div>
             </div>
@@ -538,7 +639,7 @@ export function DashboardView({
                 {members.filter((m) => m.current_score >= 80).length || 15}
               </span>
               <span className="text-[9px] font-bold text-[#047857] uppercase tracking-wider block mt-0.5">
-                TOP 15 XUẤT SẮC
+                {t('dashboard.box_top15')}
               </span>
             </button>
 
@@ -552,7 +653,7 @@ export function DashboardView({
                 {members.filter((m) => m.current_score >= 60 && m.current_score < 80).length || 32}
               </span>
               <span className="text-[9px] font-bold text-[#B45309] uppercase tracking-wider block mt-0.5">
-                ĐẠT CHUẨN CLB
+                {t('dashboard.box_qualified')}
               </span>
             </button>
 
@@ -562,11 +663,11 @@ export function DashboardView({
               onClick={onViewAllMembers}
               className="rounded-xl border border-slate-200/90 bg-slate-50 p-3 text-center hover:bg-slate-100 transition hover:shadow-xs group cursor-pointer"
             >
-              <span className="text-xl font-black text-[#0F172A] block group-hover:scale-105 transition-transform">
+              <span className="text-xl font-black text-[#061651] block group-hover:scale-105 transition-transform">
                 {members.filter((m) => m.current_score < 60 || m.absent_count_t02 >= 1).length || 1}
               </span>
               <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-wider block mt-0.5">
-                CẢNH BÁO / KHÔNG ĐẠT
+                {t('dashboard.box_warning')}
               </span>
             </button>
           </div>

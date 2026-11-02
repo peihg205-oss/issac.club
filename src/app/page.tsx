@@ -20,8 +20,8 @@ import type { RosterMember } from '@/lib/clubData'
 
 export default function AppHome() {
   const router = useRouter()
-  const { currentUser, isAuthChecked, isBCN } = useAuth()
-  const { proposals, activeEvent } = useClub()
+  const { currentUser, isAuthChecked, isBCN, isHR } = useAuth()
+  const { proposals, disputes, activeEvent } = useClub()
 
   const isAccountManager = isBCN || canUserManageAccounts(currentUser)
 
@@ -66,7 +66,20 @@ export default function AppHome() {
     return null
   }
 
-  const pendingCount = isBCN ? proposals.filter((p) => p.status === 'pending_bcn').length : 0
+  // Tính tổng số lượng mục cần duyệt / khiếu nại chờ xử lý thời gian thực (Real-time):
+  // - Ban Chủ nhiệm: Số đề xuất chờ duyệt (pending_bcn) + Số khiếu nại chờ xử lý (pending_bcn hoặc pending_hr_review)
+  // - Ban Nhân sự: Số khiếu nại chờ HR thẩm định (pending_hr_review)
+  // - Thành viên: Số khiếu nại chưa giải quyết của chính mình
+  const pendingCount = isBCN
+    ? (proposals?.filter((p) => p.status === 'pending_bcn').length || 0) +
+      (disputes?.filter((d) => d.status === 'pending_bcn' || d.status === 'pending_hr_review').length || 0)
+    : isHR
+    ? (disputes?.filter((d) => d.status === 'pending_hr_review').length || 0)
+    : (disputes?.filter(
+        (d) =>
+          (d.status === 'pending_bcn' || d.status === 'pending_hr_review') &&
+          d.memberCode === currentUser?.memberCode
+      ).length || 0)
 
   const handleSelectTab = (tab: ActiveNavTab) => {
     setSelectedMember(null) // Reset member profile view when switching tabs
@@ -82,8 +95,8 @@ export default function AppHome() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFBFC]">
-      {/* Top Header - Full Width spanning the top */}
+    <div className="h-screen flex flex-col bg-[#E7ECF1] overflow-hidden">
+      {/* Top Header - Full Width spanning the top 100% */}
       <Header
         searchTerm={globalSearch}
         onSearchChange={setGlobalSearch}
@@ -100,7 +113,7 @@ export default function AppHome() {
         }}
       />
 
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 overflow-y-auto relative">
         {/* Left Floating Menu & 9-Dots Button */}
         <Sidebar
           activeTab={activeTab}

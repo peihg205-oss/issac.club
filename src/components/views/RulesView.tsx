@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react'
 import { useClub, type CustomRuleItem } from '@/lib/context/ClubContext'
+import { useAuth } from '@/lib/auth/AuthContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import {
   BookOpen,
@@ -17,6 +19,7 @@ import {
   Award,
   Info,
   X,
+  XCircle,
   Layers,
   Check,
   Calendar,
@@ -56,7 +59,7 @@ const BUILTIN_PRINCIPLES: SystemPrinciple[] = [
     code: 'P03',
     title: 'Chế tài Core Team (×2)',
     points: '×2 phạt',
-    condition: '11 nhân sự nòng cốt (BCN & Trưởng/Phó ban) bị phạt gấp đôi đối với các lỗi vi phạm kỷ luật. Điểm cộng giữ nguyên.',
+    condition: 'Nhân sự Core Team (BCN & Trưởng/Phó ban) bị phạt gấp đôi đối với các lỗi vi phạm kỷ luật. Điểm cộng giữ nguyên.',
     category: 'Chế tài trách nhiệm',
   },
   {
@@ -110,14 +113,202 @@ const BUILTIN_PRINCIPLES: SystemPrinciple[] = [
   },
 ]
 
+const PRINCIPLES_EN: Record<string, { title: string; points: string; condition: string; category: string }> = {
+  P01: {
+    title: 'Starting Score',
+    points: '60',
+    condition: 'Each member begins with a baseline of 60 points at the start of each tenure or competition cycle.',
+    category: 'Foundational Principle',
+  },
+  P02: {
+    title: 'Score Scale Range',
+    points: '0 - 100',
+    condition: 'Absolute scale from 0 to 100. Scores are clamped strictly within this range after all calculations.',
+    category: 'Foundational Principle',
+  },
+  P03: {
+    title: 'Core Team Sanctions (×2)',
+    points: '×2 Penalty',
+    condition: 'Core Team members (Executive Board & Heads/Deputy Heads) receive double penalty points for violations. Bonus points remain standard 1×.',
+    category: 'Leadership Accountability',
+  },
+  P04: {
+    title: 'Monthly Interaction Cap',
+    points: '15 pts/month',
+    condition: 'Total points from C01, C02, C03 are capped at a maximum of 15 points/month/member to prevent score farming.',
+    category: 'Quota Control',
+  },
+  P05: {
+    title: 'Interaction & Response Deadline',
+    points: '12h',
+    condition: 'Deadline to respond to important announcements and complete call-to-action interactions applies strictly within 12 hours.',
+    category: 'Communication Discipline',
+  },
+  P06: {
+    title: 'Replacement & Non-stacking Rules',
+    points: 'Non-stacking',
+    condition: 'C02 includes C01; T02 replaces T01; T08 replaces T07; T09 replaces T07/T08. Prevents duplicate penalties or bonuses.',
+    category: 'Scoring Fairness',
+  },
+  P07: {
+    title: '4 Task Delivery Quality Standards',
+    points: '4 Standards',
+    condition: 'Deliverable acceptance criteria: meets requirements, accurate information, complete, no rework needed.',
+    category: 'Task Acceptance',
+  },
+  P08: {
+    title: 'Member PII Privacy Protection',
+    points: '100% Confidential',
+    condition: 'Public leaderboard protects sensitive PII: excludes Email, Phone, Student ID, or disciplinary details.',
+    category: 'Privacy Rights',
+  },
+  P09: {
+    title: 'Excused Meeting Absence',
+    points: '-2 pts',
+    condition: 'Notice given at least 2 hours prior in departmental group and confirmed with legitimate reason by Exec Board / Head.',
+    category: 'Activity Discipline',
+  },
+  P10: {
+    title: 'Unexcused Absence Sanction (3 times)',
+    points: 'Membership Termination',
+    condition: 'Accumulating 3 unexcused absences triggers an official review process for club membership termination.',
+    category: 'Strict Disciplinary',
+  },
+}
+
+const CRITERIA_EN: Record<string, { name: string; description: string; category: string }> = {
+  C01: {
+    name: 'Standard Engagement',
+    description: 'React, like, and interact on time (within 12h of announcement).',
+    category: 'Social & Interaction',
+  },
+  C02: {
+    name: 'Quality Feedback & Comment',
+    description: 'Constructive comments, suggestions, or sharing public posts.',
+    category: 'Social & Interaction',
+  },
+  C03: {
+    name: 'Form & Survey Response',
+    description: 'Fill out internal forms and feedback surveys accurately and on time.',
+    category: 'Social & Interaction',
+  },
+  C04: {
+    name: 'Creative Ideas & Proposals',
+    description: 'Contribute approved initiatives and innovative ideas implemented by departments.',
+    category: 'Tasks & Dedication',
+  },
+  C05: {
+    name: 'On-time & Standard Task Completion',
+    description: 'Successfully fulfill all 4 deliverable acceptance standards on time.',
+    category: 'Tasks & Dedication',
+  },
+  C06: {
+    name: 'Outstanding Task / Ahead of Schedule',
+    description: 'High quality deliverable, completed ahead of deadline, or exceptional issue handling.',
+    category: 'Tasks & Dedication',
+  },
+  C07: {
+    name: 'Punctual Meeting / Event Attendance',
+    description: 'Arrive on time and participate in >=80% of event/meeting duration.',
+    category: 'Meetings & Attendance',
+  },
+  C08: {
+    name: 'Cross-functional Event Support',
+    description: 'Volunteer support for other departments or handle urgent unassigned tasks.',
+    category: 'Tasks & Dedication',
+  },
+  C09: {
+    name: 'University Awards & Recognitions',
+    description: 'Represent the club to achieve accolades or official commendations from the University.',
+    category: 'Tasks & Dedication',
+  },
+  T01: {
+    name: 'Excused Meeting / Event Absence',
+    description: 'Requested at least 2 hours in advance with a verified legitimate reason.',
+    category: 'Meetings & Discipline',
+  },
+  T02: {
+    name: 'UNEXCUSED Meeting / Event Absence',
+    description: 'Absent without notice or requesting permission after the meeting has started.',
+    category: 'Meetings & Discipline',
+  },
+  T03: {
+    name: 'Official Disciplinary Warning from Exec Board',
+    description: 'Formal written warning letter/email from Exec Board. Capped at -10 pts total.',
+    category: 'Disciplinary Sanctions',
+  },
+  T04: {
+    name: 'Late Arrival / Early Departure (>15m)',
+    description: 'Participate >=80% duration but arrive >15 mins late or leave early.',
+    category: 'Meetings & Discipline',
+  },
+  T05: {
+    name: 'No Interaction on Posts / Announcements',
+    description: 'Missed important announcements within 12h without any response.',
+    category: 'Interaction & Attitude',
+  },
+  T06: {
+    name: 'Lost Contact >48h During Active Campaigns',
+    description: 'Unresponsive to work messages while department is actively running an event/campaign.',
+    category: 'Interaction & Attitude',
+  },
+  T07: {
+    name: 'Task Deadline Delay (<24h)',
+    description: 'Submit product or deliverable less than 24 hours late after the deadline.',
+    category: 'Tasks & Deadlines',
+  },
+  T08: {
+    name: 'Task Deadline Delay (>24h)',
+    description: 'Submit product 24 hours or more past deadline without prior notice.',
+    category: 'Tasks & Deadlines',
+  },
+  T09: {
+    name: 'Abandoned Task / Incomplete Assignment',
+    description: 'Accepted task but failed to deliver, adversely affecting team progress.',
+    category: 'Tasks & Deadlines',
+  },
+  T10: {
+    name: 'Substandard Deliverable Quality',
+    description: 'Poor quality output, violating acceptance criteria and requiring rework.',
+    category: 'Tasks & Deadlines',
+  },
+  T11: {
+    name: 'Violation of Internal Communication Etiquette',
+    description: 'Disrespectful language, causing discord or internal conflict.',
+    category: 'Discipline & Attitude',
+  },
+  T12: {
+    name: 'Fraud / Club Image Infringement',
+    description: 'Dishonest reporting, proxy check-in, forged proof, or harming club reputation.',
+    category: 'Strict Disciplinary',
+  },
+  T13: {
+    name: 'Loss / Damage of Shared Club Assets',
+    description: 'Failure to safeguard entrusted club equipment, logistics, or physical assets.',
+    category: 'Asset Responsibility',
+  },
+}
+
 export function RulesView() {
   const { customRules, addCustomRule, deleteCustomRule } = useClub()
+  const { isBCN } = useAuth()
+  const { language, t } = useLanguage()
 
   const [activeTab, setActiveTab] = useState<'principles' | 'add' | 'deduct' | 'all'>('principles')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Mascot lời nhắc động & tương tác
+  const [mascotBubble, setMascotBubble] = useState(true)
+  const [mascotPopping, setMascotPopping] = useState(false)
+
+  const handleMascotClick = () => {
+    setMascotPopping(true)
+    setMascotBubble(true)
+    setTimeout(() => setMascotPopping(false), 850)
+  }
 
   // Form state cho modal thêm quy định
   const [formType, setFormType] = useState<'add' | 'deduct' | 'principle'>('add')
@@ -253,59 +444,82 @@ export function RulesView() {
     }
   }
 
-  // Danh sách hợp nhất
+  // Danh sách hợp nhất (Tự động chuyển đổi ngôn ngữ Vi/En)
   const builtinAddList = useMemo(() => {
     return Object.values(CRITERIA_RULES)
       .filter((c) => c.type === 'add')
-      .map((c) => ({
-        code: c.code,
-        name: c.name,
-        type: 'add' as const,
-        points: `+${c.base_points}`,
-        numericPoints: c.base_points,
-        category: c.monthly_cap_group ? 'Tương tác & Mạng xã hội' : 'Nhiệm vụ & Cống hiến',
-        condition: c.description,
-        isCustom: false,
-        monthlyCap: !!c.monthly_cap_group,
-        coreMultiplier: false,
-      }))
-  }, [])
+      .map((c) => {
+        const en = CRITERIA_EN[c.code]
+        return {
+          code: c.code,
+          name: language === 'en' && en ? en.name : c.name,
+          type: 'add' as const,
+          points: `+${c.base_points}`,
+          numericPoints: c.base_points,
+          category:
+            language === 'en'
+              ? en?.category || (c.monthly_cap_group ? 'Social & Interaction' : 'Tasks & Dedication')
+              : c.monthly_cap_group
+              ? 'Tương tác & Mạng xã hội'
+              : 'Nhiệm vụ & Cống hiến',
+          condition: language === 'en' && en ? en.description : c.description,
+          isCustom: false,
+          monthlyCap: !!c.monthly_cap_group,
+          coreMultiplier: false,
+        }
+      })
+  }, [language])
 
   const builtinDeductList = useMemo(() => {
     return Object.values(CRITERIA_RULES)
       .filter((c) => c.type === 'deduct')
-      .map((c) => ({
-        code: c.code,
-        name: c.name,
-        type: 'deduct' as const,
-        points: `${c.base_points}`,
-        numericPoints: c.base_points,
-        category: c.code.startsWith('T01') || c.code.startsWith('T02') || c.code.startsWith('T03')
-          ? 'Họp & Kỷ luật'
-          : c.code.startsWith('T07') || c.code.startsWith('T08') || c.code.startsWith('T09')
-          ? 'Nhiệm vụ & Deadline'
-          : 'Tương tác & Thái độ',
-        condition: c.description,
-        isCustom: false,
-        monthlyCap: false,
-        coreMultiplier: c.core_multiplier_applies,
-      }))
-  }, [])
+      .map((c) => {
+        const en = CRITERIA_EN[c.code]
+        return {
+          code: c.code,
+          name: language === 'en' && en ? en.name : c.name,
+          type: 'deduct' as const,
+          points: `${c.base_points}`,
+          numericPoints: c.base_points,
+          category:
+            language === 'en'
+              ? en?.category || (
+                  c.code.startsWith('T01') || c.code.startsWith('T02') || c.code.startsWith('T03')
+                    ? 'Meetings & Discipline'
+                    : c.code.startsWith('T07') || c.code.startsWith('T08') || c.code.startsWith('T09')
+                    ? 'Tasks & Deadlines'
+                    : 'Interaction & Attitude'
+                )
+              : c.code.startsWith('T01') || c.code.startsWith('T02') || c.code.startsWith('T03')
+              ? 'Họp & Kỷ luật'
+              : c.code.startsWith('T07') || c.code.startsWith('T08') || c.code.startsWith('T09')
+              ? 'Nhiệm vụ & Deadline'
+              : 'Tương tác & Thái độ',
+          condition: language === 'en' && en ? en.description : c.description,
+          isCustom: false,
+          monthlyCap: false,
+          coreMultiplier: c.core_multiplier_applies,
+        }
+      })
+  }, [language])
 
   const builtinPrincipleList = useMemo(() => {
-    return BUILTIN_PRINCIPLES.map((p) => ({
-      code: p.code,
-      name: p.title,
-      type: 'principle' as const,
-      points: p.points,
-      numericPoints: 0,
-      category: p.category,
-      condition: p.condition,
-      isCustom: false,
-      monthlyCap: false,
-      coreMultiplier: false,
-    }))
-  }, [])
+    return BUILTIN_PRINCIPLES.map((p) => {
+      const en = PRINCIPLES_EN[p.code]
+      return {
+        code: p.code,
+        name: language === 'en' && en ? en.title : p.title,
+        type: 'principle' as const,
+        points: language === 'en' && en ? en.points : p.points,
+        numericPoints: 0,
+        category: language === 'en' && en ? en.category : p.category,
+        condition: language === 'en' && en ? en.condition : p.condition,
+        isCustom: false,
+        monthlyCap: false,
+        coreMultiplier: false,
+      }
+    })
+  }, [language])
 
   // Custom list
   const customListFormatted = useMemo(() => {
@@ -323,13 +537,13 @@ export function RulesView() {
         typeof r.points === 'number'
           ? r.points
           : parseInt(String(r.points), 10) || 0,
-      category: r.category || 'Quy định bổ sung',
+      category: r.category || (language === 'vi' ? 'Quy định bổ sung' : 'Custom Regulation'),
       condition: r.condition || r.description,
       isCustom: true,
       monthlyCap: !!r.monthlyCapGroup,
       coreMultiplier: !!r.coreMultiplierApplies,
     }))
-  }, [customRules])
+  }, [customRules, language])
 
   // Lọc dữ liệu theo tab, search và danh mục
   const allRulesList = useMemo(() => {
@@ -362,7 +576,15 @@ export function RulesView() {
       if (selectedCategory === 'custom_only') {
         list = list.filter((r) => r.isCustom)
       } else {
-        list = list.filter((r) => r.category.toLowerCase().includes(selectedCategory.toLowerCase()))
+        const cat = selectedCategory.toLowerCase()
+        list = list.filter((r) => {
+          const rCat = r.category.toLowerCase()
+          if (rCat.includes(cat)) return true
+          if (cat === 'tương tác' && (rCat.includes('social') || rCat.includes('interaction') || rCat.includes('tương tác'))) return true
+          if (cat === 'nhiệm vụ' && (rCat.includes('task') || rCat.includes('nhiệm vụ'))) return true
+          if (cat === 'họp' && (rCat.includes('meeting') || rCat.includes('họp') || rCat.includes('attendance'))) return true
+          return false
+        })
       }
     }
 
@@ -390,143 +612,183 @@ export function RulesView() {
         </div>
       )}
 
-      {/* Header trang đồng bộ, chuyên nghiệp & tinh tế */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
-            Bảng Quy Định & Tiêu Chí Chấm Điểm
-          </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-medium">
-            Hệ thống quy chuẩn hóa hoạt động thi đua và rèn luyện. Áp dụng minh bạch cho toàn bộ thành viên CLB.
-          </p>
+      {/* Header trang với Linh vật Mascot & Lời nhắc động */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1 pt-3 sm:pt-4">
+        <div className="flex items-center gap-3.5 sm:gap-4.5">
+          {/* Mascot Container với animation bay lượn & bóng thoại */}
+          <div className="relative shrink-0 select-none">
+            {/* Bóng thoại lời nhắc: "Hãy thực hiện theo quy định" */}
+            {mascotBubble && (
+              <div
+                onClick={handleMascotClick}
+                className="absolute -top-8 sm:-top-8.5 -left-1 sm:left-1 bg-white text-[#0B1E48] border border-sky-300/80 shadow-[0_4px_14px_rgba(2,132,199,0.18)] px-2.5 py-1 rounded-xl rounded-bl-none text-[11px] sm:text-xs font-black whitespace-nowrap flex items-center z-20 cursor-pointer animate-pulse transition-all duration-200 hover:scale-105 active:scale-95"
+                title="Bấm vào tớ nhé!"
+              >
+                <span>{language === 'vi' ? 'Hãy thực hiện theo quy định' : 'Please follow the regulations!'}</span>
+                {/* Mũi tên bóng thoại chỉ vào mascot */}
+                <span className="absolute -bottom-1 left-3 w-2 h-2 bg-white border-b border-r border-sky-300/80 rotate-45" />
+              </div>
+            )}
+
+            {/* Mascot Image bay lượn động */}
+            <div
+              onClick={handleMascotClick}
+              className={`cursor-pointer transition-transform duration-300 hover:scale-110 active:scale-95 ${
+                mascotPopping ? 'animate-mascot-pop' : 'animate-mascot-fly'
+              }`}
+              title="Linh vật iSSAC: Bấm để tương tác!"
+            >
+              <img
+                src="/rules-mascot.png"
+                alt="iSSAC Rules Mascot"
+                className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-md select-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-[#0B1E48] tracking-tight leading-snug">
+              {language === 'vi' ? 'Quy định và quy tắc thực hiện chung của iSSAC' : 'General Rules & Regulations of iSSAC'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium leading-normal mt-0.5">
+              {language === 'vi'
+                ? 'Áp dụng minh bạch cho toàn bộ thành viên CLB.'
+                : 'Transparently applied to all club members.'}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-shrink-0 self-start md:self-center">
-          <button
-            onClick={() => handleOpenAddModal('add')}
-            className="px-3.5 py-2 rounded-xl bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-800 border border-emerald-200 font-bold text-xs sm:text-[13px] transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>Thêm Điểm Cộng</span>
-          </button>
-          <button
-            onClick={() => handleOpenAddModal('deduct')}
-            className="px-3.5 py-2 rounded-xl bg-rose-50/90 hover:bg-rose-100/90 text-rose-800 border border-rose-200 font-bold text-xs sm:text-[13px] transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
-          >
-            <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
-            <span>Thêm Điểm Trừ</span>
-          </button>
-          <button
-            onClick={() => handleOpenAddModal('principle')}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5] flex-shrink-0" />
-            <span>Thêm Quy Định Mới</span>
-          </button>
-        </div>
+        {isBCN && (
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0 self-start md:self-center flex-wrap sm:flex-nowrap">
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('add')}
+              className="px-3 sm:px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 text-emerald-800 border border-emerald-200/90 font-bold text-xs sm:text-[13px] transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>{language === 'vi' ? 'Thêm Điểm Cộng' : 'Add Bonus Criterion'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('deduct')}
+              className="px-3 sm:px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100/90 text-rose-800 border border-rose-200/90 font-bold text-xs sm:text-[13px] transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            >
+              <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <span>{language === 'vi' ? 'Thêm Điểm Trừ' : 'Add Penalty Criterion'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('principle')}
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5] flex-shrink-0" />
+              <span>{language === 'vi' ? 'Thêm Quy Định Mới' : 'Add New Rule'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 4 Khối tóm tắt: Chuẩn viền mỏng 1px sang trọng & Tương tác 1 chạm */}
+      {/* 4 Khối tóm tắt: Chuẩn Pastel sang trọng & Tương tác 1 chạm như MembersView */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Nguyên tắc cốt lõi */}
         <div
           onClick={() => setActiveTab('principles')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#F0F9FF] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'principles'
-              ? 'border-blue-300 ring-2 ring-[#1351D8]/20 bg-blue-50/40 shadow-xs scale-[1.01]'
-              : 'border-slate-200/90 bg-white hover:border-blue-300 hover:shadow-xs'
+              ? 'border-sky-400 ring-2 ring-[#0284C7] ring-offset-1 scale-[1.01]'
+              : 'border-sky-200/80 hover:border-sky-300'
           }`}
         >
-          <div>
-            <span className="text-xs font-semibold text-slate-600 block">
-              Nguyên tắc cốt lõi
+          <div className="space-y-1">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Nguyên tắc cốt lõi' : 'Core Principles'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#1351D8] mt-1 block">
+            <span className="text-2xl sm:text-[28px] font-black text-[#0284C7] block tracking-tight leading-none py-0.5">
               {countPrinciples}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#1351D8] shadow-2xs border border-blue-200/60 flex items-center justify-center flex-shrink-0">
-            <Scale className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-sky-300/70 bg-white/70 flex items-center justify-center text-[#0284C7] shrink-0">
+            <Scale className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
         {/* Card 2: Tiêu chí Điểm cộng */}
         <div
           onClick={() => setActiveTab('add')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#F0FDF4] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'add'
-              ? 'border-emerald-300 ring-2 ring-emerald-500/20 bg-emerald-50/40 shadow-xs scale-[1.01]'
-              : 'border-slate-200/90 bg-white hover:border-emerald-300 hover:shadow-xs'
+              ? 'border-emerald-400 ring-2 ring-emerald-500 ring-offset-1 scale-[1.01]'
+              : 'border-emerald-200/80 hover:border-emerald-300'
           }`}
         >
-          <div>
-            <span className="text-xs font-semibold text-slate-600 block">
-              Tiêu chí Điểm cộng
+          <div className="space-y-1">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Tiêu chí Điểm cộng' : 'Bonus Criteria'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#059669] mt-1 block">
+            <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] block tracking-tight leading-none py-0.5">
               {countAdd}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#059669] shadow-2xs border border-emerald-200/60 flex items-center justify-center flex-shrink-0">
-            <Award className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-emerald-300/70 bg-white/70 flex items-center justify-center text-[#16A34A] shrink-0">
+            <Award className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
         {/* Card 3: Tiêu chí Điểm trừ */}
         <div
           onClick={() => setActiveTab('deduct')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#FFF1F2] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'deduct'
-              ? 'border-rose-300 ring-2 ring-rose-500/20 bg-rose-50/40 shadow-xs scale-[1.01]'
-              : 'border-slate-200/90 bg-white hover:border-rose-300 hover:shadow-xs'
+              ? 'border-rose-400 ring-2 ring-rose-500 ring-offset-1 scale-[1.01]'
+              : 'border-rose-200/80 hover:border-rose-300'
           }`}
         >
-          <div>
-            <span className="text-xs font-semibold text-slate-600 block">
-              Tiêu chí Điểm trừ
+          <div className="space-y-1">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Tiêu chí Điểm trừ' : 'Penalty Criteria'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#DC2626] mt-1 block">
+            <span className="text-2xl sm:text-[28px] font-black text-[#DC2626] block tracking-tight leading-none py-0.5">
               {countDeduct}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#DC2626] shadow-2xs border border-rose-200/60 flex items-center justify-center flex-shrink-0">
-            <ShieldAlert className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-rose-300/70 bg-white/70 flex items-center justify-center text-[#DC2626] shrink-0">
+            <ShieldAlert className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 4: Điểm tương tác tối đa */}
+        {/* Card 4: Tất cả quy chuẩn */}
         <div
-          onClick={() => setSelectedCategory(selectedCategory === 'tương tác' ? 'all' : 'tương tác')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-            selectedCategory === 'tương tác'
-              ? 'border-amber-300 ring-2 ring-amber-500/20 bg-amber-50/40 shadow-xs scale-[1.01]'
-              : 'border-slate-200/90 bg-white hover:border-amber-300 hover:shadow-xs'
+          onClick={() => setActiveTab('all')}
+          className={`p-4 sm:p-5 rounded-2xl bg-[#FFFBEB] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+            activeTab === 'all'
+              ? 'border-amber-400 ring-2 ring-amber-500 ring-offset-1 scale-[1.01]'
+              : 'border-amber-200/80 hover:border-amber-300'
           }`}
         >
-          <div>
-            <span className="text-xs font-semibold text-slate-600 block">
-              Điểm tương tác tối đa
+          <div className="space-y-1">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 block">
+              {language === 'vi' ? 'Tất cả quy chuẩn' : 'All Rules & Criteria'}
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-[#D97706] mt-1 block">
-              15
+            <span className="text-2xl sm:text-[28px] font-black text-[#D97706] block tracking-tight leading-none py-0.5">
+              {allRulesList.length}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#D97706] shadow-2xs border border-amber-200/60 flex items-center justify-center flex-shrink-0">
-            <BarChart3 className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-amber-300/70 bg-white/70 flex items-center justify-center text-[#D97706] shrink-0">
+            <Layers className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
       </div>
 
-      {/* Thanh điều khiển: Subtabs + Tìm kiếm & Bộ lọc (gọn gàng, cân đối, không rớt dòng) */}
-      <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          {/* Subtabs kiểu Segmented Control 1 hàng ngang duy nhất */}
-          <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70 overflow-x-auto max-w-full">
+      {/* KHỐI CONTAINER TRẮNG LIỀN MẠCH: Subtabs + Thanh lọc + Bảng dữ liệu (Đồng bộ 100% HistoryView & MembersView) */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-4 sm:p-5 space-y-4">
+        {/* Hàng 1: Subtabs theo phân loại (Dạng Pill bo tròn mềm mại) + Chỉ số Hiển thị */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-full pb-1 sm:pb-0">
             {[
-              { id: 'principles' as const, label: 'Nguyên tắc cốt lõi', count: countPrinciples, icon: Scale, activeColor: 'bg-[#1351D8] text-white shadow-xs' },
-              { id: 'add' as const, label: 'Tiêu chí điểm cộng', count: countAdd, icon: Award, activeColor: 'bg-emerald-600 text-white shadow-xs' },
-              { id: 'deduct' as const, label: 'Tiêu chí điểm trừ', count: countDeduct, icon: ShieldAlert, activeColor: 'bg-rose-600 text-white shadow-xs' },
-              { id: 'all' as const, label: 'Tất cả quy định', count: allRulesList.length, icon: Layers, activeColor: 'bg-[#0B1E48] text-white shadow-xs' },
+              { id: 'principles' as const, label: language === 'vi' ? 'Nguyên tắc cốt lõi' : 'Core Principles', count: countPrinciples, icon: Scale },
+              { id: 'add' as const, label: language === 'vi' ? 'Tiêu chí điểm cộng' : 'Bonus Criteria', count: countAdd, icon: Award },
+              { id: 'deduct' as const, label: language === 'vi' ? 'Tiêu chí điểm trừ' : 'Penalty Criteria', count: countDeduct, icon: ShieldAlert },
+              { id: 'all' as const, label: language === 'vi' ? 'Tất cả quy định' : 'All Rules', count: allRulesList.length, icon: Layers },
             ].map((tab) => {
               const TabIcon = tab.icon
               const isSelected = activeTab === tab.id
@@ -535,17 +797,17 @@ export function RulesView() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 ${
+                  className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
                     isSelected
-                      ? `${tab.activeColor}`
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
+                      ? 'bg-[#0284C7] text-white font-bold shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium'
                   }`}
                 >
                   <TabIcon className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>{tab.label}</span>
                   <span
-                    className={`px-1.5 py-0.5 rounded text-[11px] font-extrabold ${
-                      isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/90 text-slate-700'
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                      isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                     }`}
                   >
                     {tab.count}
@@ -555,61 +817,65 @@ export function RulesView() {
             })}
           </div>
 
-          {/* Quick Counter - luôn trên 1 dòng */}
+          {/* Quick Counter */}
           <div className="text-xs text-slate-500 font-medium whitespace-nowrap flex items-center gap-1 self-end sm:self-auto px-1">
-            <span>Hiển thị:</span>
+            <span>{language === 'vi' ? 'Hiển thị:' : 'Showing:'}</span>
             <strong className="text-slate-900 font-bold">{filteredRules.length}</strong>
-            <span>/ {allRulesList.length} quy chuẩn</span>
+            <span>/ {allRulesList.length} {language === 'vi' ? 'quy chuẩn' : 'rules'}</span>
           </div>
         </div>
 
-        {/* Thanh tìm kiếm & chip lọc danh mục */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        {/* Hàng 2: Thanh tìm kiếm (Bo tròn dài rounded-full) & Chip lọc danh mục */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-0.5">
+          {/* Search Input (rounded-full) */}
+          <div className="relative flex-1 sm:max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Tìm mã (C01, T02...), tên, điều kiện..."
+              placeholder={language === 'vi' ? 'Tìm mã (C01, T02...), tên quy chuẩn, điều kiện...' : 'Search code (C01, T02...), rule title, condition...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-8 py-1.5 sm:py-2 bg-slate-50 hover:bg-slate-50/80 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#1351D8] focus:ring-1 focus:ring-[#1351D8]/20 transition shadow-2xs"
+              className="w-full pl-9.5 pr-8 py-2 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <XCircle className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Chip filter */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 text-xs">
+          {/* Chip filter danh mục */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 text-xs">
             <span className="text-slate-500 font-bold text-[11px] whitespace-nowrap flex items-center gap-1 pr-1">
-              <Filter className="w-3 h-3 text-slate-400" /> Lọc:
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <span>{language === 'vi' ? 'Lọc:' : 'Filter:'}</span>
             </span>
             {[
-              { id: 'all', label: 'Tất cả' },
-              { id: 'tương tác', label: 'Tương tác' },
-              { id: 'nhiệm vụ', label: 'Nhiệm vụ' },
-              { id: 'họp', label: 'Kỷ luật họp' },
-              { id: 'custom_only', label: `CLB bổ sung (${countCustom})`, icon: BadgePlus },
+              { id: 'all', label: language === 'vi' ? 'Tất cả' : 'All' },
+              { id: 'tương tác', label: language === 'vi' ? 'Tương tác' : 'Engagement' },
+              { id: 'nhiệm vụ', label: language === 'vi' ? 'Nhiệm vụ' : 'Tasks' },
+              { id: 'họp', label: language === 'vi' ? 'Kỷ luật họp' : 'Meetings' },
+              { id: 'custom_only', label: language === 'vi' ? `CLB bổ sung (${countCustom})` : `Club Added (${countCustom})`, icon: BadgePlus },
             ].map((chip) => {
               const isSelected = selectedCategory === chip.id
               const ChipIcon = (chip as any).icon
               return (
                 <button
                   key={chip.id}
+                  type="button"
                   onClick={() => setSelectedCategory(chip.id)}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all inline-flex items-center gap-1 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
                     isSelected
-                      ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                      ? 'bg-[#0284C7] text-white font-bold'
                       : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-medium'
                   }`}
                 >
                   {ChipIcon && (
-                    <ChipIcon className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                    <ChipIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                   )}
                   <span>{chip.label}</span>
                 </button>
@@ -617,138 +883,42 @@ export function RulesView() {
             })}
           </div>
         </div>
-      </div>
 
-      {/* Bảng dữ liệu quy định: Tiêu đề Navy sang trọng & Đường viền mỏng thanh thoát */}
-      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm text-slate-700 border-collapse">
-            {/* Header bảng màu xanh Navy CLB sang trọng, chữ trắng nổi bật */}
-            <thead className="bg-[#0B1E48] text-xs font-bold text-white uppercase tracking-wider border-b border-[#071533] select-none">
-              <tr className="divide-x divide-white/10">
-                <th className="py-3 px-3 w-[72px] text-center font-bold text-blue-100 whitespace-nowrap">Mã</th>
-                <th className="py-3 px-4 min-w-[220px] font-bold text-white whitespace-nowrap">Nội dung & Danh mục</th>
-                <th className="py-3 px-3 text-center w-[160px] min-w-[150px] font-bold whitespace-nowrap">
-                  <div className="flex flex-col items-center justify-center">
-                    <span className="text-white">Điểm Thành Viên</span>
-                    <span className="text-[10px] font-normal text-blue-200/90 tracking-normal lowercase">
-                      tiêu chuẩn
-                    </span>
-                  </div>
-                </th>
-                {/* Cột Điểm Core Team: Hài hòa trên nền Navy với sắc vàng hổ phách trang nhã */}
-                <th className="py-3 px-3 text-center w-[200px] min-w-[190px] font-bold whitespace-nowrap bg-[#122A5E] text-amber-300 border-x border-amber-400/30">
-                  <div className="flex flex-col items-center justify-center whitespace-nowrap">
-                    <div className="inline-flex items-center justify-center gap-1.5 font-bold text-amber-300 whitespace-nowrap">
-                      <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                      <span className="whitespace-nowrap tracking-wide">Điểm Core Team</span>
-                    </div>
-                    <span className="text-[10px] font-semibold text-amber-200/80 tracking-normal whitespace-nowrap mt-0.5">
-                      Thành viên Core Team ×2
-                    </span>
-                  </div>
-                </th>
-                <th className="py-3 px-4 min-w-[280px] font-bold text-white whitespace-nowrap">Điều kiện áp dụng & Chi tiết</th>
-                <th className="py-3 px-3 text-center w-[125px] font-bold text-blue-100 whitespace-nowrap">Nguồn gốc</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {filteredRules.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <div className="space-y-2">
-                      <Search className="w-8 h-8 text-slate-300 mx-auto" />
-                      <p className="font-semibold text-xs sm:text-sm">Không tìm thấy quy định phù hợp với bộ lọc</p>
-                      <button
-                        onClick={() => {
-                          setSearchQuery('')
-                          setSelectedCategory('all')
-                        }}
-                        className="text-xs sm:text-sm text-[#1351D8] font-semibold hover:underline"
-                      >
-                        Xóa bộ lọc tìm kiếm
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredRules.map((item) => {
-                  const isAdd = item.type === 'add'
-                  const isDeduct = item.type === 'deduct'
-                  const isPrinciple = item.type === 'principle'
+        {/* Hàng 3: Bảng dữ liệu quy chế & Mobile Card List */}
+        <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs">
+          {/* Mobile View: Cards */}
+          <div className="md:hidden divide-y divide-slate-100 bg-white">
+            {filteredRules.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 px-4">
+                <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="font-semibold text-xs sm:text-sm">
+                  {language === 'vi' ? 'Không tìm thấy quy định phù hợp' : 'No matching rules found'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setSelectedCategory('all')
+                  }}
+                  className="text-xs text-[#0284C7] font-semibold hover:underline mt-1"
+                >
+                  {language === 'vi' ? 'Xóa bộ lọc tìm kiếm' : 'Clear search filters'}
+                </button>
+              </div>
+            ) : (
+              filteredRules.map((item) => {
+                const isAdd = item.type === 'add'
+                const isDeduct = item.type === 'deduct'
+                const isPrinciple = item.type === 'principle'
 
-                  // Render phần hiển thị điểm riêng biệt cho Core Team với viền mỏng thanh lịch
-                  let coreTeamElement: React.ReactNode = null
-                  if (item.coreMultiplier) {
-                    const rawPts = item.numericPoints || 0
-                    const corePts = rawPts < 0 ? rawPts * 2 : -Math.abs(rawPts) * 2
-                    coreTeamElement = (
-                      <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap shadow-2xs">
-                          <ShieldAlert className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
-                          <span>{corePts}</span>
-                        </span>
-                        <span className="inline-block text-[10px] font-semibold text-rose-800 bg-rose-100/70 border border-rose-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
-                          Core phạt ×2
-                        </span>
-                      </div>
-                    )
-                  } else if (item.code === 'P03') {
-                    coreTeamElement = (
-                      <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap shadow-2xs">
-                          <Crown className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                          <span>Phạt ×2</span>
-                        </span>
-                        <span className="inline-block text-[10px] font-semibold text-amber-800 bg-amber-100/70 border border-amber-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
-                          11 nhân sự BCN
-                        </span>
-                      </div>
-                    )
-                  } else if (isAdd) {
-                    coreTeamElement = (
-                      <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
-                        <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap shadow-2xs">
-                          {item.points}
-                        </span>
-                        <span className="inline-block text-[10px] font-semibold text-emerald-800 bg-emerald-50/80 border border-emerald-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
-                          Đồng mức
-                        </span>
-                      </div>
-                    )
-                  } else if (isDeduct) {
-                    coreTeamElement = (
-                      <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
-                        <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap shadow-2xs">
-                          {item.points}
-                        </span>
-                        <span className="inline-block text-[10px] font-semibold text-rose-800 bg-rose-50/80 border border-rose-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
-                          Đồng mức
-                        </span>
-                      </div>
-                    )
-                  } else {
-                    coreTeamElement = (
-                      <div className="flex flex-col items-center justify-center whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50/70 border border-blue-200 whitespace-nowrap shadow-2xs">
-                          <Check className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                          <span>Áp dụng chung</span>
-                        </span>
-                      </div>
-                    )
-                  }
-
-                  return (
-                    <tr
-                      key={item.code}
-                      className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100"
-                    >
-                      {/* 1. Mã quy chế có viền mỏng thanh thoát */}
-                      <td className="py-3 px-2.5 text-center align-middle">
+                return (
+                  <div key={item.code} className="p-4 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
                         <span
-                          className={`inline-block px-2.5 py-1 rounded-lg text-xs font-mono font-bold shadow-2xs ${
+                          className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold shadow-2xs ${
                             isPrinciple
-                              ? 'bg-blue-50 text-[#1351D8] border border-blue-200'
+                              ? 'bg-blue-50 text-[#0284C7] border border-blue-200'
                               : isAdd
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -756,118 +926,321 @@ export function RulesView() {
                         >
                           {item.code}
                         </span>
-                      </td>
+                        <span className="text-[11px] px-2 py-0.5 rounded-md font-medium bg-slate-100 text-slate-700">
+                          {item.category}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs border ${
+                            isAdd
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : isDeduct
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-blue-50 text-[#0284C7] border-blue-200'
+                          }`}
+                        >
+                          {item.points}
+                        </span>
+                      </div>
+                    </div>
 
-                      {/* 2. Nội dung & Danh mục */}
-                      <td className="py-3 px-4 align-middle space-y-1">
-                        <div className="font-bold text-slate-900 text-[13px] sm:text-[13.5px] flex items-center gap-1.5 leading-snug">
-                          <span>{item.name}</span>
-                          {item.isCustom && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap shadow-2xs">
-                              CLB Thêm
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          <span
-                            className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
-                              isPrinciple
-                                ? 'bg-blue-50/80 text-blue-800 border border-blue-200/60'
-                                : isAdd
-                                ? 'bg-emerald-50/80 text-emerald-800 border border-emerald-200/60'
-                                : 'bg-rose-50/80 text-rose-800 border border-rose-200/60'
-                            }`}
-                          >
-                            {item.category}
+                    <div>
+                      <h4 className="font-bold text-[#0B1E48] text-sm">{item.name}</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.condition}</p>
+                    </div>
+
+                    {/* Core Team badge on mobile */}
+                    {item.coreMultiplier && (
+                      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-900 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-2xs">
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>{language === 'vi' ? 'Core Team: Phạt gấp đôi (×2)' : 'Core Team: Double Penalty (×2)'}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Desktop View: Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700 border-collapse table-fixed min-w-[1040px]">
+              <colgroup>
+                <col className="w-[75px]" style={{ width: '75px' }} />
+                <col className="w-[340px]" style={{ width: '340px' }} />
+                <col className="w-[145px]" style={{ width: '145px' }} />
+                <col className="w-[180px]" style={{ width: '180px' }} />
+                <col />
+                <col className="w-[130px]" style={{ width: '130px' }} />
+              </colgroup>
+              <thead className="bg-[#0284C7] text-xs font-bold text-white uppercase tracking-wider select-none shadow-xs">
+                <tr className="divide-x divide-white/15">
+                  <th className="py-3 px-3 text-center whitespace-nowrap font-bold text-sky-100 w-[75px]">
+                    {language === 'vi' ? 'Mã' : 'Code'}
+                  </th>
+                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-white w-[340px]">
+                    {language === 'vi' ? 'Nội dung & Danh mục' : 'Content & Category'}
+                  </th>
+                  <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-white w-[145px]">
+                    <div className="flex flex-col items-center justify-center leading-tight">
+                      <span>{language === 'vi' ? 'Điểm Thành Viên' : 'Member Score'}</span>
+                      <span className="text-[10px] font-normal text-sky-100 tracking-normal lowercase">
+                        {language === 'vi' ? 'tiêu chuẩn' : 'standard'}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-white w-[180px]">
+                    <div className="flex flex-col items-center justify-center leading-tight">
+                      <div className="inline-flex items-center justify-center gap-1 font-bold text-white">
+                        <Crown className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                        <span>{language === 'vi' ? 'Điểm Core Team' : 'Core Team Score'}</span>
+                      </div>
+                      <span className="text-[10px] font-normal text-sky-100 tracking-normal mt-0.5 lowercase">
+                        {language === 'vi' ? 'thành viên core team ×2' : 'core team members ×2'}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="py-3 px-4 text-left font-bold text-white">
+                    {language === 'vi' ? 'Điều kiện áp dụng & Chi tiết' : 'Conditions & Details'}
+                  </th>
+                  <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-sky-100 w-[130px]">
+                    {language === 'vi' ? 'Nguồn gốc' : 'Source'}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {filteredRules.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <div className="space-y-2">
+                        <Search className="w-8 h-8 text-slate-300 mx-auto" />
+                        <p className="font-semibold text-xs sm:text-sm">
+                          {language === 'vi' ? 'Không tìm thấy quy định phù hợp với bộ lọc' : 'No rules match the current filters'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery('')
+                            setSelectedCategory('all')
+                          }}
+                          className="text-xs sm:text-sm text-[#0284C7] font-semibold hover:underline"
+                        >
+                          {language === 'vi' ? 'Xóa bộ lọc tìm kiếm' : 'Clear search filters'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRules.map((item) => {
+                    const isAdd = item.type === 'add'
+                    const isDeduct = item.type === 'deduct'
+                    const isPrinciple = item.type === 'principle'
+
+                    // Render phần hiển thị điểm riêng biệt cho Core Team
+                    let coreTeamElement: React.ReactNode = null
+                    if (item.coreMultiplier) {
+                      const rawPts = item.numericPoints || 0
+                      const corePts = rawPts < 0 ? rawPts * 2 : -Math.abs(rawPts) * 2
+                      coreTeamElement = (
+                        <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap shadow-2xs">
+                            <ShieldAlert className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                            <span>{corePts}</span>
+                          </span>
+                          <span className="inline-block text-[10px] font-semibold text-rose-800 bg-rose-100/70 border border-rose-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            {language === 'vi' ? 'Core phạt ×2' : 'Core ×2 Penalty'}
                           </span>
                         </div>
-                      </td>
-
-                      {/* 3. Mức Điểm Thành Viên: Viền mỏng 1px */}
-                      <td className="py-3 px-3 text-center align-middle">
-                        <div className="flex flex-col items-center justify-center gap-0.5 whitespace-nowrap">
-                          {isAdd && (
-                            <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 whitespace-nowrap shadow-2xs">
-                              {item.points}
-                            </span>
-                          )}
-                          {isDeduct && (
-                            <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs text-rose-800 bg-rose-50 border border-rose-200 whitespace-nowrap shadow-2xs">
-                              {item.points}
-                            </span>
-                          )}
-                          {isPrinciple && (
-                            <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs text-[#1351D8] bg-blue-50 border border-blue-200 whitespace-nowrap shadow-2xs">
-                              {item.points}
-                            </span>
-                          )}
-                          {item.monthlyCap && (
-                            <span className="inline-flex items-center justify-center text-[10px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-center leading-tight whitespace-nowrap mt-1 shadow-2xs">
-                              Tối đa 15đ/tháng
-                            </span>
-                          )}
-                          <span
-                            className={`text-[10px] font-medium mt-0.5 whitespace-nowrap ${
-                              isPrinciple ? 'text-blue-600' : isAdd ? 'text-emerald-600' : 'text-rose-600'
-                            }`}
-                          >
-                            {isPrinciple ? 'Chuẩn quy chế' : 'Tiêu chuẩn'}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* 4. Mức Điểm Core Team: Viền mỏng hổ phách */}
-                      <td className="py-3 px-3 text-center align-middle bg-amber-50/20 border-x border-amber-200/40 group-hover:bg-amber-50/35 transition-colors">
-                        {coreTeamElement}
-                      </td>
-
-                      {/* 5. Điều kiện áp dụng & Chi tiết */}
-                      <td className="py-3 px-4 align-middle">
-                        <p className="text-[12.5px] sm:text-[13px] text-slate-600 leading-relaxed text-justify [text-align:justify] [text-justify:inter-word]">{item.condition}</p>
-                        {item.code === 'T02' && (
-                          <div className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-rose-900 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-2xs">
-                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
-                            <span>Cảnh báo: Tích lũy 3 lần vắng họp xem xét dừng tư cách thành viên</span>
-                          </div>
-                        )}
-                        {item.code === 'P03' && (
-                          <div className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                      )
+                    } else if (item.code === 'P03') {
+                      coreTeamElement = (
+                        <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs bg-amber-50 text-amber-900 border border-amber-200 whitespace-nowrap shadow-2xs">
                             <Crown className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                            <span>Áp dụng cho 11 nhân sự Core Team (BCN & Trưởng/Phó ban)</span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* 6. Nguồn gốc & Thao tác */}
-                      <td className="py-3 px-2.5 text-center align-middle">
-                        {item.isCustom ? (
-                          <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 whitespace-nowrap shadow-2xs">
-                              <BadgePlus className="w-3.5 h-3.5 text-amber-600" /> CLB bổ sung
-                            </span>
-                            <div>
-                              <button
-                                onClick={() => handleDeleteRule(item.code)}
-                                title="Xóa quy định này"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 hover:underline pt-0.5"
-                              >
-                                <Trash2 className="w-3 h-3" /> Xóa
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 whitespace-nowrap shadow-2xs">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#1351D8]" />
-                            <span>Quy chế chuẩn</span>
+                            <span>{language === 'vi' ? 'Phạt ×2' : '×2 Penalty'}</span>
                           </span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+                          <span className="inline-block text-[10px] font-semibold text-amber-800 bg-amber-100/70 border border-amber-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            Core Team
+                          </span>
+                        </div>
+                      )
+                    } else if (isAdd) {
+                      coreTeamElement = (
+                        <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap shadow-2xs">
+                            {item.points}
+                          </span>
+                          <span className="inline-block text-[10px] font-semibold text-emerald-800 bg-emerald-50/80 border border-emerald-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            {language === 'vi' ? 'Đồng mức' : 'Standard 1×'}
+                          </span>
+                        </div>
+                      )
+                    } else if (isDeduct) {
+                      coreTeamElement = (
+                        <div className="flex flex-col items-center justify-center gap-1 whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap shadow-2xs">
+                            {item.points}
+                          </span>
+                          <span className="inline-block text-[10px] font-semibold text-rose-800 bg-rose-50/80 border border-rose-200/60 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            {language === 'vi' ? 'Đồng mức' : 'Standard 1×'}
+                          </span>
+                        </div>
+                      )
+                    } else {
+                      coreTeamElement = (
+                        <div className="flex flex-col items-center justify-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50/70 border border-blue-200 whitespace-nowrap shadow-2xs">
+                            <Check className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                            <span>{language === 'vi' ? 'Áp dụng chung' : 'General Apply'}</span>
+                          </span>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <tr
+                        key={item.code}
+                        className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100"
+                      >
+                        {/* 1. Mã quy chế */}
+                        <td className="py-3 px-2.5 text-center align-middle">
+                          <span
+                            className={`inline-block px-2.5 py-1 rounded-lg text-xs font-mono font-bold shadow-2xs ${
+                              isPrinciple
+                                ? 'bg-blue-50 text-[#0284C7] border border-blue-200'
+                                : isAdd
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {item.code}
+                          </span>
+                        </td>
+
+                        {/* 2. Nội dung & Danh mục */}
+                        <td className="py-3 px-4 align-middle space-y-1">
+                          <div className="font-bold text-[#0B1E48] text-[13px] sm:text-[13.5px] flex items-center gap-1.5 leading-snug">
+                            <span>{item.name}</span>
+                            {item.isCustom && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap shadow-2xs">
+                                {language === 'vi' ? 'CLB Thêm' : 'Custom'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            <span
+                              className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
+                                isPrinciple
+                                  ? 'bg-blue-50/80 text-blue-800 border border-blue-200/60'
+                                  : isAdd
+                                  ? 'bg-emerald-50/80 text-emerald-800 border border-emerald-200/60'
+                                  : 'bg-rose-50/80 text-rose-800 border border-rose-200/60'
+                              }`}
+                            >
+                              {item.category}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 3. Mức Điểm Thành Viên */}
+                        <td className="py-3 px-3 text-center align-middle">
+                          <div className="flex flex-col items-center justify-center gap-0.5 whitespace-nowrap">
+                            {isAdd && (
+                              <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 whitespace-nowrap shadow-2xs">
+                                {item.points}
+                              </span>
+                            )}
+                            {isDeduct && (
+                              <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs text-rose-800 bg-rose-50 border border-rose-200 whitespace-nowrap shadow-2xs">
+                                {item.points}
+                              </span>
+                            )}
+                            {isPrinciple && (
+                              <span className="inline-block px-2.5 py-1 rounded-lg font-bold text-xs text-[#0284C7] bg-blue-50 border border-blue-200 whitespace-nowrap shadow-2xs">
+                                {item.points}
+                              </span>
+                            )}
+                            {item.monthlyCap && (
+                              <span className="inline-flex items-center justify-center text-[10px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-center leading-tight whitespace-nowrap mt-1 shadow-2xs">
+                                {language === 'vi' ? 'Tối đa 15đ/tháng' : 'Max 15 pts/month'}
+                              </span>
+                            )}
+                            <span
+                              className={`text-[10px] font-medium mt-0.5 whitespace-nowrap ${
+                                isPrinciple ? 'text-[#0284C7]' : isAdd ? 'text-emerald-600' : 'text-rose-600'
+                              }`}
+                            >
+                              {isPrinciple
+                                ? (language === 'vi' ? 'Chuẩn quy chế' : 'Baseline Rule')
+                                : (language === 'vi' ? 'Tiêu chuẩn' : 'Standard')}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 4. Mức Điểm Core Team */}
+                        <td className="py-3 px-3 text-center align-middle">
+                          {coreTeamElement}
+                        </td>
+
+                        {/* 5. Điều kiện áp dụng & Chi tiết */}
+                        <td className="py-3 px-4 align-middle">
+                          <p className="text-[12.5px] sm:text-[13px] text-slate-600 leading-relaxed text-left font-normal">
+                            {item.condition}
+                          </p>
+                          {item.code === 'T02' && (
+                            <div className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-rose-900 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 shadow-2xs">
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                              <span>
+                                {language === 'vi'
+                                  ? 'Cảnh báo: Tích lũy 3 lần vắng họp xem xét dừng tư cách thành viên'
+                                  : 'Warning: 3 unexcused absences trigger membership termination review'}
+                              </span>
+                            </div>
+                          )}
+                          {item.code === 'P03' && (
+                            <div className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
+                              <Crown className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                              <span>{language === 'vi' ? 'Áp dụng cho Core Team' : 'Applies to Core Team'}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* 6. Nguồn gốc & Thao tác */}
+                        <td className="py-3 px-2.5 text-center align-middle">
+                          {item.isCustom ? (
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 whitespace-nowrap shadow-2xs">
+                                <BadgePlus className="w-3.5 h-3.5 text-amber-600" />
+                                <span>{language === 'vi' ? 'CLB bổ sung' : 'Club Added'}</span>
+                              </span>
+                              {isBCN && (
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteRule(item.code)}
+                                    title={language === 'vi' ? 'Xóa quy định này' : 'Delete this rule'}
+                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 hover:underline pt-0.5 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3 h-3" /> {language === 'vi' ? 'Xóa' : 'Delete'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 whitespace-nowrap shadow-2xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#0284C7]" />
+                              <span>{language === 'vi' ? 'Quy chế chuẩn' : 'Standard Rule'}</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -898,13 +1271,15 @@ export function RulesView() {
                 <div>
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-blue-50 text-[#1351D8] border border-blue-200/60 mb-1">
                     <Shield className="w-3 h-3 text-[#1351D8]" />
-                    <span>Quy Chế Hoạt Động CLB</span>
+                    <span>{language === 'vi' ? 'Quy Chế Hoạt Động CLB' : 'Club Operational Regulations'}</span>
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
-                    Thêm Quy Định / Tiêu Chí CLB
+                    {language === 'vi' ? 'Thêm Quy Định / Tiêu Chí CLB' : 'Add Club Rule / Criterion'}
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Bổ sung tiêu chí chấm điểm và chế tài thi đua cho Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế
+                    {language === 'vi'
+                      ? 'Bổ sung tiêu chí chấm điểm và chế tài thi đua cho Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế'
+                      : 'Add scoring criteria and disciplinary regulations for VNU-IS Ambassadors Club'}
                   </p>
                 </div>
               </div>
@@ -920,7 +1295,9 @@ export function RulesView() {
             <form onSubmit={handleSaveRule} className="space-y-4 text-xs">
               {/* 1. Chọn loại quy định: 3 Thẻ tương tác sang trọng */}
               <div>
-                <label className="block font-bold text-slate-700 mb-2">Loại quy định & tiêu chí:</label>
+                <label className="block font-bold text-slate-700 mb-2">
+                  {language === 'vi' ? 'Loại quy định & tiêu chí:' : 'Rule & Criterion Type:'}
+                </label>
                 <div className="grid grid-cols-3 gap-2.5">
                   <button
                     type="button"
@@ -934,9 +1311,9 @@ export function RulesView() {
                     <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs shadow-2xs">
                       <Award className="w-4 h-4 text-emerald-700" />
                     </div>
-                    <span className="font-bold">Điểm cộng (+)</span>
+                    <span className="font-bold">{language === 'vi' ? 'Điểm cộng (+)' : 'Bonus (+)'}</span>
                     <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
-                      +2đ chuẩn
+                      {language === 'vi' ? '+2đ chuẩn' : '+2 pts standard'}
                     </span>
                   </button>
 
@@ -952,9 +1329,9 @@ export function RulesView() {
                     <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-black text-xs shadow-2xs">
                       <ShieldAlert className="w-4 h-4 text-rose-700" />
                     </div>
-                    <span className="font-bold">Điểm trừ (-)</span>
+                    <span className="font-bold">{language === 'vi' ? 'Điểm trừ (-)' : 'Penalty (-)'}</span>
                     <span className="text-[10px] font-semibold text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded">
-                      -2đ (Core ×2)
+                      {language === 'vi' ? '-2đ (Core ×2)' : '-2 pts (Core ×2)'}
                     </span>
                   </button>
 
@@ -970,9 +1347,9 @@ export function RulesView() {
                     <div className="w-7 h-7 rounded-full bg-blue-100 text-[#1351D8] flex items-center justify-center font-black text-xs shadow-2xs">
                       <Scale className="w-4 h-4 text-[#1351D8]" />
                     </div>
-                    <span className="font-bold">Nguyên tắc (P)</span>
+                    <span className="font-bold">{language === 'vi' ? 'Nguyên tắc (P)' : 'Principle (P)'}</span>
                     <span className="text-[10px] font-semibold text-[#1351D8] bg-blue-100/70 px-1.5 py-0.5 rounded">
-                      Quy chuẩn
+                      {language === 'vi' ? 'Quy chuẩn' : 'Standard'}
                     </span>
                   </button>
                 </div>
@@ -982,7 +1359,7 @@ export function RulesView() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Mã quy chế: <span className="text-rose-500">*</span>
+                    {language === 'vi' ? 'Mã quy chế:' : 'Rule Code:'} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -992,12 +1369,14 @@ export function RulesView() {
                     className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-[#1351D8] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs"
                     required
                   />
-                  <p className="text-[10px] text-slate-500 mt-1 font-medium">Tự động gợi ý mã kế tiếp</p>
+                  <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                    {language === 'vi' ? 'Tự động gợi ý mã kế tiếp' : 'Auto-suggested next code'}
+                  </p>
                 </div>
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Mức điểm: <span className="text-rose-500">*</span>
+                    {language === 'vi' ? 'Mức điểm:' : 'Points:'} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -1009,10 +1388,10 @@ export function RulesView() {
                   />
                   <p className="text-[10px] text-slate-500 mt-1 font-medium">
                     {formType === 'add'
-                      ? 'Điểm cộng (dương, VD: +2, +3)'
+                      ? (language === 'vi' ? 'Điểm cộng (dương, VD: +2, +3)' : 'Bonus points (positive, e.g. +2, +3)')
                       : formType === 'deduct'
-                      ? 'Điểm trừ (âm, VD: -2, -5)'
-                      : 'Mốc điểm hoặc ghi chú'}
+                      ? (language === 'vi' ? 'Điểm trừ (âm, VD: -2, -5)' : 'Penalty points (negative, e.g. -2, -5)')
+                      : (language === 'vi' ? 'Mốc điểm hoặc ghi chú' : 'Score milestone or note')}
                   </p>
                 </div>
               </div>
@@ -1020,13 +1399,13 @@ export function RulesView() {
               {/* 3. Tên nội dung tiêu chí */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Tên nội dung quy định / tiêu chí: <span className="text-rose-500">*</span>
+                  {language === 'vi' ? 'Tên nội dung quy định / tiêu chí:' : 'Rule / Criterion Title:'} <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  placeholder="VD: Đại diện CLB tham gia Hội thảo cấp ĐHQGHN"
+                  placeholder={language === 'vi' ? 'VD: Đại diện CLB tham gia Hội thảo cấp ĐHQGHN' : 'e.g. Represent club at VNU-level workshop'}
                   className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs"
                   required
                 />
@@ -1034,31 +1413,33 @@ export function RulesView() {
 
               {/* 4. Danh mục */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Danh mục phân loại:</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  {language === 'vi' ? 'Danh mục phân loại:' : 'Category Classification:'}
+                </label>
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
                   className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs cursor-pointer"
                 >
-                  <option value="Nhiệm vụ & Tiến độ">Nhiệm vụ & Tiến độ</option>
-                  <option value="Tương tác & Mạng xã hội">Tương tác & Mạng xã hội</option>
-                  <option value="Kỷ luật & Deadline">Kỷ luật & Deadline</option>
-                  <option value="Họp & Kỷ luật">Họp & Kỷ luật</option>
-                  <option value="Đối ngoại & Sự kiện">Đối ngoại & Sự kiện</option>
-                  <option value="Khen thưởng & Đóng góp">Khen thưởng & Đóng góp</option>
-                  <option value="Nguyên tắc vận hành">Nguyên tắc vận hành</option>
+                  <option value="Nhiệm vụ & Tiến độ">{language === 'vi' ? 'Nhiệm vụ & Tiến độ' : 'Tasks & Progress'}</option>
+                  <option value="Tương tác & Mạng xã hội">{language === 'vi' ? 'Tương tác & Mạng xã hội' : 'Social & Interaction'}</option>
+                  <option value="Kỷ luật & Deadline">{language === 'vi' ? 'Kỷ luật & Deadline' : 'Discipline & Deadlines'}</option>
+                  <option value="Họp & Kỷ luật">{language === 'vi' ? 'Họp & Kỷ luật' : 'Meetings & Attendance'}</option>
+                  <option value="Đối ngoại & Sự kiện">{language === 'vi' ? 'Đối ngoại & Sự kiện' : 'External Affairs & Events'}</option>
+                  <option value="Khen thưởng & Đóng góp">{language === 'vi' ? 'Khen thưởng & Đóng góp' : 'Awards & Contributions'}</option>
+                  <option value="Nguyên tắc vận hành">{language === 'vi' ? 'Nguyên tắc vận hành' : 'Operational Principles'}</option>
                 </select>
               </div>
 
               {/* 5. Điều kiện áp dụng & Chi tiết */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Điều kiện áp dụng & Minh chứng yêu cầu:
+                  {language === 'vi' ? 'Điều kiện áp dụng & Minh chứng yêu cầu:' : 'Conditions & Required Proof:'}
                 </label>
                 <textarea
                   value={formCondition}
                   onChange={(e) => setFormCondition(e.target.value)}
-                  placeholder="Mô tả cụ thể trường hợp áp dụng, căn cứ xét điểm, thời hạn nộp hoặc minh chứng cần có..."
+                  placeholder={language === 'vi' ? 'Mô tả cụ thể trường hợp áp dụng, căn cứ xét điểm, thời hạn nộp hoặc minh chứng cần có...' : 'Describe specific case, scoring basis, submission deadline or required evidence...'}
                   rows={3}
                   className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs leading-relaxed"
                 />
@@ -1068,7 +1449,7 @@ export function RulesView() {
               <div className="p-3.5 bg-gradient-to-r from-blue-50/60 to-indigo-50/40 rounded-2xl border border-blue-200/70 space-y-2.5">
                 <span className="font-bold text-[#0F172A] block text-xs flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-[#1351D8]" />
-                  <span>Tùy chọn cơ chế CLB:</span>
+                  <span>{language === 'vi' ? 'Tùy chọn cơ chế CLB:' : 'Club Mechanism Options:'}</span>
                 </span>
 
                 {formType === 'deduct' && (
@@ -1080,7 +1461,11 @@ export function RulesView() {
                       className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 bg-white mt-0.5 cursor-pointer"
                     />
                     <span>
-                      Áp dụng chế tài <strong>phạt gấp đôi (×2)</strong> cho 11 nhân sự Core Team (BCN & Trưởng ban)
+                      {language === 'vi' ? (
+                        <>Áp dụng chế tài <strong>phạt gấp đôi (×2)</strong> cho Core Team</>
+                      ) : (
+                        <>Apply <strong>double penalty (×2)</strong> for Core Team</>
+                      )}
                     </span>
                   </label>
                 )}
@@ -1094,14 +1479,21 @@ export function RulesView() {
                       className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-white mt-0.5 cursor-pointer"
                     />
                     <span>
-                      Tính vào <strong>điểm tương tác tối đa 15 điểm/tháng</strong> (tránh cày điểm ảo)
+                      {language === 'vi' ? (
+                        <>Tính vào <strong>điểm tương tác tối đa 15 điểm/tháng</strong> (tránh cày điểm ảo)</>
+                      ) : (
+                        <>Count towards <strong>monthly 15-point interaction cap</strong> (anti-farming)</>
+                      )}
                     </span>
                   </label>
                 )}
 
                 <div className="text-[11px] text-slate-600 font-medium bg-white/70 p-2.5 rounded-xl border border-blue-200/50 leading-relaxed">
-                  Sau khi thêm, quy định này sẽ ngay lập tức xuất hiện trong mục <strong>Chấm điểm & Duyệt</strong>{' '}
-                  để Ban Nhân sự và Ban Chủ nhiệm áp dụng.
+                  {language === 'vi' ? (
+                    <>Sau khi thêm, quy định này sẽ ngay lập tức xuất hiện trong mục <strong>Chấm điểm & Duyệt</strong> để Ban Nhân sự và Ban Chủ nhiệm áp dụng.</>
+                  ) : (
+                    <>Once added, this rule will immediately become available in <strong>Scoring & Approval</strong> for HR and Exec Board.</>
+                  )}
                 </div>
               </div>
 
@@ -1112,14 +1504,14 @@ export function RulesView() {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2.5 rounded-xl border border-slate-200/90 text-slate-700 font-bold text-xs hover:bg-slate-50 transition shadow-2xs active:scale-95 cursor-pointer"
                 >
-                  Hủy bỏ
+                  {language === 'vi' ? 'Hủy bỏ' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:from-[#0B2562] hover:to-[#1351D8] text-white font-bold text-xs shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-bold text-xs shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>Lưu Quy Định CLB</span>
+                  <span>{language === 'vi' ? 'Lưu Quy Định CLB' : 'Save Club Regulation'}</span>
                 </button>
               </div>
             </form>

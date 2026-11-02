@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+import { Be_Vietnam_Pro } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth/AuthContext'
 import { ClubProvider } from '@/lib/context/ClubContext'
+import { LanguageProvider } from '@/lib/context/LanguageContext'
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-plus-jakarta',
+  variable: '--font-be-vietnam-pro',
   display: 'swap',
 })
 
@@ -38,13 +39,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi" className={`h-full scroll-smooth ${plusJakartaSans.variable}`}>
-      <body className={`min-h-full bg-[#FAFBFC] text-[#0F172A] antialiased selection:bg-[#BFDBFE] selection:text-[#1E3A8A] ${plusJakartaSans.className}`}>
-        <AuthProvider>
-          <ClubProvider>
-            {children}
-          </ClubProvider>
-        </AuthProvider>
+    <html lang="vi" className={`h-full scroll-smooth ${beVietnamPro.variable}`}>
+      <body className={`min-h-full bg-[#E7ECF1] text-[#1E293B] antialiased selection:bg-[#BFDBFE] selection:text-[#1E3A8A] ${beVietnamPro.className}`}>
+        <LanguageProvider>
+          <AuthProvider>
+            <ClubProvider>
+              {children}
+            </ClubProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   )

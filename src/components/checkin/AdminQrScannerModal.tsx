@@ -358,9 +358,9 @@ export function AdminQrScannerModal({
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
       <div className="bg-[#F8FAFC] rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
         {/* Top Header */}
-        <div className="bg-[#0B1E48] text-white p-5 sm:p-6 flex items-center justify-between shrink-0">
+        <div className="bg-gradient-to-r from-[#0284C7] via-[#0369A1] to-[#075985] text-white p-5 sm:p-6 flex items-center justify-between shrink-0 border-b border-sky-800">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 border border-white/20 flex items-center justify-center shadow-md">
               <QrCode className="w-6 h-6 text-white" />
             </div>
             <div>

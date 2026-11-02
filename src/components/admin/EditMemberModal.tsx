@@ -24,6 +24,11 @@ import { compressImage } from '@/lib/utils/imageCompress'
 // Bộ sưu tập avatar mẫu gợi ý nhanh (SVG / Gradient chuyên nghiệp cho Đại sứ sinh viên)
 const PRESET_AVATARS = [
   {
+    id: 'thuy-nguyen',
+    name: 'Thuỷ Nguyên (Đại sứ Chibi)',
+    url: '/thuy-nguyen-avatar.png',
+  },
+  {
     id: 'thang',
     name: 'Đức Thắng (Thực tế)',
     url: '/avatars/duc-thang.jpg',
@@ -182,24 +187,21 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
       <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-2xl w-full border border-slate-200/90 shadow-2xl relative space-y-5 max-h-[94vh] flex flex-col">
         {/* Modal Header */}
         <div className="flex items-start justify-between pb-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0B1E48] via-[#1351D8] to-[#1E62F4] text-white flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center shadow-sm shadow-[#0284C7]/25 shrink-0">
               <User className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#1351D8] border border-blue-200/60">
+              <div className="mb-1">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#F0F9FF] text-[#0284C7] border border-sky-200">
                   Chỉnh Sửa Hồ Sơ Thành Viên
                 </span>
-                <span className="text-xs font-mono font-bold text-slate-500">
-                  {member.member_code}
-                </span>
               </div>
-              <h3 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
+              <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight">
                 {fullName || member.full_name}
               </h3>
             </div>
@@ -239,7 +241,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
           <div className="bg-gradient-to-b from-slate-50/80 to-blue-50/30 p-4 sm:p-5 rounded-2xl border border-slate-200/90 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-[#1351D8]" />
+                <Camera className="w-4 h-4 text-[#0284C7]" />
                 <h4 className="text-xs font-black uppercase text-slate-800 tracking-wide">
                   Ảnh Đại Diện Thành Viên (Avatar)
                 </h4>
@@ -266,7 +268,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                     className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover ring-4 ring-white shadow-md border border-slate-200"
                   />
                 ) : (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-200 ring-4 ring-white shadow-md border border-blue-200 text-[#1351D8] font-black text-2xl flex items-center justify-center">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 ring-4 ring-white shadow-md border border-sky-200 text-[#0284C7] font-black text-2xl flex items-center justify-center">
                     {fullName ? fullName.charAt(0).toUpperCase() : 'A'}
                   </div>
                 )}
@@ -285,7 +287,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                     onClick={() => setAvatarTab('upload')}
                     className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
                       avatarTab === 'upload'
-                        ? 'bg-white text-[#1351D8] shadow-xs'
+                        ? 'bg-white text-[#0284C7] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -297,7 +299,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                     onClick={() => setAvatarTab('presets')}
                     className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
                       avatarTab === 'presets'
-                        ? 'bg-white text-[#1351D8] shadow-xs'
+                        ? 'bg-white text-[#0284C7] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -309,7 +311,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                     onClick={() => setAvatarTab('url')}
                     className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
                       avatarTab === 'url'
-                        ? 'bg-white text-[#1351D8] shadow-xs'
+                        ? 'bg-white text-[#0284C7] shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -331,7 +333,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                     />
                     <label
                       htmlFor="member-avatar-upload"
-                      className="w-full py-2.5 px-4 rounded-xl border border-dashed border-[#1351D8]/60 bg-blue-50/60 hover:bg-blue-50 text-[#1351D8] font-bold text-center cursor-pointer transition flex items-center justify-center gap-2 shadow-2xs"
+                      className="w-full py-2.5 px-4 rounded-xl border border-dashed border-[#0284C7]/60 bg-[#F0F9FF] hover:bg-sky-50 text-[#0284C7] font-bold text-center cursor-pointer transition flex items-center justify-center gap-2 shadow-2xs"
                     >
                       <Upload className="w-4 h-4" />
                       <span>Chọn file ảnh từ thiết bị của bạn (JPG, PNG, WebP)</span>
@@ -358,7 +360,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                             }}
                             className={`p-1 rounded-xl border transition flex flex-col items-center gap-1 cursor-pointer ${
                               isSelected
-                                ? 'bg-blue-100 border-[#1351D8] ring-2 ring-[#1351D8]/30'
+                                ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/30'
                                 : 'bg-white border-slate-200 hover:border-slate-300'
                             }`}
                           >
@@ -385,12 +387,12 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                       placeholder="Dán đường dẫn ảnh https://... hoặc /avatars/..."
                       value={customUrlInput}
                       onChange={(e) => setCustomUrlInput(e.target.value)}
-                      className="flex-1 bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#1351D8]"
+                      className="flex-1 bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
                     />
                     <button
                       type="button"
                       onClick={handleApplyUrl}
-                      className="px-3.5 py-2 rounded-xl bg-[#1351D8] hover:bg-[#0F3282] text-white font-bold text-xs transition cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs transition cursor-pointer"
                     >
                       Áp dụng
                     </button>
@@ -420,7 +422,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nhập họ và tên đầy đủ"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -432,7 +434,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 <select
                   value={departmentCode}
                   onChange={(e) => setDepartmentCode(e.target.value as DepartmentCode)}
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs cursor-pointer"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
                 >
                   <option value="B04">Ban Chủ nhiệm (B04)</option>
                   <option value="B01">Ban Truyền thông (B01)</option>
@@ -452,7 +454,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
                   placeholder="Chủ nhiệm, Phó ban, Thành viên..."
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -466,7 +468,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   placeholder="VD: 23070691"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -480,7 +482,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                   placeholder="VD: MIS2023A, DC2024B..."
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -494,7 +496,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="VD: 0374140705"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
                 <span className="block text-[10px] text-slate-400 mt-0.5">
                   (Dùng để xác thực 4 số cuối chống điểm danh hộ)
@@ -512,7 +514,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="VD: email@vnuis.edu.vn"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
             </div>
@@ -554,7 +556,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   max={100}
                   value={currentScore}
                   onChange={(e) => setCurrentScore(Number(e.target.value))}
-                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-slate-900 focus:outline-none focus:border-[#1351D8]"
+                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-slate-900 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
                 />
               </div>
 
@@ -569,7 +571,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   max={3}
                   value={absentT02}
                   onChange={(e) => setAbsentT02(Number(e.target.value))}
-                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-rose-700 focus:outline-none focus:border-[#1351D8]"
+                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-rose-700 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
                 />
               </div>
             </div>
@@ -588,7 +590,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#0F3282] via-[#1351D8] to-[#1E62F4] hover:brightness-110 shadow-md shadow-[#1351D8]/20 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="px-6 py-2.5 rounded-xl text-xs font-black text-white bg-[#0284C7] hover:bg-[#0369A1] shadow-md shadow-[#0284C7]/20 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
             >
               {isSubmitting ? (
                 <>

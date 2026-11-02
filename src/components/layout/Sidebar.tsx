@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/lib/auth/AuthContext'
 import { canUserManageAccounts } from '@/lib/auth/permissions'
 import { useClub } from '@/lib/context/ClubContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
 
 export type ActiveNavTab =
   | 'dashboard'
@@ -104,8 +105,9 @@ export function Sidebar({
   isOpen = false,
   onToggle,
 }: SidebarProps) {
-  const { currentUser, isBCN, canManageAccounts } = useAuth()
-  const { members } = useClub()
+  const { currentUser, isBCN, isHR, canManageAccounts } = useAuth()
+  const { members, proposals, disputes } = useClub()
+  const { t } = useLanguage()
 
   // Chỉ Ban Chủ nhiệm mới có quyền quản trị và xem Cấp tài khoản Ban
   const isAccountManager = isBCN || canManageAccounts || canUserManageAccounts(currentUser)
@@ -130,8 +132,28 @@ export function Sidebar({
   const currentTheme =
     SIDEBAR_THEMES.find((t) => t.id === themeId) || SIDEBAR_THEMES[0]
 
-  // Count to display for pending approval (from Image 2: "3" or dynamic pendingCount)
-  const displayPendingCount = pendingCount > 0 ? pendingCount : 3
+  // Tính số lượng mục cần duyệt / xử lý theo thời gian thực (Real-time):
+  // - Ban Chủ nhiệm: Số đề xuất chờ duyệt (pending_bcn) + Số khiếu nại chờ xử lý (pending_bcn hoặc pending_hr_review)
+  // - Ban Nhân sự: Số khiếu nại chờ HR thẩm định (pending_hr_review)
+  // - Thành viên: Số khiếu nại chưa giải quyết của chính mình
+  const calculatedPendingCount = isBCN
+    ? (proposals?.filter((p) => p.status === 'pending_bcn').length || 0) +
+      (disputes?.filter((d) => d.status === 'pending_bcn' || d.status === 'pending_hr_review').length || 0)
+    : isHR
+    ? (disputes?.filter((d) => d.status === 'pending_hr_review').length || 0)
+    : (disputes?.filter(
+        (d) =>
+          (d.status === 'pending_bcn' || d.status === 'pending_hr_review') &&
+          d.memberCode === currentUser?.memberCode
+      ).length || 0)
+
+  const effectivePendingCount =
+    typeof pendingCount === 'number' && pendingCount >= 0
+      ? pendingCount
+      : calculatedPendingCount
+
+  // Chỉ hiển thị huy hiệu số màu đỏ khi có mục cần duyệt thực tế (> 0). Nếu 0 thì ẩn hoàn toàn (undefined)
+  const displayPendingBadge = effectivePendingCount > 0 ? effectivePendingCount : undefined
 
   // Section 1: QUẢN TRỊ & ĐIỂM SỐ
   const section1Items: Array<{
@@ -143,31 +165,31 @@ export function Sidebar({
   }> = [
     {
       id: 'dashboard',
-      label: 'Dashboard',
+      label: t('nav.dashboard'),
       icon: LayoutGrid,
     },
     {
       id: 'members',
-      label: 'Hồ sơ thành viên',
+      label: t('nav.members'),
       icon: Users,
     },
     {
       id: 'checkin',
-      label: 'Điểm danh Check-in',
+      label: t('nav.checkin'),
       icon: QrCode,
       badge: hasActiveEvent ? 'LIVE' : undefined,
       badgeType: 'live',
     },
     {
       id: 'history',
-      label: 'Chấm điểm & Duyệt',
+      label: t('nav.history'),
       icon: Clock,
-      badge: displayPendingCount,
+      badge: displayPendingBadge,
       badgeType: 'counter',
     },
     {
       id: 'rules',
-      label: 'Bảng quy định',
+      label: t('nav.rules'),
       icon: BookOpen,
     },
   ]
@@ -183,7 +205,7 @@ export function Sidebar({
   }> = [
     {
       id: 'stats',
-      label: 'Bảng xếp hạng',
+      label: t('nav.leaderboard'),
       icon: Trophy,
       badge: `TOP ${members.length || 48}`,
       badgeType: 'pill',
@@ -192,7 +214,7 @@ export function Sidebar({
       ? [
           {
             id: 'accounts' as ActiveNavTab,
-            label: 'Cấp tài khoản Ban',
+            label: t('nav.accounts'),
             icon: KeyRound,
             badge: 'BCN',
             badgeType: 'pill' as const,
@@ -201,7 +223,7 @@ export function Sidebar({
       : []),
     {
       id: 'settings',
-      label: 'Cài đặt hệ thống',
+      label: t('nav.settings'),
       icon: Settings,
     },
   ]
@@ -278,7 +300,7 @@ export function Sidebar({
                   <span
                     className={`text-[11px] font-extrabold tracking-wider uppercase ${currentTheme.headerText}`}
                   >
-                    QUẢN TRỊ & ĐIỂM SỐ
+                    {t('nav.management')}
                   </span>
                 </div>
 
@@ -358,7 +380,7 @@ export function Sidebar({
                   <span
                     className={`text-[11px] font-extrabold tracking-wider uppercase ${currentTheme.headerText}`}
                   >
-                    CÔNG CỤ & HỆ THỐNG
+                    {t('nav.overview')}
                   </span>
                 </div>
 

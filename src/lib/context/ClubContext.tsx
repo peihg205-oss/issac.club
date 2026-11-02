@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { INITIAL_MEMBERS, type RosterMember, getRankedMembers, getActiveRosterMembers } from '@/lib/clubData'
+import { INITIAL_MEMBERS, type RosterMember, getRankedMembers, getActiveRosterMembers, getMemberAvatarUrl } from '@/lib/clubData'
 import type { DepartmentCode, DepartmentSlug, RuleCode } from '@/types/database'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
@@ -388,6 +388,7 @@ export function reconcileMemberScores(
     const t02Count = t02CountMap.get(m.member_code) || 0
     return {
       ...m,
+      avatar_url: m.avatar_url || getMemberAvatarUrl(m) || undefined,
       current_score: calculatedScore,
       absent_count_t02: t02Count,
     }
@@ -527,10 +528,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       // Loại bỏ các thành viên đã xóa và nén/làm sạch avatar quá lớn
       initialMemberList = initialMemberList
         .filter((m) => !deletedMemberCodesRef.current.has(m.member_code))
-        .map((m) => ({
-          ...m,
-          avatar_url: sanitizeMemberAvatar(m.avatar_url),
-        }))
+        .map((m) => {
+          let avt = sanitizeMemberAvatar(m.avatar_url) || getMemberAvatarUrl(m) || undefined
+          return {
+            ...m,
+            avatar_url: avt,
+          }
+        })
 
       // Tự động bổ sung các thành viên trong danh sách chuẩn mà thiết bị này còn thiếu do bộ nhớ đệm cũ (chưa từng bị xóa)
       const existingCodes = new Set(initialMemberList.map((m) => m.member_code))
@@ -798,7 +802,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
               return {
                 ...cleanCloudM,
                 ...localM,
-                avatar_url: sanitizeMemberAvatar(localM.avatar_url) || cleanCloudM.avatar_url,
+                avatar_url: sanitizeMemberAvatar(localM.avatar_url) || cleanCloudM.avatar_url || getMemberAvatarUrl(localM) || undefined,
                 current_score: cleanCloudM.current_score !== undefined ? cleanCloudM.current_score : (localM?.current_score ?? 60),
                 absent_count_t02: cleanCloudM.absent_count_t02 !== undefined ? cleanCloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
               }
@@ -806,7 +810,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
               return {
                 ...localM,
                 ...cleanCloudM,
-                avatar_url: cleanCloudM.avatar_url || sanitizeMemberAvatar(localM.avatar_url),
+                avatar_url: cleanCloudM.avatar_url || sanitizeMemberAvatar(localM.avatar_url) || getMemberAvatarUrl(cleanCloudM) || getMemberAvatarUrl(localM) || undefined,
                 current_score: cleanCloudM.current_score !== undefined ? cleanCloudM.current_score : (localM?.current_score ?? 60),
                 absent_count_t02: cleanCloudM.absent_count_t02 !== undefined ? cleanCloudM.absent_count_t02 : (localM?.absent_count_t02 ?? 0),
               }
@@ -933,14 +937,31 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         pollSync()
       }
     }
+    const handleWindowFocus = () => {
+      pollSync()
+    }
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && e.key.startsWith('issac_')) {
+        pollSync()
+      }
+    }
+
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleWindowFocus)
+      window.addEventListener('storage', handleStorageChange)
     }
 
     return () => {
       clearInterval(timer)
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleWindowFocus)
+        window.removeEventListener('storage', handleStorageChange)
       }
     }
   }, [])
@@ -1703,13 +1724,27 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     if (evt.isFinalized) {
       return { success: false, message: 'Buổi họp đã kết thúc và chốt sổ điểm danh!' }
     }
-    if (evt.pinCode !== pinCode.trim()) {
-      return { success: false, message: 'Mã PIN điểm danh không chính xác! Vui lòng kiểm tra trên máy chiếu.' }
-    }
-
     const member = members.find((m) => m.member_code === memberCode)
     if (!member) {
       return { success: false, message: 'Mã thành viên không tồn tại trong danh sách CLB!' }
+    }
+
+    // Xác thực danh tính: nếu ở chế độ Kiosk hoặc có phoneLastDigits -> kiểm tra 4 số cuối SĐT cá nhân
+    const cleanPhoneInput = (phoneLastDigits || '').trim()
+    const memberPhone = (member.phone || '').replace(/\D/g, '')
+    const expectedPhoneDigits = memberPhone.slice(-4)
+
+    if (mode === 'kiosk' || cleanPhoneInput) {
+      if (expectedPhoneDigits && cleanPhoneInput !== expectedPhoneDigits && cleanPhoneInput !== evt.pinCode) {
+        return {
+          success: false,
+          message: `Xác thực thất bại! 4 số cuối SĐT (${cleanPhoneInput}) không khớp với hồ sơ CLB của thành viên "${member.full_name}". Vui lòng kiểm tra lại!`,
+        }
+      }
+    } else {
+      if (evt.pinCode !== pinCode.trim()) {
+        return { success: false, message: 'Mã PIN điểm danh không chính xác! Vui lòng kiểm tra trên máy chiếu.' }
+      }
     }
 
     // Kiểm tra đã điểm danh trước đó chưa (Chống ghi đè / bấm lặp)
@@ -1719,19 +1754,6 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       return {
         success: false,
         message: `Thành viên "${member.full_name}" đã được ghi nhận có mặt trong sự kiện này rồi (Trạng thái: ${statusLabel}). Không cần điểm danh lại!`,
-      }
-    }
-
-    // Xác thực 4 số cuối số điện thoại cá nhân (Chống điểm danh hộ)
-    if (phoneLastDigits && phoneLastDigits.trim() !== '') {
-      const cleanInput = phoneLastDigits.trim()
-      const memberPhone = (member.phone || '').replace(/\D/g, '')
-      const expectedDigits = memberPhone.slice(-4)
-      if (expectedDigits && cleanInput !== expectedDigits) {
-        return {
-          success: false,
-          message: `Xác thực cá nhân thất bại! 4 số cuối SĐT (${cleanInput}) không khớp với hồ sơ CLB của "${member.full_name}". Vui lòng kiểm tra lại để tránh điểm danh nhầm/hộ!`,
-        }
       }
     }
 
