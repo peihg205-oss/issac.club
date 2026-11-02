@@ -624,45 +624,50 @@ export function ScoreModal({
                 
                 {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) */}
                 <div>
-                  <label className="block text-xs font-bold text-[#061651] mb-1.5">
+                  <label className="block text-xs font-bold text-[#061651] mb-2">
                     Chọn loại điểm muốn ghi nhận:
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 text-xs font-bold">
-                    <button
-                      type="button"
-                      onClick={() => handleCategorySwitch('deduct')}
-                      className={`py-2 rounded-lg transition cursor-pointer text-center ${
-                        criterionCategory === 'deduct'
-                          ? 'bg-rose-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      Vi phạm (Trừ)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleCategorySwitch('add')}
-                      className={`py-2 rounded-lg transition cursor-pointer text-center ${
-                        criterionCategory === 'add'
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      Cống hiến (Cộng)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleCategorySwitch('custom')}
-                      className={`py-2 rounded-lg transition cursor-pointer text-center ${
-                        criterionCategory === 'custom'
-                          ? 'bg-[#0284C7] text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      Tự nhập điểm
-                    </button>
+                  <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1">
+                    {[
+                      {
+                        id: 'deduct' as const,
+                        label: 'Vi phạm (Trừ)',
+                        badge: builtinDeductRules.length + customDeductRules.length,
+                      },
+                      {
+                        id: 'add' as const,
+                        label: 'Cống hiến (Cộng)',
+                        badge: builtinAddRules.length + customAddRules.length,
+                      },
+                      {
+                        id: 'custom' as const,
+                        label: 'Tự nhập điểm',
+                        badge: '±',
+                      },
+                    ].map((tab) => {
+                      const isSelected = criterionCategory === tab.id
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => handleCategorySwitch(tab.id)}
+                          className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0284C7] text-white font-bold shadow-xs'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium'
+                          }`}
+                        >
+                          <span>{tab.label}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                              isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/90 text-slate-700'
+                            }`}
+                          >
+                            {tab.badge}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
