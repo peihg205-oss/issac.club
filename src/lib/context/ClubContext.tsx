@@ -633,6 +633,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {}
 
+    try {
+      const savedDisputes = localStorage.getItem('issac_disputes_clean_v1')
+      if (savedDisputes) {
+        const parsed = JSON.parse(savedDisputes)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          disputesRef.current = parsed
+          setDisputes(parsed)
+        }
+      }
+    } catch (e) {}
+
     isHydratedRef.current = true
     // Đồng bộ tức thì từ Supabase Cloud khi vừa tải trang
     fetchCloudSync()
@@ -1990,7 +2001,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     const updatedDisputes = [newDisp, ...disputes]
+    disputesRef.current = updatedDisputes
     setDisputes(updatedDisputes)
+    try {
+      localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(updatedDisputes))
+    } catch (e) {}
     syncToCloud({ disputes: updatedDisputes })
 
     return {
@@ -2001,7 +2016,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
   // Ban Nhân sự thẩm định khiếu nại và chuyển BCN
   const reviewDisputeByHR = (disputeId: string, hrNote: string) => {
-    const updatedDisputes = disputes.map((d) =>
+    const currentDisputesList = disputesRef.current.length > 0 ? disputesRef.current : disputes
+    const updatedDisputes = currentDisputesList.map((d) =>
       d.id === disputeId
         ? {
             ...d,
@@ -2010,7 +2026,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         : d
     )
+    disputesRef.current = updatedDisputes
     setDisputes(updatedDisputes)
+    try {
+      localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(updatedDisputes))
+    } catch (e) {}
     syncToCloud({ disputes: updatedDisputes })
   }
 
@@ -2020,34 +2040,23 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     approved: boolean,
     verdict: string
   ) => {
-    const disp = disputes.find((d) => d.id === disputeId)
+    const currentDisputesList = disputesRef.current.length > 0 ? disputesRef.current : disputes
+    const disp = currentDisputesList.find((d) => d.id === disputeId)
     if (!disp) return { success: false, message: 'Khiếu nại không tồn tại' }
 
-    let updatedMembers = members
-    let updatedProposals = proposals
+    let updatedMembers = membersRef.current.length > 0 ? membersRef.current : members
+    let updatedProposals = proposalsRef.current.length > 0 ? proposalsRef.current : proposals
 
     if (approved) {
       // Hoàn lại điểm cho thành viên (cộng bù lại số điểm đã bị trừ)
       const refundPoints = Math.abs(disp.pointsContested)
+      const targetPeriodId = currentActivePeriodIdRef.current || currentActivePeriodId || 'month-2026-10'
 
-      updatedMembers = getRankedMembers(
-        members.map((m) => {
-          if (m.member_code === disp.memberCode) {
-            const newScore = Math.min(100, m.current_score + refundPoints)
-            const newT02 =
-              disp.criterionCode === 'T02'
-                ? Math.max(0, m.absent_count_t02 - 1)
-                : m.absent_count_t02
-            return { ...m, current_score: newScore, absent_count_t02: newT02 }
-          }
-          return m
-        })
-      )
-      setMembers(updatedMembers)
-
-      // Ghi nhận vào sổ cái lịch sử hoàn điểm
+      // Ghi nhận vào sổ cái lịch sử hoàn điểm chuẩn quy chế
       const refundRecord: ProposalItem = {
         id: `refund-${Date.now()}`,
+        periodId: targetPeriodId,
+        periodName: currentActiveMonth || 'Tháng 10/2026',
         memberCode: disp.memberCode,
         memberName: disp.memberName,
         memberDept: disp.memberDept,
@@ -2055,18 +2064,30 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         criterionCode: 'C09' as RuleCode,
         criterionName: 'Hoàn điểm khiếu nại Q06 thành công',
         points: refundPoints,
-        reason: `Ban Chủ nhiệm chấp nhận khiếu nại: ${verdict}`,
-        proposedBy: 'Nguyễn Thị Hồng Hân (Chủ nhiệm CLB)',
+        reason: `Ban Chủ nhiệm chấp thuận khiếu nại: ${verdict}`,
+        proposedBy: 'Ban Chủ nhiệm CLB',
         proposedByRole: 'bcn',
         status: 'approved',
         createdAt: getVietnamNowFormatted(),
       }
-      updatedProposals = [refundRecord, ...proposals]
+      updatedProposals = [refundRecord, ...updatedProposals]
+      proposalsRef.current = updatedProposals
       setProposals(updatedProposals)
+      try {
+        localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProposals))
+      } catch (e) {}
+
+      // Tái tính toán điểm chuẩn xác cho danh sách thành viên
+      updatedMembers = reconcileMemberScores(updatedMembers, updatedProposals, targetPeriodId)
+      membersRef.current = updatedMembers
+      setMembers(updatedMembers)
+      try {
+        localStorage.setItem('issac_members_clean_v1', JSON.stringify(updatedMembers))
+      } catch (e) {}
     }
 
     const finalStatus: DisputeItem['status'] = approved ? 'approved_resolved' : 'rejected'
-    const updatedDisputes = disputes.map((d) =>
+    const updatedDisputes = currentDisputesList.map((d) =>
       d.id === disputeId
         ? {
             ...d,
@@ -2076,7 +2097,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         : d
     )
+    disputesRef.current = updatedDisputes
     setDisputes(updatedDisputes)
+    try {
+      localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(updatedDisputes))
+    } catch (e) {}
 
     syncToCloud({
       disputes: updatedDisputes,
@@ -2086,8 +2111,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     return {
       success: true,
       message: approved
-        ? `Đã chấp thuận khiếu nại và hoàn trả điểm cho ${disp.memberName}!`
-        : `Đã bác bỏ khiếu nại của ${disp.memberName}.`,
+        ? `Đã chấp thuận khiếu nại và hoàn trả ${Math.abs(disp.pointsContested)} điểm cho ${disp.memberName}!`
+        : `Đã bác khiếu nại của ${disp.memberName}.`,
     }
   }
 

@@ -133,7 +133,7 @@ export function HistoryView() {
   const handleConfirmBcnVerdict = () => {
     if (!selectedDispute) return
     setVerdictActionLoading(true)
-    resolveDisputeByBCN(
+    const res = resolveDisputeByBCN(
       selectedDispute.id,
       isApproveVerdict,
       verdictText.trim() || (isApproveVerdict ? 'Chấp thuận khiếu nại' : 'Bác khiếu nại')
@@ -141,6 +141,9 @@ export function HistoryView() {
     setVerdictActionLoading(false)
     setVerdictModalOpen(false)
     setSelectedDispute(null)
+    if (res?.message) {
+      alert(res.message)
+    }
   }
 
   const handleOpenHrReview = (disp: any) => {
@@ -154,6 +157,7 @@ export function HistoryView() {
     reviewDisputeByHR(selectedDispute.id, hrNoteText.trim())
     setHrReviewModalOpen(false)
     setSelectedDispute(null)
+    alert('Đã hoàn tất thẩm định sơ bộ và chuyển Ban Chủ nhiệm xem xét phê duyệt!')
   }
 
   // Helper avatar đồng bộ với MembersView & StatsView
@@ -1695,6 +1699,266 @@ export function HistoryView() {
                 className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 shadow-sm shadow-rose-600/25 transition-all active:scale-95 cursor-pointer"
               >
                 Xác nhận xóa & Hoàn tác
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Phán Quyết Khiếu Nại Dành Cho Ban Chủ Nhiệm (Q06) */}
+      {verdictModalOpen && selectedDispute && (
+        <div className="fixed inset-0 z-50 bg-[#0B1E48]/55 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200/90 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-2xs ${
+                    isApproveVerdict
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      : 'bg-rose-50 text-rose-600 border-rose-200'
+                  }`}
+                >
+                  <Crown className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#0B1E48] tracking-tight">
+                    {isApproveVerdict
+                      ? 'Chấp thuận khiếu nại & Hoàn trả điểm'
+                      : 'Bác bỏ khiếu nại (Q06)'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Quyền phán quyết trực tiếp của Ban Chủ nhiệm CLB
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setVerdictModalOpen(false)
+                  setSelectedDispute(null)
+                }}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Chi tiết đơn khiếu nại */}
+            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Thành viên:</span>
+                <span className="font-bold text-slate-900">
+                  {selectedDispute.memberName} ({selectedDispute.memberDept})
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Điểm &amp; Tiêu chí:</span>
+                <span className="font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200/60">
+                  {selectedDispute.criterionCode} ({selectedDispute.pointsContested > 0 ? `+${selectedDispute.pointsContested}` : selectedDispute.pointsContested} điểm)
+                </span>
+              </div>
+              <div className="text-slate-700 leading-relaxed border-t border-slate-200/60 pt-2">
+                <strong className="text-slate-900">Lý do khiếu nại: </strong>
+                {selectedDispute.reason}
+              </div>
+              {selectedDispute.evidenceUrl && (
+                <div className="border-t border-slate-200/60 pt-1.5 flex items-center gap-1.5 text-[#0284C7] font-semibold">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <a
+                    href={selectedDispute.evidenceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline hover:text-blue-800 break-all"
+                  >
+                    Xem minh chứng đính kèm
+                  </a>
+                </div>
+              )}
+              {selectedDispute.hrNote && (
+                <div className="border-t border-slate-200/60 pt-1.5 text-slate-600 bg-sky-50/50 p-2 rounded-xl">
+                  <strong className="text-sky-900">Ý kiến Ban Nhân sự: </strong>
+                  {selectedDispute.hrNote}
+                </div>
+              )}
+            </div>
+
+            {/* Textarea lý do phán quyết */}
+            <div className="space-y-1.5 text-xs">
+              <label className="block font-bold text-slate-700">
+                Ý kiến / Phán quyết chính thức của Ban Chủ nhiệm:
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={verdictText}
+                onChange={(e) => setVerdictText(e.target.value)}
+                placeholder="Nhập căn cứ phán quyết hoặc ghi chú..."
+                className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs font-medium"
+              />
+            </div>
+
+            {/* Thông báo tác động */}
+            {isApproveVerdict ? (
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-900 leading-relaxed flex items-start gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Cơ chế tự động:</strong> Khi chấp thuận, hệ thống sẽ tự động hoàn trả{' '}
+                  <strong className="text-emerald-700">
+                    +{Math.abs(selectedDispute.pointsContested)} điểm
+                  </strong>{' '}
+                  cho thành viên {selectedDispute.memberName}, đồng thời ghi nhận vào sổ cái lịch sử và đồng bộ dữ liệu ngay lập tức.
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Lưu ý:</strong> Khi bác khiếu nại, điểm số bị trừ sẽ được giữ nguyên và trạng thái khiếu nại chuyển thành Bác khiếu nại.
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setVerdictModalOpen(false)
+                  setSelectedDispute(null)
+                }}
+                disabled={verdictActionLoading}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBcnVerdict}
+                disabled={verdictActionLoading}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                  isApproveVerdict
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/25'
+                    : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 shadow-rose-600/25'
+                }`}
+              >
+                {verdictActionLoading ? (
+                  <span className="animate-spin">⏳</span>
+                ) : isApproveVerdict ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+                <span>
+                  {verdictActionLoading
+                    ? 'Đang xử lý...'
+                    : isApproveVerdict
+                    ? 'Xác nhận Chấp thuận & Hoàn điểm'
+                    : 'Xác nhận Bác khiếu nại'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Ban Nhân Sự Thẩm Định Sơ Bộ (Q06) */}
+      {hrReviewModalOpen && selectedDispute && (
+        <div className="fixed inset-0 z-50 bg-[#0B1E48]/55 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200/90 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-sky-50 text-[#0284C7] flex items-center justify-center border border-sky-200 shadow-2xs">
+                  <FileCheck className="w-5 h-5 text-[#0284C7]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#0B1E48] tracking-tight">
+                    Ban Nhân sự: Thẩm định khiếu nại
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Xác minh sơ bộ minh chứng và đề xuất chuyển Ban Chủ nhiệm
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHrReviewModalOpen(false)
+                  setSelectedDispute(null)
+                }}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Chi tiết */}
+            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Thành viên:</span>
+                <span className="font-bold text-slate-900">
+                  {selectedDispute.memberName} ({selectedDispute.memberDept})
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Tiêu chí:</span>
+                <span className="font-bold text-slate-800">
+                  {selectedDispute.criterionCode} ({selectedDispute.pointsContested > 0 ? `+${selectedDispute.pointsContested}` : selectedDispute.pointsContested} điểm)
+                </span>
+              </div>
+              <div className="text-slate-700 leading-relaxed border-t border-slate-200/60 pt-2">
+                <strong className="text-slate-900">Lý do: </strong>
+                {selectedDispute.reason}
+              </div>
+              {selectedDispute.evidenceUrl && (
+                <div className="border-t border-slate-200/60 pt-1.5 flex items-center gap-1.5 text-[#0284C7] font-semibold">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <a
+                    href={selectedDispute.evidenceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline hover:text-blue-800 break-all"
+                  >
+                    Xem minh chứng đính kèm
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Ghi chú */}
+            <div className="space-y-1.5 text-xs">
+              <label className="block font-bold text-slate-700">
+                Ý kiến thẩm định của Ban Nhân sự:
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={hrNoteText}
+                onChange={(e) => setHrNoteText(e.target.value)}
+                placeholder="Nhập kết quả xác minh sơ bộ..."
+                className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs font-medium"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setHrReviewModalOpen(false)
+                  setSelectedDispute(null)
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmHrReview}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 shadow-sm shadow-sky-600/25 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>Chuyển Ban Chủ nhiệm phê duyệt</span>
               </button>
             </div>
           </div>
