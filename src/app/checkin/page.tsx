@@ -1312,7 +1312,6 @@ function CheckinContent() {
 
                       <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1 shadow-2xs">
                         <div className="flex items-center gap-2 font-bold text-emerald-900">
-                          <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                           <span>⚡ Quét Phát Nhận Ngay (Khuyên dùng)</span>
                         </div>
                         <p className="text-[11px] text-emerald-800/90 leading-relaxed">
