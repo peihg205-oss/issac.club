@@ -206,7 +206,7 @@ export function QrTicketPass({ event, member, onUnregister }: QrTicketPassProps)
                 MÃ VÉ ĐIỂM DANH ĐIỆN TỬ
               </span>
               <h3 className="text-lg font-black text-slate-900 mt-1">{member.full_name}</h3>
-              <p className="text-xs text-slate-500">MSSV: {member.student_id || member.member_code} • {member.department_name}</p>
+              <p className="text-xs text-slate-500">MSSV: {member.student_id || member.member_code} - {member.department_name}</p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border-2 border-blue-500/40 inline-block shadow-inner">

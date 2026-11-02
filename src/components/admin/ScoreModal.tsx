@@ -407,7 +407,7 @@ export function ScoreModal({
                             {selectedMember?.full_name}
                           </p>
                           <p className="text-[10px] text-[#64748B] font-medium truncate">
-                            {selectedMember?.member_code} • {selectedMember?.department_name}
+                            {selectedMember?.member_code} - {selectedMember?.department_name}
                           </p>
                         </div>
                       </div>
@@ -501,7 +501,7 @@ export function ScoreModal({
                                     <div className="min-w-0">
                                       <p className="font-bold text-xs truncate">{m.full_name}</p>
                                       <p className="text-[10px] text-slate-400 truncate">
-                                        {m.member_code} • {m.department_name}
+                                        {m.member_code} - {m.department_name}
                                       </p>
                                     </div>
                                   </div>

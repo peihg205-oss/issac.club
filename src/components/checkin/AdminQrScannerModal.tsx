@@ -583,7 +583,7 @@ export function AdminQrScannerModal({
                         <div className="flex justify-between items-center">
                           <span className="text-slate-500 font-medium">MSSV / Lớp:</span>
                           <span className="font-mono font-bold text-blue-700">
-                            {scanResult.member.student_id || scanResult.member.member_code} • {scanResult.member.class_name || '-'}
+                            {scanResult.member.student_id || scanResult.member.member_code} - {scanResult.member.class_name || '-'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
