@@ -16,6 +16,7 @@ import {
   Search,
   ChevronDown,
   Check,
+  Pencil,
 } from 'lucide-react'
 
 interface ScoreModalProps {
@@ -622,7 +623,7 @@ export function ScoreModal({
                       {
                         id: 'custom' as const,
                         label: 'Tự nhập điểm',
-                        badge: '±',
+                        badgeIcon: Pencil,
                       },
                     ].map((tab) => {
                       const isSelected = criterionCategory === tab.id
@@ -639,11 +640,15 @@ export function ScoreModal({
                         >
                           <span>{tab.label}</span>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center justify-center min-w-[20px] ${
                               isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/90 text-slate-700'
                             }`}
                           >
-                            {tab.badge}
+                            {'badgeIcon' in tab && tab.badgeIcon ? (
+                              <tab.badgeIcon className="w-3 h-3 stroke-[2.2]" />
+                            ) : (
+                              'badge' in tab ? tab.badge : null
+                            )}
                           </span>
                         </button>
                       )
