@@ -9,7 +9,6 @@ import {
   ChevronDown,
   User,
   ShieldCheck,
-  Building2,
   Minus,
   Plus,
 } from 'lucide-react'
@@ -737,16 +736,13 @@ export function DisputeModal({
           {/* ============================================================== */}
           {/* THẺ TÓM TẮT XÁC NHẬN (TRÁNH GỬI NHẦM 100%)                    */}
           {/* ============================================================== */}
-          <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/70 text-xs text-purple-950 flex items-start gap-2.5">
-            <Building2 className="w-4 h-4 text-[#7026ED] shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <span>Đang tạo đơn khiếu nại cho: </span>
-              <strong className="text-[#061651] font-bold">{selectedMember.full_name || '...'}</strong>
-              <span className="text-slate-500"> ({selectedMember.department_name || ''})</span>
-              <span> - Tiêu chí: </span>
-              <strong className="text-purple-900 font-bold">[{selectedCriterionObj.code}] {selectedCriterionObj.name}</strong>
-              <span className="text-rose-600 font-black"> ({points} điểm)</span>.
-            </div>
+          <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/70 text-xs text-purple-950 leading-relaxed">
+            <span>Đang tạo đơn khiếu nại cho: </span>
+            <strong className="text-[#061651] font-bold">{selectedMember.full_name || '...'}</strong>
+            <span className="text-slate-500"> ({selectedMember.department_name || ''})</span>
+            <span> - Tiêu chí: </span>
+            <strong className="text-purple-900 font-bold">[{selectedCriterionObj.code}] {selectedCriterionObj.name}</strong>
+            <span className="text-rose-600 font-black"> ({points} điểm)</span>.
           </div>
 
           {/* ============================================================== */}
