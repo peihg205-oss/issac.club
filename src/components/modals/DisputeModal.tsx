@@ -10,10 +10,6 @@ import {
   User,
   ShieldCheck,
   Building2,
-  Clock,
-  Briefcase,
-  Scale,
-  Sparkles,
 } from 'lucide-react'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -481,9 +477,8 @@ export function DisputeModal({
                 <div className="absolute left-0 top-full mt-1.5 w-full sm:w-[360px] bg-white rounded-2xl border border-slate-200/90 shadow-xl z-50 p-2.5 max-h-72 overflow-y-auto space-y-3 animate-in fade-in zoom-in-95 duration-150 no-scrollbar">
                   {/* Nhóm 1: Chuyên cần & Điểm danh */}
                   <div>
-                    <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      <Clock className="w-3.5 h-3.5 text-blue-500" />
-                      <span>1. Chuyên cần &amp; Điểm danh</span>
+                    <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      1. Chuyên cần &amp; Điểm danh
                     </div>
                     <div className="space-y-0.5 mt-1">
                       {allDeductCriteria
@@ -515,9 +510,8 @@ export function DisputeModal({
 
                   {/* Nhóm 2: Nhiệm vụ & Sự kiện */}
                   <div className="pt-2 border-t border-slate-100">
-                    <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      <Briefcase className="w-3.5 h-3.5 text-amber-500" />
-                      <span>2. Nhiệm vụ &amp; Sự kiện</span>
+                    <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      2. Nhiệm vụ &amp; Sự kiện
                     </div>
                     <div className="space-y-0.5 mt-1">
                       {allDeductCriteria
@@ -549,9 +543,8 @@ export function DisputeModal({
 
                   {/* Nhóm 3: Quy chế & Kỷ luật */}
                   <div className="pt-2 border-t border-slate-100">
-                    <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      <Scale className="w-3.5 h-3.5 text-rose-500" />
-                      <span>3. Quy chế &amp; Kỷ luật</span>
+                    <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      3. Quy chế &amp; Kỷ luật
                     </div>
                     <div className="space-y-0.5 mt-1">
                       {allDeductCriteria
@@ -584,9 +577,8 @@ export function DisputeModal({
                   {/* Nhóm 4: Tiêu chí khác & Tự do khiếu nại */}
                   {allDeductCriteria.filter((c) => c.group === 'Khác').length > 0 && (
                     <div className="pt-2 border-t border-slate-100">
-                      <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                        <span>4. Tiêu chí khác &amp; Tự nhập</span>
+                      <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        4. Tiêu chí khác &amp; Tự nhập
                       </div>
                       <div className="space-y-0.5 mt-1">
                         {allDeductCriteria
