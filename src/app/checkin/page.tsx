@@ -510,15 +510,15 @@ function CheckinContent() {
                   }`}
                 />
 
-                {/* Bubble tooltip nằm ở trên mascot, bao bọc toàn bộ chữ với nền trắng */}
+                {/* Bubble tooltip nằm ở trên mascot, hướng về phía bên phải */}
                 <div
-                  className={`absolute bottom-full mb-3 right-0 w-max max-w-[280px] sm:max-w-none px-4 py-2 rounded-2xl bg-white text-[#061651] text-xs font-bold shadow-xl z-40 transition-all duration-200 border border-slate-100 ${
+                  className={`absolute bottom-full mb-3 left-0 w-max max-w-[280px] sm:max-w-none px-4 py-2 rounded-2xl bg-white text-[#061651] text-xs font-bold shadow-xl z-40 transition-all duration-200 border border-slate-100 ${
                     isMascotCheering || showMascotBubble
                       ? 'opacity-100 scale-100 pointer-events-auto'
                       : 'opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100'
                   }`}
                 >
-                  <div className="absolute -bottom-1.5 right-6 w-3 h-3 bg-white rotate-45 border-r border-b border-slate-100" />
+                  <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-white rotate-45 border-r border-b border-slate-100" />
                   <span className="block leading-tight text-center">{checkinMascotQuotes[mascotQuoteIdx]}</span>
                 </div>
               </div>
