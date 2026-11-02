@@ -789,8 +789,7 @@ function CheckinContent() {
                             <MapPin className="w-3.5 h-3.5 text-[#0284C7]" />
                             <span className="truncate">{evt.location}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                          <div className="text-emerald-700 font-bold text-xs">
                             <span>+{evt.pointBonus || 2} Điểm thi đua khi tham gia</span>
                           </div>
                         </div>
