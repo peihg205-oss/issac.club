@@ -350,17 +350,17 @@ export function ScoreModal({
             </h4>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-4 text-sm">
             
             {/* Top Toolbar: Chọn Tháng (Ảnh 1) & Cảnh báo Khóa sổ - Bo tròn cân đối */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50/80 border border-slate-200/75">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[#061651] text-xs">Chu kỳ áp dụng:</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75">
+              <div className="flex items-center gap-2.5">
+                <span className="font-bold text-[#061651] text-xs sm:text-sm">Chu kỳ áp dụng:</span>
                 <div className="relative">
                   <select
                     value={selectedPeriodId}
                     onChange={(e) => setSelectedPeriodId(e.target.value)}
-                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-full pl-4 pr-8 py-2 text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs appearance-none transition"
+                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-full pl-4 pr-9 py-2 text-xs sm:text-sm font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs appearance-none transition"
                   >
                     {monthPeriods.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -368,7 +368,7 @@ export function ScoreModal({
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -394,10 +394,10 @@ export function ScoreModal({
                 {/* 1. Bộ chọn thành viên thông minh có tìm kiếm & lọc Ban */}
                 <div className="space-y-1.5" ref={dropdownRef}>
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-[#061651]">
+                    <label className="text-xs sm:text-sm font-bold text-[#061651]">
                       Thành viên nhận điểm:
                     </label>
-                    <span className="text-[10px] text-[#64748B] font-medium">
+                    <span className="text-[11px] text-[#64748B] font-medium">
                       Tìm kiếm nhanh theo tên/mã
                     </span>
                   </div>
@@ -423,16 +423,16 @@ export function ScoreModal({
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="font-extrabold text-xs text-[#061651] truncate">
+                          <p className="font-extrabold text-sm text-[#061651] truncate">
                             {selectedMember?.full_name}
                           </p>
-                          <p className="text-[10px] text-[#64748B] font-medium truncate">
+                          <p className="text-xs text-[#64748B] font-medium truncate">
                             {selectedMember?.member_code} - {selectedMember?.department_name}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-[#061651] border border-slate-200/70">
+                        <span className="px-2.5 py-1 rounded-full text-xs sm:text-sm font-bold bg-slate-100 text-[#061651] border border-slate-200/70">
                           {selectedMember?.current_score || 60}đ
                         </span>
                         <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition" />
@@ -635,9 +635,9 @@ export function ScoreModal({
               {/* CỘT PHẢI (7 Cols): THAO TÁC CHO ĐIỂM DỄ SỬ DỤNG - KHÔNG BỊ RỐI */}
               <div className="lg:col-span-7 space-y-3.5">
                 
-                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Bo tròn viên thuốc, bỏ số & icon */}
+                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Bo tròn viên thuốc, chữ rõ ràng */}
                 <div>
-                  <label className="block text-xs font-bold text-[#061651] mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-[#061651] mb-2">
                     Chọn loại điểm muốn ghi nhận:
                   </label>
                   <div className="grid grid-cols-3 gap-2 w-full">
@@ -667,7 +667,7 @@ export function ScoreModal({
                           key={tab.id}
                           type="button"
                           onClick={() => handleCategorySwitch(tab.id)}
-                          className={`w-full py-2 px-3 rounded-full text-xs transition-all flex items-center justify-center cursor-pointer text-center whitespace-nowrap font-bold ${
+                          className={`w-full py-2.5 px-3 sm:px-4 rounded-full text-xs sm:text-sm transition-all flex items-center justify-center cursor-pointer text-center whitespace-nowrap font-bold ${
                             isSelected ? tab.activeColor : tab.inactiveColor
                           }`}
                         >
@@ -681,7 +681,7 @@ export function ScoreModal({
                 {/* 2. Tiêu chí theo loại - Thay thế native select bằng Custom Dropdown Popover cao cấp (Ảnh 2 & Ảnh 3) */}
                 {criterionCategory !== 'custom' ? (
                   <div className="space-y-1.5" ref={criterionDropdownRef}>
-                    <label className="block text-xs font-bold text-[#061651]">
+                    <label className="block text-xs sm:text-sm font-bold text-[#061651]">
                       {criterionCategory === 'deduct'
                         ? 'Chọn lỗi vi phạm quy định:'
                         : 'Chọn hoạt động đóng góp / khen thưởng:'}
@@ -701,17 +701,17 @@ export function ScoreModal({
                       >
                         <div className="flex items-center gap-2.5 min-w-0 pr-2">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-white font-extrabold text-[11px] shrink-0 ${
+                            className={`px-2.5 py-0.5 rounded-full text-white font-extrabold text-xs shrink-0 ${
                               criterionCategory === 'deduct' ? 'bg-rose-600' : 'bg-emerald-600'
                             }`}
                           >
                             {builtinRule?.code || customRule?.code}
                           </span>
-                          <span className="font-bold text-xs text-[#061651] truncate">
+                          <span className="font-bold text-xs sm:text-sm text-[#061651] truncate">
                             {builtinRule
-                              ? `${builtinRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${builtinRule.base_points}đ)`
+                              ? `${builtinRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${Math.abs(builtinRule.base_points)}đ)`
                               : customRule
-                              ? `${customRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${customRule.points}đ)`
+                              ? `${customRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${Math.abs(Number(customRule.points) || 0)}đ)`
                               : 'Chọn tiêu chí...'}
                           </span>
                         </div>
@@ -893,7 +893,7 @@ export function ScoreModal({
 
                     {/* Thẻ hiển thị tóm tắt mức điểm của quy định đang chọn */}
                     <div
-                      className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs transition ${
+                      className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs sm:text-sm transition ${
                         criterionCategory === 'deduct'
                           ? 'bg-rose-50/70 border-rose-200/70 text-rose-900'
                           : 'bg-emerald-50/70 border-emerald-200/70 text-emerald-900'
@@ -901,18 +901,18 @@ export function ScoreModal({
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-white font-extrabold text-[11px] shrink-0 ${
+                          className={`px-2.5 py-0.5 rounded-full text-white font-extrabold text-xs shrink-0 ${
                             criterionCategory === 'deduct' ? 'bg-rose-600' : 'bg-emerald-600'
                           }`}
                         >
                           {builtinRule?.code || customRule?.code}
                         </span>
-                        <span className="font-semibold text-[11.5px] truncate">
+                        <span className="font-bold text-xs sm:text-sm truncate">
                           {builtinRule?.name || customRule?.name}
                         </span>
                       </div>
                       <span
-                        className={`font-black text-xs shrink-0 pl-2 ${
+                        className={`font-black text-xs sm:text-sm shrink-0 pl-2 ${
                           criterionCategory === 'deduct' ? 'text-rose-600' : 'text-emerald-600'
                         }`}
                       >
@@ -1080,7 +1080,7 @@ export function ScoreModal({
 
                 {/* 3. Lý do / Nội dung chi tiết */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#061651] block">
+                  <label className="text-xs sm:text-sm font-bold text-[#061651] block">
                     Lý do / Nội dung chi tiết: <span className="text-rose-500">*</span>
                   </label>
 
@@ -1091,13 +1091,13 @@ export function ScoreModal({
                     placeholder="Ghi rõ đầu việc hoặc lý do cụ thể..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-xl p-2.5 text-xs font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
+                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-2xl p-3 text-xs sm:text-sm font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
                   />
                 </div>
 
                 {/* 4. Link minh chứng */}
                 <div>
-                  <label className="block text-xs font-bold text-[#061651] mb-1">
+                  <label className="block text-xs sm:text-sm font-bold text-[#061651] mb-1">
                     Link minh chứng (Drive, ảnh, bài viết - nếu có):
                   </label>
                   <input
@@ -1106,24 +1106,24 @@ export function ScoreModal({
                     placeholder="https://drive.google.com/..."
                     value={evidenceUrl}
                     onChange={(e) => setEvidenceUrl(e.target.value)}
-                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
+                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
                   />
                 </div>
 
                 {/* 5. Tóm tắt Biến Động Điểm Tức Thì (Thẻ 3 cột hiện đại) */}
-                <div className="p-3 rounded-2xl bg-gradient-to-r from-sky-50/50 via-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-50/50 via-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs">
                   <div className="grid grid-cols-3 divide-x divide-slate-200/80 text-center">
                     <div className="px-2">
-                      <p className="text-[10.5px] font-medium text-slate-500">Trước khi chấm</p>
-                      <p className="text-sm font-extrabold text-[#061651] mt-0.5">
+                      <p className="text-xs font-semibold text-slate-500">Trước khi chấm</p>
+                      <p className="text-base font-extrabold text-[#061651] mt-0.5">
                         {selectedMember?.current_score}đ
                       </p>
                     </div>
 
                     <div className="px-2">
-                      <p className="text-[10.5px] font-medium text-slate-500">Biến động điểm</p>
+                      <p className="text-xs font-semibold text-slate-500">Biến động điểm</p>
                       <p
-                        className={`text-sm font-extrabold mt-0.5 ${
+                        className={`text-base font-extrabold mt-0.5 ${
                           previewActualDelta > 0
                             ? 'text-emerald-600'
                             : previewActualDelta < 0
@@ -1137,8 +1137,8 @@ export function ScoreModal({
                     </div>
 
                     <div className="px-2">
-                      <p className="text-[10.5px] font-bold text-[#0284C7]">Dự kiến điểm mới</p>
-                      <p className="text-base font-black text-[#0284C7] mt-0.5">
+                      <p className="text-xs font-bold text-[#0284C7]">Dự kiến điểm mới</p>
+                      <p className="text-lg font-black text-[#0284C7] mt-0.5">
                         {previewScoreAfter}đ
                       </p>
                     </div>
@@ -1148,16 +1148,16 @@ export function ScoreModal({
                 {/* 6. Phân quyền BCN / HR & Submit Actions */}
                 <div className="space-y-2.5 pt-1">
                   {isBCN && !isLocked && (
-                    <label className="p-3 rounded-2xl bg-white border border-slate-200/80 hover:border-sky-300 flex items-center justify-between text-xs cursor-pointer transition shadow-2xs group">
+                    <label className="p-3 rounded-2xl bg-white border border-slate-200/80 hover:border-sky-300 flex items-center justify-between cursor-pointer transition shadow-2xs group">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition ${directApply ? 'bg-sky-50 text-[#0284C7]' : 'bg-slate-100 text-slate-400'}`}>
-                          <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${directApply ? 'bg-sky-50 text-[#0284C7]' : 'bg-slate-100 text-slate-400'}`}>
+                          <CheckCircle2 className="w-5 h-5 stroke-[2.2]" />
                         </div>
                         <div>
-                          <span className="font-bold text-[#061651] block group-hover:text-[#0284C7] transition">
+                          <span className="font-bold text-xs sm:text-sm text-[#061651] block group-hover:text-[#0284C7] transition">
                             Áp dụng trực tiếp (Quyền BCN)
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">
+                          <span className="text-xs text-slate-500 font-medium">
                             Cập nhật ngay vào bảng xếp hạng
                           </span>
                         </div>
