@@ -499,7 +499,7 @@ function CheckinContent() {
                 title="Bấm vào tớ nhé!"
               >
                 <img
-                  src="/issac-mascot.png"
+                  src="/checkin-chibi-mascot.png"
                   alt="iSSAC Mascot"
                   className={`w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)] transition-all duration-300 ${
                     isMascotCheering
