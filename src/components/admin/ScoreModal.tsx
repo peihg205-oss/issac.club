@@ -63,20 +63,27 @@ export function ScoreModal({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Criterion Mode: 'deduct' | 'add' | 'custom'
+  // Criterion Mode & Search Popover (Ảnh 2 & 3)
   const [criterionCategory, setCriterionCategory] = useState<'deduct' | 'add' | 'custom'>('deduct')
   const [criterionCode, setCriterionCode] = useState<string>('T07') // Default to penalty T07
+  const [isCriterionDropdownOpen, setIsCriterionDropdownOpen] = useState(false)
+  const [criterionSearch, setCriterionSearch] = useState('')
+  const criterionDropdownRef = useRef<HTMLDivElement>(null)
+
   const [customPoints, setCustomPoints] = useState<number>(-2)
   const [reason, setReason] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
   const [directApply, setDirectApply] = useState(isBCN)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Close dropdown when click outside
+  // Close dropdowns when click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false)
+      }
+      if (criterionDropdownRef.current && !criterionDropdownRef.current.contains(event.target as Node)) {
+        setIsCriterionDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -173,6 +180,8 @@ export function ScoreModal({
 
   const handleCategorySwitch = (cat: 'deduct' | 'add' | 'custom') => {
     setCriterionCategory(cat)
+    setIsCriterionDropdownOpen(false)
+    setCriterionSearch('')
     if (cat === 'deduct') {
       setCriterionCode('T07')
       setCustomPoints(-2)
@@ -184,6 +193,24 @@ export function ScoreModal({
       setCustomPoints(-2)
     }
   }
+
+  // Lọc danh sách tiêu chí theo từ khóa tìm kiếm (Mã hoặc Tên)
+  const filteredCriteria = useMemo(() => {
+    const q = criterionSearch.trim().toLowerCase()
+    const isDeduct = criterionCategory === 'deduct'
+    const builtinList = isDeduct ? builtinDeductRules : builtinAddRules
+    const customList = isDeduct ? customDeductRules : customAddRules
+
+    const matchFilter = (r: { code: string; name: string }) => {
+      if (!q) return true
+      return r.code.toLowerCase().includes(q) || r.name.toLowerCase().includes(q)
+    }
+
+    return {
+      builtin: builtinList.filter(matchFilter),
+      custom: customList.filter(matchFilter),
+    }
+  }, [criterionSearch, criterionCategory, builtinDeductRules, builtinAddRules, customDeductRules, customAddRules])
 
   const handleCriterionChange = (newCode: string) => {
     setCriterionCode(newCode)
@@ -327,21 +354,24 @@ export function ScoreModal({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             
-            {/* Top Toolbar: Chọn Tháng & Cảnh báo Khóa sổ */}
+            {/* Top Toolbar: Chọn Tháng (Ảnh 1) & Cảnh báo Khóa sổ - Bo tròn cân đối */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50/80 border border-slate-200/75">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-[#061651] text-xs">Chu kỳ áp dụng:</span>
-                <select
-                  value={selectedPeriodId}
-                  onChange={(e) => setSelectedPeriodId(e.target.value)}
-                  className="bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs"
-                >
-                  {monthPeriods.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} {p.status === 'locked' ? '(Đã khóa)' : '(Đang mở)'}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={selectedPeriodId}
+                    onChange={(e) => setSelectedPeriodId(e.target.value)}
+                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-full pl-4 pr-8 py-2 text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs appearance-none transition"
+                  >
+                    {monthPeriods.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.status === 'locked' ? '(Đã khóa)' : '(Đang mở)'}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               {isLocked ? (
@@ -650,67 +680,222 @@ export function ScoreModal({
                   </div>
                 </div>
 
-                {/* 2. Tiêu chí theo loại */}
+                {/* 2. Tiêu chí theo loại - Thay thế native select bằng Custom Dropdown Popover cao cấp (Ảnh 2 & Ảnh 3) */}
                 {criterionCategory !== 'custom' ? (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5" ref={criterionDropdownRef}>
                     <label className="block text-xs font-bold text-[#061651]">
                       {criterionCategory === 'deduct'
                         ? 'Chọn lỗi vi phạm quy định:'
                         : 'Chọn hoạt động đóng góp / khen thưởng:'}
                     </label>
 
-                    <select
-                      value={criterionCode}
-                      onChange={(e) => handleCriterionChange(e.target.value)}
-                      disabled={isLocked}
-                      className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
-                    >
-                      {criterionCategory === 'deduct' && (
-                        <>
-                          <optgroup label="--- Lỗi vi phạm tiêu chuẩn (T01 - T13) ---">
-                            {builtinDeductRules.map((c) => (
-                              <option key={c.code} value={c.code}>
-                                {c.code} ({c.base_points}đ): {c.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          {customDeductRules.length > 0 && (
-                            <optgroup label="--- Quy định phạt bổ sung của CLB ---">
-                              {customDeductRules.map((c) => (
-                                <option key={c.code} value={c.code}>
-                                  {c.code} ({c.points}đ): {c.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                          )}
-                        </>
-                      )}
+                    <div className="relative">
+                      {/* Nút bấm trigger (Ảnh 2) - Bo tròn viên thuốc rounded-full, đồng bộ cân đối với Ảnh 1 */}
+                      <button
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => setIsCriterionDropdownOpen(!isCriterionDropdownOpen)}
+                        className={`w-full bg-white hover:bg-slate-50/70 border rounded-full px-4 py-2.5 flex items-center justify-between text-left transition shadow-2xs group cursor-pointer disabled:opacity-50 ${
+                          isCriterionDropdownOpen
+                            ? 'border-[#0284C7] ring-2 ring-[#0284C7]/15'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-white font-extrabold text-[11px] shrink-0 ${
+                              criterionCategory === 'deduct' ? 'bg-rose-600' : 'bg-emerald-600'
+                            }`}
+                          >
+                            {builtinRule?.code || customRule?.code}
+                          </span>
+                          <span className="font-bold text-xs text-[#061651] truncate">
+                            {builtinRule
+                              ? `${builtinRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${builtinRule.base_points}đ)`
+                              : customRule
+                              ? `${customRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${customRule.points}đ)`
+                              : 'Chọn tiêu chí...'}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 shrink-0 transition-transform ${
+                            isCriterionDropdownOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
 
-                      {criterionCategory === 'add' && (
-                        <>
-                          <optgroup label="--- Đóng góp & Khen thưởng chuẩn (C01 - C09) ---">
-                            {builtinAddRules.map((c) => (
-                              <option key={c.code} value={c.code}>
-                                {c.code} (+{c.base_points}đ): {c.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                          {customAddRules.length > 0 && (
-                            <optgroup label="--- Điểm cộng bổ sung của CLB ---">
-                              {customAddRules.map((c) => (
-                                <option key={c.code} value={c.code}>
-                                  {c.code} (+{c.points}đ): {c.name}
-                                </option>
-                              ))}
-                            </optgroup>
-                          )}
-                        </>
+                      {/* Popover Menu Tiêu Chí (Ảnh 3) - Cực kỳ rõ ràng, phân nhóm, có tìm kiếm, không bao giờ nhầm lẫn */}
+                      {isCriterionDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2.5 space-y-2 max-h-80 flex flex-col animate-fadeIn">
+                          {/* Ô tìm kiếm nhanh */}
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                            <input
+                              type="text"
+                              placeholder={
+                                criterionCategory === 'deduct'
+                                  ? 'Tìm lỗi (gõ T01, T07, deadline, muộn, vắng...)...'
+                                  : 'Tìm hoạt động (gõ C01, khen thưởng, bài viết...)...'
+                              }
+                              value={criterionSearch}
+                              onChange={(e) => setCriterionSearch(e.target.value)}
+                              autoFocus
+                              className="w-full bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 py-1.5 text-xs text-[#061651] placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white transition"
+                            />
+                          </div>
+
+                          {/* Danh sách tiêu chí chia 2 nhóm trực quan */}
+                          <div className="overflow-y-auto space-y-2.5 pr-1 max-h-60 custom-scrollbar">
+                            {/* Nhóm 1: Tiêu chuẩn */}
+                            {filteredCriteria.builtin.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="px-2 py-0.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  {criterionCategory === 'deduct'
+                                    ? 'Lỗi vi phạm tiêu chuẩn (T01 - T13)'
+                                    : 'Đóng góp & Khen thưởng chuẩn (C01 - C09)'}
+                                </div>
+                                <div className="space-y-1">
+                                  {filteredCriteria.builtin.map((c) => {
+                                    const isSelected = criterionCode === c.code
+                                    const pts = criterionCategory === 'deduct' ? -c.base_points : c.base_points
+                                    return (
+                                      <button
+                                        key={c.code}
+                                        type="button"
+                                        onClick={() => {
+                                          handleCriterionChange(c.code)
+                                          setIsCriterionDropdownOpen(false)
+                                          setCriterionSearch('')
+                                        }}
+                                        className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                                          isSelected
+                                            ? criterionCategory === 'deduct'
+                                              ? 'bg-rose-50 text-rose-900 border border-rose-200'
+                                              : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                                            : 'hover:bg-slate-50 text-slate-700'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span
+                                            className={`px-2 py-0.5 rounded-lg text-[10.5px] font-black shrink-0 ${
+                                              isSelected
+                                                ? criterionCategory === 'deduct'
+                                                  ? 'bg-rose-600 text-white'
+                                                  : 'bg-emerald-600 text-white'
+                                                : 'bg-slate-100 text-slate-700 font-bold'
+                                            }`}
+                                          >
+                                            {c.code}
+                                          </span>
+                                          <span className="font-semibold text-xs truncate">{c.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          <span
+                                            className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                                              criterionCategory === 'deduct'
+                                                ? 'bg-rose-100 text-rose-700'
+                                                : 'bg-emerald-100 text-emerald-700'
+                                            }`}
+                                          >
+                                            {pts > 0 ? `+${pts}đ` : `${pts}đ`}
+                                          </span>
+                                          {isSelected && (
+                                            <Check
+                                              className={`w-4 h-4 ${
+                                                criterionCategory === 'deduct' ? 'text-rose-600' : 'text-emerald-600'
+                                              }`}
+                                            />
+                                          )}
+                                        </div>
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Nhóm 2: Bổ sung CLB */}
+                            {filteredCriteria.custom.length > 0 && (
+                              <div className="space-y-1 pt-1.5 border-t border-slate-100">
+                                <div className="px-2 py-0.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  {criterionCategory === 'deduct'
+                                    ? 'Quy định phạt bổ sung của CLB'
+                                    : 'Điểm cộng bổ sung của CLB'}
+                                </div>
+                                <div className="space-y-1">
+                                  {filteredCriteria.custom.map((c) => {
+                                    const isSelected = criterionCode === c.code
+                                    const numPts = typeof c.points === 'number' ? c.points : parseFloat(String(c.points)) || 0
+                                    const pts = criterionCategory === 'deduct' ? -Math.abs(numPts) : Math.abs(numPts)
+                                    return (
+                                      <button
+                                        key={c.code}
+                                        type="button"
+                                        onClick={() => {
+                                          handleCriterionChange(c.code)
+                                          setIsCriterionDropdownOpen(false)
+                                          setCriterionSearch('')
+                                        }}
+                                        className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                                          isSelected
+                                            ? criterionCategory === 'deduct'
+                                              ? 'bg-rose-50 text-rose-900 border border-rose-200'
+                                              : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                                            : 'hover:bg-slate-50 text-slate-700'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span
+                                            className={`px-2 py-0.5 rounded-lg text-[10.5px] font-black shrink-0 ${
+                                              isSelected
+                                                ? criterionCategory === 'deduct'
+                                                  ? 'bg-rose-600 text-white'
+                                                  : 'bg-emerald-600 text-white'
+                                                : 'bg-slate-100 text-slate-700 font-bold'
+                                            }`}
+                                          >
+                                            {c.code}
+                                          </span>
+                                          <span className="font-semibold text-xs truncate">{c.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          <span
+                                            className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                                              criterionCategory === 'deduct'
+                                                ? 'bg-rose-100 text-rose-700'
+                                                : 'bg-emerald-100 text-emerald-700'
+                                            }`}
+                                          >
+                                            {pts > 0 ? `+${pts}đ` : `${pts}đ`}
+                                          </span>
+                                          {isSelected && (
+                                            <Check
+                                              className={`w-4 h-4 ${
+                                                criterionCategory === 'deduct' ? 'text-rose-600' : 'text-emerald-600'
+                                              }`}
+                                            />
+                                          )}
+                                        </div>
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {filteredCriteria.builtin.length === 0 && filteredCriteria.custom.length === 0 && (
+                              <div className="py-6 text-center text-xs text-slate-400">
+                                Không tìm thấy tiêu chí nào với từ khóa &quot;{criterionSearch}&quot;
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
-                    </select>
+                    </div>
 
                     {/* Thẻ hiển thị tóm tắt mức điểm của quy định đang chọn */}
                     <div
-                      className={`p-2.5 rounded-xl border flex items-center justify-between text-xs transition ${
+                      className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs transition ${
                         criterionCategory === 'deduct'
                           ? 'bg-rose-50/70 border-rose-200/70 text-rose-900'
                           : 'bg-emerald-50/70 border-emerald-200/70 text-emerald-900'
@@ -718,7 +903,7 @@ export function ScoreModal({
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`px-2 py-0.5 rounded-lg text-white font-extrabold text-[11px] shrink-0 ${
+                          className={`px-2 py-0.5 rounded-full text-white font-extrabold text-[11px] shrink-0 ${
                             criterionCategory === 'deduct' ? 'bg-rose-600' : 'bg-emerald-600'
                           }`}
                         >
