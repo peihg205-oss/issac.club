@@ -307,20 +307,20 @@ export function ScoreModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/55 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-4xl w-full border border-slate-200/90 shadow-2xl relative space-y-4 max-h-[94vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#0B1E48]/55 backdrop-blur-xs animate-fadeIn">
+      <div className="bg-white rounded-3xl p-4 sm:p-5.5 max-w-4xl w-full border border-slate-200/90 shadow-2xl relative space-y-3 max-h-[92vh] overflow-y-auto">
         
         {/* Header */}
-        <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center shadow-sm shadow-[#0284C7]/25 shrink-0">
-              <ClipboardList className="w-5 h-5 stroke-[2.2]" />
+        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center shadow-xs shadow-[#0284C7]/20 shrink-0">
+              <ClipboardList className="w-4.5 h-4.5 stroke-[2.2]" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight">
+              <h3 className="text-sm sm:text-base font-extrabold text-[#061651] tracking-tight">
                 {isBCN ? 'Trung Tâm Chấm Điểm & Phê Duyệt' : 'Đề Xuất Chấm Điểm Thi Đua'}
               </h3>
-              <p className="text-[11px] text-[#64748B] font-medium">
+              <p className="text-[10.5px] text-[#64748B] font-medium">
                 {currentUser?.departmentCode === 'B01'
                   ? 'Ban Truyền thông có quyền cho điểm các thành viên thuộc Ban Truyền thông'
                   : currentUser?.departmentCode === 'B02'
@@ -334,33 +334,33 @@ export function ScoreModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer shrink-0"
+            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {feedback ? (
-          <div className="py-12 text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
+          <div className="py-10 text-center space-y-2.5">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
             </div>
-            <h4 className="text-sm font-bold text-[#061651] max-w-md mx-auto leading-relaxed">
+            <h4 className="text-xs sm:text-sm font-bold text-[#061651] max-w-md mx-auto leading-relaxed">
               {feedback.message}
             </h4>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+          <form onSubmit={handleSubmit} className="space-y-3 text-[11px]">
             
-            {/* Top Toolbar: Chọn Tháng (Ảnh 1) & Cảnh báo Khóa sổ - Bo tròn cân đối */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75">
-              <div className="flex items-center gap-2.5">
-                <span className="font-bold text-[#061651] text-xs sm:text-sm">Chu kỳ áp dụng:</span>
+            {/* Top Toolbar: Chọn Tháng & Cảnh báo Khóa sổ - Bo tròn cân đối */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/75">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-[#061651] text-[11px]">Chu kỳ áp dụng:</span>
                 <div className="relative">
                   <select
                     value={selectedPeriodId}
                     onChange={(e) => setSelectedPeriodId(e.target.value)}
-                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-full pl-4 pr-9 py-2 text-xs sm:text-sm font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs appearance-none transition"
+                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-full pl-3 pr-7 py-1 text-[11px] font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs appearance-none transition"
                   >
                     {monthPeriods.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -368,36 +368,36 @@ export function ScoreModal({
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               {isLocked ? (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
-                  <Lock className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+                  <Lock className="w-3 h-3" />
                   <span>Chu kỳ đã bị BCN khóa sổ</span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Sổ điểm đang mở ghi nhận</span>
                 </div>
               )}
             </div>
 
             {/* Layout 2 Cột Chống Nhầm & Ghi Nhớ Lịch Sử */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               
               {/* CỘT TRÁI (5 Cols): CHỌN THÀNH VIÊN & XEM LỊCH SỬ ĐÃ CHO THÁNG NÀY */}
-              <div className="lg:col-span-5 space-y-3.5">
+              <div className="lg:col-span-5 space-y-2.5">
                 
                 {/* 1. Bộ chọn thành viên thông minh có tìm kiếm & lọc Ban */}
-                <div className="space-y-1.5" ref={dropdownRef}>
+                <div className="space-y-1" ref={dropdownRef}>
                   <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-bold text-[#061651]">
+                    <label className="text-[11px] font-bold text-[#061651]">
                       Thành viên nhận điểm:
                     </label>
-                    <span className="text-[11px] text-[#64748B] font-medium">
+                    <span className="text-[10px] text-[#64748B] font-medium">
                       Tìm kiếm nhanh theo tên/mã
                     </span>
                   </div>
@@ -408,61 +408,61 @@ export function ScoreModal({
                       type="button"
                       disabled={isLocked}
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="w-full bg-white hover:bg-slate-50/70 border border-slate-200/90 hover:border-sky-300 rounded-2xl p-2.5 flex items-center justify-between text-left transition shadow-2xs group focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer disabled:opacity-50"
+                      className="w-full bg-white hover:bg-slate-50/70 border border-slate-200/90 hover:border-sky-300 rounded-xl p-2 flex items-center justify-between text-left transition shadow-2xs group focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer disabled:opacity-50"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         {getMemberAvatarUrl(selectedMember) ? (
                           <img
                             src={getMemberAvatarUrl(selectedMember)!}
                             alt={selectedMember.full_name}
-                            className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0"
+                            className="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-200 shrink-0"
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
                             {selectedMember?.full_name?.charAt(0) || 'U'}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="font-extrabold text-sm text-[#061651] truncate">
+                          <p className="font-extrabold text-[11px] text-[#061651] truncate">
                             {selectedMember?.full_name}
                           </p>
-                          <p className="text-xs text-[#64748B] font-medium truncate">
+                          <p className="text-[9.5px] text-[#64748B] font-medium truncate">
                             {selectedMember?.member_code} - {selectedMember?.department_name}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="px-2.5 py-1 rounded-full text-xs sm:text-sm font-bold bg-slate-100 text-[#061651] border border-slate-200/70">
+                      <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
+                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-[#061651] border border-slate-200/70">
                           {selectedMember?.current_score || 60}đ
                         </span>
-                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition" />
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition" />
                       </div>
                     </button>
 
                     {/* Popover Menu: Tìm kiếm + Lọc Ban + Danh sách */}
                     {isDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 space-y-2 max-h-72 flex flex-col animate-fadeIn">
+                      <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-xl border border-slate-200 shadow-xl p-2 space-y-1.5 max-h-64 flex flex-col animate-fadeIn">
                         {/* Search Input */}
                         <div className="relative">
-                          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                          <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400" />
                           <input
                             type="text"
                             placeholder="Gõ tên hoặc mã SV..."
                             value={memberSearch}
                             onChange={(e) => setMemberSearch(e.target.value)}
                             autoFocus
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#061651] placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-2.5 py-1 text-[11px] text-[#061651] placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white"
                           />
                         </div>
 
                         {/* Dept Filter Tabs */}
-                        <div className="flex gap-1 overflow-x-auto pb-1 shrink-0 no-scrollbar">
+                        <div className="flex gap-1 overflow-x-auto pb-0.5 shrink-0 no-scrollbar">
                           {availableDepts.map((d) => (
                             <button
                               key={d.slug}
                               type="button"
                               onClick={() => setDeptFilter(d.slug)}
-                              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
+                              className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold whitespace-nowrap transition cursor-pointer ${
                                 deptFilter === d.slug
                                   ? 'bg-[#0284C7] text-white shadow-2xs'
                                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -476,7 +476,7 @@ export function ScoreModal({
                         {/* List Items */}
                         <div className="overflow-y-auto space-y-1 flex-1 pr-1">
                           {filteredMembers.length === 0 ? (
-                            <div className="py-6 text-center text-slate-400 text-xs">
+                            <div className="py-4 text-center text-slate-400 text-[11px]">
                               Không tìm thấy thành viên phù hợp
                             </div>
                           ) : (
@@ -490,7 +490,7 @@ export function ScoreModal({
                                     setMemberCode(m.member_code)
                                     setIsDropdownOpen(false)
                                   }}
-                                  className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition cursor-pointer ${
+                                  className={`w-full text-left p-1.5 rounded-lg flex items-center justify-between transition cursor-pointer ${
                                     isSelected
                                       ? 'bg-sky-50/80 border border-sky-200 text-[#0284C7]'
                                       : 'hover:bg-slate-50 text-slate-700'
@@ -501,23 +501,23 @@ export function ScoreModal({
                                       <img
                                         src={getMemberAvatarUrl(m)!}
                                         alt={m.full_name}
-                                        className="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-200 shrink-0"
+                                        className="w-6 h-6 rounded object-cover ring-1 ring-slate-200 shrink-0"
                                       />
                                     ) : (
-                                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                                      <div className="w-6 h-6 rounded bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold text-[9px] shrink-0">
                                         {m.full_name.charAt(0)}
                                       </div>
                                     )}
                                     <div className="min-w-0">
-                                      <p className="font-bold text-xs truncate">{m.full_name}</p>
-                                      <p className="text-[10px] text-slate-400 truncate">
+                                      <p className="font-bold text-[11px] truncate">{m.full_name}</p>
+                                      <p className="text-[9.5px] text-slate-400 truncate">
                                         {m.member_code} - {m.department_name}
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                                    <span className="text-[11px] font-black">{m.current_score}đ</span>
-                                    {isSelected && <Check className="w-3.5 h-3.5 text-[#0284C7]" />}
+                                  <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                                    <span className="text-[10px] font-black">{m.current_score}đ</span>
+                                    {isSelected && <Check className="w-3 h-3 text-[#0284C7]" />}
                                   </div>
                                 </button>
                               )
@@ -530,34 +530,34 @@ export function ScoreModal({
                 </div>
 
                 {/* 2. Thẻ hồ sơ thành viên đang chọn */}
-                <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75 space-y-2.5">
+                <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/75 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
                       Hồ sơ thành viên
                     </span>
                     {selectedMember?.is_core ? (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/80">
+                      <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200/80">
                         Core Team (Phạt ×2)
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400 font-medium">Thành viên thường</span>
+                      <span className="text-[9.5px] text-slate-400 font-medium">Thành viên thường</span>
                     )}
                   </div>
 
                   <div className="flex items-center justify-between pt-0.5">
                     <div>
-                      <p className="text-[10px] text-slate-500 font-medium">Điểm hiện tại:</p>
-                      <p className="text-2xl font-black text-[#061651] tracking-tight">
-                        {selectedMember?.current_score}<span className="text-xs font-bold text-slate-400 ml-0.5">đ</span>
+                      <p className="text-[9.5px] text-slate-500 font-medium">Điểm hiện tại:</p>
+                      <p className="text-xl font-black text-[#061651] tracking-tight">
+                        {selectedMember?.current_score}<span className="text-[10px] font-bold text-slate-400 ml-0.5">đ</span>
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-slate-500 font-medium mb-1">Biến động tháng này:</p>
-                      <div className="flex items-center gap-1.5 font-bold text-xs justify-end">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px]">
+                      <p className="text-[9.5px] text-slate-500 font-medium mb-0.5">Biến động tháng này:</p>
+                      <div className="flex items-center gap-1 font-bold text-[10px] justify-end">
+                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
                           +{totalAddedThisMonth}đ
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80 text-[11px]">
+                        <span className="px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80">
                           -{totalDeductedThisMonth}đ
                         </span>
                       </div>
@@ -566,37 +566,37 @@ export function ScoreModal({
                 </div>
 
                 {/* 3. Sổ ghi nhớ lịch sử đã chấm tháng này */}
-                <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75 space-y-2.5">
+                <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/75 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#061651] text-xs">
+                    <span className="font-bold text-[#061651] text-[11px]">
                       Đã ghi nhận trong {selectedPeriod?.name}:
                     </span>
-                    <span className="text-[10.5px] px-2.5 py-0.5 rounded-full font-bold bg-slate-200/80 text-slate-700">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-200/80 text-slate-700">
                       {memberHistoryThisMonth.length} lần
                     </span>
                   </div>
 
                   {memberHistoryThisMonth.length === 0 ? (
-                    <div className="p-3.5 rounded-xl bg-white border border-slate-200/70 text-center space-y-1 shadow-2xs">
-                      <p className="text-[11px] text-slate-600 font-semibold">
+                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/70 text-center space-y-0.5 shadow-2xs">
+                      <p className="text-[10.5px] text-slate-600 font-semibold">
                         Chưa có bản ghi điểm nào trong tháng này
                       </p>
-                      <p className="text-[10px] text-slate-400">
+                      <p className="text-[9.5px] text-slate-400">
                         Thành viên đang giữ trọn vẹn {selectedMember?.current_score || 60} điểm xuất phát trong chu kỳ.
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                    <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
                       {memberHistoryThisMonth.map((rec) => {
                         const isAdd = rec.points >= 0
                         return (
                           <div
                             key={rec.id}
-                            className="p-2.5 rounded-xl bg-white border border-slate-200/70 text-[11px] space-y-1 shadow-2xs"
+                            className="p-2 rounded-lg bg-white border border-slate-200/70 text-[10px] space-y-0.5 shadow-2xs"
                           >
                             <div className="flex items-center justify-between">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                className={`px-1.5 py-0.5 rounded-full text-[9.5px] font-black ${
                                   isAdd
                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
                                     : 'bg-rose-50 text-rose-700 border border-rose-200/80'
@@ -604,14 +604,14 @@ export function ScoreModal({
                               >
                                 {isAdd ? `+${rec.points}đ` : `${rec.points}đ`} ({rec.criterionCode})
                               </span>
-                              <span className="text-[9.5px] text-slate-400 font-medium">
+                              <span className="text-[9px] text-slate-400 font-medium">
                                 {rec.createdAt}
                               </span>
                             </div>
-                            <p className="text-[10.5px] font-bold text-slate-800 line-clamp-1">
+                            <p className="text-[10px] font-bold text-slate-800 line-clamp-1">
                               {rec.reason || rec.criterionName}
                             </p>
-                            <div className="flex items-center justify-between text-[9.5px] text-slate-400 border-t border-slate-100 pt-1">
+                            <div className="flex items-center justify-between text-[9px] text-slate-400 border-t border-slate-100 pt-0.5">
                               <span>Bởi: {rec.proposedBy}</span>
                               <span
                                 className={
@@ -632,32 +632,32 @@ export function ScoreModal({
 
               </div>
 
-              {/* CỘT PHẢI (7 Cols): THAO TÁC CHO ĐIỂM DỄ SỬ DỤNG - KHÔNG BỊ RỐI */}
-              <div className="lg:col-span-7 space-y-3.5">
+              {/* CỘT PHẢI (7 Cols): THAO TÁC CHO ĐIỂM DỄ SỬ DỤNG - GỌN GÀNG, CÂN ĐỐI */}
+              <div className="lg:col-span-7 space-y-2.5">
                 
-                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Bo tròn viên thuốc, chữ rõ ràng */}
+                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Bo tròn viên thuốc, cân đối, thanh thoát */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-bold text-[#061651] mb-2">
+                  <label className="block text-[11px] font-bold text-[#061651] mb-1">
                     Chọn loại điểm muốn ghi nhận:
                   </label>
-                  <div className="grid grid-cols-3 gap-2 w-full">
+                  <div className="grid grid-cols-3 gap-1.5 w-full">
                     {[
                       {
                         id: 'deduct' as const,
                         label: 'Vi phạm (Trừ)',
-                        activeColor: 'bg-rose-600 text-white font-bold shadow-sm shadow-rose-600/20',
+                        activeColor: 'bg-rose-600 text-white font-bold shadow-xs shadow-rose-600/20',
                         inactiveColor: 'bg-rose-50/70 text-rose-700 hover:bg-rose-100/80 font-semibold border border-rose-200/60',
                       },
                       {
                         id: 'add' as const,
                         label: 'Cống hiến (Cộng)',
-                        activeColor: 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-600/20',
+                        activeColor: 'bg-emerald-600 text-white font-bold shadow-xs shadow-emerald-600/20',
                         inactiveColor: 'bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100/80 font-semibold border border-emerald-200/60',
                       },
                       {
                         id: 'custom' as const,
                         label: 'Tự nhập điểm',
-                        activeColor: 'bg-[#0284C7] text-white font-bold shadow-sm shadow-[#0284C7]/20',
+                        activeColor: 'bg-[#0284C7] text-white font-bold shadow-xs shadow-[#0284C7]/20',
                         inactiveColor: 'bg-sky-50/70 text-[#0284C7] hover:bg-sky-100/80 font-semibold border border-sky-200/60',
                       },
                     ].map((tab) => {
@@ -667,7 +667,7 @@ export function ScoreModal({
                           key={tab.id}
                           type="button"
                           onClick={() => handleCategorySwitch(tab.id)}
-                          className={`w-full py-2.5 px-3 sm:px-4 rounded-full text-xs sm:text-sm transition-all flex items-center justify-center cursor-pointer text-center whitespace-nowrap font-bold ${
+                          className={`w-full py-1.5 px-2.5 rounded-full text-[11px] transition-all flex items-center justify-center cursor-pointer text-center whitespace-nowrap font-bold ${
                             isSelected ? tab.activeColor : tab.inactiveColor
                           }`}
                         >
@@ -678,36 +678,36 @@ export function ScoreModal({
                   </div>
                 </div>
 
-                {/* 2. Tiêu chí theo loại - Thay thế native select bằng Custom Dropdown Popover cao cấp (Ảnh 2 & Ảnh 3) */}
+                {/* 2. Tiêu chí theo loại - Dropdown Popover thanh lịch */}
                 {criterionCategory !== 'custom' ? (
                   <div className="space-y-1.5" ref={criterionDropdownRef}>
-                    <label className="block text-xs sm:text-sm font-bold text-[#061651]">
+                    <label className="block text-[11px] font-bold text-[#061651]">
                       {criterionCategory === 'deduct'
                         ? 'Chọn lỗi vi phạm quy định:'
                         : 'Chọn hoạt động đóng góp / khen thưởng:'}
                     </label>
 
                     <div className="relative">
-                      {/* Nút bấm trigger (Ảnh 2) - Bo tròn viên thuốc rounded-full, đồng bộ cân đối với Ảnh 1 */}
+                      {/* Nút bấm trigger - Bo tròn viên thuốc rounded-full, kích thước cân xứng */}
                       <button
                         type="button"
                         disabled={isLocked}
                         onClick={() => setIsCriterionDropdownOpen(!isCriterionDropdownOpen)}
-                        className={`w-full bg-white hover:bg-slate-50/70 border rounded-full px-4 py-2.5 flex items-center justify-between text-left transition shadow-2xs group cursor-pointer disabled:opacity-50 ${
+                        className={`w-full bg-white hover:bg-slate-50/70 border rounded-full px-3 py-1.5 flex items-center justify-between text-left transition shadow-2xs group cursor-pointer disabled:opacity-50 ${
                           isCriterionDropdownOpen
                             ? 'border-[#0284C7] ring-2 ring-[#0284C7]/15'
                             : 'border-slate-200/90 hover:border-slate-300'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5 min-w-0 pr-2">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-white font-extrabold text-xs shrink-0 ${
+                            className={`px-1.5 py-0.5 rounded-full text-white font-extrabold text-[10px] shrink-0 ${
                               criterionCategory === 'deduct' ? 'bg-rose-600' : 'bg-emerald-600'
                             }`}
                           >
                             {builtinRule?.code || customRule?.code}
                           </span>
-                          <span className="font-bold text-xs sm:text-sm text-[#061651] truncate">
+                          <span className="font-semibold text-[11px] text-[#061651] truncate">
                             {builtinRule
                               ? `${builtinRule.name} (${criterionCategory === 'deduct' ? '-' : '+'}${Math.abs(builtinRule.base_points)}đ)`
                               : customRule
@@ -716,18 +716,18 @@ export function ScoreModal({
                           </span>
                         </div>
                         <ChevronDown
-                          className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 shrink-0 transition-transform ${
+                          className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 shrink-0 transition-transform ${
                             isCriterionDropdownOpen ? 'rotate-180' : ''
                           }`}
                         />
                       </button>
 
-                      {/* Popover Menu Tiêu Chí (Ảnh 3) - Cực kỳ rõ ràng, phân nhóm, có tìm kiếm, không bao giờ nhầm lẫn */}
+                      {/* Popover Menu Tiêu Chí */}
                       {isCriterionDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2.5 space-y-2 max-h-80 flex flex-col animate-fadeIn">
+                        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white rounded-xl border border-slate-200 shadow-xl p-2 space-y-1.5 max-h-72 flex flex-col animate-fadeIn">
                           {/* Ô tìm kiếm nhanh */}
                           <div className="relative">
-                            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                            <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400" />
                             <input
                               type="text"
                               placeholder={
@@ -738,21 +738,21 @@ export function ScoreModal({
                               value={criterionSearch}
                               onChange={(e) => setCriterionSearch(e.target.value)}
                               autoFocus
-                              className="w-full bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 py-1.5 text-xs text-[#061651] placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white transition"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-full pl-7 pr-2.5 py-1 text-[11px] text-[#061651] placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white transition"
                             />
                           </div>
 
-                          {/* Danh sách tiêu chí chia 2 nhóm trực quan */}
-                          <div className="overflow-y-auto space-y-2.5 pr-1 max-h-60 custom-scrollbar">
+                          {/* Danh sách tiêu chí */}
+                          <div className="overflow-y-auto space-y-2 pr-1 max-h-52 custom-scrollbar">
                             {/* Nhóm 1: Tiêu chuẩn */}
                             {filteredCriteria.builtin.length > 0 && (
-                              <div className="space-y-1">
-                                <div className="px-2 py-0.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              <div className="space-y-0.5">
+                                <div className="px-1.5 py-0.5 text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">
                                   {criterionCategory === 'deduct'
                                     ? 'Lỗi vi phạm tiêu chuẩn (T01 - T13)'
                                     : 'Đóng góp & Khen thưởng chuẩn (C01 - C09)'}
                                 </div>
-                                <div className="space-y-1">
+                                <div className="space-y-0.5">
                                   {filteredCriteria.builtin.map((c) => {
                                     const isSelected = criterionCode === c.code
                                     const pts = criterionCategory === 'deduct' ? -c.base_points : c.base_points
@@ -765,7 +765,7 @@ export function ScoreModal({
                                           setIsCriterionDropdownOpen(false)
                                           setCriterionSearch('')
                                         }}
-                                        className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                                        className={`w-full p-1.5 rounded-lg text-left transition flex items-center justify-between gap-1.5 cursor-pointer ${
                                           isSelected
                                             ? criterionCategory === 'deduct'
                                               ? 'bg-rose-50 text-rose-900 border border-rose-200'
@@ -773,9 +773,9 @@ export function ScoreModal({
                                             : 'hover:bg-slate-50 text-slate-700'
                                         }`}
                                       >
-                                        <div className="flex items-center gap-2 min-w-0">
+                                        <div className="flex items-center gap-1.5 min-w-0">
                                           <span
-                                            className={`px-2 py-0.5 rounded-lg text-[10.5px] font-black shrink-0 ${
+                                            className={`px-1.5 py-0.5 rounded text-[10px] font-black shrink-0 ${
                                               isSelected
                                                 ? criterionCategory === 'deduct'
                                                   ? 'bg-rose-600 text-white'
@@ -785,11 +785,11 @@ export function ScoreModal({
                                           >
                                             {c.code}
                                           </span>
-                                          <span className="font-semibold text-xs truncate">{c.name}</span>
+                                          <span className="font-semibold text-[11px] truncate">{c.name}</span>
                                         </div>
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex items-center gap-1.5 shrink-0">
                                           <span
-                                            className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
                                               criterionCategory === 'deduct'
                                                 ? 'bg-rose-100 text-rose-700'
                                                 : 'bg-emerald-100 text-emerald-700'
@@ -799,7 +799,7 @@ export function ScoreModal({
                                           </span>
                                           {isSelected && (
                                             <Check
-                                              className={`w-4 h-4 ${
+                                              className={`w-3.5 h-3.5 ${
                                                 criterionCategory === 'deduct' ? 'text-rose-600' : 'text-emerald-600'
                                               }`}
                                             />
@@ -814,13 +814,13 @@ export function ScoreModal({
 
                             {/* Nhóm 2: Bổ sung CLB */}
                             {filteredCriteria.custom.length > 0 && (
-                              <div className="space-y-1 pt-1.5 border-t border-slate-100">
-                                <div className="px-2 py-0.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              <div className="space-y-0.5 pt-1 border-t border-slate-100">
+                                <div className="px-1.5 py-0.5 text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">
                                   {criterionCategory === 'deduct'
                                     ? 'Quy định phạt bổ sung của CLB'
                                     : 'Điểm cộng bổ sung của CLB'}
                                 </div>
-                                <div className="space-y-1">
+                                <div className="space-y-0.5">
                                   {filteredCriteria.custom.map((c) => {
                                     const isSelected = criterionCode === c.code
                                     const numPts = typeof c.points === 'number' ? c.points : parseFloat(String(c.points)) || 0
@@ -834,7 +834,7 @@ export function ScoreModal({
                                           setIsCriterionDropdownOpen(false)
                                           setCriterionSearch('')
                                         }}
-                                        className={`w-full p-2 rounded-xl text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                                        className={`w-full p-1.5 rounded-lg text-left transition flex items-center justify-between gap-1.5 cursor-pointer ${
                                           isSelected
                                             ? criterionCategory === 'deduct'
                                               ? 'bg-rose-50 text-rose-900 border border-rose-200'
@@ -842,9 +842,9 @@ export function ScoreModal({
                                             : 'hover:bg-slate-50 text-slate-700'
                                         }`}
                                       >
-                                        <div className="flex items-center gap-2 min-w-0">
+                                        <div className="flex items-center gap-1.5 min-w-0">
                                           <span
-                                            className={`px-2 py-0.5 rounded-lg text-[10.5px] font-black shrink-0 ${
+                                            className={`px-1.5 py-0.5 rounded text-[10px] font-black shrink-0 ${
                                               isSelected
                                                 ? criterionCategory === 'deduct'
                                                   ? 'bg-rose-600 text-white'
@@ -854,11 +854,11 @@ export function ScoreModal({
                                           >
                                             {c.code}
                                           </span>
-                                          <span className="font-semibold text-xs truncate">{c.name}</span>
+                                          <span className="font-semibold text-[11px] truncate">{c.name}</span>
                                         </div>
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex items-center gap-1.5 shrink-0">
                                           <span
-                                            className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
                                               criterionCategory === 'deduct'
                                                 ? 'bg-rose-100 text-rose-700'
                                                 : 'bg-emerald-100 text-emerald-700'
@@ -868,7 +868,7 @@ export function ScoreModal({
                                           </span>
                                           {isSelected && (
                                             <Check
-                                              className={`w-4 h-4 ${
+                                              className={`w-3.5 h-3.5 ${
                                                 criterionCategory === 'deduct' ? 'text-rose-600' : 'text-emerald-600'
                                               }`}
                                             />
@@ -882,7 +882,7 @@ export function ScoreModal({
                             )}
 
                             {filteredCriteria.builtin.length === 0 && filteredCriteria.custom.length === 0 && (
-                              <div className="py-6 text-center text-xs text-slate-400">
+                              <div className="py-4 text-center text-[11px] text-slate-400">
                                 Không tìm thấy tiêu chí nào với từ khóa &quot;{criterionSearch}&quot;
                               </div>
                             )}
@@ -893,26 +893,26 @@ export function ScoreModal({
 
                     {/* Thẻ hiển thị tóm tắt mức điểm của quy định đang chọn */}
                     <div
-                      className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs sm:text-sm transition ${
+                      className={`p-1.5 px-2.5 rounded-xl border flex items-center justify-between text-[11px] transition ${
                         criterionCategory === 'deduct'
                           ? 'bg-rose-50/70 border-rose-200/70 text-rose-900'
                           : 'bg-emerald-50/70 border-emerald-200/70 text-emerald-900'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-white font-extrabold text-xs shrink-0 ${
+                          className={`px-1.5 py-0.5 rounded-full text-white font-extrabold text-[10px] shrink-0 ${
                             criterionCategory === 'deduct' ? 'bg-rose-600' : 'bg-emerald-600'
                           }`}
                         >
                           {builtinRule?.code || customRule?.code}
                         </span>
-                        <span className="font-bold text-xs sm:text-sm truncate">
+                        <span className="font-semibold text-[11px] truncate">
                           {builtinRule?.name || customRule?.name}
                         </span>
                       </div>
                       <span
-                        className={`font-black text-xs sm:text-sm shrink-0 pl-2 ${
+                        className={`font-black text-[11px] shrink-0 pl-2 ${
                           criterionCategory === 'deduct' ? 'text-rose-600' : 'text-emerald-600'
                         }`}
                       >
@@ -923,32 +923,32 @@ export function ScoreModal({
                   </div>
                 ) : (
                   /* 2. Điểm tự cho (Tăng giảm điểm tùy biến - Tối ưu bố cục gọn gàng, hài hòa) */
-                  <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-2.5">
+                  <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50/90 border border-slate-200/80 space-y-2">
                     
-                    {/* Hàng 1: Header + Chuyển nhanh chế độ Phạt (-) / Thưởng (+) Segmented gọn gàng */}
+                    {/* Hàng 1: Header + Chuyển nhanh chế độ Phạt (-) / Thưởng (+) Segmented */}
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Pencil className="w-3.5 h-3.5 text-[#0284C7] shrink-0" />
-                        <span className="font-bold text-[#061651] text-xs">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <Pencil className="w-3 h-3 text-[#0284C7] shrink-0" />
+                        <span className="font-bold text-[#061651] text-[11px]">
                           Chế độ tự cho điểm:
                         </span>
                       </div>
 
                       {/* Segmented Pill: Phạt (-) / Thưởng (+) */}
-                      <div className="flex items-center bg-slate-200/75 p-0.5 rounded-xl shrink-0">
+                      <div className="flex items-center bg-slate-200/75 p-0.5 rounded-lg shrink-0">
                         <button
                           type="button"
                           onClick={() => {
                             const currentAbs = Math.abs(customPoints) || 2
                             setCustomPoints(-currentAbs)
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             customPoints < 0
                               ? 'bg-rose-600 text-white shadow-2xs'
                               : 'text-slate-600 hover:text-rose-700'
                           }`}
                         >
-                          <Minus className="w-3 h-3 stroke-[2.5]" />
+                          <Minus className="w-2.5 h-2.5 stroke-[2.5]" />
                           <span>Phạt (-)</span>
                         </button>
 
@@ -958,29 +958,29 @@ export function ScoreModal({
                             const currentAbs = Math.abs(customPoints) || 2
                             setCustomPoints(currentAbs)
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             customPoints > 0
                               ? 'bg-emerald-600 text-white shadow-2xs'
                               : 'text-slate-600 hover:text-emerald-700'
                           }`}
                         >
-                          <Plus className="w-3 h-3 stroke-[2.5]" />
+                          <Plus className="w-2.5 h-2.5 stroke-[2.5]" />
                           <span>Thưởng (+)</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Hàng 2: Bộ điều khiển Stepper trực quan, cao cấp & cân xứng */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {/* Nút Giảm 1 điểm (-) */}
                       <button
                         type="button"
                         onClick={() => setCustomPoints((prev) => (prev || 0) - 1)}
                         disabled={isLocked}
                         title="Giảm 1 điểm"
-                        className="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-300 flex items-center justify-center font-black transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+                        className="w-8 h-8 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-300 flex items-center justify-center font-black transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
                       >
-                        <Minus className="w-4 h-4 stroke-[2.5]" />
+                        <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                       </button>
 
                       {/* Ô nhập số điểm */}
@@ -994,11 +994,11 @@ export function ScoreModal({
                             setCustomPoints(val === '' ? 0 : Number(val))
                           }}
                           placeholder="Nhập số điểm (+ thưởng, - phạt)..."
-                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10 rounded-xl pl-3.5 pr-20 py-2 text-sm font-bold text-[#061651] placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 rounded-lg pl-3 pr-16 py-1.5 text-xs font-bold text-[#061651] placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
-                        <div className="absolute right-2.5 flex items-center pointer-events-none">
+                        <div className="absolute right-2 flex items-center pointer-events-none">
                           <span
-                            className={`px-2.5 py-0.5 rounded-lg text-xs font-black transition ${
+                            className={`px-2 py-0.5 rounded text-[10px] font-black transition ${
                               customPoints > 0
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
                                 : customPoints < 0
@@ -1017,22 +1017,22 @@ export function ScoreModal({
                         onClick={() => setCustomPoints((prev) => (prev || 0) + 1)}
                         disabled={isLocked}
                         title="Tăng 1 điểm"
-                        className="w-10 h-10 rounded-xl bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200 hover:border-emerald-300 flex items-center justify-center font-black transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+                        className="w-8 h-8 rounded-lg bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200 hover:border-emerald-300 flex items-center justify-center font-black transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
                       >
-                        <Plus className="w-4 h-4 stroke-[2.5]" />
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                       </button>
                     </div>
 
-                    {/* Hàng 3: Hai nhóm chọn nhanh đối xứng: Trừ điểm (Giảm) & Cộng điểm (Tăng) */}
-                    <div className="space-y-1 pt-0.5">
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold px-0.5">
+                    {/* Hàng 3: Hai nhóm chọn nhanh đối xứng */}
+                    <div className="space-y-0.5 pt-0.5">
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold px-0.5">
                         <span className="text-rose-600 font-bold">● Giảm nhanh:</span>
                         <span className="text-emerald-600 font-bold">● Tăng nhanh:</span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         {/* 4 nút Trừ điểm */}
-                        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+                        <div className="grid grid-cols-4 gap-1">
                           {[-1, -2, -5, -10].map((pt) => {
                             const isSelected = customPoints === pt
                             return (
@@ -1040,7 +1040,7 @@ export function ScoreModal({
                                 key={pt}
                                 type="button"
                                 onClick={() => setCustomPoints(pt)}
-                                className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center active:scale-95 ${
+                                className={`py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer text-center active:scale-95 ${
                                   isSelected
                                     ? 'bg-rose-600 text-white shadow-xs'
                                     : 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200/70'
@@ -1053,7 +1053,7 @@ export function ScoreModal({
                         </div>
 
                         {/* 4 nút Cộng điểm */}
-                        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+                        <div className="grid grid-cols-4 gap-1">
                           {[1, 2, 5, 10].map((pt) => {
                             const isSelected = customPoints === pt
                             return (
@@ -1061,7 +1061,7 @@ export function ScoreModal({
                                 key={pt}
                                 type="button"
                                 onClick={() => setCustomPoints(pt)}
-                                className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center active:scale-95 ${
+                                className={`py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer text-center active:scale-95 ${
                                   isSelected
                                     ? 'bg-emerald-600 text-white shadow-xs'
                                     : 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200/70'
@@ -1079,8 +1079,8 @@ export function ScoreModal({
                 )}
 
                 {/* 3. Lý do / Nội dung chi tiết */}
-                <div className="space-y-1.5">
-                  <label className="text-xs sm:text-sm font-bold text-[#061651] block">
+                <div className="space-y-0.5">
+                  <label className="text-[11px] font-bold text-[#061651] block">
                     Lý do / Nội dung chi tiết: <span className="text-rose-500">*</span>
                   </label>
 
@@ -1091,13 +1091,13 @@ export function ScoreModal({
                     placeholder="Ghi rõ đầu việc hoặc lý do cụ thể..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-2xl p-3 text-xs sm:text-sm font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
+                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-xl p-2 text-[11px] font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
                   />
                 </div>
 
                 {/* 4. Link minh chứng */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-bold text-[#061651] mb-1">
+                  <label className="block text-[11px] font-bold text-[#061651] mb-0.5">
                     Link minh chứng (Drive, ảnh, bài viết - nếu có):
                   </label>
                   <input
@@ -1106,24 +1106,24 @@ export function ScoreModal({
                     placeholder="https://drive.google.com/..."
                     value={evidenceUrl}
                     onChange={(e) => setEvidenceUrl(e.target.value)}
-                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
+                    className="w-full bg-white hover:border-slate-300 focus:bg-white border border-slate-200/90 rounded-xl px-2.5 py-1.5 text-[11px] font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
                   />
                 </div>
 
                 {/* 5. Tóm tắt Biến Động Điểm Tức Thì (Thẻ 3 cột hiện đại) */}
-                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-50/50 via-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs">
+                <div className="p-2 rounded-xl bg-gradient-to-r from-sky-50/50 via-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs">
                   <div className="grid grid-cols-3 divide-x divide-slate-200/80 text-center">
-                    <div className="px-2">
-                      <p className="text-xs font-semibold text-slate-500">Trước khi chấm</p>
-                      <p className="text-base font-extrabold text-[#061651] mt-0.5">
+                    <div className="px-1">
+                      <p className="text-[10px] font-medium text-slate-500">Trước khi chấm</p>
+                      <p className="text-xs font-extrabold text-[#061651] mt-0.5">
                         {selectedMember?.current_score}đ
                       </p>
                     </div>
 
-                    <div className="px-2">
-                      <p className="text-xs font-semibold text-slate-500">Biến động điểm</p>
+                    <div className="px-1">
+                      <p className="text-[10px] font-medium text-slate-500">Biến động điểm</p>
                       <p
-                        className={`text-base font-extrabold mt-0.5 ${
+                        className={`text-xs font-extrabold mt-0.5 ${
                           previewActualDelta > 0
                             ? 'text-emerald-600'
                             : previewActualDelta < 0
@@ -1136,9 +1136,9 @@ export function ScoreModal({
                       </p>
                     </div>
 
-                    <div className="px-2">
-                      <p className="text-xs font-bold text-[#0284C7]">Dự kiến điểm mới</p>
-                      <p className="text-lg font-black text-[#0284C7] mt-0.5">
+                    <div className="px-1">
+                      <p className="text-[10px] font-bold text-[#0284C7]">Dự kiến điểm mới</p>
+                      <p className="text-sm font-black text-[#0284C7] mt-0.5">
                         {previewScoreAfter}đ
                       </p>
                     </div>
@@ -1146,18 +1146,18 @@ export function ScoreModal({
                 </div>
 
                 {/* 6. Phân quyền BCN / HR & Submit Actions */}
-                <div className="space-y-2.5 pt-1">
+                <div className="space-y-1.5 pt-0.5">
                   {isBCN && !isLocked && (
-                    <label className="p-3 rounded-2xl bg-white border border-slate-200/80 hover:border-sky-300 flex items-center justify-between cursor-pointer transition shadow-2xs group">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${directApply ? 'bg-sky-50 text-[#0284C7]' : 'bg-slate-100 text-slate-400'}`}>
-                          <CheckCircle2 className="w-5 h-5 stroke-[2.2]" />
+                    <label className="p-2 rounded-xl bg-white border border-slate-200/80 hover:border-sky-300 flex items-center justify-between cursor-pointer transition shadow-2xs group">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center transition ${directApply ? 'bg-sky-50 text-[#0284C7]' : 'bg-slate-100 text-slate-400'}`}>
+                          <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.2]" />
                         </div>
                         <div>
-                          <span className="font-bold text-xs sm:text-sm text-[#061651] block group-hover:text-[#0284C7] transition">
+                          <span className="font-bold text-[11px] text-[#061651] block group-hover:text-[#0284C7] transition">
                             Áp dụng trực tiếp (Quyền BCN)
                           </span>
-                          <span className="text-xs text-slate-500 font-medium">
+                          <span className="text-[9.5px] text-slate-500 font-medium">
                             Cập nhật ngay vào bảng xếp hạng
                           </span>
                         </div>
@@ -1166,23 +1166,23 @@ export function ScoreModal({
                         type="checkbox"
                         checked={directApply}
                         onChange={(e) => setDirectApply(e.target.checked)}
-                        className="w-4 h-4 rounded text-[#0284C7] accent-[#0284C7] cursor-pointer"
+                        className="w-3.5 h-3.5 rounded text-[#0284C7] accent-[#0284C7] cursor-pointer"
                       />
                     </label>
                   )}
 
                   {isHR && !isLocked && (
-                    <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
-                      <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[10.5px] text-amber-900 flex items-start gap-1.5">
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span>Đề xuất sẽ được gửi vào hàng đợi chờ Ban Chủ nhiệm phê duyệt.</span>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-end gap-2.5 pt-1">
+                  <div className="flex items-center justify-end gap-2 pt-0.5">
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-[11px] hover:bg-slate-50 transition cursor-pointer"
                     >
                       Hủy bỏ
                     </button>
@@ -1191,15 +1191,15 @@ export function ScoreModal({
                       <button
                         type="button"
                         disabled
-                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-500 cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-200 text-slate-500 cursor-not-allowed"
                       >
-                        <Lock className="w-3.5 h-3.5" />
+                        <Lock className="w-3 h-3" />
                         <span>Tháng Này Đã Khóa Sổ Điểm</span>
                       </button>
                     ) : (
                       <button
                         type="submit"
-                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-bold text-xs shadow-md shadow-[#0284C7]/25 transition-all active:scale-95 cursor-pointer"
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-bold text-[11px] shadow-xs shadow-[#0284C7]/20 transition-all active:scale-95 cursor-pointer"
                       >
                         {isBCN
                           ? directApply
