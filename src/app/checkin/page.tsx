@@ -103,6 +103,25 @@ function CheckinContent() {
   const [kioskSupervisorPin, setKioskSupervisorPin] = useState<string>('')
   const [kioskError, setKioskError] = useState<string>('')
 
+  // Trạng thái Mascot tương tác iSSAC
+  const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
+  const [mascotQuoteIdx, setMascotQuoteIdx] = useState<number>(0)
+  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
+
+  const checkinMascotQuotes = [
+    'Chào bạn! Nhớ điểm danh đúng giờ nhé! ✨',
+    'Nhập MSSV để đăng ký giữ chỗ sự kiện nào! 🎟️',
+    'iSSAC Gen 3.0 luôn sẵn sàng cùng bạn! 🌟',
+    'Điểm danh thành công là có ngay điểm thi đua! 🚀',
+  ]
+
+  const handleMascotClick = () => {
+    setIsMascotCheering(true)
+    setShowMascotBubble(true)
+    setMascotQuoteIdx((prev) => (prev + 1) % checkinMascotQuotes.length)
+    setTimeout(() => setIsMascotCheering(false), 850)
+  }
+
   // Form đăng ký trước sự kiện: Xác thực danh tính qua MSSV để chống đăng ký nhầm
   const [verifiedRegMember, setVerifiedRegMember] = useState<RosterMember | null>(null)
   const [regMemberCode, setRegMemberCode] = useState<string>('')
@@ -415,19 +434,19 @@ function CheckinContent() {
       />
 
       {/* Sub-navbar with Breadcrumbs & Quick Link back to Admin */}
-      <div className="bg-white border-b border-slate-200/90 px-6 sm:px-12 lg:px-16 xl:px-20 py-2.5 shadow-2xs">
+      <div className="bg-white border-b border-slate-200/90 px-4 sm:px-8 lg:px-12 py-2.5 shadow-2xs">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/"
-              className="text-slate-500 hover:text-[#1351D8] flex items-center gap-1 font-semibold transition"
+              className="text-slate-500 hover:text-[#0284C7] flex items-center gap-1 font-semibold transition"
             >
               <Home className="w-3.5 h-3.5" />
               <span>Trang chủ</span>
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="font-bold text-[#0B1E48]">Cổng Điểm Danh &amp; Đăng Ký Thành Viên CLB</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#1351D8] border border-blue-200/80">
+            <span className="font-bold text-[#061651]">Cổng Điểm Danh &amp; Đăng Ký Thành Viên CLB</span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-sky-50 text-[#0284C7] border border-sky-200/80">
               Tự phục vụ
             </span>
           </div>
@@ -435,14 +454,14 @@ function CheckinContent() {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#1351D8] bg-blue-50 hover:bg-blue-100/80 border border-blue-200/80 shadow-2xs transition active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#0284C7] bg-sky-50 hover:bg-sky-100/80 border border-sky-200/80 shadow-2xs transition active:scale-95 cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Đăng Nhập BCN / HR</span>
             </Link>
             <Link
               href="/"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 shadow-2xs transition active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/90 shadow-2xs transition active:scale-95 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Vào Trang Quản Trị CLB</span>
@@ -452,32 +471,61 @@ function CheckinContent() {
       </div>
 
       <main className="flex-1 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full space-y-6">
-        {/* Banner giới thiệu cơ chế không cần tài khoản */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1E48] via-[#0E2C6C] to-[#1351D8] p-6 sm:p-7 text-white shadow-lg shadow-blue-950/15 border border-white/10">
+        {/* Banner giới thiệu cơ chế không cần tài khoản - Đồng bộ với DashboardView */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#061651] via-[#0B2559] to-[#0284C7] p-6 sm:p-7 text-white shadow-xl shadow-[#0284C7]/10 border border-white/10">
           {/* Ambient background glow decoration */}
-          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-blue-400/15 blur-3xl pointer-events-none" />
+          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-sky-400/20 blur-3xl pointer-events-none" />
           <div className="absolute right-1/3 -bottom-16 w-56 h-56 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-xs font-bold text-blue-100 backdrop-blur-md border border-white/20">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-xs font-bold text-sky-100 backdrop-blur-md border border-white/20">
                 <ShieldCheck className="w-4 h-4 text-emerald-300" />
                 <span>Không Cần Đăng Nhập Mật Khẩu</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
                 Đăng Ký Sự Kiện &amp; Điểm Danh Dành Riêng Cho Thành Viên CLB
               </h2>
-              <p className="text-xs sm:text-[13px] text-blue-100/90 leading-relaxed">
+              <p className="text-xs sm:text-[13px] text-sky-100/90 leading-relaxed">
                 Thành viên không cần tài khoản riêng. Dễ dàng đăng ký giữ chỗ trước các sự kiện/workshop sắp tới của CLB, hoặc nhập <strong>Họ tên / MSSV</strong> và <strong>Mã PIN 4 số</strong> hiển thị trên máy chiếu hội trường để điểm danh trực tiếp.
               </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-4 shrink-0">
+              {/* Mascot Chibi hoạt động năng động có bubble tooltip tương tác */}
+              <div
+                onClick={handleMascotClick}
+                className="relative group cursor-pointer flex items-center shrink-0 select-none"
+                title="Bấm vào tớ nhé!"
+              >
+                <img
+                  src="/issac-mascot.png"
+                  alt="iSSAC Mascot"
+                  className={`w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)] transition-all duration-300 ${
+                    isMascotCheering
+                      ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.5)]'
+                      : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+                  }`}
+                />
+
+                {/* Bubble tooltip nằm bên cạnh mascot */}
+                <div
+                  className={`absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-white text-[#061651] text-[11px] font-bold shadow-xl whitespace-nowrap z-40 transition-all duration-200 border border-slate-100 ${
+                    isMascotCheering || showMascotBubble
+                      ? 'opacity-100 scale-105 pointer-events-auto'
+                      : 'opacity-0 group-hover:opacity-100 group-hover:-translate-x-1'
+                  }`}
+                >
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45 border-r border-t border-slate-100" />
+                  <span>{checkinMascotQuotes[mascotQuoteIdx]}</span>
+                </div>
+              </div>
+
               <div className="px-5 py-3.5 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md text-center shadow-inner">
                 <div className="text-2xl font-black text-[#FFCD38]">
                   {members.length}
                 </div>
-                <div className="text-[10px] text-blue-100 uppercase tracking-wider font-bold mt-0.5">
+                <div className="text-[10px] text-sky-100 uppercase tracking-wider font-bold mt-0.5">
                   Thành viên chính thức
                 </div>
               </div>
@@ -485,52 +533,60 @@ function CheckinContent() {
           </div>
         </div>
 
-        {/* Segmented Control 3 Tabs - Đăng ký đặt trước Check-in */}
-        <div className="grid grid-cols-3 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-2xs gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab('register')}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'register'
-                ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <Ticket className={`w-4 h-4 shrink-0 ${activeTab === 'register' ? 'text-[#1351D8]' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">1. Đăng Ký Sự Kiện Trước</span>
-            <span className="sm:hidden">1. Đăng ký trước</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('live_checkin')
-              setCheckinResult(null)
-            }}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'live_checkin'
-                ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <QrCode className={`w-4 h-4 shrink-0 ${activeTab === 'live_checkin' ? 'text-[#1351D8]' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">2. Điểm Danh Hội Trường</span>
-            <span className="sm:hidden">2. Điểm danh</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('lookup')}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'lookup'
-                ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <Award className={`w-4 h-4 shrink-0 ${activeTab === 'lookup' ? 'text-[#1351D8]' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">3. Tra Cứu Điểm Cá Nhân</span>
-            <span className="sm:hidden">3. Tra cứu điểm</span>
-          </button>
+        {/* Navigation Tabs chuẩn phong cách Pill Tabs đồng bộ dự án */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {[
+            {
+              id: 'register' as const,
+              label: '1. Đăng Ký Sự Kiện Trước',
+              mobileLabel: '1. Đăng ký trước',
+              icon: Ticket,
+              badge: events.filter((e) => !e.isFinalized).length || events.length,
+            },
+            {
+              id: 'live_checkin' as const,
+              label: '2. Điểm Danh Hội Trường',
+              mobileLabel: '2. Điểm danh',
+              icon: QrCode,
+              badge: activeEvent ? 'LIVE' : 'Mở',
+            },
+            {
+              id: 'lookup' as const,
+              label: '3. Tra Cứu Điểm Cá Nhân',
+              mobileLabel: '3. Tra cứu điểm',
+              icon: Award,
+              badge: `${members.length} TV`,
+            },
+          ].map((tab) => {
+            const isSelected = activeTab === tab.id
+            const TabIcon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab.id)
+                  if (tab.id === 'live_checkin') setCheckinResult(null)
+                }}
+                className={`px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#0284C7] text-white shadow-md shadow-[#0284C7]/20 font-bold'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium'
+                }`}
+              >
+                <TabIcon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.mobileLabel}</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/90 text-slate-700'
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         {/* Feedback Alert for Registration */}
@@ -568,11 +624,11 @@ function CheckinContent() {
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200/80 font-bold shadow-2xs shrink-0">
-                    <Ticket className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold shadow-xs shadow-[#0284C7]/25 shrink-0">
+                    <Ticket className="w-5 h-5 stroke-[2.2]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-[#0B1E48]">
+                    <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight">
                       Cổng Đăng Ký Sự Kiện &amp; Workshop Sắp Tới
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">
@@ -583,16 +639,16 @@ function CheckinContent() {
 
                 {/* Khu vực hiển thị danh tính đã xác thực hoặc ô nhập MSSV nhanh */}
                 {verifiedRegMember ? (
-                  <div className="flex items-center gap-2.5 p-2 px-3 rounded-2xl bg-blue-50/80 border border-blue-200/80 max-w-sm w-full shadow-2xs">
-                    <div className="w-8 h-8 rounded-xl bg-[#0B1E48] text-white font-black text-xs flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-2.5 p-2 px-3 rounded-2xl bg-sky-50/80 border border-sky-200/80 max-w-sm w-full shadow-2xs">
+                    <div className="w-8 h-8 rounded-xl bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
                       {verifiedRegMember.full_name.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-extrabold text-xs text-slate-900 truncate">
+                        <span className="font-extrabold text-xs text-[#061651] truncate">
                           {verifiedRegMember.full_name}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-[#1351D8] border border-blue-200 shrink-0">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-[#0284C7] border border-sky-200 shrink-0">
                           {verifiedRegMember.department_name}
                         </span>
                       </div>
@@ -627,12 +683,12 @@ function CheckinContent() {
                         }
                       }}
                       placeholder="Nhập MSSV (VD: 24310069)..."
-                      className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                      className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10 rounded-xl px-3.5 py-2 text-xs font-bold text-[#061651] placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
                     />
                     <button
                       type="button"
                       onClick={handleVerifyMssv}
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] transition shadow-xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
                     >
                       Xác thực
                     </button>
@@ -642,10 +698,10 @@ function CheckinContent() {
 
               {/* Thông báo hướng dẫn nếu chưa xác thực MSSV */}
               {!verifiedRegMember && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/60 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/75 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                   <div className="space-y-0.5">
-                    <h4 className="text-xs font-bold text-[#0B1E48] flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-[#1351D8]" />
+                    <h4 className="text-xs font-bold text-[#061651] flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-[#0284C7]" />
                       <span>Xác thực danh tính bằng Mã sinh viên (MSSV)</span>
                     </h4>
                     <p className="text-[11.5px] text-slate-500 font-medium">
@@ -689,7 +745,7 @@ function CheckinContent() {
                     >
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200/80">
                             {evt.category === 'workshop'
                               ? 'Workshop chuyên đề'
                               : evt.category === 'teambuilding'
@@ -707,7 +763,7 @@ function CheckinContent() {
                           </span>
                         </div>
 
-                        <h4 className="text-base font-black text-[#0B1E48] leading-tight">
+                        <h4 className="text-base font-black text-[#061651] leading-tight">
                           {evt.title}
                         </h4>
                         <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
@@ -716,11 +772,11 @@ function CheckinContent() {
 
                         <div className="pt-2 space-y-1.5 text-xs text-slate-500">
                           <div className="flex items-center gap-2 font-semibold text-slate-700">
-                            <Calendar className="w-3.5 h-3.5 text-[#1351D8]" />
+                            <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
                             <span>{evt.date} ({evt.startTime} - {evt.endTime})</span>
                           </div>
                           <div className="flex items-center gap-2 text-slate-600">
-                            <MapPin className="w-3.5 h-3.5 text-[#1351D8]" />
+                            <MapPin className="w-3.5 h-3.5 text-[#0284C7]" />
                             <span className="truncate">{evt.location}</span>
                           </div>
                           <div className="flex items-center gap-2 text-emerald-700 font-bold">
@@ -764,9 +820,9 @@ function CheckinContent() {
                                 input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                                 setMssvError('Vui lòng nhập MSSV của bạn ở trên để xác nhận Ban & Họ tên trước khi đăng ký!')
                               }}
-                              className="px-4 py-2 rounded-xl text-xs font-bold text-[#0B1E48] bg-blue-50 hover:bg-blue-100 border border-blue-200/80 transition-all cursor-pointer flex items-center gap-1.5"
+                              className="px-4 py-2 rounded-xl text-xs font-bold text-[#061651] bg-sky-50 hover:bg-sky-100 border border-sky-200/80 transition-all cursor-pointer flex items-center gap-1.5"
                             >
-                              <UserCheck className="w-3.5 h-3.5 text-[#1351D8]" />
+                              <UserCheck className="w-3.5 h-3.5 text-[#0284C7]" />
                               <span>Nhập MSSV để đăng ký</span>
                             </button>
                           )}
@@ -810,7 +866,7 @@ function CheckinContent() {
                     suppressHydrationWarning
                     value={selectedEventId}
                     onChange={(e) => setSelectedEventId(e.target.value)}
-                    className="w-full bg-slate-50/70 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs cursor-pointer"
+                    className="w-full bg-slate-50/70 border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#0284C7] transition shadow-2xs cursor-pointer"
                   >
                     {events.map((e) => (
                       <option key={e.id} value={e.id} suppressHydrationWarning>
@@ -824,7 +880,7 @@ function CheckinContent() {
               {currentEvent ? (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-base sm:text-lg font-black text-[#0B1E48] leading-snug tracking-tight">
+                    <h3 className="text-base sm:text-lg font-black text-[#061651] leading-snug tracking-tight">
                       {currentEvent.title}
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed font-normal mt-1.5">
@@ -834,7 +890,7 @@ function CheckinContent() {
 
                   <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-2.5 text-xs">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#1351D8] flex items-center justify-center shrink-0 shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-sky-100 text-[#0284C7] flex items-center justify-center shrink-0 shadow-2xs">
                         <Calendar className="w-4 h-4" />
                       </div>
                       <div>
@@ -854,15 +910,15 @@ function CheckinContent() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/60 border border-blue-200/80 rounded-2xl text-xs text-blue-950 space-y-1.5 shadow-2xs">
-                    <div className="flex items-center gap-2 font-bold text-[#0B1E48]">
-                      <div className="w-6 h-6 rounded-lg bg-[#1351D8] text-white flex items-center justify-center shadow-xs">
+                  <div className="p-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/60 border border-sky-200/80 rounded-2xl text-xs text-blue-950 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center gap-2 font-bold text-[#061651]">
+                      <div className="w-6 h-6 rounded-lg bg-[#0284C7] text-white flex items-center justify-center shadow-xs">
                         <Sparkles className="w-3.5 h-3.5" />
                       </div>
                       <span className="text-xs font-black">Mức điểm cộng nhận được:</span>
                     </div>
                     <p className="text-[11.5px] text-blue-900 leading-relaxed pl-8">
-                      Điểm danh đúng giờ được cộng <span className="inline-block px-1.5 py-0.5 rounded-md bg-white border border-blue-200 text-[#1351D8] font-black font-mono shadow-2xs">+{currentEvent.pointBonus || 1} điểm thi đua</span> trực tiếp vào hồ sơ tháng sau khi BCN chốt buổi.
+                      Điểm danh đúng giờ được cộng <span className="inline-block px-1.5 py-0.5 rounded-md bg-white border border-sky-200 text-[#0284C7] font-black font-mono shadow-2xs">+{currentEvent.pointBonus || 1} điểm thi đua</span> trực tiếp vào hồ sơ tháng sau khi BCN chốt buổi.
                     </p>
                   </div>
 
@@ -905,15 +961,15 @@ function CheckinContent() {
               {/* TRƯỜNG HỢP 1: Thiết bị đã điểm danh và bị khóa (Chống điểm danh hộ trên 1 điện thoại) */}
               {deviceLockedMember && !isKioskMode && !checkinResult ? (
                 <div className="text-center py-6 space-y-5 animate-in zoom-in-95 duration-200">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1351D8] border border-blue-200 flex items-center justify-center mx-auto shadow-sm">
+                  <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#0284C7] border border-sky-200 flex items-center justify-center mx-auto shadow-sm">
                     <Lock className="w-8 h-8" />
                   </div>
 
                   <div className="space-y-1.5">
-                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-blue-100 text-blue-900 border border-blue-200">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-sky-100 text-blue-900 border border-sky-200">
                       Thiết bị cá nhân đã khóa xác thực
                     </span>
-                    <h3 className="text-xl font-black text-[#0B1E48]">
+                    <h3 className="text-xl font-black text-[#061651]">
                       Bạn Đã Hoàn Tất Điểm Danh!
                     </h3>
                     <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
@@ -933,7 +989,7 @@ function CheckinContent() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500 font-medium">Trạng thái thiết bị:</span>
-                      <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60 flex items-center gap-1">
+                      <span className="font-bold text-blue-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200/60 flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         Đã khóa bảo vệ chính chủ
                       </span>
@@ -944,7 +1000,7 @@ function CheckinContent() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('lookup')}
-                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#1351D8] text-white hover:bg-[#0F3282] shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0284C7] text-white hover:bg-[#0369A1] shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <Award className="w-3.5 h-3.5" />
                       <span>Tra cứu điểm thi đua cá nhân</span>
@@ -970,7 +1026,7 @@ function CheckinContent() {
                     <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
                       Điểm danh thành công
                     </span>
-                    <h3 className="text-xl font-black text-[#0B1E48] mt-2">
+                    <h3 className="text-xl font-black text-[#061651] mt-2">
                       Ghi Nhận Sự Hiện Diện!
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
@@ -988,7 +1044,7 @@ function CheckinContent() {
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                       <span className="text-slate-500 font-medium">Ban trực thuộc:</span>
-                      <span className="font-bold text-[#1351D8]">{checkinResult.member?.department_name}</span>
+                      <span className="font-bold text-[#0284C7]">{checkinResult.member?.department_name}</span>
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                       <span className="text-slate-500 font-medium">Trạng thái đăng ký:</span>
@@ -1030,7 +1086,7 @@ function CheckinContent() {
                           setPinInput('')
                           setPhoneLastDigits('')
                         }}
-                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#1351D8] text-white hover:bg-[#0F3282] shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0284C7] text-white hover:bg-[#0369A1] shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <UserPlus className="w-4 h-4" />
                         <span>Điểm danh thành viên tiếp theo (Kiosk)</span>
@@ -1040,7 +1096,7 @@ function CheckinContent() {
                         <button
                           type="button"
                           onClick={() => setActiveTab('lookup')}
-                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#1351D8] text-white hover:bg-[#0F3282] shadow-sm transition active:scale-95 cursor-pointer"
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0284C7] text-white hover:bg-[#0369A1] shadow-sm transition active:scale-95 cursor-pointer"
                         >
                           Xem Bảng Điểm Thi Đua
                         </button>
@@ -1062,11 +1118,11 @@ function CheckinContent() {
                   <div className="space-y-3 pb-3.5 border-b border-slate-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1351D8] border border-blue-200/80 flex items-center justify-center font-bold shadow-2xs">
+                        <div className="w-9 h-9 rounded-xl bg-sky-50 text-[#0284C7] border border-sky-200/80 flex items-center justify-center font-bold shadow-2xs">
                           <UserCheck className="w-4 h-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm sm:text-base font-black text-[#0B1E48]">
+                          <h3 className="text-sm sm:text-base font-black text-[#061651]">
                             Xác Thực Thành Viên &amp; Điểm Danh
                           </h3>
                           <p className="text-[11px] text-slate-500 font-medium">
@@ -1080,37 +1136,51 @@ function CheckinContent() {
                           <span>KIOSK LỄ TÂN</span>
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#1351D8] border border-blue-200/80">
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200/80">
                           {checkinMethod === 'qr_pass' ? 'Quét QR 1-Giây' : '3 Bước xác thực'}
                         </span>
                       )}
                     </div>
 
-                    {/* Switcher: Mã QR vs Nhập mã PIN */}
-                    <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/90 gap-1 text-xs font-bold shadow-2xs">
+                    {/* Switcher: Mã QR vs Nhập mã PIN (Style Pill Tabs) */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
                       <button
                         type="button"
                         onClick={() => setCheckinMethod('qr_pass')}
-                        className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-full text-xs transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-1.5 ${
                           checkinMethod === 'qr_pass'
-                            ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80 font-black'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            ? 'bg-[#0284C7] text-white shadow-xs font-bold'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium'
                         }`}
                       >
-                        <QrCode className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>🎟️ Mã QR (Core Team Quét Nhận Ngay)</span>
+                        <QrCode className="w-3.5 h-3.5 shrink-0" />
+                        <span>Mã QR cá nhân (Quét nhận ngay)</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            checkinMethod === 'qr_pass' ? 'bg-white/20 text-white' : 'bg-slate-200/90 text-slate-600'
+                          }`}
+                        >
+                          Nhanh
+                        </span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setCheckinMethod('pin_form')}
-                        className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-full text-xs transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-1.5 ${
                           checkinMethod === 'pin_form'
-                            ? 'bg-white text-[#1351D8] shadow-xs border border-slate-200/80 font-black'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                            ? 'bg-[#0284C7] text-white shadow-xs font-bold'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium'
                         }`}
                       >
-                        <Key className="w-4 h-4 text-[#1351D8] shrink-0" />
-                        <span>🔢 Tự Nhập Mã PIN Máy Chiếu</span>
+                        <Key className="w-3.5 h-3.5 shrink-0" />
+                        <span>Nhập mã PIN máy chiếu</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            checkinMethod === 'pin_form' ? 'bg-white/20 text-white' : 'bg-slate-200/90 text-slate-600'
+                          }`}
+                        >
+                          4 số
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1147,9 +1217,9 @@ function CheckinContent() {
                       {verifiedRegMember ? (
                         <div className="space-y-3.5">
                           {/* Thanh thông tin thành viên đã xác thực chính chủ */}
-                          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white border border-blue-200/80 shadow-2xs">
+                          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white border border-sky-200/80 shadow-2xs">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-10 h-10 rounded-xl bg-[#0B1E48] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                              <div className="w-10 h-10 rounded-xl bg-[#061651] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
                                 {verifiedRegMember.full_name.charAt(0)}
                               </div>
                               <div className="min-w-0">
@@ -1157,7 +1227,7 @@ function CheckinContent() {
                                   <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
                                     {verifiedRegMember.full_name}
                                   </span>
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200 shrink-0">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-[#0284C7] border border-sky-200 shrink-0">
                                     {verifiedRegMember.department_name}
                                   </span>
                                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
@@ -1188,7 +1258,7 @@ function CheckinContent() {
                           )}
                         </div>
                       ) : (
-                        <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-white to-slate-50 border border-blue-200/80 shadow-2xs space-y-3.5">
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-white to-slate-50 border border-sky-200/80 shadow-2xs space-y-3.5">
                           <div>
                             <label className="block text-xs font-bold text-slate-800 mb-1.5">
                               Nhập Mã sinh viên (MSSV) của bạn để lấy mã QR cá nhân: <span className="text-rose-500">*</span>
@@ -1209,12 +1279,12 @@ function CheckinContent() {
                                   }
                                 }}
                                 placeholder="Nhập MSSV (VD: 24310069)..."
-                                className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                                className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
                               />
                               <button
                                 type="button"
                                 onClick={handleVerifyMssv}
-                                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#061651] hover:bg-[#0284C7] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
                               >
                                 Xác thực &amp; Lấy vé QR
                               </button>
@@ -1230,7 +1300,7 @@ function CheckinContent() {
 
                           <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
                             <p className="font-bold text-slate-800 flex items-center gap-1.5">
-                              <ShieldCheck className="w-4 h-4 text-[#1351D8]" />
+                              <ShieldCheck className="w-4 h-4 text-[#0284C7]" />
                               <span>Tránh nhầm lẫn vé QR &amp; bảo vệ quyền lợi cá nhân</span>
                             </p>
                             <p className="text-[11.5px] leading-relaxed text-slate-500">
@@ -1260,7 +1330,7 @@ function CheckinContent() {
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
                             <label className="block text-xs font-bold text-slate-800">
-                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-[#0284C7] text-[11px] font-black mr-1.5">1</span>
                               Thành viên điểm danh:
                             </label>
                             <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -1270,7 +1340,7 @@ function CheckinContent() {
                           </div>
                           <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-xl bg-[#0B1E48] text-white font-black text-xs flex items-center justify-center shrink-0">
+                              <div className="w-8 h-8 rounded-xl bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
                                 {verifiedRegMember.full_name.charAt(0)}
                               </div>
                               <div className="min-w-0">
@@ -1278,7 +1348,7 @@ function CheckinContent() {
                                   <span className="font-extrabold text-xs text-slate-900 truncate">
                                     {verifiedRegMember.full_name}
                                   </span>
-                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[#1351D8]">
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-[#0284C7]">
                                     {verifiedRegMember.department_name}
                                   </span>
                                 </div>
@@ -1300,7 +1370,7 @@ function CheckinContent() {
                       ) : (
                         <div className="space-y-1.5">
                           <label className="block text-xs font-bold text-slate-800">
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">1</span>
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-[#0284C7] text-[11px] font-black mr-1.5">1</span>
                             Nhập Mã sinh viên (MSSV) của bạn: <span className="text-rose-500">*</span>
                           </label>
                           <div className="flex items-center gap-2">
@@ -1319,12 +1389,12 @@ function CheckinContent() {
                                 }
                               }}
                               placeholder="Nhập MSSV (VD: 24310069)..."
-                              className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                              className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
                             />
                             <button
                               type="button"
                               onClick={handleVerifyMssv}
-                              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#061651] hover:bg-[#0284C7] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
                             >
                               Xác thực
                             </button>
@@ -1352,7 +1422,7 @@ function CheckinContent() {
                       {/* Bước 2: Nhập mã PIN dự phòng do BTC đọc khi không quét được QR */}
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-slate-800">
-                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">2</span>
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-[#0284C7] text-[11px] font-black mr-1.5">2</span>
                           Mã PIN dự phòng (4 số do BTC đọc): <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
@@ -1365,7 +1435,7 @@ function CheckinContent() {
                             placeholder="•••• (BTC đọc mã để nhập)"
                             value={pinInput}
                             onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                            className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-center tracking-[0.3em] font-mono text-xl font-black text-[#1351D8] transition shadow-2xs placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-medium placeholder:text-slate-400"
+                            className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-4 py-2.5 text-center tracking-[0.3em] font-mono text-xl font-black text-[#0284C7] transition shadow-2xs placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-medium placeholder:text-slate-400"
                           />
                         </div>
                         <span className="block text-[11px] text-slate-500 mt-1 text-center font-medium">
@@ -1377,11 +1447,11 @@ function CheckinContent() {
                       <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 shadow-2xs">
                         <div className="flex items-center justify-between">
                           <label className="block text-xs font-bold text-slate-800">
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-[#1351D8] text-[11px] font-black mr-1.5">3</span>
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-[#0284C7] text-[11px] font-black mr-1.5">3</span>
                             Xác thực 4 số cuối Số điện thoại của bạn: <span className="text-rose-500">*</span>
                           </label>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1351D8] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200/60 shadow-2xs">
-                            <ShieldCheck className="w-3 h-3 text-[#1351D8]" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0284C7] bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200/60 shadow-2xs">
+                            <ShieldCheck className="w-3 h-3 text-[#0284C7]" />
                             Chống điểm danh hộ
                           </span>
                         </div>
@@ -1393,7 +1463,7 @@ function CheckinContent() {
                             placeholder="Ví dụ: 0705"
                             value={phoneLastDigits}
                             onChange={(e) => setPhoneLastDigits(e.target.value.replace(/\D/g, ''))}
-                            className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2 text-center tracking-[0.35em] font-mono text-base font-black text-[#0B1E48] transition shadow-2xs"
+                            className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-4 py-2 text-center tracking-[0.35em] font-mono text-base font-black text-[#061651] transition shadow-2xs"
                           />
                         </div>
                         <p className="text-[11px] text-slate-500 text-center leading-relaxed">
@@ -1407,7 +1477,7 @@ function CheckinContent() {
                         className={`w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
                           isAlreadyCheckedIn
                             ? 'bg-emerald-600 text-white cursor-default'
-                            : 'bg-gradient-to-r from-[#0B1E48] via-[#1351D8] to-[#1E62F4] hover:brightness-110 text-white shadow-[#1351D8]/20 cursor-pointer'
+                            : 'bg-gradient-to-r from-[#061651] via-[#0284C7] to-[#1E62F4] hover:brightness-110 text-white shadow-[#0284C7]/20 cursor-pointer'
                         }`}
                       >
                         {isAlreadyCheckedIn ? (
@@ -1439,15 +1509,15 @@ function CheckinContent() {
 
         {/* Modal Xác Nhận Danh Tính Khi Nhập MSSV (Dùng chung cho cả Đăng ký và Điểm danh) */}
         {targetConfirmMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#061651]/60 backdrop-blur-xs animate-fadeIn">
             <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-2xl relative space-y-4">
               {/* Header */}
               <div className="flex items-start justify-between pb-3 border-b border-slate-100">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-[#1351D8] bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-md inline-block mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#0284C7] bg-sky-50 border border-sky-200/60 px-2.5 py-0.5 rounded-md inline-block mb-1">
                     Xác thực thành viên CLB
                   </span>
-                  <h3 className="text-base sm:text-lg font-black text-[#0B1E48]">
+                  <h3 className="text-base sm:text-lg font-black text-[#061651]">
                     Xác Nhận Danh Tính Của Bạn
                   </h3>
                 </div>
@@ -1463,7 +1533,7 @@ function CheckinContent() {
               {/* Chi tiết thành viên tìm thấy */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#0B1E48] text-white font-black text-base flex items-center justify-center shadow-xs shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-[#061651] text-white font-black text-base flex items-center justify-center shadow-xs shrink-0">
                     {targetConfirmMember.full_name.charAt(0)}
                   </div>
                   <div className="min-w-0">
@@ -1471,7 +1541,7 @@ function CheckinContent() {
                       {targetConfirmMember.full_name}
                     </h4>
                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                      <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200">
+                      <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-sky-100 text-[#0284C7] border border-sky-200">
                         {targetConfirmMember.department_name}
                       </span>
                       {targetConfirmMember.position && (
@@ -1515,7 +1585,7 @@ function CheckinContent() {
                 <button
                   type="button"
                   onClick={() => handleConfirmIdentity(targetConfirmMember)}
-                  className="flex-1 py-2.5 rounded-xl bg-[#0B1E48] hover:bg-[#1351D8] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer text-center"
+                  className="flex-1 py-2.5 rounded-xl bg-[#061651] hover:bg-[#0284C7] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer text-center"
                 >
                   Xác nhận là tôi
                 </button>
@@ -1529,7 +1599,7 @@ function CheckinContent() {
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-[#0B1E48]">
+                <div className="flex items-center gap-2 text-[#061651]">
                   <Key className="w-5 h-5 text-amber-600" />
                   <h3 className="text-base font-black">Mở Khóa Kiosk Lễ Tân</h3>
                 </div>
@@ -1568,7 +1638,7 @@ function CheckinContent() {
                     placeholder="Nhập mã giám sát (Ví dụ: issac2025)"
                     value={kioskSupervisorPin}
                     onChange={(e) => setKioskSupervisorPin(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8]"
+                    className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#0284C7]"
                   />
                   <span className="block text-[11px] text-slate-400 mt-1">
                     Mã mặc định hệ thống: <code>issac2025</code> hoặc <code>8888</code>
@@ -1589,7 +1659,7 @@ function CheckinContent() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl text-xs font-bold bg-[#1351D8] text-white hover:bg-[#0F3282] transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-[#0284C7] text-white hover:bg-[#0369A1] transition shadow-xs cursor-pointer flex items-center gap-1.5"
                   >
                     <Unlock className="w-3.5 h-3.5" />
                     <span>Xác Nhận Mở Kiosk</span>
@@ -1609,11 +1679,11 @@ function CheckinContent() {
             <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#1351D8] flex items-center justify-center border border-blue-200/80 font-bold shadow-2xs">
+                  <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#0284C7] flex items-center justify-center border border-sky-200/80 font-bold shadow-2xs">
                     <Award className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-[#0B1E48]">
+                    <h3 className="text-base font-black text-[#061651]">
                       Tra Cứu Điểm Thi Đua &amp; Sổ Cái Cá Nhân
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">
@@ -1630,17 +1700,17 @@ function CheckinContent() {
                     placeholder="Tìm tên, MSSV, ban..."
                     value={lookupQuery}
                     onChange={(e) => setLookupQuery(e.target.value)}
-                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#1351D8] shadow-2xs transition"
+                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-full pl-9 pr-4 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#0284C7] shadow-2xs transition"
                   />
                 </div>
               </div>
 
               {/* Kết quả tìm kiếm khi nhập từ khóa tra cứu */}
               {lookupQuery.trim() ? (
-                <div className="p-4 sm:p-5 bg-blue-50/50 rounded-2xl border border-blue-200/80 space-y-3 animate-in fade-in duration-200">
+                <div className="p-4 sm:p-5 bg-sky-50/50 rounded-2xl border border-sky-200/80 space-y-3 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Search className="w-3.5 h-3.5 text-[#1351D8]" />
+                      <Search className="w-3.5 h-3.5 text-[#0284C7]" />
                       <span>Kết quả tìm kiếm cho &ldquo;{lookupQuery.trim()}&rdquo; ({filteredLookupMembers.length} thành viên):</span>
                     </span>
                     <button
@@ -1670,12 +1740,12 @@ function CheckinContent() {
                             }}
                             className={`flex items-center justify-between p-3 rounded-xl border text-left transition cursor-pointer ${
                               isSelected
-                                ? 'bg-blue-100/70 border-[#1351D8] shadow-2xs'
+                                ? 'bg-sky-100/70 border-[#0284C7] shadow-2xs'
                                 : 'bg-white border-slate-200/90 hover:border-blue-300 hover:bg-slate-50'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-[#0B1E48] text-white font-black text-xs flex items-center justify-center shrink-0">
+                              <div className="w-8 h-8 rounded-lg bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
                                 {m.full_name.charAt(0)}
                               </div>
                               <div className="min-w-0">
@@ -1688,7 +1758,7 @@ function CheckinContent() {
                               </div>
                             </div>
                             <div className="text-right shrink-0 ml-2">
-                              <span className="text-xs font-black text-[#1351D8] block">{m.current_score}đ</span>
+                              <span className="text-xs font-black text-[#0284C7] block">{m.current_score}đ</span>
                               <span className="text-[10px] font-bold text-slate-400 block">#{m.rank_in_club || 1}</span>
                             </div>
                           </button>
@@ -1701,9 +1771,9 @@ function CheckinContent() {
                 /* Thẻ hiển thị điểm cá nhân của thành viên */
                 <div className="space-y-4 animate-in fade-in duration-200">
                   {/* Thanh thông tin xác thực danh tính */}
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/40 to-white border border-blue-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/40 to-white border border-sky-200/80 shadow-2xs">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-[#0B1E48] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                      <div className="w-10 h-10 rounded-xl bg-[#061651] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
                         {currentLookupMember.full_name.charAt(0)}
                       </div>
                       <div className="min-w-0">
@@ -1711,7 +1781,7 @@ function CheckinContent() {
                           <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
                             {currentLookupMember.full_name}
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200 shrink-0">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-[#0284C7] border border-sky-200 shrink-0">
                             {currentLookupMember.department_name}
                           </span>
                           {currentLookupMember.member_code === verifiedRegMember?.member_code ? (
@@ -1720,7 +1790,7 @@ function CheckinContent() {
                               Hồ sơ chính chủ của bạn
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 shrink-0">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200 shrink-0">
                               Kết quả tra cứu
                             </span>
                           )}
@@ -1740,7 +1810,7 @@ function CheckinContent() {
                             setSelectedLookupMember(verifiedRegMember.member_code)
                             setLookupQuery('')
                           }}
-                          className="text-xs font-bold text-[#1351D8] hover:text-[#0B1E48] px-2.5 py-1.5 rounded-xl hover:bg-blue-50 border border-blue-200 transition cursor-pointer"
+                          className="text-xs font-bold text-[#0284C7] hover:text-[#061651] px-2.5 py-1.5 rounded-xl hover:bg-sky-50 border border-sky-200 transition cursor-pointer"
                         >
                           Về điểm của tôi
                         </button>
@@ -1763,15 +1833,15 @@ function CheckinContent() {
                   <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 space-y-5 shadow-2xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
                       <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0B1E48] to-[#1351D8] text-white font-black flex items-center justify-center text-lg shadow-sm shrink-0">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#061651] to-[#0284C7] text-white font-black flex items-center justify-center text-lg shadow-sm shrink-0">
                           {currentLookupMember.full_name.charAt(0)}
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-lg font-black text-[#0B1E48]">
+                            <h4 className="text-lg font-black text-[#061651]">
                               {currentLookupMember.full_name}
                             </h4>
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#1351D8] border border-blue-200/70">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-[#0284C7] border border-sky-200/70">
                               {currentLookupMember.department_name}
                             </span>
                           </div>
@@ -1786,7 +1856,7 @@ function CheckinContent() {
                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                             Điểm thi đua hiện tại
                           </span>
-                          <span className="text-2xl sm:text-3xl font-black text-[#1351D8]">
+                          <span className="text-2xl sm:text-3xl font-black text-[#0284C7]">
                             {currentLookupMember.current_score}đ
                           </span>
                         </div>
@@ -1794,7 +1864,7 @@ function CheckinContent() {
                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                             Xếp hạng CLB
                           </span>
-                          <span className="text-2xl sm:text-3xl font-black text-[#0B1E48]">
+                          <span className="text-2xl sm:text-3xl font-black text-[#061651]">
                             #{currentLookupMember.rank_in_club || 1}
                           </span>
                         </div>
@@ -1824,9 +1894,9 @@ function CheckinContent() {
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200/70 text-xs text-slate-600 space-y-1">
-                      <p className="font-bold text-[#0B1E48] flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-[#1351D8]" />
+                    <div className="p-3.5 rounded-xl bg-sky-50/60 border border-sky-200/70 text-xs text-slate-600 space-y-1">
+                      <p className="font-bold text-[#061651] flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-[#0284C7]" />
                         <span>Quy chế tính điểm thi đua CLB Đại sứ sinh viên (iSSAC)</span>
                       </p>
                       <p className="text-[11px] leading-relaxed text-slate-500">
@@ -1837,7 +1907,7 @@ function CheckinContent() {
                 </div>
               ) : (
                 /* Form nhập MSSV tra cứu điểm khi chưa xác thực */
-                <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border border-blue-200/80 shadow-2xs space-y-4 animate-in fade-in duration-200">
+                <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border border-sky-200/80 shadow-2xs space-y-4 animate-in fade-in duration-200">
                   <div>
                     <label className="block text-xs font-bold text-slate-800 mb-1.5">
                       Nhập Mã sinh viên (MSSV) của bạn để tra cứu điểm thi đua: <span className="text-rose-500">*</span>
@@ -1858,12 +1928,12 @@ function CheckinContent() {
                           }
                         }}
                         placeholder="Nhập MSSV (VD: 24310069)..."
-                        className="w-full bg-white border border-slate-200/90 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
+                        className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs"
                       />
                       <button
                         type="button"
                         onClick={handleVerifyMssv}
-                        className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0B1E48] hover:bg-[#1351D8] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
+                        className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#061651] hover:bg-[#0284C7] transition shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
                       >
                         Tra cứu điểm
                       </button>
@@ -1879,7 +1949,7 @@ function CheckinContent() {
 
                   <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
                     <p className="font-bold text-slate-800 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-[#1351D8]" />
+                      <ShieldCheck className="w-4 h-4 text-[#0284C7]" />
                       <span>Bảo mật kết quả &amp; Tránh nhầm lẫn bảng điểm</span>
                     </p>
                     <p className="text-[11.5px] leading-relaxed text-slate-500">
