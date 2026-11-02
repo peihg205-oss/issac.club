@@ -287,19 +287,6 @@ export function ScoreModal({
               <ClipboardList className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide bg-sky-50 text-[#0284C7] border border-sky-200/80 mb-0.5">
-                <span>
-                  {isBCN
-                    ? '👑 Ban Chủ Nhiệm (Toàn quyền tất cả các ban)'
-                    : isHR || currentUser?.departmentCode === 'B03'
-                    ? '📋 Ban Nhân Sự (Cho điểm tất cả các ban)'
-                    : currentUser?.departmentCode === 'B01'
-                    ? '📢 Ban Truyền Thông (Cho điểm thành viên Ban Truyền thông)'
-                    : currentUser?.departmentCode === 'B02'
-                    ? '💡 Ban Tư Vấn (Cho điểm thành viên Ban Tư vấn)'
-                    : 'Cán bộ CLB'}
-                </span>
-              </div>
               <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight">
                 {isBCN ? 'Trung Tâm Chấm Điểm & Phê Duyệt' : 'Đề Xuất Chấm Điểm Thi Đua'}
               </h3>
