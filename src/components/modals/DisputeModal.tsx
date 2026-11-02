@@ -639,16 +639,16 @@ export function DisputeModal({
                 </div>
               </div>
 
-              {/* Hộp Stepper Tăng/Giảm điểm to rõ, không bị đè chữ */}
-              <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 sm:p-1.5 shadow-2xs focus-within:border-[#7026ED] focus-within:ring-2 focus-within:ring-[#7026ED]/15 transition">
-                {/* Nút Giảm điểm (-) */}
+              {/* Hộp Stepper Tăng/Giảm điểm gọn gàng, nút nhỏ tinh tế */}
+              <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-2 sm:py-2.5 shadow-2xs focus-within:border-[#7026ED] focus-within:ring-2 focus-within:ring-[#7026ED]/15 transition">
+                {/* Nút Giảm điểm (-) nhỏ gọn */}
                 <button
                   type="button"
                   onClick={() => setPoints((prev) => prev - 1)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer"
+                  className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
                   title="Giảm 1 điểm"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3 h-3 stroke-[2.5]" />
                 </button>
 
                 {/* Ô nhập số điểm trung tâm */}
@@ -658,21 +658,21 @@ export function DisputeModal({
                     step="1"
                     value={points}
                     onChange={(e) => setPoints(Number(e.target.value))}
-                    className="w-14 text-center text-xs sm:text-[14px] font-extrabold text-rose-600 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-12 text-center text-xs sm:text-[13px] font-extrabold text-rose-600 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <span className="text-xs font-bold text-slate-400 select-none">
+                  <span className="text-[11px] sm:text-xs font-bold text-slate-400 select-none">
                     điểm
                   </span>
                 </div>
 
-                {/* Nút Tăng điểm (+) */}
+                {/* Nút Tăng điểm (+) nhỏ gọn */}
                 <button
                   type="button"
                   onClick={() => setPoints((prev) => prev + 1)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer"
+                  className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
                   title="Tăng 1 điểm"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3 stroke-[2.5]" />
                 </button>
               </div>
             </div>
