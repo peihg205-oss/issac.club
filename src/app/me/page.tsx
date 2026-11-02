@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { getRatingLevel } from '@/lib/scoring/constants'
 import type { RosterMember } from '@/lib/clubData'
 import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
+import { DisputeModal } from '@/components/modals/DisputeModal'
 import {
   UserCheck,
   Shield,
@@ -35,8 +36,6 @@ export default function MyScorePage() {
   const initialCode = currentUser?.memberCode || members[0]?.member_code
   const [selectedCode, setSelectedCode] = useState<string>(initialCode)
   const [disputeModalOpen, setDisputeModalOpen] = useState(false)
-  const [disputeReason, setDisputeReason] = useState('')
-  const [disputeSuccess, setDisputeSuccess] = useState(false)
 
   if (!isAuthChecked) {
     return (
@@ -120,23 +119,6 @@ export default function MyScorePage() {
 
     return list
   }, [proposals, events, member])
-
-  const handleDisputeSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!disputeReason.trim()) return
-    createDispute({
-      memberCode: member.member_code,
-      criterionCode: 'Q06',
-      pointsContested: 0,
-      reason: disputeReason.trim(),
-    })
-    setDisputeSuccess(true)
-    setTimeout(() => {
-      setDisputeModalOpen(false)
-      setDisputeSuccess(false)
-      setDisputeReason('')
-    }, 2000)
-  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -349,82 +331,11 @@ export default function MyScorePage() {
       </div>
 
       {/* Dispute Modal (Q06) */}
-      {disputeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="glass-panel-glow rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-white/20 shadow-2xl relative space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-[#F5B301]" />
-                Đề Nghị Giải Trình & Đối Chiếu (Q06)
-              </h3>
-              <button
-                onClick={() => setDisputeModalOpen(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            {disputeSuccess ? (
-              <div className="py-6 text-center space-y-2">
-                <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto" />
-                <h4 className="text-sm font-bold text-white">Đã Gửi Đề Nghị Thành Công!</h4>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Ban Chủ nhiệm và Trưởng ban sẽ tiếp nhận và phản hồi trong thời hạn 3 ngày làm việc.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleDisputeSubmit} className="space-y-3.5">
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Theo quy chế Q06, thành viên có quyền giải trình kèm minh chứng. Vui lòng nêu rõ lý do và cung cấp link minh chứng.
-                </p>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Nội dung đề nghị đối chiếu / sửa đổi:
-                  </label>
-                  <textarea
-                    rows={3}
-                    required
-                    value={disputeReason}
-                    onChange={(e) => setDisputeReason(e.target.value)}
-                    placeholder="VD: Em xin phép đối chiếu buổi họp ngày 05/10, em có mặt từ 14:00 đến hết buổi nhưng bị ghi nhận muộn..."
-                    className="w-full bg-[#070D1E] border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#1E63D6]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Link minh chứng (nếu có):
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://drive.google.com/..."
-                    className="w-full bg-[#070D1E] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#1E63D6]"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setDisputeModalOpen(false)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white/5 text-slate-300 hover:bg-white/10"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold bg-[#1E63D6] text-white hover:bg-[#1E63D6]/90 shadow"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Gửi Đề Nghị</span>
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      <DisputeModal
+        isOpen={disputeModalOpen}
+        onClose={() => setDisputeModalOpen(false)}
+        initialMemberCode={member.member_code}
+      />
     </div>
   )
 }

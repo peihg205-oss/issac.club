@@ -6,6 +6,7 @@ import { useClub } from '@/lib/context/ClubContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 import { getMemberAvatarUrl } from '@/lib/clubData'
 import { ScoreModal } from '@/components/admin/ScoreModal'
+import { DisputeModal } from '@/components/modals/DisputeModal'
 import {
   Download,
   PlusCircle,
@@ -106,8 +107,6 @@ export function HistoryView() {
   const [disputeMemberCode, setDisputeMemberCode] = useState(members[0]?.member_code || '')
   const [disputeCriterion, setDisputeCriterion] = useState('T02')
   const [disputePoints, setDisputePoints] = useState(-5)
-  const [disputeReason, setDisputeReason] = useState('')
-  const [disputeEvidence, setDisputeEvidence] = useState('')
 
   // State Ban Chủ nhiệm & Ban Nhân sự xét duyệt khiếu nại
   const [verdictModalOpen, setVerdictModalOpen] = useState(false)
@@ -344,32 +343,6 @@ export function HistoryView() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
-
-  // Submit dispute form
-  const handleSubmitDispute = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!disputeReason.trim()) {
-      alert('Vui lòng nhập lý do khiếu nại chi tiết!')
-      return
-    }
-
-    const res = createDispute({
-      memberCode: disputeMemberCode,
-      criterionCode: disputeCriterion,
-      pointsContested: disputePoints,
-      reason: disputeReason,
-      evidenceUrl: disputeEvidence,
-    })
-
-    if (res.success) {
-      alert(res.message)
-      setDisputeReason('')
-      setDisputeEvidence('')
-      setDisputeModalOpen(false)
-    } else {
-      alert(res.message)
-    }
   }
 
   return (
@@ -877,23 +850,34 @@ export function HistoryView() {
       {/* View Tab 4: Khiếu nại Q06 */}
       {activeTab === 'disputes' ? (
         <div className="space-y-4">
-          <div className="rounded-2xl p-4 sm:p-5 border border-purple-200/90 bg-gradient-to-br from-purple-50/80 via-indigo-50/30 to-purple-50/50 shadow-2xs space-y-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-400/40 text-purple-700 flex items-center justify-center shadow-xs flex-shrink-0">
-                <MessageSquare className="w-4 h-4 text-purple-600" />
+          <div className="rounded-2xl p-4 sm:p-5 border border-purple-200/90 bg-gradient-to-br from-purple-50/80 via-indigo-50/30 to-purple-50/50 shadow-2xs space-y-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-400/40 text-purple-700 flex items-center justify-center shadow-xs flex-shrink-0">
+                  <MessageSquare className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-purple-950">
+                    Quy trình xử lý khiếu nại điểm (Q06 - Quy chế Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế)
+                  </h3>
+                  <p className="text-[11px] text-purple-800/80 font-medium">
+                    Đảm bảo công bằng, minh bạch - Thời hạn giải quyết tối đa 7 ngày làm việc
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-black text-purple-950">
-                  Quy trình xử lý khiếu nại điểm (Q06 - Quy chế Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế)
-                </h3>
-                <p className="text-[11px] text-purple-800/80 font-medium">
-                  Đảm bảo công bằng, minh bạch - Thời hạn giải quyết tối đa 7 ngày làm việc
-                </p>
-              </div>
+              <p className="text-xs text-purple-900/85 leading-relaxed pl-10.5">
+                Thành viên có quyền khiếu nại điểm trong vòng 7 ngày kể từ khi có biến động điểm. Ban Nhân sự thẩm định sơ bộ hoặc Ban Chủ nhiệm có toàn quyền trực tiếp kiểm tra và ra phán quyết cuối cùng (Hoàn trả điểm hoặc Bác khiếu nại).
+              </p>
             </div>
-            <p className="text-xs text-purple-900/85 leading-relaxed pl-10.5">
-              Thành viên có quyền khiếu nại điểm trong vòng 7 ngày kể từ khi có biến động điểm. Ban Nhân sự thẩm định sơ bộ hoặc Ban Chủ nhiệm có toàn quyền trực tiếp kiểm tra và ra phán quyết cuối cùng (Hoàn trả điểm hoặc Bác khiếu nại).
-            </p>
+
+            <button
+              type="button"
+              onClick={() => setDisputeModalOpen(true)}
+              className="px-5 py-2.5 rounded-2xl bg-[#7026ED] hover:bg-[#621fde] text-white text-xs font-bold shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-2 self-start md:self-center"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>Gửi đơn khiếu nại mới</span>
+            </button>
           </div>
 
           <div className="space-y-3">
@@ -1369,126 +1353,14 @@ export function HistoryView() {
       </>
     )}
 
-      {/* Modal nộp khiếu nại điểm Q06 */}
-      {disputeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#0B1E48]/55 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200/90 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center border border-purple-200/80 shadow-2xs">
-                  <AlertCircle className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#0B1E48] tracking-tight">
-                    Gửi đơn khiếu nại điểm (Q06)
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Quy chuẩn bảo vệ quyền lợi thành viên CLB iSSAC
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDisputeModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitDispute} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Thành viên khiếu nại:
-                </label>
-                <select
-                  value={disputeMemberCode}
-                  onChange={(e) => setDisputeMemberCode(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
-                >
-                  {members.map((m) => (
-                    <option key={m.member_code} value={m.member_code}>
-                      {m.full_name} ({m.department_name} - {m.student_id || m.member_code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Mã tiêu chí bị trừ:
-                  </label>
-                  <select
-                    value={disputeCriterion}
-                    onChange={(e) => setDisputeCriterion(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
-                  >
-                    <option value="T02">T02 (Vắng không phép -5đ)</option>
-                    <option value="T04">T04 (Đi họp muộn -1đ)</option>
-                    <option value="T07">T07 (Trễ deadline -2đ)</option>
-                    <option value="T05">T05 (Không xác nhận TB -1đ)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Số điểm khiếu nại:
-                  </label>
-                  <input
-                    type="number"
-                    value={disputePoints}
-                    onChange={(e) => setDisputePoints(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Lý do chi tiết &amp; Giải trình:
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Nêu rõ hoàn cảnh, lý do bất khả kháng hoặc minh chứng đã nộp..."
-                  value={disputeReason}
-                  onChange={(e) => setDisputeReason(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Đường dẫn minh chứng (Google Drive / Ảnh):
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://drive.google.com/..."
-                  value={disputeEvidence}
-                  onChange={(e) => setDisputeEvidence(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:border-[#1351D8] transition shadow-2xs"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2.5 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setDisputeModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200/80 transition cursor-pointer"
-                >
-                  Huỷ
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-sm shadow-purple-600/25 transition-all active:scale-95 cursor-pointer"
-                >
-                  Gửi khiếu nại
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modal nộp khiếu nại điểm Q06 chuẩn giao diện dự án */}
+      <DisputeModal
+        isOpen={disputeModalOpen}
+        onClose={() => setDisputeModalOpen(false)}
+        initialMemberCode={disputeMemberCode}
+        initialCriterionCode={disputeCriterion}
+        initialPoints={disputePoints}
+      />
 
       {/* Modal Sửa Điểm Nhầm cho BCN */}
       {editingProposal && (
