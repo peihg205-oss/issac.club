@@ -607,7 +607,7 @@ export function ScoreModal({
               {/* CỘT PHẢI (7 Cols): THAO TÁC CHO ĐIỂM DỄ SỬ DỤNG - KHÔNG BỊ RỐI */}
               <div className="lg:col-span-7 space-y-3.5">
                 
-                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Dàn đều 3 cột cân xứng */}
+                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Dàn đều 3 cột cân xứng, không bị cắt chữ */}
                 <div>
                   <label className="block text-xs font-bold text-[#061651] mb-2">
                     Chọn loại điểm muốn ghi nhận:
@@ -625,7 +625,7 @@ export function ScoreModal({
                       },
                       {
                         id: 'add' as const,
-                        label: 'Cống hiến (Cộng)',
+                        label: 'Cống hiến (+)',
                         badge: builtinAddRules.length + customAddRules.length,
                         activeColor: 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-600/20',
                         inactiveColor: 'bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100/80 font-semibold border border-emerald-200/60',
@@ -648,13 +648,13 @@ export function ScoreModal({
                           key={tab.id}
                           type="button"
                           onClick={() => handleCategorySwitch(tab.id)}
-                          className={`w-full px-2 sm:px-3 py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                          className={`w-full px-2 sm:px-3 py-2 rounded-xl text-[11.5px] sm:text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                             isSelected ? tab.activeColor : tab.inactiveColor
                           }`}
                         >
-                          <span className="truncate">{tab.label}</span>
+                          <span className="whitespace-nowrap font-bold">{tab.label}</span>
                           <span
-                            className={`px-1.5 py-0.5 rounded-full text-[10.5px] font-bold flex items-center justify-center min-w-[18px] shrink-0 ${
+                            className={`px-1.5 py-0.5 rounded-full text-[10px] sm:text-[10.5px] font-bold flex items-center justify-center min-w-[18px] shrink-0 ${
                               isSelected ? tab.badgeActive : tab.badgeInactive
                             }`}
                           >
@@ -759,25 +759,55 @@ export function ScoreModal({
                     </div>
                   </div>
                 ) : (
-                  /* 2. Điểm tự cho (Tăng giảm điểm tùy biến) */
-                  <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-[#061651] text-xs flex items-center gap-1.5">
-                        <Pencil className="w-3.5 h-3.5 text-[#0284C7]" />
-                        <span>Chế độ tự cho điểm (Tùy biến):</span>
-                      </span>
-                      <span className="text-[11px] text-slate-500 font-medium">
-                        {customPoints < 0 ? (
-                          <span className="text-rose-600 font-bold">● Đang trừ điểm (Phạt)</span>
-                        ) : customPoints > 0 ? (
-                          <span className="text-emerald-600 font-bold">● Đang cộng điểm (Thưởng)</span>
-                        ) : (
-                          <span>Điểm âm (-) là phạt, dương (+) là thưởng</span>
-                        )}
-                      </span>
+                  /* 2. Điểm tự cho (Tăng giảm điểm tùy biến - Tối ưu bố cục gọn gàng, hài hòa) */
+                  <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-2.5">
+                    
+                    {/* Hàng 1: Header + Chuyển nhanh chế độ Phạt (-) / Thưởng (+) Segmented gọn gàng */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Pencil className="w-3.5 h-3.5 text-[#0284C7] shrink-0" />
+                        <span className="font-bold text-[#061651] text-xs">
+                          Chế độ tự cho điểm:
+                        </span>
+                      </div>
+
+                      {/* Segmented Pill: Phạt (-) / Thưởng (+) */}
+                      <div className="flex items-center bg-slate-200/75 p-0.5 rounded-xl shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentAbs = Math.abs(customPoints) || 2
+                            setCustomPoints(-currentAbs)
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            customPoints < 0
+                              ? 'bg-rose-600 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-rose-700'
+                          }`}
+                        >
+                          <Minus className="w-3 h-3 stroke-[2.5]" />
+                          <span>Phạt (-)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentAbs = Math.abs(customPoints) || 2
+                            setCustomPoints(currentAbs)
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            customPoints > 0
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-emerald-700'
+                          }`}
+                        >
+                          <Plus className="w-3 h-3 stroke-[2.5]" />
+                          <span>Thưởng (+)</span>
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Bộ điều khiển Tăng / Giảm điểm với Stepper trực quan */}
+                    {/* Hàng 2: Bộ điều khiển Stepper trực quan, cao cấp & cân xứng */}
                     <div className="flex items-center gap-2">
                       {/* Nút Giảm 1 điểm (-) */}
                       <button
@@ -785,9 +815,9 @@ export function ScoreModal({
                         onClick={() => setCustomPoints((prev) => (prev || 0) - 1)}
                         disabled={isLocked}
                         title="Giảm 1 điểm"
-                        className="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center justify-center font-black text-lg transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+                        className="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-300 flex items-center justify-center font-black transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
                       >
-                        <Minus className="w-4 h-4 stroke-[3]" />
+                        <Minus className="w-4 h-4 stroke-[2.5]" />
                       </button>
 
                       {/* Ô nhập số điểm */}
@@ -801,11 +831,11 @@ export function ScoreModal({
                             setCustomPoints(val === '' ? 0 : Number(val))
                           }}
                           placeholder="Nhập số điểm (+ thưởng, - phạt)..."
-                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10 rounded-xl pl-3.5 pr-20 py-2.5 text-sm font-bold text-[#061651] placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10 rounded-xl pl-3.5 pr-20 py-2 text-sm font-bold text-[#061651] placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <div className="absolute right-2.5 flex items-center pointer-events-none">
                           <span
-                            className={`px-2.5 py-1 rounded-lg text-xs font-black transition ${
+                            className={`px-2.5 py-0.5 rounded-lg text-xs font-black transition ${
                               customPoints > 0
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
                                 : customPoints < 0
@@ -824,56 +854,22 @@ export function ScoreModal({
                         onClick={() => setCustomPoints((prev) => (prev || 0) + 1)}
                         disabled={isLocked}
                         title="Tăng 1 điểm"
-                        className="w-10 h-10 rounded-xl bg-white hover:bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center font-black text-lg transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+                        className="w-10 h-10 rounded-xl bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200 hover:border-emerald-300 flex items-center justify-center font-black transition active:scale-95 shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
                       >
-                        <Plus className="w-4 h-4 stroke-[3]" />
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
                       </button>
                     </div>
 
-                    {/* Chuyển nhanh chế độ Phạt / Thưởng */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentAbs = Math.abs(customPoints) || 2
-                          setCustomPoints(-currentAbs)
-                        }}
-                        className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${
-                          customPoints < 0
-                            ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
-                            : 'bg-white hover:bg-rose-50/70 text-rose-700 border-rose-200/80'
-                        }`}
-                      >
-                        <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>Chế độ Phạt (Điểm trừ -)</span>
-                      </button>
+                    {/* Hàng 3: Hai nhóm chọn nhanh đối xứng: Trừ điểm (Giảm) & Cộng điểm (Tăng) */}
+                    <div className="space-y-1 pt-0.5">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold px-0.5">
+                        <span className="text-rose-600 font-bold">● Giảm nhanh:</span>
+                        <span className="text-emerald-600 font-bold">● Tăng nhanh:</span>
+                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentAbs = Math.abs(customPoints) || 2
-                          setCustomPoints(currentAbs)
-                        }}
-                        className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${
-                          customPoints > 0
-                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
-                            : 'bg-white hover:bg-emerald-50/70 text-emerald-700 border-emerald-200/80'
-                        }`}
-                      >
-                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>Chế độ Thưởng (Điểm cộng +)</span>
-                      </button>
-                    </div>
-
-                    {/* Hai cột chọn nhanh: Trừ điểm (Giảm) & Cộng điểm (Tăng) Cân Xứng Hoàn Hảo */}
-                    <div className="grid grid-cols-2 gap-2.5 pt-1">
-                      {/* Cột Trái: Trừ điểm */}
-                      <div className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-rose-700">
-                          <span>Giảm điểm (Phạt):</span>
-                          <span className="text-[10px] text-rose-400 font-medium">Chọn nhanh</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-1.5">
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* 4 nút Trừ điểm */}
+                        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
                           {[-1, -2, -5, -10].map((pt) => {
                             const isSelected = customPoints === pt
                             return (
@@ -883,8 +879,8 @@ export function ScoreModal({
                                 onClick={() => setCustomPoints(pt)}
                                 className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center active:scale-95 ${
                                   isSelected
-                                    ? 'bg-rose-600 text-white shadow-2xs'
-                                    : 'bg-white hover:bg-rose-100/70 text-rose-700 border border-rose-200/80'
+                                    ? 'bg-rose-600 text-white shadow-xs'
+                                    : 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200/70'
                                 }`}
                               >
                                 {pt}đ
@@ -892,15 +888,9 @@ export function ScoreModal({
                             )
                           })}
                         </div>
-                      </div>
 
-                      {/* Cột Phải: Cộng điểm */}
-                      <div className="p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700">
-                          <span>Tăng điểm (Thưởng):</span>
-                          <span className="text-[10px] text-emerald-400 font-medium">Chọn nhanh</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-1.5">
+                        {/* 4 nút Cộng điểm */}
+                        <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
                           {[1, 2, 5, 10].map((pt) => {
                             const isSelected = customPoints === pt
                             return (
@@ -910,8 +900,8 @@ export function ScoreModal({
                                 onClick={() => setCustomPoints(pt)}
                                 className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center active:scale-95 ${
                                   isSelected
-                                    ? 'bg-emerald-600 text-white shadow-2xs'
-                                    : 'bg-white hover:bg-emerald-100/70 text-emerald-700 border border-emerald-200/80'
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200/70'
                                 }`}
                               >
                                 +{pt}đ
@@ -921,6 +911,7 @@ export function ScoreModal({
                         </div>
                       </div>
                     </div>
+
                   </div>
                 )}
 
