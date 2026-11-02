@@ -328,9 +328,9 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
               }`}
             />
 
-            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style như MembersView và DashboardView */}
+            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style như MembersView và DashboardView (ẩn trên mobile để không tràn viền) */}
             <div
-              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-md whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 pointer-events-none ${
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-md whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 pointer-events-none ${
                 isMascotCheering || showMascotBubble
                   ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
                   : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'

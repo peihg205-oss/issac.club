@@ -84,6 +84,9 @@ export default function AppHome() {
   const handleSelectTab = (tab: ActiveNavTab) => {
     setSelectedMember(null) // Reset member profile view when switching tabs
     setActiveTab(tab)
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsSidebarOpen(false)
+    }
   }
 
   const handleSelectMember = (member: RosterMember) => {
@@ -125,7 +128,7 @@ export default function AppHome() {
         />
 
         {/* Main Content Area - Căn đều hai bên đồng bộ với Header 100% */}
-        <main className="flex-1 py-4 sm:py-8 px-3 sm:px-6 md:px-10 lg:px-16 xl:px-20 w-full min-w-0">
+        <main className="flex-1 py-4 sm:py-8 px-3 sm:px-6 md:px-10 lg:px-16 xl:px-20 w-full min-w-0 overflow-x-hidden">
           {selectedMember ? (
             <MemberProfileView member={selectedMember} onBack={handleBackFromMember} />
           ) : activeTab === 'dashboard' ? (

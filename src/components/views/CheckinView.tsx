@@ -424,9 +424,9 @@ export function CheckinView() {
               }`}
             />
 
-            {/* Bubble lời nhắc nhở động - Chỉ hiện khi chạm hoặc hover */}
+            {/* Bubble lời nhắc nhở động (ẩn trên mobile để không tràn viền) */}
             <div
-              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-md whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 pointer-events-none ${
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-md whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 pointer-events-none ${
                 isMascotCheering || showMascotBubble
                   ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
                   : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
@@ -442,8 +442,8 @@ export function CheckinView() {
         </div>
 
         {/* Sub-tabs + Nút Máy Quét QR: 1 hàng ngang duy nhất, gọn gàng và không rớt dòng */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap self-start lg:self-center flex-shrink-0">
-          <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70 overflow-x-auto flex-shrink-0">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap self-start lg:self-center flex-shrink-0 max-w-full">
+          <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70 overflow-x-auto no-scrollbar max-w-full flex-shrink-0">
             <button
               type="button"
               onClick={() => setSubTab('admin_roster')}

@@ -157,9 +157,9 @@ export function DashboardView({
               }`}
             />
 
-            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style ảnh 2 */}
+            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style ảnh 2 (ẩn trên mobile để không tràn viền) */}
             <div
-              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
                 isMascotCheering || showMascotBubble
                   ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
                   : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
@@ -478,10 +478,10 @@ export function DashboardView({
                     onClick={onNavigateToLeaderboard}
                     className="py-2.5 flex items-center justify-between hover:bg-slate-50 px-2 rounded-xl transition cursor-pointer group"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
                       {/* Huy hiệu xếp hạng */}
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-2xs ${
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-2xs shrink-0 ${
                           rank === 1
                             ? 'bg-[#FFCD38] text-[#061651]'
                             : rank === 2
@@ -496,17 +496,17 @@ export function DashboardView({
 
                       {/* Họ tên và Ban */}
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 whitespace-nowrap">
-                          <span className="text-xs font-bold text-[#061651] group-hover:text-[#1351D8] transition-colors whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-[#061651] group-hover:text-[#1351D8] transition-colors truncate">
                             {m.full_name}
                           </span>
                           {m.is_core && (
-                            <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200/80 whitespace-nowrap">
+                            <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200/80 shrink-0">
                               CORE
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] text-slate-500 font-normal block whitespace-nowrap">
+                        <span className="text-[11px] text-slate-500 font-normal block truncate max-w-[170px] sm:max-w-xs md:max-w-none">
                           {m.student_id ? `${m.student_id} - ` : ''}
                           {translateDept(m.department_name)} - {translateRole(m.position)}
                         </span>

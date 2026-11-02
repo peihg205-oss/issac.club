@@ -282,7 +282,7 @@ export function Header({
 
                   {/* User Account Dropdown Modal */}
                   {roleDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-76 sm:w-80 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-3 space-y-2.5 z-50 animate-fadeIn text-xs">
+                    <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-[320px] sm:w-80 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-3 space-y-2.5 z-50 animate-fadeIn text-xs">
                       {/* Card thông tin người dùng cân đối & mềm mại */}
                       <div className="p-3 bg-slate-50/90 rounded-xl space-y-2.5 border border-slate-100">
                         <div className="flex items-center gap-3">

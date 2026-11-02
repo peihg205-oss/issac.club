@@ -378,7 +378,7 @@ export function HistoryView() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
         <div className="flex items-center gap-3.5 sm:gap-4.5">
           <div>
-            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight whitespace-nowrap">
+            <h1 className="text-xl sm:text-2xl md:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight">
               {t('history.title')}
             </h1>
             <p className="text-xs sm:text-[13px] text-[#64748B] mt-1 font-normal">
@@ -402,9 +402,9 @@ export function HistoryView() {
               }`}
             />
 
-            {/* Bubble tooltip nằm bên cạnh mascot */}
+            {/* Bubble tooltip nằm bên cạnh mascot (ẩn trên điện thoại hẹp để tránh tràn viền) */}
             <div
-              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
+              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
                 isMascotCheering || showMascotBubble
                   ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
                   : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'

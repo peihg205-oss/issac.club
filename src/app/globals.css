@@ -246,3 +246,19 @@
 .animate-sparkle-float {
   animation: sparkleFloat 0.9s ease-out forwards;
 }
+
+/* Mobile smooth momentum scrolling & scrollbar hiding */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}

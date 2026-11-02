@@ -422,8 +422,8 @@ export function ComparisonChart({
           </div>
 
           {/* Tab Switcher & Dropdown (Luôn giữ trên 1 hàng ngang cân xứng) */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0 self-start lg:self-center">
-            <div className="inline-flex items-center gap-0.5 sm:gap-1 p-1 bg-[#F1F5F9] rounded-xl text-xs font-medium shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0 self-start lg:self-center max-w-full">
+            <div className="inline-flex items-center gap-0.5 sm:gap-1 p-1 bg-[#F1F5F9] rounded-xl text-xs font-medium shrink-0 max-w-full overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setMode('dept_score')}
@@ -490,7 +490,7 @@ export function ComparisonChart({
                 </button>
 
                 {periodDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1.5 min-w-[280px] w-max max-w-sm bg-white border border-slate-200/90 rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-fadeIn">
+                  <div className="absolute right-0 top-full mt-1.5 w-[calc(100vw-32px)] sm:w-auto sm:min-w-[280px] max-w-sm bg-white border border-slate-200/90 rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-fadeIn">
                     {periods.map((p) => {
                       const isSelected = p.id === activePeriodId
                       const statusLabel =

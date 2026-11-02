@@ -90,16 +90,16 @@ function LoginContent() {
       <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full bg-blue-600/30 blur-3xl pointer-events-none" />
 
       {/* Main Container - 2 Columns */}
-      <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 z-10">
+      <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-14 z-10">
         
         {/* ============================================================== */}
         {/* CỘT TRÁI: LINH VẬT & HUY HIỆU iSSAC (CLICK ĐỂ VỀ TRANG CHỦ)    */}
         {/* ============================================================== */}
-        <div className="flex-1 w-full flex items-center justify-center max-w-xl py-4 lg:py-0">
+        <div className="flex-1 w-full flex items-center justify-center max-w-xl py-2 sm:py-4 lg:py-0">
           <Link
             href="/"
             title="Về Trang chủ hệ thống"
-            className="relative w-full max-w-[460px] sm:max-w-[520px] lg:max-w-[560px] flex items-center justify-center group animate-in fade-in zoom-in-95 duration-500 cursor-pointer"
+            className="relative w-full max-w-[160px] sm:max-w-[280px] lg:max-w-[560px] flex items-center justify-center group animate-in fade-in zoom-in-95 duration-500 cursor-pointer"
           >
             {/* Soft Ambient Glow behind the mascot */}
             <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-3xl pointer-events-none transform -translate-y-4 scale-95" />
@@ -115,7 +115,7 @@ function LoginContent() {
         {/* CỘT PHẢI: KHUNG ĐĂNG NHẬP TRẮNG TINH GỌN, SANG TRỌNG (MAX-W-MD) */}
         {/* ============================================================== */}
         <div className="w-full max-w-[430px] shrink-0">
-          <div className="bg-white rounded-[32px] p-7 sm:p-9 shadow-2xl text-slate-800 border border-white/40 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-2xl sm:rounded-[32px] p-5 sm:p-7 md:p-9 shadow-2xl text-slate-800 border border-white/40 animate-in fade-in zoom-in-95 duration-300">
             
             {/* 1. PILL BADGE & HEADLINE */}
             <div className="space-y-2">

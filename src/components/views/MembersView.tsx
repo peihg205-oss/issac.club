@@ -287,9 +287,9 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
               }`}
             />
 
-            {/* Bubble tooltip động đặt bên cạnh mascot - Tuyệt đối không bị thanh header che */}
+            {/* Bubble tooltip động đặt bên cạnh mascot (ẩn trên điện thoại để không tràn viền) */}
             <div
-              className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
+              className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
                 isMascotCheering
                   ? 'opacity-100 scale-105 translate-x-1'
                   : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
@@ -779,7 +779,7 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
 
           {/* Thanh phân trang Pagination hiện đại */}
           <div className="p-3.5 px-4 sm:px-6 bg-[#F8FAFC]/80 border-t border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-slate-600">
+            <div className="flex items-center gap-2 text-slate-600 flex-wrap justify-center sm:justify-start">
               <span>{language === 'vi' ? 'Hiển thị' : 'Show'}</span>
               <select
                 value={pageSize}
