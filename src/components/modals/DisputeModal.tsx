@@ -10,6 +10,8 @@ import {
   User,
   ShieldCheck,
   Building2,
+  Minus,
+  Plus,
 } from 'lucide-react'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -613,27 +615,65 @@ export function DisputeModal({
               )}
             </div>
 
-            {/* Cột phải: Số điểm khiếu nại (Tự động đồng bộ số điểm) */}
+            {/* Cột phải: Số điểm khiếu nại (Stepper chuyên nghiệp, to rõ, dễ bấm) */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[13px] font-bold text-[#061651] block">
                   Số điểm khiếu nại:
                 </label>
-                <span className="text-[10px] text-slate-500 font-normal">
-                  (Điểm trừ gốc)
-                </span>
+                <div className="flex items-center gap-1">
+                  {[-1, -2, -5].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setPoints(preset)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
+                        points === preset
+                          ? 'bg-[#7026ED] text-white shadow-2xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {preset}đ
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="1"
-                  value={points}
-                  onChange={(e) => setPoints(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-[13px] font-bold text-rose-600 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs pr-10"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                  điểm
-                </span>
+
+              {/* Hộp Stepper Tăng/Giảm điểm to rõ, không bị đè chữ */}
+              <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 sm:p-1.5 shadow-2xs focus-within:border-[#7026ED] focus-within:ring-2 focus-within:ring-[#7026ED]/15 transition">
+                {/* Nút Giảm điểm (-) */}
+                <button
+                  type="button"
+                  onClick={() => setPoints((prev) => prev - 1)}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer"
+                  title="Giảm 1 điểm"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+
+                {/* Ô nhập số điểm trung tâm */}
+                <div className="flex-1 flex items-center justify-center gap-1 px-1">
+                  <input
+                    type="number"
+                    step="1"
+                    value={points}
+                    onChange={(e) => setPoints(Number(e.target.value))}
+                    className="w-14 text-center text-xs sm:text-[14px] font-extrabold text-rose-600 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className="text-xs font-bold text-slate-400 select-none">
+                    điểm
+                  </span>
+                </div>
+
+                {/* Nút Tăng điểm (+) */}
+                <button
+                  type="button"
+                  onClick={() => setPoints((prev) => prev + 1)}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer"
+                  title="Tăng 1 điểm"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
