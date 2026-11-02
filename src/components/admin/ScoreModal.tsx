@@ -607,7 +607,7 @@ export function ScoreModal({
               {/* CỘT PHẢI (7 Cols): THAO TÁC CHO ĐIỂM DỄ SỬ DỤNG - KHÔNG BỊ RỐI */}
               <div className="lg:col-span-7 space-y-3.5">
                 
-                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Dàn đều 3 cột cân xứng, không bị cắt chữ */}
+                {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) - Bo tròn viên thuốc, bỏ số & icon */}
                 <div>
                   <label className="block text-xs font-bold text-[#061651] mb-2">
                     Chọn loại điểm muốn ghi nhận:
@@ -617,29 +617,20 @@ export function ScoreModal({
                       {
                         id: 'deduct' as const,
                         label: 'Vi phạm (Trừ)',
-                        badge: builtinDeductRules.length + customDeductRules.length,
                         activeColor: 'bg-rose-600 text-white font-bold shadow-sm shadow-rose-600/20',
                         inactiveColor: 'bg-rose-50/70 text-rose-700 hover:bg-rose-100/80 font-semibold border border-rose-200/60',
-                        badgeActive: 'bg-white/20 text-white',
-                        badgeInactive: 'bg-rose-200/80 text-rose-800',
                       },
                       {
                         id: 'add' as const,
-                        label: 'Cống hiến (+)',
-                        badge: builtinAddRules.length + customAddRules.length,
+                        label: 'Cống hiến (Cộng)',
                         activeColor: 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-600/20',
                         inactiveColor: 'bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100/80 font-semibold border border-emerald-200/60',
-                        badgeActive: 'bg-white/20 text-white',
-                        badgeInactive: 'bg-emerald-200/80 text-emerald-800',
                       },
                       {
                         id: 'custom' as const,
                         label: 'Tự nhập điểm',
-                        badgeIcon: Pencil,
                         activeColor: 'bg-[#0284C7] text-white font-bold shadow-sm shadow-[#0284C7]/20',
                         inactiveColor: 'bg-sky-50/70 text-[#0284C7] hover:bg-sky-100/80 font-semibold border border-sky-200/60',
-                        badgeActive: 'bg-white/20 text-white',
-                        badgeInactive: 'bg-sky-200/80 text-sky-800',
                       },
                     ].map((tab) => {
                       const isSelected = criterionCategory === tab.id
@@ -648,22 +639,11 @@ export function ScoreModal({
                           key={tab.id}
                           type="button"
                           onClick={() => handleCategorySwitch(tab.id)}
-                          className={`w-full px-2 sm:px-3 py-2 rounded-xl text-[11.5px] sm:text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+                          className={`w-full py-2 px-3 rounded-full text-xs transition-all flex items-center justify-center cursor-pointer text-center whitespace-nowrap font-bold ${
                             isSelected ? tab.activeColor : tab.inactiveColor
                           }`}
                         >
-                          <span className="whitespace-nowrap font-bold">{tab.label}</span>
-                          <span
-                            className={`px-1.5 py-0.5 rounded-full text-[10px] sm:text-[10.5px] font-bold flex items-center justify-center min-w-[18px] shrink-0 ${
-                              isSelected ? tab.badgeActive : tab.badgeInactive
-                            }`}
-                          >
-                            {'badgeIcon' in tab && tab.badgeIcon ? (
-                              <tab.badgeIcon className="w-3 h-3 stroke-[2.2]" />
-                            ) : (
-                              'badge' in tab ? tab.badge : null
-                            )}
-                          </span>
+                          {tab.label}
                         </button>
                       )
                     })}
