@@ -250,23 +250,28 @@ export function DisputeModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B1E48]/45 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[28px] max-w-[540px] w-full p-5 sm:p-7 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.22)] border border-slate-100/90 space-y-4 sm:space-y-4.5 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+      className="fixed inset-0 z-50 bg-[#0B1E48]/55 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 animate-in fade-in duration-200"
+    >
+      <div className="bg-white rounded-3xl sm:rounded-[28px] max-w-[540px] w-full p-4 sm:p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.22)] border border-slate-100/90 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar">
         
         {/* ============================================================== */}
         {/* HEADER: Icon tròn tím + Tiêu đề + Nút Đóng X tròn viền mỏng    */}
         {/* ============================================================== */}
         <div className="flex items-center justify-between pb-1">
-          <div className="flex items-center gap-3 sm:gap-3.5">
-            <div className="w-10 h-10 rounded-full bg-[#FAF5FF] text-[#7026ED] flex items-center justify-center border border-purple-200/50 shadow-2xs shrink-0">
-              <AlertCircle className="w-5 h-5 text-[#7026ED]" />
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FAF5FF] text-[#7026ED] flex items-center justify-center border border-purple-200/50 shadow-2xs shrink-0">
+              <AlertCircle className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#7026ED]" />
             </div>
 
-            <div>
-              <h3 className="text-base sm:text-[17px] font-extrabold text-[#061651] tracking-tight leading-tight">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-[17px] font-extrabold text-[#061651] tracking-tight leading-tight truncate">
                 Gửi đơn khiếu nại điểm (Q06)
               </h3>
-              <p className="text-xs text-[#64748B] font-normal mt-0.5">
+              <p className="text-[11px] sm:text-xs text-[#64748B] font-normal mt-0.5 truncate">
                 Quy chuẩn bảo vệ quyền lợi thành viên CLB iSSAC
               </p>
             </div>
@@ -275,7 +280,7 @@ export function DisputeModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full border border-slate-300/80 text-slate-400 hover:text-slate-600 hover:border-slate-400 transition flex items-center justify-center cursor-pointer shrink-0"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition flex items-center justify-center cursor-pointer shrink-0 ml-2"
             title="Đóng modal"
           >
             <X className="w-3.5 h-3.5 stroke-[2]" />
@@ -765,19 +770,19 @@ export function DisputeModal({
           {/* ============================================================== */}
           {/* FOOTER ACTION BUTTONS: HUỶ & GỬI KHIẾU NẠI                     */}
           {/* ============================================================== */}
-          <div className="pt-2 flex items-center justify-end gap-3">
+          <div className="pt-2 flex items-center gap-2.5 sm:gap-3 sm:justify-end">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-6 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-[13px] transition active:scale-95 cursor-pointer shadow-2xs"
+              className="flex-1 sm:flex-initial px-5 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-[13px] text-center transition active:scale-95 cursor-pointer shadow-2xs"
             >
               Huỷ
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 rounded-2xl text-xs sm:text-[13px] font-bold text-white bg-[#7026ED] hover:bg-[#621fde] shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial px-6 py-2.5 rounded-2xl text-xs sm:text-[13px] font-bold text-white bg-[#7026ED] hover:bg-[#621fde] text-center shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer disabled:opacity-50"
             >
               {submitting ? 'Đang gửi...' : 'Gửi khiếu nại'}
             </button>

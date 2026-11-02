@@ -873,7 +873,7 @@ export function HistoryView() {
             <button
               type="button"
               onClick={() => setDisputeModalOpen(true)}
-              className="px-5 py-2.5 rounded-2xl bg-[#7026ED] hover:bg-[#621fde] text-white text-xs font-bold shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-2 self-start md:self-center"
+              className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-2xl bg-[#7026ED] hover:bg-[#621fde] text-white text-xs font-bold shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer flex items-center gap-2 shrink-0"
             >
               <AlertCircle className="w-4 h-4" />
               <span>Gửi đơn khiếu nại mới</span>
@@ -882,20 +882,20 @@ export function HistoryView() {
 
           <div className="space-y-3">
             {disputes.length === 0 ? (
-              <div className="bg-white rounded-2xl p-8 border border-slate-200/90 text-center space-y-3 shadow-2xs">
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 text-center space-y-3 shadow-2xs">
                 <div className="w-12 h-12 rounded-full bg-purple-50 text-[#7026ED] flex items-center justify-center mx-auto border border-purple-200/70 shadow-2xs">
                   <MessageSquare className="w-6 h-6 text-[#7026ED]" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-800">Chưa có đơn khiếu nại nào</h4>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                  <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
                     Hệ thống ghi nhận điểm minh bạch. Khi có biến động điểm cần giải trình hoặc đối soát, thành viên có thể bấm nút &quot;Gửi đơn khiếu nại mới&quot; ở trên.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setDisputeModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-[#7026ED] bg-purple-50 hover:bg-purple-100 border border-purple-200 transition active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-[#7026ED] bg-purple-50 hover:bg-purple-100 border border-purple-200 transition active:scale-95 cursor-pointer"
                 >
                   <AlertCircle className="w-4 h-4" />
                   <span>Tạo đơn khiếu nại ngay</span>
