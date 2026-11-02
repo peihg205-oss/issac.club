@@ -17,8 +17,6 @@ import {
   ChevronDown,
   Check,
   Pencil,
-  Minus,
-  Plus,
 } from 'lucide-react'
 
 interface ScoreModalProps {
@@ -718,93 +716,74 @@ export function ScoreModal({
                   </div>
                 ) : (
                   /* 2. Điểm tự cho */
-                  <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75 space-y-2.5">
+                  <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-[#061651] text-xs">
                         Chế độ tự cho điểm (Tùy biến):
                       </span>
-                      <span className="text-[10px] text-slate-500 font-medium">
+                      <span className="text-[10.5px] text-slate-500 font-medium">
                         Điểm âm (-) là phạt, Điểm dương (+) là thưởng
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {/* Nút giảm điểm (-) */}
-                      <button
-                        type="button"
+                    {/* Ô nhập điểm tinh gọn & cao cấp */}
+                    <div className="relative flex items-center">
+                      <input
+                        type="number"
                         disabled={isLocked}
-                        onClick={() => setCustomPoints((prev) => prev - 1)}
-                        className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 text-slate-600 font-bold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
-                        title="Giảm 1 điểm"
-                      >
-                        <Minus className="w-4 h-4 stroke-[2.5]" />
-                      </button>
-
-                      {/* Ô nhập số điểm trực tiếp */}
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          disabled={isLocked}
-                          value={customPoints === 0 ? '' : customPoints}
-                          onChange={(e) => {
-                            const val = e.target.value
-                            setCustomPoints(val === '' ? 0 : Number(val))
-                          }}
-                          placeholder="0"
-                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 rounded-xl px-3 py-2 text-center text-base font-black text-[#061651] focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-
-                      {/* Nút tăng điểm (+) */}
-                      <button
-                        type="button"
-                        disabled={isLocked}
-                        onClick={() => setCustomPoints((prev) => prev + 1)}
-                        className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 text-slate-600 font-bold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
-                        title="Tăng 1 điểm"
-                      >
-                        <Plus className="w-4 h-4 stroke-[2.5]" />
-                      </button>
-
-                      {/* Badge hiển thị kết quả */}
-                      <div
-                        className={`px-3.5 py-2 rounded-xl text-xs font-black min-w-[72px] text-center shadow-2xs transition shrink-0 ${
-                          customPoints > 0
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                            : customPoints < 0
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200/80'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200/80'
-                        }`}
-                      >
-                        {customPoints > 0 ? `+${customPoints}đ` : `${customPoints}đ`}
+                        value={customPoints === 0 ? '' : customPoints}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setCustomPoints(val === '' ? 0 : Number(val))
+                        }}
+                        placeholder="Nhập số điểm (+ thưởng, - phạt)..."
+                        className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-4 focus:ring-[#0284C7]/10 rounded-xl pl-3.5 pr-20 py-2.5 text-sm font-bold text-[#061651] placeholder:text-slate-400 placeholder:font-normal focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="absolute right-2.5 flex items-center pointer-events-none">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-xs font-black transition ${
+                            customPoints > 0
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                              : customPoints < 0
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                              : 'bg-slate-100 text-slate-500 border border-slate-200/80'
+                          }`}
+                        >
+                          {customPoints > 0 ? `+${customPoints}đ` : customPoints < 0 ? `${customPoints}đ` : '0đ'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Chips nhanh */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                      <span className="text-[10px] font-bold text-slate-500 mr-0.5">Chọn nhanh:</span>
-                      {[-10, -5, -3, -2, -1, 1, 2, 3, 5, 10].map((pt) => {
-                        const isSelected = customPoints === pt
-                        const isPositive = pt > 0
-                        return (
-                          <button
-                            key={pt}
-                            type="button"
-                            onClick={() => setCustomPoints(pt)}
-                            className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 ${
-                              isSelected
-                                ? isPositive
-                                  ? 'bg-emerald-600 text-white shadow-2xs'
-                                  : 'bg-rose-600 text-white shadow-2xs'
-                                : isPositive
-                                ? 'bg-white text-emerald-700 border border-emerald-200/80 hover:bg-emerald-50'
-                                : 'bg-white text-rose-700 border border-rose-200/80 hover:bg-rose-50'
-                            }`}
-                          >
-                            {isPositive ? `+${pt}` : pt}
-                          </button>
-                        )
-                      })}
+                    {/* 8 nút chọn nhanh dàn đều không bị tràn dòng */}
+                    <div className="space-y-1.5 pt-0.5">
+                      <div className="flex items-center justify-between text-[10.5px]">
+                        <span className="font-semibold text-slate-500">Gợi ý chọn nhanh:</span>
+                        <span className="text-slate-400">hoặc tự gõ số ở trên</span>
+                      </div>
+                      <div className="grid grid-cols-8 gap-1.5">
+                        {[-10, -5, -2, -1, 1, 2, 5, 10].map((pt) => {
+                          const isSelected = customPoints === pt
+                          const isPositive = pt > 0
+                          return (
+                            <button
+                              key={pt}
+                              type="button"
+                              onClick={() => setCustomPoints(pt)}
+                              className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center active:scale-95 ${
+                                isSelected
+                                  ? isPositive
+                                    ? 'bg-emerald-600 text-white shadow-2xs'
+                                    : 'bg-rose-600 text-white shadow-2xs'
+                                  : isPositive
+                                  ? 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                                  : 'bg-white hover:bg-rose-50 text-rose-700 border border-rose-200/80'
+                              }`}
+                            >
+                              {isPositive ? `+${pt}` : pt}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -841,28 +820,38 @@ export function ScoreModal({
                   />
                 </div>
 
-                {/* 5. Tóm tắt Biến Động Điểm Tức Thì */}
-                <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/75 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Trước khi chấm:</span>
-                    <span className="font-bold text-[#061651]">{selectedMember?.current_score}đ</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Biến động điểm:</span>
-                    <span
-                      className={`font-black ${
-                        previewActualDelta > 0 ? 'text-emerald-600' : 'text-rose-600'
-                      }`}
-                    >
-                      {previewActualDelta > 0 ? `+${previewActualDelta}đ` : `${previewActualDelta}đ`}
-                      {selectedMember?.is_core && previewActualDelta < 0 && !isCustomMode ? ' (Core Team ×2)' : ''}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-slate-200/80 pt-2 text-xs">
-                    <span className="font-bold text-[#061651]">Dự kiến điểm mới:</span>
-                    <span className="text-xs font-black text-white bg-[#0284C7] px-3 py-1 rounded-full shadow-xs">
-                      {previewScoreAfter}đ
-                    </span>
+                {/* 5. Tóm tắt Biến Động Điểm Tức Thì (Thẻ 3 cột hiện đại) */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-sky-50/50 via-slate-50 to-indigo-50/30 border border-slate-200/80 shadow-2xs">
+                  <div className="grid grid-cols-3 divide-x divide-slate-200/80 text-center">
+                    <div className="px-2">
+                      <p className="text-[10.5px] font-medium text-slate-500">Trước khi chấm</p>
+                      <p className="text-sm font-extrabold text-[#061651] mt-0.5">
+                        {selectedMember?.current_score}đ
+                      </p>
+                    </div>
+
+                    <div className="px-2">
+                      <p className="text-[10.5px] font-medium text-slate-500">Biến động điểm</p>
+                      <p
+                        className={`text-sm font-extrabold mt-0.5 ${
+                          previewActualDelta > 0
+                            ? 'text-emerald-600'
+                            : previewActualDelta < 0
+                            ? 'text-rose-600'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {previewActualDelta > 0 ? `+${previewActualDelta}đ` : previewActualDelta < 0 ? `${previewActualDelta}đ` : '0đ'}
+                        {selectedMember?.is_core && previewActualDelta < 0 && !isCustomMode ? ' (×2)' : ''}
+                      </p>
+                    </div>
+
+                    <div className="px-2">
+                      <p className="text-[10.5px] font-bold text-[#0284C7]">Dự kiến điểm mới</p>
+                      <p className="text-base font-black text-[#0284C7] mt-0.5">
+                        {previewScoreAfter}đ
+                      </p>
+                    </div>
                   </div>
                 </div>
 
