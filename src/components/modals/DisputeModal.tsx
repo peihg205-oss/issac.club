@@ -196,7 +196,20 @@ export function DisputeModal({
     }
   }
 
-  if (!isOpen) return null
+  // Tiêu chí đang chọn hiện tại (luôn gọi hook không điều kiện)
+  const selectedCriterionObj = useMemo(() => {
+    if (criterion === 'OTHER') {
+      return {
+        code: 'KHÁC',
+        name: customCriterionName.trim() || 'Mục khác (Tự nhập nội dung / tiêu chí)',
+        points: points,
+        group: 'Khác' as const,
+      }
+    }
+    return (
+      allDeductCriteria.find((c) => c.code === criterion) || allDeductCriteria[0]
+    )
+  }, [allDeductCriteria, criterion, points, customCriterionName])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -236,19 +249,8 @@ export function DisputeModal({
     }
   }
 
-  const selectedCriterionObj = useMemo(() => {
-    if (criterion === 'OTHER') {
-      return {
-        code: 'KHÁC',
-        name: customCriterionName.trim() || 'Mục khác (Tự nhập nội dung / tiêu chí)',
-        points: points,
-        group: 'Khác' as const,
-      }
-    }
-    return (
-      allDeductCriteria.find((c) => c.code === criterion) || allDeductCriteria[0]
-    )
-  }, [allDeductCriteria, criterion, points, customCriterionName])
+  // Đặt điều kiện return null sau TẤT CẢ các hooks để tuân thủ 100% Rules of Hooks
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0B1E48]/45 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
