@@ -40,7 +40,7 @@ import {
   X,
 } from 'lucide-react'
 import { QrTicketPass } from '@/components/checkin/QrTicketPass'
-import type { RosterMember } from '@/lib/clubData'
+import { type RosterMember, getMemberAvatarUrl } from '@/lib/clubData'
 
 function CheckinContent() {
   const router = useRouter()
@@ -640,9 +640,17 @@ function CheckinContent() {
                 {/* Khu vực hiển thị danh tính đã xác thực hoặc ô nhập MSSV nhanh */}
                 {verifiedRegMember ? (
                   <div className="flex items-center gap-2.5 p-2 px-3 rounded-2xl bg-sky-50/80 border border-sky-200/80 max-w-sm w-full shadow-2xs">
-                    <div className="w-8 h-8 rounded-xl bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
-                      {verifiedRegMember.full_name.charAt(0)}
-                    </div>
+                    {verifiedRegMember.avatar_url || getMemberAvatarUrl(verifiedRegMember) ? (
+                      <img
+                        src={(verifiedRegMember.avatar_url || getMemberAvatarUrl(verifiedRegMember))!}
+                        alt={verifiedRegMember.full_name}
+                        className="w-8 h-8 rounded-xl object-cover border border-sky-200 shrink-0 shadow-xs"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-xl bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
+                        {verifiedRegMember.full_name.charAt(0)}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-extrabold text-xs text-[#061651] truncate">
@@ -654,7 +662,7 @@ function CheckinContent() {
                       </div>
                       <p className="text-[10px] text-slate-500 font-medium truncate">
                         MSSV: <strong>{verifiedRegMember.student_id || verifiedRegMember.member_code}</strong>
-                        {verifiedRegMember.class_name ? ` • ${verifiedRegMember.class_name}` : ''}
+                        {verifiedRegMember.class_name ? ` - ${verifiedRegMember.class_name}` : ''}
                       </p>
                     </div>
                     <button
@@ -1219,9 +1227,17 @@ function CheckinContent() {
                           {/* Thanh thông tin thành viên đã xác thực chính chủ */}
                           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white border border-sky-200/80 shadow-2xs">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-10 h-10 rounded-xl bg-[#061651] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
-                                {verifiedRegMember.full_name.charAt(0)}
-                              </div>
+                              {verifiedRegMember.avatar_url || getMemberAvatarUrl(verifiedRegMember) ? (
+                                <img
+                                  src={(verifiedRegMember.avatar_url || getMemberAvatarUrl(verifiedRegMember))!}
+                                  alt={verifiedRegMember.full_name}
+                                  className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-xl bg-[#061651] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                                  {verifiedRegMember.full_name.charAt(0)}
+                                </div>
+                              )}
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
@@ -1237,8 +1253,8 @@ function CheckinContent() {
                                 </div>
                                 <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
                                   MSSV: <strong className="text-slate-800">{verifiedRegMember.student_id || verifiedRegMember.member_code}</strong>
-                                  {verifiedRegMember.class_name ? ` • Lớp ${verifiedRegMember.class_name}` : ''}
-                                  {verifiedRegMember.position ? ` • ${verifiedRegMember.position}` : ''}
+                                  {verifiedRegMember.class_name ? ` - Lớp ${verifiedRegMember.class_name}` : ''}
+                                  {verifiedRegMember.position ? ` - ${verifiedRegMember.position}` : ''}
                                 </p>
                               </div>
                             </div>
@@ -1339,9 +1355,17 @@ function CheckinContent() {
                           </div>
                           <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-xl bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
-                                {verifiedRegMember.full_name.charAt(0)}
-                              </div>
+                              {verifiedRegMember.avatar_url || getMemberAvatarUrl(verifiedRegMember) ? (
+                                <img
+                                  src={(verifiedRegMember.avatar_url || getMemberAvatarUrl(verifiedRegMember))!}
+                                  alt={verifiedRegMember.full_name}
+                                  className="w-8 h-8 rounded-xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-xl bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
+                                  {verifiedRegMember.full_name.charAt(0)}
+                                </div>
+                              )}
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-extrabold text-xs text-slate-900 truncate">
@@ -1533,9 +1557,17 @@ function CheckinContent() {
               {/* Chi tiết thành viên tìm thấy */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#061651] text-white font-black text-base flex items-center justify-center shadow-xs shrink-0">
-                    {targetConfirmMember.full_name.charAt(0)}
-                  </div>
+                  {targetConfirmMember.avatar_url || getMemberAvatarUrl(targetConfirmMember) ? (
+                    <img
+                      src={(targetConfirmMember.avatar_url || getMemberAvatarUrl(targetConfirmMember))!}
+                      alt={targetConfirmMember.full_name}
+                      className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-2xl bg-[#061651] text-white font-black text-base flex items-center justify-center shadow-xs shrink-0">
+                      {targetConfirmMember.full_name.charAt(0)}
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <h4 className="font-black text-sm sm:text-base text-slate-900 truncate">
                       {targetConfirmMember.full_name}
@@ -1546,7 +1578,7 @@ function CheckinContent() {
                       </span>
                       {targetConfirmMember.position && (
                         <span className="text-xs text-slate-500 font-medium">
-                          • {targetConfirmMember.position}
+                          - {targetConfirmMember.position}
                         </span>
                       )}
                     </div>
@@ -1745,15 +1777,23 @@ function CheckinContent() {
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
-                                {m.full_name.charAt(0)}
-                              </div>
+                              {m.avatar_url || getMemberAvatarUrl(m) ? (
+                                <img
+                                  src={(m.avatar_url || getMemberAvatarUrl(m))!}
+                                  alt={m.full_name}
+                                  className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-[#061651] text-white font-black text-xs flex items-center justify-center shrink-0">
+                                  {m.full_name.charAt(0)}
+                                </div>
+                              )}
                               <div className="min-w-0">
                                 <span className="font-extrabold text-xs text-slate-900 truncate block">
                                   {m.full_name}
                                 </span>
                                 <span className="text-[10.5px] text-slate-500 truncate block">
-                                  {m.department_name} • MSSV: {m.student_id || m.member_code}
+                                  {m.department_name} - MSSV: {m.student_id || m.member_code}
                                 </span>
                               </div>
                             </div>
@@ -1773,9 +1813,17 @@ function CheckinContent() {
                   {/* Thanh thông tin xác thực danh tính */}
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/40 to-white border border-sky-200/80 shadow-2xs">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-[#061651] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
-                        {currentLookupMember.full_name.charAt(0)}
-                      </div>
+                      {currentLookupMember.avatar_url || getMemberAvatarUrl(currentLookupMember) ? (
+                        <img
+                          src={(currentLookupMember.avatar_url || getMemberAvatarUrl(currentLookupMember))!}
+                          alt={currentLookupMember.full_name}
+                          className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-[#061651] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                          {currentLookupMember.full_name.charAt(0)}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">
@@ -1797,8 +1845,8 @@ function CheckinContent() {
                         </div>
                         <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
                           MSSV: <strong className="text-slate-800">{currentLookupMember.student_id || currentLookupMember.member_code}</strong>
-                          {currentLookupMember.class_name ? ` • Lớp ${currentLookupMember.class_name}` : ''}
-                          {currentLookupMember.position ? ` • ${currentLookupMember.position}` : ''}
+                          {currentLookupMember.class_name ? ` - Lớp ${currentLookupMember.class_name}` : ''}
+                          {currentLookupMember.position ? ` - ${currentLookupMember.position}` : ''}
                         </p>
                       </div>
                     </div>
@@ -1833,9 +1881,17 @@ function CheckinContent() {
                   <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 space-y-5 shadow-2xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70">
                       <div className="flex items-center gap-3.5">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#061651] to-[#0284C7] text-white font-black flex items-center justify-center text-lg shadow-sm shrink-0">
-                          {currentLookupMember.full_name.charAt(0)}
-                        </div>
+                        {currentLookupMember.avatar_url || getMemberAvatarUrl(currentLookupMember) ? (
+                          <img
+                            src={(currentLookupMember.avatar_url || getMemberAvatarUrl(currentLookupMember))!}
+                            alt={currentLookupMember.full_name}
+                            className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#061651] to-[#0284C7] text-white font-black flex items-center justify-center text-lg shadow-sm shrink-0">
+                            {currentLookupMember.full_name.charAt(0)}
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="text-lg font-black text-[#061651]">
