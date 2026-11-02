@@ -298,7 +298,7 @@ export function DisputeModal({
                   </div>
                   <span className="text-[11px] text-slate-500 font-medium block truncate">
                     MSSV: {selectedMember.student_id || selectedMember.member_code || '-'}
-                    {selectedMember.position ? ` • ${selectedMember.position}` : ''}
+                    {selectedMember.position ? ` - ${selectedMember.position}` : ''}
                   </span>
                 </div>
               </div>
@@ -386,7 +386,7 @@ export function DisputeModal({
                                 {m.full_name}
                               </span>
                               <span className="text-[10px] text-slate-500 font-normal block truncate">
-                                {m.department_name} • {m.student_id || m.member_code}
+                                {m.department_name} - {m.student_id || m.member_code}
                               </span>
                             </div>
                           </div>
@@ -531,7 +531,7 @@ export function DisputeModal({
               <span>Đang tạo đơn khiếu nại cho: </span>
               <strong className="text-[#061651] font-bold">{selectedMember.full_name || '...'}</strong>
               <span className="text-slate-500"> ({selectedMember.department_name || ''})</span>
-              <span> • Tiêu chí: </span>
+              <span> - Tiêu chí: </span>
               <strong className="text-purple-900 font-bold">[{selectedCriterionObj.code}] {selectedCriterionObj.name}</strong>
               <span className="text-rose-600 font-black"> ({points} điểm)</span>.
             </div>

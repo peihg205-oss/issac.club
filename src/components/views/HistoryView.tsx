@@ -610,7 +610,7 @@ export function HistoryView() {
                   <div className="mt-2 text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="truncate">
-                      Đề xuất: <strong className="text-slate-600 font-semibold">{item.proposedBy}</strong> • {normalizeHistoryTimestamp(item.createdAt)}
+                      Đề xuất: <strong className="text-slate-600 font-semibold">{item.proposedBy}</strong> - {normalizeHistoryTimestamp(item.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -1035,7 +1035,7 @@ export function HistoryView() {
                             {item.name}
                           </span>
                           <span className="text-[10px] text-slate-400 font-medium block truncate">
-                            {translateDept(item.dept)} • {item.time}
+                            {translateDept(item.dept)} - {item.time}
                           </span>
                         </div>
                       </div>
