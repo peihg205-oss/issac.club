@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
+import { getMemberAvatarUrl } from '@/lib/clubData'
 import type { RuleCode } from '@/types/database'
 import {
   X,
@@ -276,17 +277,17 @@ export function ScoreModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#0B1E48]/55 backdrop-blur-xs animate-fadeIn">
       <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-4xl w-full border border-slate-200/90 shadow-2xl relative space-y-4 max-h-[94vh] overflow-y-auto">
         
         {/* Header */}
         <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0B1E48] text-white flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center shadow-sm shadow-[#0284C7]/25 shrink-0">
               <ClipboardList className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10.5px] font-extrabold uppercase tracking-wide bg-blue-50 text-[#1351D8] border border-blue-200/60 mb-0.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide bg-sky-50 text-[#0284C7] border border-sky-200/80 mb-0.5">
                 <span>
                   {isBCN
                     ? '👑 Ban Chủ Nhiệm (Toàn quyền tất cả các ban)'
@@ -299,10 +300,10 @@ export function ScoreModal({
                     : 'Cán bộ CLB'}
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
+              <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight">
                 {isBCN ? 'Trung Tâm Chấm Điểm & Phê Duyệt' : 'Đề Xuất Chấm Điểm Thi Đua'}
               </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className="text-[11px] text-[#64748B] font-medium">
                 {currentUser?.departmentCode === 'B01'
                   ? 'Ban Truyền thông có quyền cho điểm các thành viên thuộc Ban Truyền thông'
                   : currentUser?.departmentCode === 'B02'
@@ -314,8 +315,9 @@ export function ScoreModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer flex-shrink-0"
+            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -326,7 +328,7 @@ export function ScoreModal({
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
               <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900 max-w-md mx-auto leading-relaxed">
+            <h4 className="text-sm font-bold text-[#061651] max-w-md mx-auto leading-relaxed">
               {feedback.message}
             </h4>
           </div>
@@ -334,13 +336,13 @@ export function ScoreModal({
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             
             {/* Top Toolbar: Chọn Tháng & Cảnh báo Khóa sổ */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50/90 border border-slate-200/80">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-700 text-xs">Chu kỳ áp dụng:</span>
+                <span className="font-bold text-[#061651] text-xs">Chu kỳ áp dụng:</span>
                 <select
                   value={selectedPeriodId}
                   onChange={(e) => setSelectedPeriodId(e.target.value)}
-                  className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-[#0F172A] focus:outline-none focus:border-[#1351D8] cursor-pointer shadow-2xs"
+                  className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer shadow-2xs"
                 >
                   {monthPeriods.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -372,10 +374,10 @@ export function ScoreModal({
                 {/* 1. Bộ chọn thành viên thông minh có tìm kiếm & lọc Ban */}
                 <div className="space-y-1.5" ref={dropdownRef}>
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700">
+                    <label className="text-xs font-bold text-[#061651]">
                       Thành viên nhận điểm:
                     </label>
-                    <span className="text-[10px] text-slate-400 font-medium">
+                    <span className="text-[10px] text-[#64748B] font-medium">
                       Tìm kiếm nhanh theo tên/mã
                     </span>
                   </div>
@@ -386,21 +388,25 @@ export function ScoreModal({
                       type="button"
                       disabled={isLocked}
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="w-full bg-slate-50 hover:bg-white border border-slate-200/90 rounded-2xl p-2.5 flex items-center justify-between text-left transition shadow-2xs group focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 cursor-pointer disabled:opacity-50"
+                      className="w-full bg-slate-50 hover:bg-white border border-slate-200/90 rounded-2xl p-2.5 flex items-center justify-between text-left transition shadow-2xs group focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 cursor-pointer disabled:opacity-50"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-xs shrink-0 ${
-                            selectedMember?.avatarBg || 'bg-[#1351D8]'
-                          }`}
-                        >
-                          {selectedMember?.full_name?.charAt(0) || 'U'}
-                        </div>
+                        {getMemberAvatarUrl(selectedMember) ? (
+                          <img
+                            src={getMemberAvatarUrl(selectedMember)!}
+                            alt={selectedMember.full_name}
+                            className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            {selectedMember?.full_name?.charAt(0) || 'U'}
+                          </div>
+                        )}
                         <div className="min-w-0">
-                          <p className="font-extrabold text-xs text-slate-900 truncate">
+                          <p className="font-extrabold text-xs text-[#061651] truncate">
                             {selectedMember?.full_name}
                           </p>
-                          <p className="text-[10px] text-slate-500 font-medium truncate">
+                          <p className="text-[10px] text-[#64748B] font-medium truncate">
                             {selectedMember?.member_code} • {selectedMember?.department_name}
                           </p>
                         </div>
@@ -435,7 +441,7 @@ export function ScoreModal({
                             value={memberSearch}
                             onChange={(e) => setMemberSearch(e.target.value)}
                             autoFocus
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1351D8] focus:bg-white"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#061651] placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white"
                           />
                         </div>
 
@@ -448,7 +454,7 @@ export function ScoreModal({
                               onClick={() => setDeptFilter(d.slug)}
                               className={`px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
                                 deptFilter === d.slug
-                                  ? 'bg-[#1351D8] text-white shadow-2xs'
+                                  ? 'bg-[#0284C7] text-white shadow-2xs'
                                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                               }`}
                             >
@@ -476,18 +482,22 @@ export function ScoreModal({
                                   }}
                                   className={`w-full text-left p-2 rounded-xl flex items-center justify-between transition cursor-pointer ${
                                     isSelected
-                                      ? 'bg-blue-50/80 border border-blue-200 text-[#1351D8]'
+                                      ? 'bg-sky-50/80 border border-sky-200 text-[#0284C7]'
                                       : 'hover:bg-slate-50 text-slate-700'
                                   }`}
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <div
-                                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-[10px] shrink-0 ${
-                                        m.avatarBg || 'bg-[#1351D8]'
-                                      }`}
-                                    >
-                                      {m.full_name.charAt(0)}
-                                    </div>
+                                    {getMemberAvatarUrl(m) ? (
+                                      <img
+                                        src={getMemberAvatarUrl(m)!}
+                                        alt={m.full_name}
+                                        className="w-7 h-7 rounded-lg object-cover ring-1 ring-slate-200 shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                                        {m.full_name.charAt(0)}
+                                      </div>
+                                    )}
                                     <div className="min-w-0">
                                       <p className="font-bold text-xs truncate">{m.full_name}</p>
                                       <p className="text-[10px] text-slate-400 truncate">
@@ -497,7 +507,7 @@ export function ScoreModal({
                                   </div>
                                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
                                     <span className="text-[11px] font-black">{m.current_score}đ</span>
-                                    {isSelected && <Check className="w-3.5 h-3.5 text-[#1351D8]" />}
+                                    {isSelected && <Check className="w-3.5 h-3.5 text-[#0284C7]" />}
                                   </div>
                                 </button>
                               )
@@ -510,9 +520,9 @@ export function ScoreModal({
                 </div>
 
                 {/* 2. Thẻ hồ sơ thành viên đang chọn */}
-                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+                <div className="p-3 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
                       Hồ sơ thành viên
                     </span>
                     {selectedMember?.is_core ? (
@@ -526,13 +536,13 @@ export function ScoreModal({
 
                   <div className="flex items-center justify-between pt-1">
                     <div>
-                      <p className="text-[10px] text-slate-500 font-medium">Điểm hiện tại:</p>
-                      <p className="text-xl font-black text-slate-900 tracking-tight">
+                      <p className="text-[10px] text-[#64748B] font-medium">Điểm hiện tại:</p>
+                      <p className="text-xl font-black text-[#061651] tracking-tight">
                         {selectedMember?.current_score}đ
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-slate-500 font-medium">Biến động tháng này:</p>
+                      <p className="text-[10px] text-[#64748B] font-medium">Biến động tháng này:</p>
                       <div className="flex items-center gap-1.5 font-black text-xs justify-end">
                         <span className="text-emerald-600">+{totalAddedThisMonth}đ</span>
                         <span className="text-slate-300">/</span>
@@ -543,9 +553,9 @@ export function ScoreModal({
                 </div>
 
                 {/* 3. Sổ ghi nhớ lịch sử đã chấm tháng này */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-700 text-xs">
+                    <span className="font-bold text-[#061651] text-xs">
                       Đã ghi nhận trong {selectedPeriod?.name}:
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-200/80 text-slate-700">
@@ -614,7 +624,7 @@ export function ScoreModal({
                 
                 {/* 1. Tabs Chọn Loại Tiêu Chí (Trừ / Cộng / Tự Điền) */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-[#061651] mb-1.5">
                     Chọn loại điểm muốn ghi nhận:
                   </label>
                   <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 text-xs font-bold">
@@ -647,11 +657,11 @@ export function ScoreModal({
                       onClick={() => handleCategorySwitch('custom')}
                       className={`py-2 rounded-lg transition cursor-pointer text-center ${
                         criterionCategory === 'custom'
-                          ? 'bg-[#0B1E48] text-white shadow-xs'
+                          ? 'bg-[#0284C7] text-white shadow-xs'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                       }`}
                     >
-                      Điểm tự cho
+                      Tự nhập điểm
                     </button>
                   </div>
                 </div>
@@ -659,7 +669,7 @@ export function ScoreModal({
                 {/* 2. Tiêu chí theo loại */}
                 {criterionCategory !== 'custom' ? (
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">
+                    <label className="block text-xs font-bold text-[#061651]">
                       {criterionCategory === 'deduct'
                         ? 'Chọn lỗi vi phạm quy định:'
                         : 'Chọn hoạt động đóng góp / khen thưởng:'}
@@ -669,7 +679,7 @@ export function ScoreModal({
                       value={criterionCode}
                       onChange={(e) => handleCriterionChange(e.target.value)}
                       disabled={isLocked}
-                      className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs cursor-pointer"
+                      className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#061651] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
                     >
                       {criterionCategory === 'deduct' && (
                         <>
@@ -716,12 +726,12 @@ export function ScoreModal({
                   </div>
                 ) : (
                   /* 2. Điểm tự cho */
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+                  <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/90 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-xs">
+                      <span className="font-bold text-[#061651] text-xs">
                         Chế độ tự cho điểm (Tùy biến):
                       </span>
-                      <span className="text-[10px] text-slate-500 font-medium">
+                      <span className="text-[10px] text-[#64748B] font-medium">
                         Điểm âm (-) là phạt, Điểm dương (+) là thưởng
                       </span>
                     </div>
@@ -734,7 +744,7 @@ export function ScoreModal({
                           value={customPoints}
                           onChange={(e) => setCustomPoints(Number(e.target.value))}
                           placeholder="Nhập số điểm (+ hoặc -)..."
-                          className="w-full bg-white border border-slate-200 focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 rounded-xl px-3.5 py-2 text-sm font-black text-[#0F172A] focus:outline-none transition shadow-2xs"
+                          className="w-full bg-white border border-slate-200 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 rounded-xl px-3.5 py-2 text-sm font-black text-[#061651] focus:outline-none transition shadow-2xs"
                         />
                         <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
                           điểm
@@ -755,7 +765,7 @@ export function ScoreModal({
 
                     {/* Chips nhanh */}
                     <div className="flex items-center gap-1 flex-wrap">
-                      <span className="text-[10px] font-bold text-slate-500 mr-0.5">Chọn nhanh:</span>
+                      <span className="text-[10px] font-bold text-[#64748B] mr-0.5">Chọn nhanh:</span>
                       {[-10, -5, -3, -2, -1, 1, 2, 3, 5, 10].map((pt) => (
                         <button
                           key={pt}
@@ -780,7 +790,7 @@ export function ScoreModal({
 
                 {/* 3. Lý do / Nội dung chi tiết */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 block">
+                  <label className="text-xs font-bold text-[#061651] block">
                     Lý do / Nội dung chi tiết: <span className="text-rose-500">*</span>
                   </label>
 
@@ -791,13 +801,13 @@ export function ScoreModal({
                     placeholder="Ghi rõ đầu việc hoặc lý do cụ thể..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl p-2.5 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60"
+                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl p-2.5 text-xs font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
                   />
                 </div>
 
                 {/* 4. Link minh chứng */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-[#061651] mb-1">
                     Link minh chứng (Drive, ảnh, bài viết - nếu có):
                   </label>
                   <input
@@ -806,12 +816,12 @@ export function ScoreModal({
                     placeholder="https://drive.google.com/..."
                     value={evidenceUrl}
                     onChange={(e) => setEvidenceUrl(e.target.value)}
-                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs disabled:opacity-60"
+                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs disabled:opacity-60"
                   />
                 </div>
 
                 {/* 5. Tóm tắt Biến Động Điểm Tức Thì */}
-                <div className="p-3 rounded-2xl bg-slate-900 text-white space-y-1.5 shadow-sm">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#061651] to-[#0A2540] text-white space-y-1.5 shadow-sm border border-slate-800">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-400 font-medium">Trước khi chấm:</span>
                     <span className="font-bold">{selectedMember?.current_score}đ</span>
@@ -827,9 +837,9 @@ export function ScoreModal({
                       {selectedMember?.is_core && previewActualDelta < 0 && !isCustomMode ? ' (Core Team ×2)' : ''}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-slate-800 pt-1.5 text-xs font-bold">
+                  <div className="flex items-center justify-between border-t border-slate-700/80 pt-1.5 text-xs font-bold">
                     <span className="text-amber-400">Dự kiến điểm mới:</span>
-                    <span className="text-sm font-black text-white">
+                    <span className="text-sm font-black text-white bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">
                       {previewScoreAfter}đ
                     </span>
                   </div>
@@ -838,23 +848,23 @@ export function ScoreModal({
                 {/* 6. Phân quyền BCN / HR & Submit Actions */}
                 <div className="space-y-2.5 pt-1">
                   {isBCN && !isLocked && (
-                    <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/70 flex items-center justify-between text-xs">
+                    <div className="p-3 rounded-2xl bg-sky-50/70 border border-sky-200/80 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-bold text-[#0B1E48] block">Áp dụng trực tiếp (Quyền BCN)</span>
-                        <span className="text-[10px] text-slate-600">Cập nhật ngay vào bảng xếp hạng</span>
+                        <span className="font-bold text-[#061651] block">Áp dụng trực tiếp (Quyền BCN)</span>
+                        <span className="text-[10px] text-[#0284C7] font-medium">Cập nhật ngay vào bảng xếp hạng</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={directApply}
                         onChange={(e) => setDirectApply(e.target.checked)}
-                        className="w-4 h-4 rounded text-[#1351D8] focus:ring-[#1351D8] bg-white cursor-pointer"
+                        className="w-4 h-4 rounded text-[#0284C7] accent-[#0284C7] focus:ring-[#0284C7] bg-white cursor-pointer"
                       />
                     </div>
                   )}
 
                   {isHR && !isLocked && (
-                    <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[11px] text-[#0B1E48] flex items-start gap-2">
-                      <ShieldAlert className="w-4 h-4 text-[#1351D8] flex-shrink-0 mt-0.5" />
+                    <div className="p-3 rounded-2xl bg-sky-50 border border-sky-200 text-[11px] text-[#061651] flex items-start gap-2">
+                      <ShieldAlert className="w-4 h-4 text-[#0284C7] flex-shrink-0 mt-0.5" />
                       <span>Đề xuất sẽ được gửi vào hàng đợi chờ Ban Chủ nhiệm phê duyệt.</span>
                     </div>
                   )}
@@ -880,7 +890,7 @@ export function ScoreModal({
                     ) : (
                       <button
                         type="submit"
-                        className="px-6 py-2.5 rounded-xl bg-[#0B1E48] hover:bg-[#1351D8] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-bold text-xs shadow-md shadow-[#0284C7]/25 transition-all active:scale-95 cursor-pointer"
                       >
                         {isBCN
                           ? directApply
