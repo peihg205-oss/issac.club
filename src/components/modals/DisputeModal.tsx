@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
-import type { RosterMember } from '@/lib/clubData'
+import { type RosterMember, getMemberAvatarUrl } from '@/lib/clubData'
 
 export interface DisputeModalProps {
   isOpen: boolean
@@ -316,9 +316,17 @@ export function DisputeModal({
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-purple-50 text-[#7026ED] border border-purple-200/80 font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
-                  {selectedMember.full_name ? selectedMember.full_name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
-                </div>
+                {selectedMember?.avatar_url || getMemberAvatarUrl(selectedMember) ? (
+                  <img
+                    src={(selectedMember?.avatar_url || getMemberAvatarUrl(selectedMember))!}
+                    alt={selectedMember.full_name || ''}
+                    className="w-8 h-8 rounded-full object-cover border border-purple-200/80 shrink-0 shadow-2xs"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-purple-50 text-[#7026ED] border border-purple-200/80 font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
+                    {selectedMember.full_name ? selectedMember.full_name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                  </div>
+                )}
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -399,6 +407,7 @@ export function DisputeModal({
                   ) : (
                     filteredMembers.map((m) => {
                       const isSelected = m.member_code === selectedMember.member_code
+                      const mAvatar = m.avatar_url || getMemberAvatarUrl(m)
                       return (
                         <div
                           key={m.member_code}
@@ -410,9 +419,17 @@ export function DisputeModal({
                           }`}
                         >
                           <div className="min-w-0 flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black flex items-center justify-center shrink-0">
-                              {m.full_name.charAt(0).toUpperCase()}
-                            </span>
+                            {mAvatar ? (
+                              <img
+                                src={mAvatar}
+                                alt={m.full_name}
+                                className="w-6 h-6 rounded-full object-cover border border-slate-200/80 shrink-0 shadow-2xs"
+                              />
+                            ) : (
+                              <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black flex items-center justify-center shrink-0">
+                                {m.full_name.charAt(0).toUpperCase()}
+                              </span>
+                            )}
                             <div className="min-w-0">
                               <span className={`text-xs font-bold truncate block ${isSelected ? 'text-[#7026ED]' : 'text-slate-800'}`}>
                                 {m.full_name}
