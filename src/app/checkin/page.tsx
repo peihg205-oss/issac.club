@@ -1459,10 +1459,11 @@ function CheckinContent() {
                             type="password"
                             maxLength={4}
                             required
-                            placeholder="Ví dụ: 0705"
+                            autoComplete="off"
+                            placeholder="Nhập 4 số cuối SĐT..."
                             value={phoneLastDigits}
                             onChange={(e) => setPhoneLastDigits(e.target.value.replace(/\D/g, ''))}
-                            className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-4 py-2 text-center tracking-[0.35em] font-mono text-base font-black text-[#061651] transition shadow-2xs"
+                            className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-sky-100 rounded-xl px-4 py-2.5 text-center tracking-[0.35em] font-mono text-base font-black text-[#061651] transition shadow-2xs placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:font-normal placeholder:text-slate-400"
                           />
                         </div>
                         <p className="text-[11px] text-slate-500 text-center leading-relaxed">
