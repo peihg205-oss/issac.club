@@ -17,6 +17,8 @@ import {
   ChevronDown,
   Check,
   Pencil,
+  Minus,
+  Plus,
 } from 'lucide-react'
 
 interface ScoreModalProps {
@@ -727,21 +729,46 @@ export function ScoreModal({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {/* Nút giảm điểm (-) */}
+                      <button
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => setCustomPoints((prev) => prev - 1)}
+                        className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 text-slate-600 font-bold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                        title="Giảm 1 điểm"
+                      >
+                        <Minus className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+
+                      {/* Ô nhập số điểm trực tiếp */}
                       <div className="relative flex-1">
                         <input
                           type="number"
                           disabled={isLocked}
-                          value={customPoints}
-                          onChange={(e) => setCustomPoints(Number(e.target.value))}
-                          placeholder="Nhập số điểm (+ hoặc -)..."
-                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 rounded-xl px-3.5 py-2 text-sm font-black text-[#061651] focus:outline-none transition shadow-2xs"
+                          value={customPoints === 0 ? '' : customPoints}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setCustomPoints(val === '' ? 0 : Number(val))
+                          }}
+                          placeholder="0"
+                          className="w-full bg-white border border-slate-200/90 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 rounded-xl px-3 py-2 text-center text-base font-black text-[#061651] focus:outline-none transition shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
-                        <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
-                          điểm
-                        </span>
                       </div>
+
+                      {/* Nút tăng điểm (+) */}
+                      <button
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => setCustomPoints((prev) => prev + 1)}
+                        className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 text-slate-600 font-bold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50 shrink-0"
+                        title="Tăng 1 điểm"
+                      >
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+
+                      {/* Badge hiển thị kết quả */}
                       <div
-                        className={`px-3.5 py-2 rounded-xl text-xs font-black min-w-[70px] text-center shadow-2xs ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-black min-w-[72px] text-center shadow-2xs transition shrink-0 ${
                           customPoints > 0
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
                             : customPoints < 0
