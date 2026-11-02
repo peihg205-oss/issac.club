@@ -109,10 +109,10 @@ function CheckinContent() {
   const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
 
   const checkinMascotQuotes = [
-    'Chào bạn! Nhớ điểm danh đúng giờ nhé! ✨',
-    'Nhập MSSV để đăng ký giữ chỗ sự kiện nào! 🎟️',
-    'iSSAC Gen 3.0 luôn sẵn sàng cùng bạn! 🌟',
-    'Điểm danh thành công là có ngay điểm thi đua! 🚀',
+    'Chào bạn! Nhớ điểm danh đúng giờ nhé!',
+    'Nhập MSSV để đăng ký giữ chỗ sự kiện nào!',
+    'iSSAC Gen 3.0 luôn sẵn sàng cùng bạn!',
+    'Điểm danh thành công là có ngay điểm thi đua!',
   ]
 
   const handleMascotClick = () => {
@@ -472,10 +472,12 @@ function CheckinContent() {
 
       <main className="flex-1 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full space-y-6">
         {/* Banner giới thiệu cơ chế không cần tài khoản - Đồng bộ với DashboardView */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#061651] via-[#0B2559] to-[#0284C7] p-6 sm:p-7 text-white shadow-xl shadow-[#0284C7]/10 border border-white/10">
+        <div className="relative rounded-3xl bg-gradient-to-r from-[#061651] via-[#0B2559] to-[#0284C7] p-6 sm:p-7 text-white shadow-xl shadow-[#0284C7]/10 border border-white/10">
           {/* Ambient background glow decoration */}
-          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-sky-400/20 blur-3xl pointer-events-none" />
-          <div className="absolute right-1/3 -bottom-16 w-56 h-56 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
+          <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+            <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-sky-400/20 blur-3xl" />
+            <div className="absolute right-1/3 -bottom-16 w-56 h-56 rounded-full bg-amber-400/10 blur-3xl" />
+          </div>
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
@@ -508,15 +510,15 @@ function CheckinContent() {
                   }`}
                 />
 
-                {/* Bubble tooltip nằm bên cạnh mascot */}
+                {/* Bubble tooltip nằm ở trên mascot, không bị chèn vào chữ tiêu đề */}
                 <div
-                  className={`absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-white text-[#061651] text-[11px] font-bold shadow-xl whitespace-nowrap z-40 transition-all duration-200 border border-slate-100 ${
+                  className={`absolute bottom-full mb-2.5 right-0 sm:left-1/2 sm:-translate-x-1/2 px-3 py-1.5 rounded-xl bg-white text-[#061651] text-[11px] font-bold shadow-xl whitespace-nowrap z-40 transition-all duration-200 border border-slate-100 ${
                     isMascotCheering || showMascotBubble
-                      ? 'opacity-100 scale-105 pointer-events-auto'
-                      : 'opacity-0 group-hover:opacity-100 group-hover:-translate-x-1'
+                      ? 'opacity-100 scale-100 pointer-events-auto'
+                      : 'opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100'
                   }`}
                 >
-                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rotate-45 border-r border-t border-slate-100" />
+                  <div className="absolute -bottom-1 right-6 sm:left-1/2 sm:-translate-x-1/2 w-2 h-2 bg-white rotate-45 border-r border-b border-slate-100" />
                   <span>{checkinMascotQuotes[mascotQuoteIdx]}</span>
                 </div>
               </div>
