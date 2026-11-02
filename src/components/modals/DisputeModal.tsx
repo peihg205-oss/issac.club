@@ -10,7 +10,10 @@ import {
   User,
   ShieldCheck,
   Building2,
-  HelpCircle,
+  Clock,
+  Briefcase,
+  Scale,
+  Sparkles,
 } from 'lucide-react'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
@@ -30,15 +33,15 @@ interface DeductCriterionOption {
   code: string
   name: string
   points: number
-  group: 'Chuyên cần & Họp CLB' | 'Nhiệm vụ & Sự kiện' | 'Quy chế & Kỷ luật' | 'Khác'
+  group: 'Chuyên cần & Điểm danh' | 'Nhiệm vụ & Sự kiện' | 'Quy chế & Kỷ luật' | 'Khác'
 }
 
 const CRITERIA_GROUPS: DeductCriterionOption[] = [
   // 1. Chuyên cần & Điểm danh
-  { code: 'T02', name: 'Vắng họp CLB không phép', points: -5, group: 'Chuyên cần & Họp CLB' },
-  { code: 'T04', name: 'Đi họp muộn quá 15 phút', points: -1, group: 'Chuyên cần & Họp CLB' },
-  { code: 'T01', name: 'Vắng có phép nhưng báo muộn', points: -2, group: 'Chuyên cần & Họp CLB' },
-  { code: 'T05', name: 'Không xác nhận thông báo/tin nhắn', points: -1, group: 'Chuyên cần & Họp CLB' },
+  { code: 'T02', name: 'Vắng họp CLB không phép', points: -5, group: 'Chuyên cần & Điểm danh' },
+  { code: 'T04', name: 'Đi họp muộn quá 15 phút', points: -1, group: 'Chuyên cần & Điểm danh' },
+  { code: 'T01', name: 'Vắng có phép nhưng báo muộn', points: -2, group: 'Chuyên cần & Điểm danh' },
+  { code: 'T05', name: 'Không xác nhận thông báo/tin nhắn', points: -1, group: 'Chuyên cần & Điểm danh' },
 
   // 2. Nhiệm vụ & Sự kiện
   { code: 'T07', name: 'Trễ deadline công việc/nhiệm vụ', points: -2, group: 'Nhiệm vụ & Sự kiện' },
@@ -72,7 +75,6 @@ export function DisputeModal({
       const current = members.find((m) => m.member_code === currentUser.memberCode)
       if (current) return current
     }
-    // Mặc định thành viên đầu tiên
     return members[0] || ({} as RosterMember)
   }
 
@@ -83,6 +85,9 @@ export function DisputeModal({
   const pickerDropdownRef = useRef<HTMLDivElement>(null)
 
   const [criterion, setCriterion] = useState<string>(initialCriterionCode)
+  const [isCriterionPickerOpen, setIsCriterionPickerOpen] = useState<boolean>(false)
+  const criterionDropdownRef = useRef<HTMLDivElement>(null)
+
   const [points, setPoints] = useState<number>(initialPoints)
   const [reason, setReason] = useState<string>('')
   const [evidence, setEvidence] = useState<string>('')
@@ -94,12 +99,15 @@ export function DisputeModal({
       if (pickerDropdownRef.current && !pickerDropdownRef.current.contains(e.target as Node)) {
         setIsMemberPickerOpen(false)
       }
+      if (criterionDropdownRef.current && !criterionDropdownRef.current.contains(e.target as Node)) {
+        setIsCriterionPickerOpen(false)
+      }
     }
-    if (isMemberPickerOpen) {
+    if (isMemberPickerOpen || isCriterionPickerOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isMemberPickerOpen])
+  }, [isMemberPickerOpen, isCriterionPickerOpen])
 
   // Reset form khi modal mở ra
   useEffect(() => {
@@ -113,6 +121,7 @@ export function DisputeModal({
       setMemberSearch('')
       setDeptFilter('ALL')
       setIsMemberPickerOpen(false)
+      setIsCriterionPickerOpen(false)
       setSubmitting(false)
     }
   }, [isOpen, initialMemberCode, initialCriterionCode, initialPoints])
@@ -151,12 +160,10 @@ export function DisputeModal({
   }, [members, memberSearch, deptFilter])
 
   // Đổi tiêu chí -> tự động cập nhật số điểm chuẩn
-  const handleCriterionChange = (newCode: string) => {
-    setCriterion(newCode)
-    const found = allDeductCriteria.find((c) => c.code === newCode)
-    if (found) {
-      setPoints(found.points)
-    }
+  const handleSelectCriterion = (opt: DeductCriterionOption) => {
+    setCriterion(opt.code)
+    setPoints(opt.points)
+    setIsCriterionPickerOpen(false)
   }
 
   // Chọn thành viên
@@ -270,9 +277,12 @@ export function DisputeModal({
               )}
             </div>
 
-            {/* Thẻ hiển thị thành viên đang chọn (Trực quan, rõ ràng, không che màn hình) */}
+            {/* Thẻ hiển thị thành viên đang chọn (Trực quan, rõ ràng) */}
             <div
-              onClick={() => setIsMemberPickerOpen(!isMemberPickerOpen)}
+              onClick={() => {
+                setIsMemberPickerOpen(!isMemberPickerOpen)
+                setIsCriterionPickerOpen(false)
+              }}
               className={`w-full p-2.5 sm:p-3 bg-white border rounded-2xl flex items-center justify-between gap-2.5 cursor-pointer transition shadow-2xs hover:border-[#7026ED] ${
                 isMemberPickerOpen
                   ? 'border-[#7026ED] ring-2 ring-[#7026ED]/15'
@@ -280,7 +290,6 @@ export function DisputeModal({
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                {/* Avatar tròn nhỏ */}
                 <div className="w-8 h-8 rounded-full bg-purple-50 text-[#7026ED] border border-purple-200/80 font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
                   {selectedMember.full_name ? selectedMember.full_name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
                 </div>
@@ -309,10 +318,9 @@ export function DisputeModal({
               </div>
             </div>
 
-            {/* POPOVER CHỌN THÀNH VIÊN CÓ TÌM KIẾM VÀ PHÂN LOẠI THEO 4 BAN */}
+            {/* POPOVER CHỌN THÀNH VIÊN */}
             {isMemberPickerOpen && (
               <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-200/90 shadow-xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
-                {/* Ô tìm kiếm nhanh */}
                 <div className="relative">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -334,7 +342,6 @@ export function DisputeModal({
                   )}
                 </div>
 
-                {/* 4 Tabs Ban chuyên môn: Bấm chọn nhanh, không bao giờ nhầm lẫn */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5 text-[11px]">
                   {[
                     { id: 'ALL' as const, label: 'Tất cả (49)' },
@@ -358,7 +365,6 @@ export function DisputeModal({
                   ))}
                 </div>
 
-                {/* Danh sách thành viên giới hạn chiều cao tối đa, cuộn mượt mà */}
                 <div className="max-h-52 overflow-y-auto space-y-1 pr-1 divide-y divide-slate-50">
                   {filteredMembers.length === 0 ? (
                     <div className="py-6 text-center text-xs text-slate-400">
@@ -407,61 +413,178 @@ export function DisputeModal({
           {/* FIELD 2 & 3: 2 CỘT CÂN ĐỐI - MÃ TIÊU CHÍ VÀ SỐ ĐIỂM KHIẾU NẠI  */}
           {/* ============================================================== */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-            {/* Cột trái: Mã tiêu chí bị trừ */}
-            <div>
+            {/* Cột trái: Mã tiêu chí bị trừ (Custom Picker sang trọng) */}
+            <div className="relative" ref={criterionDropdownRef}>
               <label className="text-[13px] font-bold text-[#061651] mb-1.5 block">
                 Mã tiêu chí bị trừ:
               </label>
-              <div className="relative">
-                <select
-                  value={criterion}
-                  onChange={(e) => handleCriterionChange(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs appearance-none pr-9 cursor-pointer"
-                >
-                  <optgroup label="1. Chuyên cần & Điểm danh">
-                    {allDeductCriteria
-                      .filter((c) => c.group === 'Chuyên cần & Họp CLB')
-                      .map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.name} {c.points}đ)
-                        </option>
-                      ))}
-                  </optgroup>
 
-                  <optgroup label="2. Nhiệm vụ & Sự kiện">
-                    {allDeductCriteria
-                      .filter((c) => c.group === 'Nhiệm vụ & Sự kiện')
-                      .map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.name} {c.points}đ)
-                        </option>
-                      ))}
-                  </optgroup>
+              {/* Box bấm chọn tiêu chí */}
+              <div
+                onClick={() => {
+                  setIsCriterionPickerOpen(!isCriterionPickerOpen)
+                  setIsMemberPickerOpen(false)
+                }}
+                className={`w-full p-2.5 sm:p-3 bg-white border rounded-2xl flex items-center justify-between gap-2 cursor-pointer transition shadow-2xs hover:border-[#7026ED] ${
+                  isCriterionPickerOpen
+                    ? 'border-[#7026ED] ring-2 ring-[#7026ED]/15'
+                    : 'border-slate-200 hover:bg-slate-50/50'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200/80 shrink-0">
+                    {selectedCriterionObj.code}
+                  </span>
+                  <span className="text-xs sm:text-[13px] font-bold text-slate-800 truncate">
+                    {selectedCriterionObj.name}
+                  </span>
+                </div>
 
-                  <optgroup label="3. Quy chế & Kỷ luật">
-                    {allDeductCriteria
-                      .filter((c) => c.group === 'Quy chế & Kỷ luật')
-                      .map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.name} {c.points}đ)
-                        </option>
-                      ))}
-                  </optgroup>
-
-                  {allDeductCriteria.filter((c) => c.group === 'Khác').length > 0 && (
-                    <optgroup label="4. Tiêu chí khác">
-                      {allDeductCriteria
-                        .filter((c) => c.group === 'Khác')
-                        .map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.code} ({c.name} {c.points}đ)
-                          </option>
-                        ))}
-                    </optgroup>
-                  )}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${isCriterionPickerOpen ? 'rotate-180 text-[#7026ED]' : ''}`} />
               </div>
+
+              {/* POPOVER CHỌN TIÊU CHÍ ĐƯỢC PHÂN NHÓM CHUYÊN NGHIỆP */}
+              {isCriterionPickerOpen && (
+                <div className="absolute left-0 sm:left-auto right-0 top-full mt-1.5 w-full sm:w-[380px] bg-white rounded-2xl border border-slate-200/90 shadow-xl z-50 p-2.5 max-h-72 overflow-y-auto space-y-3 animate-in fade-in zoom-in-95 duration-150 no-scrollbar">
+                  {/* Nhóm 1: Chuyên cần & Điểm danh */}
+                  <div>
+                    <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <Clock className="w-3.5 h-3.5 text-blue-500" />
+                      <span>1. Chuyên cần &amp; Điểm danh</span>
+                    </div>
+                    <div className="space-y-0.5 mt-1">
+                      {allDeductCriteria
+                        .filter((c) => c.group === 'Chuyên cần & Điểm danh')
+                        .map((c) => {
+                          const isSel = c.code === criterion
+                          return (
+                            <div
+                              key={c.code}
+                              onClick={() => handleSelectCriterion(c)}
+                              className={`p-2 rounded-xl flex items-center justify-between gap-2 cursor-pointer transition ${
+                                isSel ? 'bg-purple-50 text-[#7026ED] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-bold border ${isSel ? 'bg-[#7026ED] text-white border-[#7026ED]' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                  {c.code}
+                                </span>
+                                <span className="text-xs truncate">{c.name}</span>
+                              </div>
+                              <span className="text-xs font-bold text-rose-600 shrink-0">
+                                {c.points}đ
+                              </span>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Nhóm 2: Nhiệm vụ & Sự kiện */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+                      <span>2. Nhiệm vụ &amp; Sự kiện</span>
+                    </div>
+                    <div className="space-y-0.5 mt-1">
+                      {allDeductCriteria
+                        .filter((c) => c.group === 'Nhiệm vụ & Sự kiện')
+                        .map((c) => {
+                          const isSel = c.code === criterion
+                          return (
+                            <div
+                              key={c.code}
+                              onClick={() => handleSelectCriterion(c)}
+                              className={`p-2 rounded-xl flex items-center justify-between gap-2 cursor-pointer transition ${
+                                isSel ? 'bg-purple-50 text-[#7026ED] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-bold border ${isSel ? 'bg-[#7026ED] text-white border-[#7026ED]' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                  {c.code}
+                                </span>
+                                <span className="text-xs truncate">{c.name}</span>
+                              </div>
+                              <span className="text-xs font-bold text-rose-600 shrink-0">
+                                {c.points}đ
+                              </span>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Nhóm 3: Quy chế & Kỷ luật */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <Scale className="w-3.5 h-3.5 text-rose-500" />
+                      <span>3. Quy chế &amp; Kỷ luật</span>
+                    </div>
+                    <div className="space-y-0.5 mt-1">
+                      {allDeductCriteria
+                        .filter((c) => c.group === 'Quy chế & Kỷ luật')
+                        .map((c) => {
+                          const isSel = c.code === criterion
+                          return (
+                            <div
+                              key={c.code}
+                              onClick={() => handleSelectCriterion(c)}
+                              className={`p-2 rounded-xl flex items-center justify-between gap-2 cursor-pointer transition ${
+                                isSel ? 'bg-purple-50 text-[#7026ED] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-bold border ${isSel ? 'bg-[#7026ED] text-white border-[#7026ED]' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                  {c.code}
+                                </span>
+                                <span className="text-xs truncate">{c.name}</span>
+                              </div>
+                              <span className="text-xs font-bold text-rose-600 shrink-0">
+                                {c.points}đ
+                              </span>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Nhóm 4: Tiêu chí khác */}
+                  {allDeductCriteria.filter((c) => c.group === 'Khác').length > 0 && (
+                    <div className="pt-2 border-t border-slate-100">
+                      <div className="px-2 py-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                        <span>4. Tiêu chí khác</span>
+                      </div>
+                      <div className="space-y-0.5 mt-1">
+                        {allDeductCriteria
+                          .filter((c) => c.group === 'Khác')
+                          .map((c) => {
+                            const isSel = c.code === criterion
+                            return (
+                              <div
+                                key={c.code}
+                                onClick={() => handleSelectCriterion(c)}
+                                className={`p-2 rounded-xl flex items-center justify-between gap-2 cursor-pointer transition ${
+                                  isSel ? 'bg-purple-50 text-[#7026ED] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-bold border ${isSel ? 'bg-[#7026ED] text-white border-[#7026ED]' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                    {c.code}
+                                  </span>
+                                  <span className="text-xs truncate">{c.name}</span>
+                                </div>
+                                <span className="text-xs font-bold text-rose-600 shrink-0">
+                                  {c.points}đ
+                                </span>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Cột phải: Số điểm khiếu nại (Tự động đồng bộ số điểm) */}
@@ -480,7 +603,7 @@ export function DisputeModal({
                   step="1"
                   value={points}
                   onChange={(e) => setPoints(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-[13px] font-bold text-rose-600 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs pr-10"
+                  className="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-[13px] font-bold text-rose-600 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs pr-10"
                 />
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
                   điểm
@@ -502,7 +625,7 @@ export function DisputeModal({
               placeholder="Nêu rõ hoàn cảnh, lý do bất khả kháng hoặc minh chứng đã nộp..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs resize-y min-h-[90px]"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-[13px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs resize-y min-h-[85px]"
             />
           </div>
 
