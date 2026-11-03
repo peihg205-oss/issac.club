@@ -765,10 +765,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             } catch (e) {}
           }
 
-          // Nếu local có bản ghi mà cloud chưa có, đẩy ngay bản hợp nhất lên cloud!
-          const cloudIds = new Set(data.proposals.map((p: any) => p.id))
-          const hasUnsynced = latestMergedProposals.some((p) => !cloudIds.has(p.id))
-          if (hasUnsynced || latestMergedProposals.length > data.proposals.length) {
+          // Nếu có bất kỳ sự khác biệt nào giữa local và cloud (bản ghi mới, đổi trạng thái duyệt approved/rejected, cập nhật reviewedAt), đẩy ngay lên cloud!
+          const isDifferentFromCloud = JSON.stringify(latestMergedProposals) !== JSON.stringify(data.proposals)
+          if (isDifferentFromCloud) {
             syncToCloud({
               proposals: latestMergedProposals,
               deletedProposalIds: Array.from(deletedProposalIdsRef.current),

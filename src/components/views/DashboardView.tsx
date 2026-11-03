@@ -132,11 +132,11 @@ export function DashboardView({
     <div className="space-y-3.5 sm:space-y-5 lg:space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB + Card Thời Tiết & Giờ Hà Nội */}
       <div className="flex flex-col lg:grid lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {/* Item 1: Tiêu đề + Mascot (khớp 100% style của ảnh 1, không thụt lề) */}
+        {/* Item 1: Tiêu đề + Mascot (nằm cạnh nhau như ảnh 3 trên laptop) */}
         <div className="order-1 lg:order-1 lg:col-span-3 lg:col-start-1 lg:row-start-1 min-w-0">
-          <div className="flex items-center justify-between gap-3.5 sm:gap-4">
-            {/* Cụm Tiêu đề & Lời chào (khớp 100% typography ảnh 1, không thụt lề thừa) */}
-            <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between lg:justify-start gap-3.5 sm:gap-4">
+            {/* Cụm Tiêu đề & Lời chào */}
+            <div className="min-w-0 flex-1 lg:flex-initial">
               <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
                 {t('dashboard.title')}
               </h1>
@@ -145,7 +145,7 @@ export function DashboardView({
               </p>
             </div>
 
-            {/* Mascot Chibi với hiệu ứng tương tác - Khớp kích thước và style như ảnh 1 */}
+            {/* Mascot Chibi với hiệu ứng tương tác - Nằm ngay cạnh tiêu đề như ảnh 3 trên laptop */}
             <div
               onClick={handleMascotClick}
               className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
@@ -154,7 +154,7 @@ export function DashboardView({
               <img
                 src="/issac-mascot.png"
                 alt="iSSAC Chibi Mascot"
-                className={`w-12 h-14 sm:w-14 sm:h-16 lg:w-16 lg:h-16 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
+                className={`w-12 h-14 sm:w-14 sm:h-16 lg:w-15 lg:h-17 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
                   isMascotCheering
                     ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
                     : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
