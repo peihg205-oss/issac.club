@@ -1277,7 +1277,7 @@ export function RulesView() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight truncate">
-                    {language === 'vi' ? 'Thêm Quy Định / Tiêu Chí CLB' : 'Add Club Rule / Criterion'}
+                    {language === 'vi' ? 'Thêm Quy định / Tiêu chí CLB' : 'Add Club Rule / Criterion'}
                   </h3>
                   <p className="text-[11px] sm:text-xs text-[#64748B] font-medium truncate mt-0.5">
                     {language === 'vi'
@@ -1663,7 +1663,7 @@ export function RulesView() {
                   className="flex-1 sm:flex-initial px-6 py-2.5 rounded-2xl text-xs sm:text-[13px] font-bold text-white bg-[#7026ED] hover:bg-[#621fde] text-center shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>{language === 'vi' ? 'Lưu Quy Định CLB' : 'Save Club Regulation'}</span>
+                  <span>{language === 'vi' ? 'Lưu Quy định CLB' : 'Save Club Regulation'}</span>
                 </button>
               </div>
             </form>
