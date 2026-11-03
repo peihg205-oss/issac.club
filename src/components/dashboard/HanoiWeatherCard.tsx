@@ -30,12 +30,12 @@ interface HanoiWeatherData {
   daily: WeatherDayForecast[]
 }
 
-// Fallback data for Hanoi if network is offline or loading
+// Fallback data for Hanoi if network is offline or loading (matching user's reference)
 const FALLBACK_WEATHER: HanoiWeatherData = {
-  currentTemp: 28,
-  tempMax: 29,
-  tempMin: 23,
-  weatherCode: 51, // light drizzle / cloudy
+  currentTemp: 31,
+  tempMax: 31,
+  tempMin: 24,
+  weatherCode: 51, // Mưa phùn / Drizzle
   daily: [
     { date: '2026-11-04', dayLabel: 'T4', code: 51, tempMax: 31, tempMin: 24 },
     { date: '2026-11-05', dayLabel: 'T5', code: 53, tempMax: 31, tempMin: 25 },
@@ -94,8 +94,8 @@ function getWeatherMeta(code: number, lang: 'vi' | 'en') {
     }
   }
   return {
-    text: lang === 'vi' ? 'Nắng nhẹ' : 'Sunny',
-    Icon: Sun,
+    text: lang === 'vi' ? 'Mưa phùn' : 'Drizzle',
+    Icon: CloudDrizzle,
   }
 }
 
@@ -106,7 +106,7 @@ export function HanoiWeatherCard() {
   const { language } = useLanguage()
   const [weatherData, setWeatherData] = useState<HanoiWeatherData>(FALLBACK_WEATHER)
   const [timeState, setTimeState] = useState({
-    hourMin: '12:00',
+    hourMin: '13:27',
     dateText: 'T3 03/11',
   })
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null)
@@ -235,30 +235,80 @@ export function HanoiWeatherCard() {
   }, [selectedDayIdx, weatherData, language])
 
   const WeatherIcon = activeWeather.Icon
-  const [isSunsetTheme, setIsSunsetTheme] = useState(false)
 
   return (
     <div
-      className={`weather-widget ${isSunsetTheme ? 'weather-sunset' : ''}`}
+      className="weather-widget"
       title={
         language === 'vi'
-          ? `Thời tiết Hà Nội hôm nay: ${activeWeather.text}, ${activeWeather.temp} (Cao/Thấp: ${activeWeather.range}). Bấm vào địa điểm để đổi giao diện màu!`
-          : `Hanoi Weather today: ${activeWeather.text}, ${activeWeather.temp} (High/Low: ${activeWeather.range}). Click location to toggle theme color!`
+          ? `Thời tiết Hà Nội: ${activeWeather.text}, ${activeWeather.temp} (${activeWeather.range})`
+          : `Hanoi Weather: ${activeWeather.text}, ${activeWeather.temp} (${activeWeather.range})`
       }
     >
-      {/* Background with artistic sun circles (From Uiverse.io by KSAplay) */}
+      {/* Background with artistic sky waves matching user's image (Vector SVG) */}
       <div className="background-design" aria-hidden="true">
-        <div className="circle" />
-        <div className="circle" />
-        <div className="circle" />
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 252 125"
+          preserveAspectRatio="none"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            {/* Light Mode Gradients matching user's image */}
+            <linearGradient id="skyGradLight" x1="0" y1="0" x2="252" y2="125" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#359CEB" />
+              <stop offset="42%" stopColor="#4FB1F6" />
+              <stop offset="100%" stopColor="#87CDF8" />
+            </linearGradient>
+            <linearGradient id="arc1GradLight" x1="112" y1="0" x2="252" y2="89" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#A2DFFD" stopOpacity="0.82" />
+              <stop offset="100%" stopColor="#C6EAFE" stopOpacity="0.9" />
+            </linearGradient>
+            <linearGradient id="arc2GradLight" x1="145" y1="0" x2="252" y2="89" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#DCF2FE" stopOpacity="0.96" />
+              <stop offset="100%" stopColor="#EBF7FE" stopOpacity="1" />
+            </linearGradient>
+
+            {/* Dark Mode Gradients */}
+            <linearGradient id="skyGradDark" x1="0" y1="0" x2="252" y2="125" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#0B2547" />
+              <stop offset="45%" stopColor="#123869" />
+              <stop offset="100%" stopColor="#184C8C" />
+            </linearGradient>
+            <linearGradient id="arc1GradDark" x1="112" y1="0" x2="252" y2="89" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#1A4980" stopOpacity="0.65" />
+              <stop offset="100%" stopColor="#2460A6" stopOpacity="0.75" />
+            </linearGradient>
+            <linearGradient id="arc2GradDark" x1="145" y1="0" x2="252" y2="89" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#1F5394" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#2969B5" stopOpacity="0.9" />
+            </linearGradient>
+          </defs>
+
+          {/* Base Azure Sky */}
+          <rect width="252" height="125" className="fill-sky-base" />
+
+          {/* Concentric Arc 1: Middle Light Cyan Wave */}
+          <path
+            d="M 112 0 C 118 34, 136 64, 162 89 L 252 89 L 252 0 Z"
+            className="fill-sky-arc1"
+          />
+
+          {/* Concentric Arc 2: Inner Pale Ice-Blue Wave behind the Clock */}
+          <path
+            d="M 145 0 C 158 34, 180 64, 212 89 L 252 89 L 252 0 Z"
+            className="fill-sky-arc2"
+          />
+        </svg>
       </div>
 
-      {/* Info Section (Top 72%) */}
+      {/* Info Section (Top 71%) */}
       <div className="info-section">
-        {/* Left Side: Weather Icon + Text + Temperature */}
+        {/* Left Side: White Weather icon + Text + Big Temperature */}
         <div className="left-side">
           <div className="weather-condition">
-            <WeatherIcon className="w-3.5 h-3.5 shrink-0 text-white drop-shadow-xs" />
+            <WeatherIcon className="w-3.5 h-3.5 shrink-0 text-white" />
             <span className="truncate max-w-[110px]">{activeWeather.text}</span>
           </div>
 
@@ -267,42 +317,40 @@ export function HanoiWeatherCard() {
           <div className="temp-range">{activeWeather.range}</div>
         </div>
 
-        {/* Right Side: Real-time Hanoi Clock + Date + Location */}
+        {/* Right Side: Dark Navy Hour + Date + Location with Yellow Pin */}
         <div className="right-side">
           <div className="hour">{timeState.hourMin}</div>
           <div className="date-text">{timeState.dateText}</div>
-          <button
-            type="button"
-            onClick={() => setIsSunsetTheme(!isSunsetTheme)}
-            className="location-text hover:opacity-80 transition cursor-pointer"
-            title="Đổi tông màu Trời Xanh / Hoàng Hôn"
-          >
-            <MapPin className="w-2.5 h-2.5 shrink-0 text-yellow-300" />
+          <div className="location-text">
+            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#EAB308] stroke-[2.5]" />
             <span>{language === 'vi' ? 'Hà Nội' : 'Hanoi'}</span>
-          </button>
+          </div>
         </div>
       </div>
 
-      {/* Days Section (Bottom 25%): 4-day forecast */}
+      {/* Days Section (Bottom 29%): 4-day forecast matching user's exact style */}
       <div className="days-section">
         {weatherData.daily.map((day, idx) => {
           const dayMeta = getWeatherMeta(day.code, language)
           const DayIcon = dayMeta.Icon
-          const isSelected = selectedDayIdx === idx
+          // Default first day (idx === 0) is active as in user's image, unless clicked
+          const isSelected = selectedDayIdx === null ? idx === 0 : selectedDayIdx === idx
+          const showDivider = idx < weatherData.daily.length - 1
 
           return (
-            <button
-              key={day.date}
-              type="button"
-              onClick={() => setSelectedDayIdx(isSelected ? null : idx)}
-              className={isSelected ? '!bg-[#1A3E94] !scale-95' : ''}
-              title={`${day.dayLabel}: ${dayMeta.text} (${day.tempMax}°/${day.tempMin}°)`}
-            >
-              <span className="day">{day.dayLabel}</span>
-              <span className="icon-weather-day">
-                <DayIcon className="w-3 h-3 text-white/95" />
-              </span>
-            </button>
+            <div key={day.date} className={`day-slot ${showDivider ? 'has-divider' : ''}`}>
+              <button
+                type="button"
+                onClick={() => setSelectedDayIdx(idx)}
+                className={`day-pill ${isSelected ? 'is-active' : ''}`}
+                title={`${day.dayLabel}: ${dayMeta.text} (${day.tempMax}°/${day.tempMin}°)`}
+              >
+                <span className="day-label">{day.dayLabel}</span>
+                <span className="day-icon">
+                  <DayIcon className="w-3.5 h-3.5" />
+                </span>
+              </button>
+            </div>
           )
         })}
       </div>
