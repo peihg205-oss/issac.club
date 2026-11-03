@@ -1355,18 +1355,20 @@ export function RulesView() {
                 {/* 2. Mã quy chế & Mức điểm */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
                   <div>
-                    <label className="text-xs sm:text-[13px] font-bold text-[#061651] block mb-1.5">
-                      {language === 'vi' ? 'Mã quy chế:' : 'Rule Code:'} <span className="text-rose-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5 h-6">
+                      <label className="text-xs sm:text-[13px] font-bold text-[#061651] whitespace-nowrap">
+                        {language === 'vi' ? 'Mã quy chế:' : 'Rule Code:'} <span className="text-rose-500">*</span>
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={formCode}
                       onChange={(e) => setFormCode(e.target.value.toUpperCase())}
                       placeholder="VD: C10, T14, P11"
-                      className="w-full bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] font-mono font-bold text-[#7026ED] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
+                      className="w-full h-[42px] bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 text-xs sm:text-[13px] font-mono font-bold text-[#7026ED] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
                       required
                     />
-                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
                       {language === 'vi' ? 'Tự động gợi ý mã kế tiếp' : 'Auto-suggested next code'}
                     </p>
                   </div>
@@ -1375,17 +1377,17 @@ export function RulesView() {
                     {/* Stepper hoặc Input tuỳ formType */}
                     {formType === 'principle' ? (
                       <>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
-                            {language === 'vi' ? 'Quy chuẩn điểm:' : 'Point Standard:'} <span className="text-rose-500">*</span>
+                        <div className="flex items-center justify-between mb-1.5 h-6">
+                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] whitespace-nowrap">
+                            {language === 'vi' ? 'Quy chuẩn:' : 'Standard:'} <span className="text-rose-500">*</span>
                           </label>
                           <div className="flex items-center gap-1">
-                            {['Quy chuẩn', '0 - 100', 'Kỷ luật'].map((preset) => (
+                            {['Quy chuẩn', '0 - 100'].map((preset) => (
                               <button
                                 key={preset}
                                 type="button"
                                 onClick={() => setFormPoints(preset)}
-                                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-medium transition cursor-pointer ${
+                                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-medium transition cursor-pointer whitespace-nowrap ${
                                   formPoints === preset
                                     ? 'bg-[#7026ED] text-white shadow-2xs font-bold'
                                     : 'bg-purple-50 hover:bg-purple-100 text-[#7026ED]'
@@ -1401,14 +1403,14 @@ export function RulesView() {
                           value={formPoints}
                           onChange={(e) => setFormPoints(e.target.value)}
                           placeholder="VD: 0, 60, Quy chuẩn..."
-                          className="w-full bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] font-bold text-[#061651] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
+                          className="w-full h-[42px] bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 text-xs sm:text-[13px] font-bold text-[#061651] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
                           required
                         />
                       </>
                     ) : (
                       <>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
+                        <div className="flex items-center justify-between mb-1.5 h-6">
+                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] whitespace-nowrap">
                             {language === 'vi' ? 'Mức điểm:' : 'Points:'} <span className="text-rose-500">*</span>
                           </label>
                           <div className="flex items-center gap-1">
@@ -1434,7 +1436,7 @@ export function RulesView() {
                           </div>
                         </div>
                         <div
-                          className={`flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-1.5 shadow-2xs transition ${
+                          className={`flex items-center justify-between h-[42px] bg-white border border-slate-200 rounded-2xl px-2.5 shadow-2xs transition ${
                             formType === 'add'
                               ? 'focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15'
                               : 'focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/15'
@@ -1477,7 +1479,7 @@ export function RulesView() {
                         </div>
                       </>
                     )}
-                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
                       {formType === 'add'
                         ? (language === 'vi' ? 'Điểm thưởng khi hoàn thành xuất sắc' : 'Bonus points for outstanding contribution')
                         : formType === 'deduct'
