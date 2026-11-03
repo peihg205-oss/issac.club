@@ -1259,20 +1259,20 @@ export function RulesView() {
             <div className="p-4 sm:p-5 sm:pb-3.5 border-b border-slate-100 flex items-start justify-between bg-white shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0 transition-colors ${
+                  className={`w-9.5 h-9.5 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-2xs border ${
                     formType === 'add'
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-700 shadow-emerald-500/20'
+                      ? 'bg-[#F0FDF4] border-emerald-300/80 text-[#16A34A]'
                       : formType === 'deduct'
-                      ? 'bg-gradient-to-br from-rose-500 to-red-700 shadow-rose-500/20'
-                      : 'bg-gradient-to-br from-[#7026ED] via-[#5b1ecc] to-[#1351D8] shadow-purple-500/20'
+                      ? 'bg-[#FFF1F2] border-rose-300/80 text-[#DC2626]'
+                      : 'bg-[#FAF5FF] border-purple-200/80 text-[#7026ED]'
                   }`}
                 >
                   {formType === 'add' ? (
-                    <Award className="w-5 h-5 text-white stroke-[2.2]" />
+                    <Award className="w-5 h-5 stroke-[1.8]" />
                   ) : formType === 'deduct' ? (
-                    <ShieldAlert className="w-5 h-5 text-white stroke-[2.2]" />
+                    <ShieldAlert className="w-5 h-5 stroke-[1.8]" />
                   ) : (
-                    <Scale className="w-5 h-5 text-white stroke-[2.2]" />
+                    <Scale className="w-5 h-5 stroke-[1.8]" />
                   )}
                 </div>
                 <div className="min-w-0">
