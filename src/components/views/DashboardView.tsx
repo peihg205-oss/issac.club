@@ -131,9 +131,9 @@ export function DashboardView({
   return (
     <div className="space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB + Card Thời Tiết & Giờ Hà Nội */}
-      <div className="flex flex-col md:flex-row lg:grid lg:grid-cols-4 md:items-center justify-between gap-3 sm:gap-4 pb-1">
-        {/* Bên trái: Tiêu đề + Mascot + Lời chào + 2 nút hành động ở ngay dưới (chiếm 3 cột đầu) */}
-        <div className="flex flex-col gap-3.5 lg:col-span-3 min-w-0 flex-1">
+      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-3 sm:gap-4 pb-1">
+        {/* Item 1: Tiêu đề + Mascot (order-1, trên desktop ở hàng 1 cột 1-3) */}
+        <div className="order-1 lg:order-1 lg:col-span-3 lg:col-start-1 lg:row-start-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             {/* Cụm Tiêu đề & Lời chào (thụt lề pl-11 trên mobile để không bị nút 9 chấm che) */}
             <div className="min-w-0 flex-1 pl-11 sm:pl-0">
@@ -177,44 +177,44 @@ export function DashboardView({
               </div>
             </div>
           </div>
-
-          {/* Cụm 2 nút hành động: Xem bảng xếp hạng + Cổng điểm danh CLB ở ngay bên dưới phần tiêu đề */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {/* Nút Xem Bảng Xếp Hạng */}
-            <button
-              type="button"
-              onClick={onNavigateToLeaderboard}
-              className="px-4 py-2 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-xs hover:shadow flex items-center gap-2 transition active:scale-95 cursor-pointer"
-              title="Mở Bảng xếp hạng đóng góp iSSACer"
-            >
-              <Trophy className="w-4 h-4 text-white fill-white flex-shrink-0" />
-              <span>{t('dashboard.view_leaderboard')}</span>
-            </button>
-
-            {/* Huy hiệu Cổng điểm danh CLB */}
-            <button
-              type="button"
-              onClick={onNavigateToCheckin}
-              className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
-              title="Chuyển đến màn hình điểm danh"
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
-                }`}
-              />
-              <span>
-                {activeEvent && !activeEvent.isFinalized
-                  ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
-                  : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
-              </span>
-            </button>
-          </div>
         </div>
 
-        {/* Bên phải: Widget Thời tiết & Giờ Hà Nội (bằng đúng cái cột thứ 4 dưới) */}
-        <div className="lg:col-span-1 w-full md:w-[280px] lg:w-full shrink-0 flex justify-start lg:justify-end">
+        {/* Item 2: Widget Thời tiết & Giờ Hà Nội (order-2 trên mobile - NẰM TRÊN CHỖ ẢNH 2; trên desktop ở cột 4 hàng 1-2) */}
+        <div className="order-2 lg:order-3 lg:col-span-1 lg:col-start-4 lg:row-start-1 lg:row-span-2 w-full md:w-[280px] lg:w-full shrink-0 flex items-center justify-start lg:justify-end">
           <HanoiWeatherCard className="w-full" />
+        </div>
+
+        {/* Item 3: Cụm 2 nút hành động (order-3 trên mobile - NẰM DƯỚI THỜI TIẾT; trên desktop ở hàng 2 cột 1-3) */}
+        <div className="order-3 lg:order-2 lg:col-span-3 lg:col-start-1 lg:row-start-2 flex items-center gap-2.5 flex-wrap">
+          {/* Nút Xem Bảng Xếp Hạng */}
+          <button
+            type="button"
+            onClick={onNavigateToLeaderboard}
+            className="px-4 py-2 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-xs hover:shadow flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            title="Mở Bảng xếp hạng đóng góp iSSACer"
+          >
+            <Trophy className="w-4 h-4 text-white fill-white flex-shrink-0" />
+            <span>{t('dashboard.view_leaderboard')}</span>
+          </button>
+
+          {/* Huy hiệu Cổng điểm danh CLB */}
+          <button
+            type="button"
+            onClick={onNavigateToCheckin}
+            className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            title="Chuyển đến màn hình điểm danh"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
+              }`}
+            />
+            <span>
+              {activeEvent && !activeEvent.isFinalized
+                ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
+                : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
+            </span>
+          </button>
         </div>
       </div>
 
