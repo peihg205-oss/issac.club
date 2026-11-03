@@ -235,14 +235,15 @@ export function HanoiWeatherCard() {
   }, [selectedDayIdx, weatherData, language])
 
   const WeatherIcon = activeWeather.Icon
+  const [isSunsetTheme, setIsSunsetTheme] = useState(false)
 
   return (
     <div
-      className="weather-widget"
+      className={`weather-widget ${isSunsetTheme ? 'weather-sunset' : ''}`}
       title={
         language === 'vi'
-          ? `Thời tiết Hà Nội hôm nay: ${activeWeather.text}, ${activeWeather.temp} (Cao/Thấp: ${activeWeather.range})`
-          : `Hanoi Weather today: ${activeWeather.text}, ${activeWeather.temp} (High/Low: ${activeWeather.range})`
+          ? `Thời tiết Hà Nội hôm nay: ${activeWeather.text}, ${activeWeather.temp} (Cao/Thấp: ${activeWeather.range}). Bấm vào địa điểm để đổi giao diện màu!`
+          : `Hanoi Weather today: ${activeWeather.text}, ${activeWeather.temp} (High/Low: ${activeWeather.range}). Click location to toggle theme color!`
       }
     >
       {/* Background with artistic sun circles (From Uiverse.io by KSAplay) */}
@@ -252,13 +253,13 @@ export function HanoiWeatherCard() {
         <div className="circle" />
       </div>
 
-      {/* Info Section (Top 75%) */}
+      {/* Info Section (Top 72%) */}
       <div className="info-section">
         {/* Left Side: Weather Icon + Text + Temperature */}
         <div className="left-side">
           <div className="weather-condition">
-            <WeatherIcon className="w-4 h-4 shrink-0 text-white drop-shadow-xs" />
-            <span className="truncate max-w-[120px]">{activeWeather.text}</span>
+            <WeatherIcon className="w-3.5 h-3.5 shrink-0 text-white drop-shadow-xs" />
+            <span className="truncate max-w-[110px]">{activeWeather.text}</span>
           </div>
 
           <div className="temperature">{activeWeather.temp}</div>
@@ -270,10 +271,15 @@ export function HanoiWeatherCard() {
         <div className="right-side">
           <div className="hour">{timeState.hourMin}</div>
           <div className="date-text">{timeState.dateText}</div>
-          <div className="location-text">
-            <MapPin className="w-3 h-3 shrink-0 text-yellow-300" />
+          <button
+            type="button"
+            onClick={() => setIsSunsetTheme(!isSunsetTheme)}
+            className="location-text hover:opacity-80 transition cursor-pointer"
+            title="Đổi tông màu Trời Xanh / Hoàng Hôn"
+          >
+            <MapPin className="w-2.5 h-2.5 shrink-0 text-yellow-300" />
             <span>{language === 'vi' ? 'Hà Nội' : 'Hanoi'}</span>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -289,12 +295,12 @@ export function HanoiWeatherCard() {
               key={day.date}
               type="button"
               onClick={() => setSelectedDayIdx(isSelected ? null : idx)}
-              className={isSelected ? '!bg-[#c0657b] !scale-95' : ''}
+              className={isSelected ? '!bg-[#1A3E94] !scale-95' : ''}
               title={`${day.dayLabel}: ${dayMeta.text} (${day.tempMax}°/${day.tempMin}°)`}
             >
               <span className="day">{day.dayLabel}</span>
               <span className="icon-weather-day">
-                <DayIcon className="w-3.5 h-3.5 text-white/90" />
+                <DayIcon className="w-3 h-3 text-white/95" />
               </span>
             </button>
           )
