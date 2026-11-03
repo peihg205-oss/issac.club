@@ -22,6 +22,7 @@ import {
   Award,
 } from 'lucide-react'
 import { ComparisonChart } from '@/components/dashboard/ComparisonChart'
+import { HanoiWeatherCard } from '@/components/dashboard/HanoiWeatherCard'
 
 interface DashboardViewProps {
   onViewAllMembers: () => void
@@ -129,82 +130,90 @@ export function DashboardView({
 
   return (
     <div className="space-y-6">
-      {/* 1. Header trang chuẩn nhận diện dự án CLB */}
-      <div className="flex flex-col gap-3 pb-1">
-        <div className="flex items-center gap-3 sm:gap-3.5">
-          <div>
-            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
-              {t('dashboard.title')}
-            </h1>
-            <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
-              {t('dashboard.subtitle')}
-            </p>
+      {/* 1. Header trang chuẩn nhận diện dự án CLB + Card Thời Tiết & Giờ Hà Nội */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-1">
+        {/* Bên trái: Tiêu đề + Mascot + Lời chào + 2 nút hành động ở ngay dưới */}
+        <div className="flex flex-col gap-3.5 flex-1 min-w-0">
+          <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap sm:flex-nowrap">
+            <div>
+              <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
+                {t('dashboard.title')}
+              </h1>
+              <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
+                {t('dashboard.subtitle')}
+              </p>
+            </div>
+
+            {/* Mascot Chibi hoạt động năng động - Hộp thoại nằm bên cạnh chuẩn style ảnh 2 */}
+            <div
+              onClick={handleMascotClick}
+              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+              title="Bấm vào tớ để nghe lời động viên nhé!"
+            >
+              <img
+                src="/issac-mascot.png"
+                alt="iSSAC Chibi Mascot"
+                className={`w-14 h-14 sm:w-[68px] sm:h-[68px] object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
+                  isMascotCheering
+                    ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(0,132,200,0.4)]'
+                    : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+                }`}
+              />
+
+              {/* Bubble tooltip nằm bên cạnh mascot chuẩn style ảnh 2 (ẩn trên mobile để không tràn viền) */}
+              <div
+                className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
+                  isMascotCheering || showMascotBubble
+                    ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
+                    : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+                }`}
+              >
+                {/* Mũi tên chỉ về phía mascot */}
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-b border-white/25" />
+                <span className="relative z-10 select-none tracking-tight">
+                  {language === 'vi' ? issacMascotQuotesVi[mascotMessageIdx] : issacMascotQuotesEn[mascotMessageIdx]}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Mascot Chibi hoạt động năng động - Hộp thoại nằm bên cạnh chuẩn style ảnh 2 */}
-          <div
-            onClick={handleMascotClick}
-            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
-            title="Bấm vào tớ để nghe lời động viên nhé!"
-          >
-            <img
-              src="/issac-mascot.png"
-              alt="iSSAC Chibi Mascot"
-              className={`w-14 h-14 sm:w-[68px] sm:h-[68px] object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
-                isMascotCheering
-                  ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(0,132,200,0.4)]'
-                  : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
-              }`}
-            />
-
-            {/* Bubble tooltip nằm bên cạnh mascot chuẩn style ảnh 2 (ẩn trên mobile để không tràn viền) */}
-            <div
-              className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
-                isMascotCheering || showMascotBubble
-                  ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
-                  : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
-              }`}
+          {/* Cụm 2 nút hành động: Xem bảng xếp hạng + Cổng điểm danh CLB ở ngay bên dưới phần tiêu đề */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Nút Xem Bảng Xếp Hạng */}
+            <button
+              type="button"
+              onClick={onNavigateToLeaderboard}
+              className="px-4 py-2 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-xs hover:shadow flex items-center gap-2 transition active:scale-95 cursor-pointer"
+              title="Mở Bảng xếp hạng đóng góp iSSACer"
             >
-              {/* Mũi tên chỉ về phía mascot */}
-              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-b border-white/25" />
-              <span className="relative z-10 select-none tracking-tight">
-                {language === 'vi' ? issacMascotQuotesVi[mascotMessageIdx] : issacMascotQuotesEn[mascotMessageIdx]}
+              <Trophy className="w-4 h-4 text-white fill-white flex-shrink-0" />
+              <span>{t('dashboard.view_leaderboard')}</span>
+            </button>
+
+            {/* Huy hiệu Cổng điểm danh CLB */}
+            <button
+              type="button"
+              onClick={onNavigateToCheckin}
+              className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
+              title="Chuyển đến màn hình điểm danh"
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
+                }`}
+              />
+              <span>
+                {activeEvent && !activeEvent.isFinalized
+                  ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
+                  : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
               </span>
-            </div>
+            </button>
           </div>
         </div>
 
-        {/* Cụm 2 nút hành động: Xem bảng xếp hạng + Cổng điểm danh CLB ở ngay bên dưới phần tiêu đề */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Nút Xem Bảng Xếp Hạng */}
-          <button
-            type="button"
-            onClick={onNavigateToLeaderboard}
-            className="px-4 py-2 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-xs hover:shadow flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            title="Mở Bảng xếp hạng đóng góp iSSACer"
-          >
-            <Trophy className="w-4 h-4 text-white fill-white flex-shrink-0" />
-            <span>{t('dashboard.view_leaderboard')}</span>
-          </button>
-
-          {/* Huy hiệu Cổng điểm danh CLB */}
-          <button
-            type="button"
-            onClick={onNavigateToCheckin}
-            className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            title="Chuyển đến màn hình điểm danh"
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
-              }`}
-            />
-            <span>
-              {activeEvent && !activeEvent.isFinalized
-                ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
-                : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
-            </span>
-          </button>
+        {/* Bên phải: Widget Thời tiết & Giờ Hà Nội cân đối tuyệt đẹp (Style Uiverse KSAplay) */}
+        <div className="shrink-0 self-start md:self-center">
+          <HanoiWeatherCard />
         </div>
       </div>
 
