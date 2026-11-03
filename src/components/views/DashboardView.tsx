@@ -132,12 +132,12 @@ export function DashboardView({
     <div className="space-y-3.5 sm:space-y-5 lg:space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB + Card Thời Tiết & Giờ Hà Nội */}
       <div className="flex flex-col lg:grid lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {/* Item 1: Tiêu đề + Mascot (order-1, trên desktop ở hàng 1 cột 1-3) */}
+        {/* Item 1: Tiêu đề + Mascot (khớp 100% style của ảnh 1, không thụt lề) */}
         <div className="order-1 lg:order-1 lg:col-span-3 lg:col-start-1 lg:row-start-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            {/* Cụm Tiêu đề & Lời chào (thụt lề pl-11 trên mobile để không bị nút 9 chấm che) */}
-            <div className="min-w-0 flex-1 pl-11 sm:pl-0">
-              <h1 className="text-xl sm:text-2xl lg:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
+          <div className="flex items-center justify-between gap-3.5 sm:gap-4">
+            {/* Cụm Tiêu đề & Lời chào (khớp 100% typography ảnh 1, không thụt lề thừa) */}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
                 {t('dashboard.title')}
               </h1>
               <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
@@ -145,32 +145,32 @@ export function DashboardView({
               </p>
             </div>
 
-            {/* Mascot Chibi hoạt động năng động - Đặt gọn gàng cân đối bên phải tiêu đề, có bóng thoại sinh động */}
+            {/* Mascot Chibi với hiệu ứng tương tác - Khớp kích thước và style như ảnh 1 */}
             <div
               onClick={handleMascotClick}
-              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none self-start"
+              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
               title="Bấm vào tớ để nghe lời động viên nhé!"
             >
               <img
                 src="/issac-mascot.png"
                 alt="iSSAC Chibi Mascot"
-                className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-[68px] lg:h-[68px] object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
+                className={`w-12 h-14 sm:w-14 sm:h-16 lg:w-16 lg:h-16 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
                   isMascotCheering
-                    ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(0,132,200,0.4)]'
-                    : 'animate-mascot-fly hover:scale-110 hover:rotate-3'
+                    ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
+                    : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
                 }`}
               />
 
-              {/* Bubble tooltip nằm bên cạnh / dưới mascot - Hiển thị mượt mà cả trên mobile & desktop */}
+              {/* Bubble tooltip nằm bên cạnh mascot (ẩn trên điện thoại giống ảnh 1 để không tràn viền) */}
               <div
-                className={`absolute right-0 sm:left-full sm:right-auto top-full sm:top-1/2 sm:-translate-y-1/2 sm:ml-3 mt-1.5 sm:mt-0 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
-                  isMascotCheering || showMascotBubble
-                    ? 'opacity-100 scale-100 pointer-events-auto'
+                className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
+                  isMascotCheering
+                    ? 'opacity-100 scale-105 translate-x-1'
                     : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
                 }`}
               >
                 {/* Mũi tên chỉ về phía mascot */}
-                <div className="absolute -top-1 right-5 sm:top-1/2 sm:-left-1 sm:right-auto sm:-translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-t sm:border-t-0 sm:border-b border-white/25" />
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0284C7] rotate-45 border-l border-b border-white/25" />
                 <span className="relative z-10 select-none tracking-tight">
                   {language === 'vi' ? issacMascotQuotesVi[mascotMessageIdx] : issacMascotQuotesEn[mascotMessageIdx]}
                 </span>
