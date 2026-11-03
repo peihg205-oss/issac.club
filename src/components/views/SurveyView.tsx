@@ -15,22 +15,13 @@ import {
   Save,
   Send,
   Star,
-  Sparkles,
-  Lightbulb,
   MessageSquare,
   ChevronDown,
-  Search,
-  Filter,
   Check,
-  RotateCcw,
-  AlertCircle,
-  HelpCircle,
   X,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
-import { useLanguage } from '@/lib/context/LanguageContext'
-import type { RosterMember } from '@/lib/clubData'
 
 export interface SurveyEvaluation {
   targetMemberCode: string
@@ -59,74 +50,13 @@ export interface SurveyTargetMember {
   isCore: boolean
 }
 
-// 6 Core Team members to evaluate matching user's Image 1 mockup
-export const DEFAULT_CORE_SURVEY_TARGETS: SurveyTargetMember[] = [
-  {
-    memberCode: '24310069',
-    fullName: 'Lê Trần Thuỳ Nguyên',
-    departmentName: 'Ban Tư vấn',
-    position: 'Trưởng ban Tư vấn',
-    avatarUrl: '/thuy-nguyen-avatar.png',
-    initials: 'N',
-    initialBg: 'bg-sky-100 text-sky-700 border-sky-200',
-    isCore: true,
-  },
-  {
-    memberCode: '25070407',
-    fullName: 'Vũ Đình Hải',
-    departmentName: 'Ban Tư vấn',
-    position: 'Ban Tư vấn',
-    avatarUrl: '/vu-dinh-hai-avatar.png',
-    initials: 'H',
-    initialBg: 'bg-amber-100 text-amber-700 border-amber-200',
-    isCore: true,
-  },
-  {
-    memberCode: '24310108',
-    fullName: 'Hoàng Triều Xuân',
-    departmentName: 'Ban Truyền thông',
-    position: 'Ban Truyền thông',
-    initials: 'H',
-    initialBg: 'bg-blue-100 text-blue-700 border-blue-200',
-    isCore: true,
-  },
-  {
-    memberCode: '24310199',
-    fullName: 'Hoàng Thị Lan Nhi',
-    departmentName: 'Ban Truyền thông',
-    position: 'Ban Truyền thông',
-    initials: 'H',
-    initialBg: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    isCore: true,
-  },
-  {
-    memberCode: '24310255',
-    fullName: 'Đặng Thị Lê Na',
-    departmentName: 'Ban Nhân sự',
-    position: 'Ban Nhân sự',
-    initials: 'Đ',
-    initialBg: 'bg-purple-100 text-purple-700 border-purple-200',
-    isCore: true,
-  },
-  {
-    memberCode: '24310088',
-    fullName: 'Trần Đức Thắng',
-    departmentName: 'Ban Truyền thông',
-    position: 'Ban Truyền thông',
-    avatarUrl: '/duc-thang-avatar.png',
-    initials: 'T',
-    initialBg: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    isCore: true,
-  },
-]
-
-// Mock initial data matching Image 1: 2/6 completed = 33%
+// Initial mock evaluation for realistic display matching project style
 export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
   '24310069': {
     targetMemberCode: '24310069',
     targetMemberName: 'Lê Trần Thuỳ Nguyên',
     targetMemberDept: 'Ban Tư vấn',
-    targetMemberRole: 'Trưởng ban Tư vấn • Core Team',
+    targetMemberRole: 'Trưởng ban • Ban Tư vấn',
     avatarUrl: '/thuy-nguyen-avatar.png',
     initials: 'N',
     q1_work: 9,
@@ -139,47 +69,27 @@ export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
     status: 'completed',
     updatedAt: '2026-11-01T20:30:00.000Z',
   },
-  '25070407': {
-    targetMemberCode: '25070407',
-    targetMemberName: 'Vũ Đình Hải',
-    targetMemberDept: 'Ban Tư vấn',
-    targetMemberRole: 'Ban Tư vấn • Core Team',
-    avatarUrl: '/vu-dinh-hai-avatar.png',
-    initials: 'H',
+  '24310088': {
+    targetMemberCode: '24310088',
+    targetMemberName: 'Trần Đức Thắng',
+    targetMemberDept: 'Ban Truyền thông',
+    targetMemberRole: 'Trưởng ban • Ban Truyền thông',
+    avatarUrl: '/thang-avatar.png',
+    initials: 'T',
     q1_work: 8,
     q2_teamwork: 9,
     q3_initiative: 8,
     q4_feedback:
-      'Nhiệt tình tham gia hoạt động, đóng góp nhiều ý tưởng sáng tạo cho ban.',
+      'Nhiệt tình tham gia hoạt động, định hướng truyền thông tốt và đóng góp nhiều ý tưởng sáng tạo cho ban.',
     q5_suggestions: 'Cần bám sát deadline các ấn phẩm truyền thông hơn.',
     status: 'completed',
     updatedAt: '2026-11-02T10:15:00.000Z',
   },
 }
 
-export interface SurveyViewProps {
-  initialMode?: 'core' | 'member'
-  onSwitchMode?: (mode: 'core' | 'member') => void
-}
-
-export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewProps) {
+export function SurveyView() {
   const { currentUser } = useAuth()
   const { members } = useClub()
-  const { language } = useLanguage()
-
-  // Active survey mode: 'core' = Khảo sát Core Team, 'member' = Khảo sát thành viên
-  const [surveyMode, setSurveyMode] = useState<'core' | 'member'>(initialMode)
-
-  useEffect(() => {
-    setSurveyMode(initialMode)
-  }, [initialMode])
-
-  const handleModeChange = (mode: 'core' | 'member') => {
-    setSurveyMode(mode)
-    if (onSwitchMode) {
-      onSwitchMode(mode)
-    }
-  }
 
   // Selected period
   const [selectedPeriod, setSelectedPeriod] = useState<string>('First Meeting - T10/2026')
@@ -207,60 +117,49 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
   }, [])
 
   // Storage keys
-  const storageKey =
-    surveyMode === 'core' ? 'issac_survey_core_v1' : 'issac_survey_member_v1'
-  const isSubmittedKey =
-    surveyMode === 'core'
-      ? 'issac_survey_core_submitted'
-      : 'issac_survey_member_submitted'
+  const storageKey = 'issac_survey_core_v1'
+  const isSubmittedKey = 'issac_survey_core_submitted'
 
-  // Member Survey Department Filter
-  const [deptFilter, setDeptFilter] = useState<string>('all')
-  const [searchQuery, setSearchQuery] = useState<string>('')
-
-  // Build target members list
+  // Lọc tất cả thành viên Core Team trong CLB, TRỪ Ban Chủ nhiệm và TRỪ người đang đánh giá nếu họ là core
   const targetMembers: SurveyTargetMember[] = useMemo(() => {
-    if (surveyMode === 'core') {
-      // Exclude current user if current user is in this list
-      return DEFAULT_CORE_SURVEY_TARGETS.filter(
-        (m) => m.memberCode !== currentUser?.memberCode
+    return members
+      .filter((m) => m.is_core)
+      // Loại trừ hoàn toàn Ban Chủ nhiệm theo yêu cầu người dùng
+      .filter(
+        (m) =>
+          m.department_slug !== 'bcn' &&
+          m.department_name !== 'Ban Chủ nhiệm' &&
+          m.department_code !== 'B04'
       )
-    } else {
-      // Member survey: filter club members (excluding current user)
-      let list = members
-        .filter((m) => m.member_code !== currentUser?.memberCode)
-        .map((m) => ({
-          memberCode: m.member_code,
-          fullName: m.full_name,
-          departmentName: m.department_name,
-          position: m.position,
-          avatarUrl: m.avatar_url,
-          initials: m.full_name.trim().slice(-1),
-          initialBg:
-            m.department_slug === 'truyen-thong'
-              ? 'bg-blue-100 text-blue-700 border-blue-200'
-              : m.department_slug === 'tu-van'
-              ? 'bg-amber-100 text-amber-700 border-amber-200'
-              : m.department_slug === 'nhan-su'
-              ? 'bg-purple-100 text-purple-700 border-purple-200'
-              : 'bg-emerald-100 text-emerald-700 border-emerald-200',
-          isCore: m.is_core,
-        }))
+      // Loại trừ chính người đang đăng nhập (không tự đánh giá bản thân)
+      .filter((m) => m.member_code !== currentUser?.memberCode)
+      .map((m) => ({
+        memberCode: m.member_code,
+        fullName: m.full_name,
+        departmentName: m.department_name,
+        position: m.position,
+        avatarUrl: m.avatar_url,
+        initials: m.full_name.trim().slice(-1),
+        initialBg:
+          m.department_slug === 'truyen-thong'
+            ? 'bg-blue-100 text-blue-700 border-blue-200'
+            : m.department_slug === 'tu-van'
+            ? 'bg-amber-100 text-amber-700 border-amber-200'
+            : 'bg-purple-100 text-purple-700 border-purple-200',
+        isCore: true,
+      }))
+  }, [members, currentUser])
 
-      if (deptFilter !== 'all') {
-        list = list.filter((m) => m.departmentName.includes(deptFilter))
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim()
-        list = list.filter(
-          (m) =>
-            m.fullName.toLowerCase().includes(q) ||
-            m.memberCode.toLowerCase().includes(q)
-        )
-      }
-      return list
-    }
-  }, [surveyMode, members, currentUser, deptFilter, searchQuery])
+  // Tổng số lượng thành viên Core Team (trừ BCN)
+  const totalCoreNonBCN = useMemo(() => {
+    return members.filter(
+      (m) =>
+        m.is_core &&
+        m.department_slug !== 'bcn' &&
+        m.department_name !== 'Ban Chủ nhiệm' &&
+        m.department_code !== 'B04'
+    ).length
+  }, [members])
 
   // Evaluations state
   const [evaluations, setEvaluations] = useState<Record<string, SurveyEvaluation>>({})
@@ -276,7 +175,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
   const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
   const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
 
-  // Load from localStorage or initialize
+  // Load from localStorage or initialize with mock data
   useEffect(() => {
     try {
       const savedEvaluations = localStorage.getItem(storageKey)
@@ -285,21 +184,16 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
 
       if (savedEvaluations) {
         setEvaluations(JSON.parse(savedEvaluations))
-      } else if (surveyMode === 'core') {
-        // Use default 2/6 completed data matching Image 1
+      } else {
         setEvaluations(INITIAL_CORE_EVALUATIONS)
         localStorage.setItem(storageKey, JSON.stringify(INITIAL_CORE_EVALUATIONS))
-      } else {
-        setEvaluations({})
       }
     } catch {
-      if (surveyMode === 'core') {
-        setEvaluations(INITIAL_CORE_EVALUATIONS)
-      }
+      setEvaluations(INITIAL_CORE_EVALUATIONS)
     }
-  }, [surveyMode, storageKey, isSubmittedKey])
+  }, [])
 
-  // Select first member by default if none selected or invalid
+  // Select first member by default
   useEffect(() => {
     if (targetMembers.length > 0) {
       if (!selectedMemberCode || !targetMembers.some((m) => m.memberCode === selectedMemberCode)) {
@@ -345,8 +239,6 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
 
   // KPI Calculations
   const totalTargetCount = targetMembers.length
-  // Total members in the group (e.g., 7 for Core Team as shown in Image 1: 6 targets + 1 self)
-  const groupTotalCount = surveyMode === 'core' ? 7 : members.length
 
   const completedCount = useMemo(() => {
     return targetMembers.filter((m) => evaluations[m.memberCode]?.status === 'completed')
@@ -380,22 +272,20 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
 
     // Validate: Need at least scores for all 3 criteria to mark as completed
     const isCompleted =
-      currentScore1 > 0 &&
-      currentScore2 > 0 &&
-      currentScore3 > 0
+      Number(currentScore1) > 0 &&
+      Number(currentScore2) > 0 &&
+      Number(currentScore3) > 0
 
     const newEvaluation: SurveyEvaluation = {
       targetMemberCode: selectedMember.memberCode,
       targetMemberName: selectedMember.fullName,
       targetMemberDept: selectedMember.departmentName,
-      targetMemberRole: `${selectedMember.position} • ${
-        surveyMode === 'core' ? 'Core Team' : selectedMember.departmentName
-      }`,
+      targetMemberRole: `${selectedMember.position} • ${selectedMember.departmentName}`,
       avatarUrl: selectedMember.avatarUrl,
       initials: selectedMember.initials,
-      q1_work: currentScore1,
-      q2_teamwork: currentScore2,
-      q3_initiative: currentScore3,
+      q1_work: Number(currentScore1),
+      q2_teamwork: Number(currentScore2),
+      q3_initiative: Number(currentScore3),
       q4_feedback: currentFeedback.trim(),
       q5_suggestions: currentSuggestion.trim(),
       status: isCompleted ? 'completed' : 'in_progress',
@@ -455,15 +345,13 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
         </div>
       )}
 
-      {/* TOP HEADER: Title + Mascot + Mode Selector Tabs + Period Dropdown */}
-      <div className="pl-9 sm:pl-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* TOP HEADER: Title + Mascot Chibi + Period Dropdown */}
+      <div className="pl-9 sm:pl-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Left: Title & Mascot */}
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {surveyMode === 'core'
-                ? 'Khảo sát Core Team iSSAC'
-                : 'Khảo sát Thành viên CLB iSSAC'}
+              Khảo sát Core Team iSSAC
             </h1>
 
             {/* Mascot Chibi beside title matching Image 1 */}
@@ -496,43 +384,12 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
           </div>
 
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            {surveyMode === 'core'
-              ? 'Đánh giá hoạt động, tinh thần phối hợp và đóng góp của các thành viên Core Team.'
-              : 'Đánh giá hoạt động, tinh thần phối hợp và đóng góp của các thành viên CLB.'}
+            Đánh giá hoạt động, tinh thần phối hợp và đóng góp của các thành viên Core Team (trừ Ban Chủ nhiệm).
           </p>
         </div>
 
-        {/* Right: Switcher Tabs & Period Dropdown */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-          {/* Quick Tab Switcher between Core and Member Survey */}
-          <div className="inline-flex p-1 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300/70 dark:border-slate-700 shadow-inner">
-            <button
-              type="button"
-              onClick={() => handleModeChange('core')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                surveyMode === 'core'
-                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Star className="w-3.5 h-3.5" />
-              <span>Khảo sát Core Team</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange('member')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                surveyMode === 'member'
-                  ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Khảo sát Thành viên</span>
-            </button>
-          </div>
-
-          {/* Period Selector Dropdown [ 📅 First Meeting - T10/2026 ⌄ ] */}
+        {/* Right: Period Dropdown [ 📅 First Meeting - T10/2026 ⌄ ] */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
           <div className="relative" ref={periodDropdownRef}>
             <button
               type="button"
@@ -581,13 +438,11 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
           </div>
           <div className="min-w-0">
             <p className="text-xs sm:text-[13px] font-semibold text-slate-600 dark:text-slate-400 truncate">
-              {surveyMode === 'core'
-                ? 'Thành viên Core Team'
-                : 'Thành viên cần đánh giá'}
+              Thành viên Core Team
             </p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                {groupTotalCount}
+                {totalCoreNonBCN}
               </span>
               <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
                 thành viên
@@ -660,7 +515,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
 
       {/* MAIN 2-COLUMN EVALUATION WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
-        {/* LEFT COLUMN: Danh sách đánh giá (6 thành viên) */}
+        {/* LEFT COLUMN: Danh sách đánh giá Core Team */}
         <div className="lg:col-span-5 xl:col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-4">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -668,57 +523,15 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
               <span>Danh sách đánh giá ({targetMembers.length} thành viên)</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {surveyMode === 'core'
-                ? 'Bạn cần đánh giá tất cả thành viên Core Team (không bao gồm bản thân).'
-                : 'Bạn cần đánh giá các thành viên trong Ban (không bao gồm bản thân).'}
+              Bạn cần đánh giá các thành viên Core Team (trừ Ban Chủ nhiệm và bản thân).
             </p>
           </div>
-
-          {/* Member Survey Extra Filters */}
-          {surveyMode === 'member' && (
-            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-              {/* Search input */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm thành viên theo tên, MSSV..."
-                  className="w-full pl-8.5 pr-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Department pills */}
-              <div className="flex flex-wrap gap-1">
-                {[
-                  { id: 'all', label: 'Tất cả' },
-                  { id: 'Truyền thông', label: 'Truyền thông' },
-                  { id: 'Tư vấn', label: 'Tư vấn' },
-                  { id: 'Nhân sự', label: 'Nhân sự' },
-                ].map((dept) => (
-                  <button
-                    key={dept.id}
-                    type="button"
-                    onClick={() => setDeptFilter(dept.id)}
-                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      deptFilter === dept.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                    }`}
-                  >
-                    {dept.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Member List */}
           <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
             {targetMembers.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
-                Không tìm thấy thành viên nào phù hợp bộ lọc.
+                Không tìm thấy thành viên Core Team nào.
               </div>
             ) : (
               targetMembers.map((member) => {
@@ -770,7 +583,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                           {member.fullName}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {member.position}
+                          {member.position} • {member.departmentName}
                         </p>
                       </div>
                     </div>
@@ -831,10 +644,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                       {selectedMember.fullName}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                      {selectedMember.position} •{' '}
-                      {surveyMode === 'core'
-                        ? 'Core Team'
-                        : selectedMember.departmentName}
+                      {selectedMember.position} • {selectedMember.departmentName}
                     </p>
                   </div>
                 </div>
@@ -870,7 +680,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                     <span className="text-amber-500">⭐</span>
                     <span>1. Đánh giá mức độ hoàn thành công việc</span>
                   </label>
-                  {currentScore1 > 0 && (
+                  {Number(currentScore1) > 0 && (
                     <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
                       {currentScore1} / 10 điểm
                     </span>
@@ -906,7 +716,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                     <span className="text-blue-500">👥</span>
                     <span>2. Đánh giá tinh thần phối hợp & làm việc nhóm</span>
                   </label>
-                  {currentScore2 > 0 && (
+                  {Number(currentScore2) > 0 && (
                     <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
                       {currentScore2} / 10 điểm
                     </span>
@@ -942,7 +752,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                     <span className="text-amber-500">💡</span>
                     <span>3. Đánh giá sự chủ động, trách nhiệm</span>
                   </label>
-                  {currentScore3 > 0 && (
+                  {Number(currentScore3) > 0 && (
                     <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
                       {currentScore3} / 10 điểm
                     </span>
@@ -1024,13 +834,13 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
             </>
           ) : (
             <div className="py-16 text-center text-slate-400">
-              Vui lòng chọn một thành viên từ danh sách bên trái để đánh giá.
+              Vui lòng chọn một thành viên Core Team từ danh sách bên trái để đánh giá.
             </div>
           )}
         </div>
       </div>
 
-      {/* BOTTOM FOOTER SUBMISSION BANNER (Matching Image 1) */}
+      {/* BOTTOM FOOTER SUBMISSION BANNER */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Left: Lock/Unlock Status */}
         <div className="flex items-center gap-3.5 w-full md:w-auto">
@@ -1061,7 +871,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                 ? 'Bản khảo sát của bạn đã được ghi nhận vào hệ thống.'
                 : canSubmit
                 ? `Tuyệt vời! Bạn đã hoàn thành ${completedCount}/${totalTargetCount} đánh giá. Hãy kiểm tra lại và nhấn nộp.`
-                : `Bạn cần hoàn thành đánh giá tất cả ${totalTargetCount} thành viên trong danh sách để mở nút nộp.`}
+                : `Bạn cần hoàn thành đánh giá tất cả ${totalTargetCount} thành viên Core Team trong danh sách để mở nút nộp.`}
             </p>
           </div>
         </div>
@@ -1088,7 +898,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                   : 'border-2 border-slate-300 dark:border-slate-600 text-slate-500'
               }`}
             >
-              {canSubmit ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
+              {canSubmit ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : completedCount}
             </div>
             <span className="hidden sm:inline">
               Hoàn thành {completedCount}/{totalTargetCount}
@@ -1141,7 +951,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1152,7 +962,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
                 Xác nhận nộp khảo sát?
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                Bạn đã hoàn thành toàn bộ đánh giá cho {totalTargetCount} thành viên trong đợt khảo sát{' '}
+                Bạn đã hoàn thành toàn bộ đánh giá cho {totalTargetCount} thành viên Core Team trong đợt khảo sát{' '}
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedPeriod}
                 </span>
@@ -1168,14 +978,14 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Kiểm tra lại
               </button>
               <button
                 type="button"
                 onClick={handleSubmitSurvey}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-500/25 transition-all"
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-500/25 transition-all cursor-pointer"
               >
                 Xác nhận nộp
               </button>
@@ -1205,7 +1015,7 @@ export function SurveyView({ initialMode = 'core', onSwitchMode }: SurveyViewPro
               <button
                 type="button"
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md shadow-emerald-500/25 transition-all"
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md shadow-emerald-500/25 transition-all cursor-pointer"
               >
                 Đã hiểu
               </button>

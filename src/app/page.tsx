@@ -57,7 +57,6 @@ export default function AppHome() {
           'dashboard',
           'members',
           'core-survey',
-          'member-survey',
           'checkin',
           'history',
           'rules',
@@ -166,15 +165,7 @@ export default function AppHome() {
           ) : activeTab === 'members' ? (
             <MembersView onSelectMember={handleSelectMember} searchQuery={globalSearch} />
           ) : activeTab === 'core-survey' ? (
-            <SurveyView
-              initialMode="core"
-              onSwitchMode={(mode) => setActiveTab(mode === 'core' ? 'core-survey' : 'member-survey')}
-            />
-          ) : activeTab === 'member-survey' ? (
-            <SurveyView
-              initialMode="member"
-              onSwitchMode={(mode) => setActiveTab(mode === 'core' ? 'core-survey' : 'member-survey')}
-            />
+            <SurveyView />
           ) : activeTab === 'checkin' ? (
             <CheckinView />
           ) : activeTab === 'history' ? (

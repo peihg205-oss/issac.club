@@ -22,7 +22,6 @@ export type ActiveNavTab =
   | 'dashboard'
   | 'members'
   | 'core-survey'
-  | 'member-survey'
   | 'checkin'
   | 'history'
   | 'rules'
@@ -181,11 +180,6 @@ export function Sidebar({
       id: 'core-survey',
       label: t('nav.core_survey', 'Khảo sát Core Team'),
       icon: Award,
-    },
-    {
-      id: 'member-survey',
-      label: t('nav.member_survey', 'Khảo sát thành viên'),
-      icon: ClipboardCheck,
     },
     {
       id: 'checkin',
