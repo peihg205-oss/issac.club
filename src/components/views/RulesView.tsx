@@ -1276,14 +1276,10 @@ export function RulesView() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-purple-50 text-[#7026ED] border border-purple-200/70 mb-0.5">
-                    <Shield className="w-3 h-3 text-[#7026ED]" />
-                    <span>{language === 'vi' ? 'Quy Chế Hoạt Động CLB' : 'Club Operational Regulations'}</span>
-                  </div>
                   <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight truncate">
                     {language === 'vi' ? 'Thêm Quy Định / Tiêu Chí CLB' : 'Add Club Rule / Criterion'}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-[#64748B] font-medium truncate">
+                  <p className="text-[11px] sm:text-xs text-[#64748B] font-medium truncate mt-0.5">
                     {language === 'vi'
                       ? 'Bổ sung tiêu chí chấm điểm và chế tài thi đua cho CLB'
                       : 'Add scoring criteria and disciplinary regulations for Club'}
