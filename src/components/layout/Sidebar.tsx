@@ -251,10 +251,10 @@ export function Sidebar({
         <button
           type="button"
           onClick={onToggle}
-          className="w-10 h-10 rounded-r-xl rounded-l-none bg-[#EFF6FF] border border-l-0 border-blue-200/90 hover:bg-[#DBEAFE] hover:border-blue-300 shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 group text-slate-600 hover:text-blue-600"
+          className="w-10 h-10 rounded-r-xl rounded-l-none bg-[#EFF6FF] dark:bg-slate-800 border border-l-0 border-blue-200/90 dark:border-slate-700 hover:bg-[#DBEAFE] dark:hover:bg-slate-700 hover:border-blue-300 dark:hover:border-slate-600 shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 group text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
           title="Mở thanh điều hướng (Menu 9 chấm)"
         >
-          <NineDotsIcon className="w-5 h-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
+          <NineDotsIcon className="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
         </button>
       </div>
     )
@@ -281,10 +281,10 @@ export function Sidebar({
           <button
             type="button"
             onClick={onToggle}
-            className="absolute -right-11 sm:-right-12 top-2 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EFF6FF] border border-blue-200/90 hover:bg-[#DBEAFE] hover:border-blue-300 shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 z-50 group text-slate-600 hover:text-blue-600"
+            className="absolute -right-11 sm:-right-12 top-2 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EFF6FF] dark:bg-slate-800 border border-blue-200/90 dark:border-slate-700 hover:bg-[#DBEAFE] dark:hover:bg-slate-700 hover:border-blue-300 dark:hover:border-slate-600 shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 z-50 group text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
             title="Thu gọn thanh điều hướng (Menu 9 chấm)"
           >
-            <NineDotsIcon className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
+            <NineDotsIcon className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
 
           {/* Main Container: Khung tổng hơi hơi tròn xíu tổng thể vẫn vuông (rounded-r-2xl), shadow-2xl, border-r border-b */}
@@ -443,8 +443,8 @@ export function Sidebar({
               </div>
             </div>
 
-            {/* BOTTOM THEME COLOR PALETTE (Chấm tròn nhỏ gọn, màu web basic, cân đối tổng thể) */}
-            <div className="bg-white py-2.5 px-4 shrink-0 border-t border-slate-200/80 shadow-2xs">
+            {/* BOTTOM THEME COLOR PALETTE */}
+            <div className="bg-white dark:bg-slate-900 py-2.5 px-4 shrink-0 border-t border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <div className="flex items-center justify-center gap-2.5 sm:gap-3">
                 {SIDEBAR_THEMES.map((palette) => {
                   const isSelected = palette.id === themeId
@@ -457,7 +457,7 @@ export function Sidebar({
                         palette.circleBorder || ''
                       } ${
                         isSelected
-                          ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white shadow-xs scale-110'
+                          ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 shadow-xs scale-110'
                           : 'hover:scale-115 hover:opacity-95 opacity-90'
                       }`}
                       style={{ backgroundColor: palette.circleBg }}

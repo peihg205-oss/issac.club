@@ -15,6 +15,7 @@ import {
   X,
   HelpCircle,
 } from 'lucide-react'
+import { ThemeSwitch } from '@/components/layout/ThemeSwitch'
 
 function LoginContent() {
   const router = useRouter()
@@ -84,7 +85,12 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1351D8] text-white flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden select-none font-sans">
+    <div className="min-h-screen bg-[#1351D8] dark:bg-[#070D18] text-white flex items-center justify-center p-4 sm:p-6 lg:p-12 relative overflow-hidden select-none font-sans transition-colors duration-200">
+      {/* Top right Theme Switch */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-30">
+        <ThemeSwitch />
+      </div>
+
       {/* Background Subtle Ambience */}
       <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-400/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full bg-blue-600/30 blur-3xl pointer-events-none" />
@@ -115,16 +121,16 @@ function LoginContent() {
         {/* CỘT PHẢI: KHUNG ĐĂNG NHẬP TRẮNG TINH GỌN, SANG TRỌNG (MAX-W-MD) */}
         {/* ============================================================== */}
         <div className="w-full max-w-[430px] shrink-0">
-          <div className="bg-white rounded-2xl sm:rounded-[32px] p-5 sm:p-7 md:p-9 shadow-2xl text-slate-800 border border-white/40 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl sm:rounded-[32px] p-5 sm:p-7 md:p-9 shadow-2xl text-slate-800 dark:text-slate-100 border border-white/40 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-300">
             
             {/* 1. PILL BADGE & HEADLINE */}
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50 text-[#1351D8] font-bold text-[11px] tracking-wide border border-blue-100">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-sky-950/60 text-[#1351D8] dark:text-sky-300 font-bold text-[11px] tracking-wide border border-blue-100 dark:border-sky-800/60">
                 <Users className="w-3.5 h-3.5" />
                 <span>CỔNG DÀNH CHO CORE TEAM iSSAC</span>
               </div>
 
-              <h2 className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight">
+              <h2 className="text-2xl sm:text-[28px] font-black text-slate-900 dark:text-white tracking-tight">
                 Đăng nhập Core Team iSSAC
               </h2>
             </div>
@@ -151,7 +157,7 @@ function LoginContent() {
             <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4">
               {/* Field 1: Email sinh viên / MSSV */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Email sinh viên / MSSV
                 </label>
                 <input
@@ -160,13 +166,13 @@ function LoginContent() {
                   value={account}
                   onChange={(e) => setAccount(e.target.value)}
                   placeholder="23070691@vnu.edu.vn"
-                  className="w-full bg-[#EEF4FF] hover:bg-blue-50/80 focus:bg-white border border-blue-100 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 placeholder:text-slate-400 transition outline-none"
+                  className="w-full bg-[#EEF4FF] dark:bg-slate-900 hover:bg-blue-50/80 dark:hover:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-950 border border-blue-100 dark:border-slate-700 focus:border-[#1351D8] dark:focus:border-sky-400 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition outline-none"
                 />
               </div>
 
               {/* Field 2: Mật khẩu */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Mật khẩu
                 </label>
                 <div className="relative">
@@ -176,12 +182,12 @@ function LoginContent() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••••••"
-                    className="w-full bg-[#EEF4FF] hover:bg-blue-50/80 focus:bg-white border border-blue-100 focus:border-[#1351D8] focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 pr-11 py-3 text-xs sm:text-sm font-semibold text-slate-800 placeholder:text-slate-400 transition outline-none"
+                    className="w-full bg-[#EEF4FF] dark:bg-slate-900 hover:bg-blue-50/80 dark:hover:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-950 border border-blue-100 dark:border-slate-700 focus:border-[#1351D8] dark:focus:border-sky-400 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 pr-11 py-3 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                    className="absolute right-0 top-0 h-full w-11 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
                     title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -193,7 +199,7 @@ function LoginContent() {
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(true)}
-                    className="text-xs font-bold text-[#1351D8] hover:underline cursor-pointer"
+                    className="text-xs font-bold text-[#1351D8] dark:text-sky-400 hover:underline cursor-pointer"
                   >
                     Quên mật khẩu?
                   </button>
@@ -226,32 +232,32 @@ function LoginContent() {
       {/* ============================================================== */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white text-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-[#1351D8]" />
-                <h3 className="text-base font-black text-slate-900">Hỗ Trợ Khôi Phục Mật Khẩu</h3>
+                <HelpCircle className="w-5 h-5 text-[#1351D8] dark:text-sky-400" />
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Hỗ Trợ Khôi Phục Mật Khẩu</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowForgotModal(false)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               <p>
                 Để bảo đảm an toàn dữ liệu và quyền lợi của thành viên, hệ thống CLB iSSAC không sử dụng khôi phục tự động qua SMS.
               </p>
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-1.5 text-[11.5px]">
-                <div className="font-bold text-[#1351D8]">Liên hệ Ban Chủ nhiệm / Ban Nhân sự:</div>
-                <div>• Email: <span className="font-bold font-mono text-slate-800">ambassadors.club@vnuis.edu.vn</span></div>
-                <div>• Hotline Tuyển quân: <span className="font-bold font-mono text-slate-800">0357 626 105</span></div>
-                <div>• Fanpage: <span className="font-bold text-blue-700">CLB Đại sứ Sinh viên Trường Quốc tế - iSSAC</span></div>
+              <div className="p-3 bg-blue-50 dark:bg-slate-900 rounded-xl border border-blue-100 dark:border-slate-700 space-y-1.5 text-[11.5px]">
+                <div className="font-bold text-[#1351D8] dark:text-sky-400">Liên hệ Ban Chủ nhiệm / Ban Nhân sự:</div>
+                <div>• Email: <span className="font-bold font-mono text-slate-800 dark:text-slate-200">ambassadors.club@vnuis.edu.vn</span></div>
+                <div>• Hotline Tuyển quân: <span className="font-bold font-mono text-slate-800 dark:text-slate-200">0357 626 105</span></div>
+                <div>• Fanpage: <span className="font-bold text-blue-700 dark:text-blue-400">CLB Đại sứ Sinh viên Trường Quốc tế - iSSAC</span></div>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 Ban Chủ nhiệm sẽ xác minh thông tin sinh viên và cấp lại mật khẩu mới trong vòng 15 phút.
               </p>
             </div>

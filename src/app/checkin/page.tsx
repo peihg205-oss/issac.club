@@ -418,7 +418,7 @@ function CheckinContent() {
   )
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC] text-slate-800 antialiased flex flex-col">
+    <div className="min-h-screen bg-[#FAFBFC] dark:bg-[#0B1120] text-slate-800 dark:text-slate-100 antialiased flex flex-col transition-colors duration-200">
       {/* Top Header - Full Width spanning the top identical to Main Club App */}
       <Header
         searchTerm={lookupQuery}
