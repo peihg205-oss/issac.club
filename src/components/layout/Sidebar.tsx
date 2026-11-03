@@ -10,6 +10,8 @@ import {
   Trophy,
   Settings,
   KeyRound,
+  Award,
+  ClipboardCheck,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { canUserManageAccounts } from '@/lib/auth/permissions'
@@ -19,6 +21,8 @@ import { useLanguage } from '@/lib/context/LanguageContext'
 export type ActiveNavTab =
   | 'dashboard'
   | 'members'
+  | 'core-survey'
+  | 'member-survey'
   | 'checkin'
   | 'history'
   | 'rules'
@@ -172,6 +176,16 @@ export function Sidebar({
       id: 'members',
       label: t('nav.members'),
       icon: Users,
+    },
+    {
+      id: 'core-survey',
+      label: t('nav.core_survey', 'Khảo sát Core Team'),
+      icon: Award,
+    },
+    {
+      id: 'member-survey',
+      label: t('nav.member_survey', 'Khảo sát thành viên'),
+      icon: ClipboardCheck,
     },
     {
       id: 'checkin',

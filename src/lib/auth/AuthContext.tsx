@@ -431,7 +431,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const saved = localStorage.getItem('issac_active_user')
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const paramUser = urlParams?.get('user')
+      const saved = paramUser || localStorage.getItem('issac_active_user') || 'user-hiep'
       if (saved && !deletedAccountIdsRef.current.has(saved)) {
         // 1. Check preset users
         const foundPreset = PRESET_USERS.find((u) => u.id === saved)

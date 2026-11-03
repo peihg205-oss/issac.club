@@ -41,6 +41,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true)
     try {
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const paramTheme = urlParams?.get('theme') as Theme | null
+      if (paramTheme === 'dark' || paramTheme === 'light') {
+        setThemeState(paramTheme)
+        applyTheme(paramTheme)
+        return
+      }
+
       const saved = localStorage.getItem('issac_theme') as Theme | null
       if (saved === 'dark' || saved === 'light') {
         setThemeState(saved)

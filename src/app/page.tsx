@@ -13,6 +13,7 @@ import { SettingsView } from '@/components/views/SettingsView'
 import { CheckinView } from '@/components/views/CheckinView'
 import { MemberProfileView } from '@/components/views/MemberProfileView'
 import { AccountsView } from '@/components/views/AccountsView'
+import { SurveyView } from '@/components/views/SurveyView'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { canUserManageAccounts } from '@/lib/auth/permissions'
@@ -45,11 +46,31 @@ export default function AppHome() {
     }
   }, [activeTab, isAccountManager])
 
+  // Đọc tab từ URL param hoặc khởi tạo
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setIsSidebarOpen(true)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const tabParam = params.get('tab') as ActiveNavTab | null
+      if (
+        tabParam &&
+        [
+          'dashboard',
+          'members',
+          'core-survey',
+          'member-survey',
+          'checkin',
+          'history',
+          'rules',
+          'stats',
+          'accounts',
+          'settings',
+        ].includes(tabParam)
+      ) {
+        setActiveTab(tabParam)
+      }
     }
   }, [])
+
 
   if (!isAuthChecked) {
     return (
@@ -84,8 +105,13 @@ export default function AppHome() {
   const handleSelectTab = (tab: ActiveNavTab) => {
     setSelectedMember(null) // Reset member profile view when switching tabs
     setActiveTab(tab)
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      setIsSidebarOpen(false)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', tab)
+      window.history.replaceState({}, '', url.toString())
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false)
+      }
     }
   }
 
@@ -139,6 +165,16 @@ export default function AppHome() {
             />
           ) : activeTab === 'members' ? (
             <MembersView onSelectMember={handleSelectMember} searchQuery={globalSearch} />
+          ) : activeTab === 'core-survey' ? (
+            <SurveyView
+              initialMode="core"
+              onSwitchMode={(mode) => setActiveTab(mode === 'core' ? 'core-survey' : 'member-survey')}
+            />
+          ) : activeTab === 'member-survey' ? (
+            <SurveyView
+              initialMode="member"
+              onSwitchMode={(mode) => setActiveTab(mode === 'core' ? 'core-survey' : 'member-survey')}
+            />
           ) : activeTab === 'checkin' ? (
             <CheckinView />
           ) : activeTab === 'history' ? (
