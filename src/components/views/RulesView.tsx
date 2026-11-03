@@ -1281,8 +1281,8 @@ export function RulesView() {
                   </h3>
                   <p className="text-[11px] sm:text-xs text-[#64748B] font-medium truncate mt-0.5">
                     {language === 'vi'
-                      ? 'Bổ sung tiêu chí chấm điểm và chế tài thi đua cho CLB'
-                      : 'Add scoring criteria and disciplinary regulations for Club'}
+                      ? 'Bổ sung quy định và tiêu chí thi đua CLB.'
+                      : 'Add rules and criteria for Club competition.'}
                   </p>
                 </div>
               </div>
