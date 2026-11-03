@@ -129,9 +129,9 @@ export function DashboardView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3.5 sm:space-y-5 lg:space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB + Card Thời Tiết & Giờ Hà Nội */}
-      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-3 sm:gap-4 pb-1">
+      <div className="flex flex-col lg:grid lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Item 1: Tiêu đề + Mascot (order-1, trên desktop ở hàng 1 cột 1-3) */}
         <div className="order-1 lg:order-1 lg:col-span-3 lg:col-start-1 lg:row-start-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
@@ -184,24 +184,24 @@ export function DashboardView({
           <HanoiWeatherCard className="w-full" />
         </div>
 
-        {/* Item 3: Cụm 2 nút hành động (cân giữa, chia đều 2 cột trên mobile; thẳng hàng bên trái trên desktop) */}
-        <div className="order-3 lg:order-2 lg:col-span-3 lg:col-start-1 lg:row-start-2 grid grid-cols-2 sm:flex sm:items-center sm:justify-start gap-2.5 w-full">
+        {/* Item 3: Cụm 2 nút hành động (Căn đều giữa 2 khối: Khối thời tiết phía trên và Khối KPI phía dưới; 2 nút bằng nhau và cân đối tuyệt đối) */}
+        <div className="order-3 lg:order-2 lg:col-span-3 lg:col-start-1 lg:row-start-2 grid grid-cols-2 lg:flex lg:items-center lg:justify-start gap-3 sm:gap-4 w-full">
           {/* Nút Xem Bảng Xếp Hạng */}
           <button
             type="button"
             onClick={onNavigateToLeaderboard}
-            className="h-9 sm:h-[38px] px-3.5 sm:px-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(249,115,22,0.22)] hover:shadow-[0_4px_10px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent"
+            className="h-10 px-3.5 sm:px-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(249,115,22,0.22)] hover:shadow-[0_4px_10px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none"
             title="Mở Bảng xếp hạng đóng góp iSSACer"
           >
             <Trophy className="w-4 h-4 text-white fill-white shrink-0" />
-            <span className="whitespace-nowrap">{t('dashboard.view_leaderboard')}</span>
+            <span className="whitespace-nowrap truncate">{t('dashboard.view_leaderboard')}</span>
           </button>
 
           {/* Huy hiệu Cổng điểm danh CLB */}
           <button
             type="button"
             onClick={onNavigateToCheckin}
-            className="h-9 sm:h-[38px] px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
+            className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
             title="Chuyển đến màn hình điểm danh"
           >
             <span
@@ -209,7 +209,7 @@ export function DashboardView({
                 activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
               }`}
             />
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap truncate">
               {activeEvent && !activeEvent.isFinalized
                 ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
                 : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
