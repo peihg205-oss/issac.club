@@ -695,10 +695,10 @@ export function RulesView() {
         {/* Card 1: Nguyên tắc cốt lõi */}
         <div
           onClick={() => setActiveTab('principles')}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#F0F9FF] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#F0F9FF] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'principles'
-              ? 'border-sky-400 ring-2 ring-[#0284C7] ring-offset-1 scale-[1.01]'
-              : 'border-sky-200/80 hover:border-sky-300'
+              ? 'ring-2 ring-[#0284C7] ring-offset-1 scale-[1.01]'
+              : ''
           }`}
         >
           <div className="space-y-1">
@@ -717,10 +717,10 @@ export function RulesView() {
         {/* Card 2: Tiêu chí Điểm cộng */}
         <div
           onClick={() => setActiveTab('add')}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#F0FDF4] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#F0FDF4] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'add'
-              ? 'border-emerald-400 ring-2 ring-emerald-500 ring-offset-1 scale-[1.01]'
-              : 'border-emerald-200/80 hover:border-emerald-300'
+              ? 'ring-2 ring-emerald-500 ring-offset-1 scale-[1.01]'
+              : ''
           }`}
         >
           <div className="space-y-1">
@@ -739,10 +739,10 @@ export function RulesView() {
         {/* Card 3: Tiêu chí Điểm trừ */}
         <div
           onClick={() => setActiveTab('deduct')}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#FFF1F2] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#FFF1F2] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'deduct'
-              ? 'border-rose-400 ring-2 ring-rose-500 ring-offset-1 scale-[1.01]'
-              : 'border-rose-200/80 hover:border-rose-300'
+              ? 'ring-2 ring-rose-500 ring-offset-1 scale-[1.01]'
+              : ''
           }`}
         >
           <div className="space-y-1">
@@ -761,10 +761,10 @@ export function RulesView() {
         {/* Card 4: Tất cả quy chuẩn */}
         <div
           onClick={() => setActiveTab('all')}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#FFFBEB] border flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
+          className={`p-4 sm:p-5 rounded-2xl bg-[#FFFBEB] flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
             activeTab === 'all'
-              ? 'border-amber-400 ring-2 ring-amber-500 ring-offset-1 scale-[1.01]'
-              : 'border-amber-200/80 hover:border-amber-300'
+              ? 'ring-2 ring-amber-500 ring-offset-1 scale-[1.01]'
+              : ''
           }`}
         >
           <div className="space-y-1">
