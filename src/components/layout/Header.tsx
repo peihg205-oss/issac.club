@@ -172,10 +172,10 @@ export function Header({
                 <button
                   type="button"
                   onClick={() => setLanguage('vi')}
-                  className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                  className={`p-1 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-center ${
                     language === 'vi'
-                      ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-105'
-                      : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                      ? 'bg-white dark:bg-slate-800 border-slate-200/90 dark:border-slate-700/80 shadow-xs'
+                      : 'border-transparent opacity-50 hover:opacity-100 hover:bg-slate-100/60 dark:hover:bg-slate-800/50'
                   }`}
                   title="Tiếng Việt (Vietnamese)"
                 >
@@ -189,10 +189,10 @@ export function Header({
                 <button
                   type="button"
                   onClick={() => setLanguage('en')}
-                  className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                  className={`p-1 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-center ${
                     language === 'en'
-                      ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-105'
-                      : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                      ? 'bg-white dark:bg-slate-800 border-slate-200/90 dark:border-slate-700/80 shadow-xs'
+                      : 'border-transparent opacity-50 hover:opacity-100 hover:bg-slate-100/60 dark:hover:bg-slate-800/50'
                   }`}
                   title="English (United Kingdom)"
                 >
@@ -205,7 +205,7 @@ export function Header({
               </div>
 
               {/* Theme Switch (Sáng / Tối) - Cân giữa hoàn hảo giữa icon English và vạch phân cách | */}
-              <div className="flex items-center sm:pl-[10px] sm:pr-[16px] md:pl-[14px] md:pr-[20px]">
+              <div className="flex items-center sm:pl-[12px] sm:pr-[16px] md:pl-[16px] md:pr-[20px]">
                 <ThemeSwitch />
               </div>
 
