@@ -130,13 +130,13 @@ export function DashboardView({
   return (
     <div className="space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
+      <div className="flex flex-col gap-3 pb-1">
         <div className="flex items-center gap-3 sm:gap-3.5">
           <div>
-            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
               {t('dashboard.title')}
             </h1>
-            <p className="text-xs sm:text-[13px] text-[#64748B] mt-1 font-normal">
+            <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
               {t('dashboard.subtitle')}
             </p>
           </div>
@@ -174,7 +174,8 @@ export function DashboardView({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start md:self-center flex-wrap">
+        {/* Cụm 2 nút hành động: Xem bảng xếp hạng + Cổng điểm danh CLB ở ngay bên dưới phần tiêu đề */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           {/* Nút Xem Bảng Xếp Hạng */}
           <button
             type="button"
@@ -190,12 +191,12 @@ export function DashboardView({
           <button
             type="button"
             onClick={onNavigateToCheckin}
-            className="px-3.5 py-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
             title="Chuyển đến màn hình điểm danh"
           >
             <span
               className={`w-2 h-2 rounded-full ${
-                activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+                activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
               }`}
             />
             <span>
