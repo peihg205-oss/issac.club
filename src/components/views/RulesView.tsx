@@ -30,6 +30,8 @@ import {
   Activity,
   Shield,
   Plus,
+  Minus,
+  ChevronDown,
 } from 'lucide-react'
 
 interface SystemPrinciple {
@@ -314,7 +316,7 @@ export function RulesView() {
   const [formType, setFormType] = useState<'add' | 'deduct' | 'principle'>('add')
   const [formCode, setFormCode] = useState('')
   const [formName, setFormName] = useState('')
-  const [formPoints, setFormPoints] = useState<number>(2)
+  const [formPoints, setFormPoints] = useState<number | string>(2)
   const [formCategory, setFormCategory] = useState('Nhiệm vụ & Tiến độ')
   const [formCondition, setFormCondition] = useState('')
   const [formCoreMultiplier, setFormCoreMultiplier] = useState(false)
@@ -359,7 +361,7 @@ export function RulesView() {
     setFormType(type)
     setFormCode(suggestNextCode(type))
     setFormName('')
-    setFormPoints(type === 'deduct' ? -2 : type === 'add' ? 2 : 0)
+    setFormPoints(type === 'deduct' ? -2 : type === 'add' ? 2 : 'Quy chuẩn')
     setFormCategory(
       type === 'add'
         ? 'Nhiệm vụ & Tiến độ'
@@ -386,7 +388,7 @@ export function RulesView() {
       setFormCoreMultiplier(false)
       setFormCategory('Nhiệm vụ & Tiến độ')
     } else {
-      setFormPoints(0)
+      setFormPoints('Quy chuẩn')
       setFormCoreMultiplier(false)
       setFormMonthlyCap(false)
       setFormCategory('Nguyên tắc vận hành')
@@ -1246,18 +1248,23 @@ export function RulesView() {
 
       {/* Modal: Thêm quy định / tiêu chí mới */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1E48]/55 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full border border-slate-200/90 shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
-              <div className="flex items-center gap-3">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false)
+          }}
+        >
+          <div className="bg-white rounded-3xl sm:rounded-[28px] max-w-xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header (Fixed / Shrink-0) */}
+            <div className="p-4 sm:p-5 sm:pb-3.5 border-b border-slate-100 flex items-start justify-between bg-white shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xs flex-shrink-0 transition-colors ${
+                  className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0 transition-colors ${
                     formType === 'add'
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-700'
+                      ? 'bg-gradient-to-br from-emerald-500 to-teal-700 shadow-emerald-500/20'
                       : formType === 'deduct'
-                      ? 'bg-gradient-to-br from-rose-500 to-red-700'
-                      : 'bg-gradient-to-br from-[#0B1E48] via-[#1351D8] to-[#1E62F4]'
+                      ? 'bg-gradient-to-br from-rose-500 to-red-700 shadow-rose-500/20'
+                      : 'bg-gradient-to-br from-[#7026ED] via-[#5b1ecc] to-[#1351D8] shadow-purple-500/20'
                   }`}
                 >
                   {formType === 'add' ? (
@@ -1268,247 +1275,396 @@ export function RulesView() {
                     <Scale className="w-5 h-5 text-white stroke-[2.2]" />
                   )}
                 </div>
-                <div>
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-blue-50 text-[#1351D8] border border-blue-200/60 mb-1">
-                    <Shield className="w-3 h-3 text-[#1351D8]" />
+                <div className="min-w-0">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-purple-50 text-[#7026ED] border border-purple-200/70 mb-0.5">
+                    <Shield className="w-3 h-3 text-[#7026ED]" />
                     <span>{language === 'vi' ? 'Quy Chế Hoạt Động CLB' : 'Club Operational Regulations'}</span>
                   </div>
-                  <h3 className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight">
+                  <h3 className="text-base sm:text-lg font-black text-[#061651] tracking-tight truncate">
                     {language === 'vi' ? 'Thêm Quy Định / Tiêu Chí CLB' : 'Add Club Rule / Criterion'}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] sm:text-xs text-[#64748B] font-medium truncate">
                     {language === 'vi'
-                      ? 'Bổ sung tiêu chí chấm điểm và chế tài thi đua cho Câu Lạc bộ Đại sứ sinh viên Trường Quốc tế'
-                      : 'Add scoring criteria and disciplinary regulations for VNU-IS Ambassadors Club'}
+                      ? 'Bổ sung tiêu chí chấm điểm và chế tài thi đua cho CLB'
+                      : 'Add scoring criteria and disciplinary regulations for Club'}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer flex-shrink-0"
+                className="w-8 h-8 rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition flex items-center justify-center cursor-pointer shrink-0 ml-2"
+                title="Đóng modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveRule} className="space-y-4 text-xs">
-              {/* 1. Chọn loại quy định: 3 Thẻ tương tác sang trọng */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-2">
-                  {language === 'vi' ? 'Loại quy định & tiêu chí:' : 'Rule & Criterion Type:'}
-                </label>
-                <div className="grid grid-cols-3 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => handleTypeChange('add')}
-                    className={`py-3 px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                      formType === 'add'
-                        ? 'border-emerald-300 bg-emerald-50/80 text-emerald-900 shadow-xs ring-2 ring-emerald-500/20'
-                        : 'border-slate-200/90 bg-slate-50/70 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs shadow-2xs">
-                      <Award className="w-4 h-4 text-emerald-700" />
-                    </div>
-                    <span className="font-bold">{language === 'vi' ? 'Điểm cộng (+)' : 'Bonus (+)'}</span>
-                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
-                      {language === 'vi' ? '+2đ chuẩn' : '+2 pts standard'}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleTypeChange('deduct')}
-                    className={`py-3 px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                      formType === 'deduct'
-                        ? 'border-rose-300 bg-rose-50/80 text-rose-900 shadow-xs ring-2 ring-rose-500/20'
-                        : 'border-slate-200/90 bg-slate-50/70 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-black text-xs shadow-2xs">
-                      <ShieldAlert className="w-4 h-4 text-rose-700" />
-                    </div>
-                    <span className="font-bold">{language === 'vi' ? 'Điểm trừ (-)' : 'Penalty (-)'}</span>
-                    <span className="text-[10px] font-semibold text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded">
-                      {language === 'vi' ? '-2đ (Core ×2)' : '-2 pts (Core ×2)'}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleTypeChange('principle')}
-                    className={`py-3 px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                      formType === 'principle'
-                        ? 'border-blue-300 bg-blue-50/80 text-[#1351D8] shadow-xs ring-2 ring-blue-500/20'
-                        : 'border-slate-200/90 bg-slate-50/70 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-blue-100 text-[#1351D8] flex items-center justify-center font-black text-xs shadow-2xs">
-                      <Scale className="w-4 h-4 text-[#1351D8]" />
-                    </div>
-                    <span className="font-bold">{language === 'vi' ? 'Nguyên tắc (P)' : 'Principle (P)'}</span>
-                    <span className="text-[10px] font-semibold text-[#1351D8] bg-blue-100/70 px-1.5 py-0.5 rounded">
-                      {language === 'vi' ? 'Quy chuẩn' : 'Standard'}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 2. Mã quy định & Mức điểm */}
-              <div className="grid grid-cols-2 gap-3">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveRule} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5.5 space-y-4 text-xs overscroll-contain">
+                {/* 1. Chọn loại quy định: 3 Thẻ tương tác */}
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    {language === 'vi' ? 'Mã quy chế:' : 'Rule Code:'} <span className="text-rose-500">*</span>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] block mb-2">
+                    {language === 'vi' ? 'Loại quy định & tiêu chí:' : 'Rule & Criterion Type:'}
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleTypeChange('add')}
+                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
+                        formType === 'add'
+                          ? 'border-emerald-300 bg-emerald-50/80 text-emerald-950 shadow-xs ring-2 ring-emerald-500/20'
+                          : 'border-slate-200/90 bg-slate-50/70 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs shadow-2xs">
+                        <Award className="w-4 h-4 text-emerald-700" />
+                      </div>
+                      <span className="font-bold text-xs truncate max-w-full">{language === 'vi' ? 'Điểm cộng (+)' : 'Bonus (+)'}</span>
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
+                        {language === 'vi' ? '+2đ chuẩn' : '+2 pts standard'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleTypeChange('deduct')}
+                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
+                        formType === 'deduct'
+                          ? 'border-rose-300 bg-rose-50/80 text-rose-950 shadow-xs ring-2 ring-rose-500/20'
+                          : 'border-slate-200/90 bg-slate-50/70 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-black text-xs shadow-2xs">
+                        <ShieldAlert className="w-4 h-4 text-rose-700" />
+                      </div>
+                      <span className="font-bold text-xs truncate max-w-full">{language === 'vi' ? 'Điểm trừ (-)' : 'Penalty (-)'}</span>
+                      <span className="text-[10px] font-semibold text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded">
+                        {language === 'vi' ? '-2đ (Core ×2)' : '-2 pts (Core ×2)'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleTypeChange('principle')}
+                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
+                        formType === 'principle'
+                          ? 'border-purple-300 bg-purple-50/80 text-purple-950 shadow-xs ring-2 ring-[#7026ED]/20'
+                          : 'border-slate-200/90 bg-slate-50/70 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-purple-100 text-[#7026ED] flex items-center justify-center font-black text-xs shadow-2xs">
+                        <Scale className="w-4 h-4 text-[#7026ED]" />
+                      </div>
+                      <span className="font-bold text-xs truncate max-w-full">{language === 'vi' ? 'Nguyên tắc (P)' : 'Principle (P)'}</span>
+                      <span className="text-[10px] font-semibold text-[#7026ED] bg-purple-100/70 px-1.5 py-0.5 rounded">
+                        {language === 'vi' ? 'Quy chuẩn' : 'Standard'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Mã quy chế & Mức điểm */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="text-xs sm:text-[13px] font-bold text-[#061651] block mb-1.5">
+                      {language === 'vi' ? 'Mã quy chế:' : 'Rule Code:'} <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formCode}
+                      onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+                      placeholder="VD: C10, T14, P11"
+                      className="w-full bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] font-mono font-bold text-[#7026ED] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
+                      required
+                    />
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
+                      {language === 'vi' ? 'Tự động gợi ý mã kế tiếp' : 'Auto-suggested next code'}
+                    </p>
+                  </div>
+
+                  <div>
+                    {/* Stepper hoặc Input tuỳ formType */}
+                    {formType === 'add' ? (
+                      <>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
+                            {language === 'vi' ? 'Mức điểm cộng:' : 'Bonus Points:'} <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 5].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setFormPoints(preset)}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
+                                  Number(formPoints) === preset
+                                    ? 'bg-emerald-600 text-white shadow-2xs'
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
+                                }`}
+                              >
+                                +{preset}đ
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-2 sm:py-2.5 shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition">
+                          <button
+                            type="button"
+                            onClick={() => setFormPoints((prev) => Math.max(1, (Number(prev) || 1) - 1))}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
+                            title="Giảm 1 điểm"
+                          >
+                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                          <div className="flex-1 flex items-center justify-center gap-1 px-1">
+                            <span className="text-xs font-bold text-emerald-600">+</span>
+                            <input
+                              type="number"
+                              step="1"
+                              min="1"
+                              value={Math.abs(Number(formPoints) || 0)}
+                              onChange={(e) => setFormPoints(Math.abs(Number(e.target.value)))}
+                              className="w-12 text-center text-xs sm:text-[13px] font-extrabold text-emerald-700 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              required
+                            />
+                            <span className="text-[11px] sm:text-xs font-bold text-slate-400 select-none">
+                              {language === 'vi' ? 'điểm' : 'pts'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFormPoints((prev) => (Number(prev) || 0) + 1)}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
+                            title="Tăng 1 điểm"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                        </div>
+                      </>
+                    ) : formType === 'deduct' ? (
+                      <>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
+                            {language === 'vi' ? 'Mức điểm trừ:' : 'Penalty Points:'} <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-1">
+                            {[-1, -2, -3, -5].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setFormPoints(preset)}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
+                                  Number(formPoints) === preset
+                                    ? 'bg-rose-600 text-white shadow-2xs'
+                                    : 'bg-rose-50 hover:bg-rose-100 text-rose-700'
+                                }`}
+                              >
+                                {preset}đ
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-2 sm:py-2.5 shadow-2xs focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/15 transition">
+                          <button
+                            type="button"
+                            onClick={() => setFormPoints((prev) => -Math.abs(Math.min(-1, (Number(prev) || -1) - 1)))}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
+                            title="Trừ thêm 1 điểm"
+                          >
+                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                          <div className="flex-1 flex items-center justify-center gap-1 px-1">
+                            <input
+                              type="number"
+                              step="1"
+                              max="-1"
+                              value={formPoints}
+                              onChange={(e) => {
+                                const val = Number(e.target.value)
+                                setFormPoints(val > 0 ? -val : val)
+                              }}
+                              className="w-14 text-center text-xs sm:text-[13px] font-extrabold text-rose-600 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              required
+                            />
+                            <span className="text-[11px] sm:text-xs font-bold text-slate-400 select-none">
+                              {language === 'vi' ? 'điểm' : 'pts'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFormPoints((prev) => {
+                              const cur = Number(prev) || -1
+                              return cur < -1 ? cur + 1 : -1
+                            })}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
+                            title="Bớt trừ 1 điểm"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
+                            {language === 'vi' ? 'Quy chuẩn điểm:' : 'Point Standard:'} <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-1">
+                            {['Quy chuẩn', '0 - 100', 'Kỷ luật'].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setFormPoints(preset)}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                                  formPoints === preset
+                                    ? 'bg-[#7026ED] text-white shadow-2xs'
+                                    : 'bg-purple-50 hover:bg-purple-100 text-[#7026ED]'
+                                }`}
+                              >
+                                {preset}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          value={formPoints}
+                          onChange={(e) => setFormPoints(e.target.value)}
+                          placeholder="VD: 0, 60, Quy chuẩn..."
+                          className="w-full bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] font-bold text-[#061651] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
+                          required
+                        />
+                      </>
+                    )}
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
+                      {formType === 'add'
+                        ? (language === 'vi' ? 'Điểm thưởng khi hoàn thành xuất sắc' : 'Bonus points for outstanding contribution')
+                        : formType === 'deduct'
+                        ? (language === 'vi' ? 'Điểm trừ căn cứ theo mức độ vi phạm' : 'Penalty points based on violation severity')
+                        : (language === 'vi' ? 'Mốc điểm hoặc định mức nguyên tắc' : 'Standard score milestone or principle')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. Tên nội dung tiêu chí */}
+                <div>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] block mb-1.5">
+                    {language === 'vi' ? 'Tên nội dung quy định / tiêu chí:' : 'Rule / Criterion Title:'} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={formCode}
-                    onChange={(e) => setFormCode(e.target.value.toUpperCase())}
-                    placeholder="VD: C10, T14, P11"
-                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-[#1351D8] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder={language === 'vi' ? 'VD: Đại diện CLB tham gia Hội thảo cấp ĐHQGHN' : 'e.g. Represent club at VNU-level workshop'}
+                    className="w-full bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] font-semibold text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
                     required
                   />
-                  <p className="text-[10px] text-slate-500 mt-1 font-medium">
-                    {language === 'vi' ? 'Tự động gợi ý mã kế tiếp' : 'Auto-suggested next code'}
-                  </p>
                 </div>
 
+                {/* 4. Danh mục */}
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    {language === 'vi' ? 'Mức điểm:' : 'Points:'} <span className="text-rose-500">*</span>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] block mb-1.5">
+                    {language === 'vi' ? 'Danh mục phân loại:' : 'Category Classification:'}
                   </label>
-                  <input
-                    type="number"
-                    value={formPoints}
-                    onChange={(e) => setFormPoints(Number(e.target.value))}
-                    step="1"
-                    className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#0F172A] focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs"
-                    required
+                  <div className="relative">
+                    <select
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value)}
+                      className="w-full appearance-none bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 pr-10 text-xs sm:text-[13px] font-semibold text-[#061651] focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs cursor-pointer"
+                    >
+                      <option value="Nhiệm vụ & Tiến độ">{language === 'vi' ? 'Nhiệm vụ & Tiến độ' : 'Tasks & Progress'}</option>
+                      <option value="Tương tác & Mạng xã hội">{language === 'vi' ? 'Tương tác & Mạng xã hội' : 'Social & Interaction'}</option>
+                      <option value="Kỷ luật & Deadline">{language === 'vi' ? 'Kỷ luật & Deadline' : 'Discipline & Deadlines'}</option>
+                      <option value="Họp & Kỷ luật">{language === 'vi' ? 'Họp & Kỷ luật' : 'Meetings & Attendance'}</option>
+                      <option value="Đối ngoại & Sự kiện">{language === 'vi' ? 'Đối ngoại & Sự kiện' : 'External Affairs & Events'}</option>
+                      <option value="Khen thưởng & Đóng góp">{language === 'vi' ? 'Khen thưởng & Đóng góp' : 'Awards & Contributions'}</option>
+                      <option value="Nguyên tắc vận hành">{language === 'vi' ? 'Nguyên tắc vận hành' : 'Operational Principles'}</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+
+                {/* 5. Điều kiện áp dụng & Chi tiết */}
+                <div>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] block mb-1.5">
+                    {language === 'vi' ? 'Điều kiện áp dụng & Minh chứng yêu cầu:' : 'Conditions & Required Proof:'}
+                  </label>
+                  <textarea
+                    value={formCondition}
+                    onChange={(e) => setFormCondition(e.target.value)}
+                    placeholder={language === 'vi' ? 'Mô tả cụ thể trường hợp áp dụng, căn cứ xét điểm, thời hạn nộp hoặc minh chứng cần có...' : 'Describe specific case, scoring basis, submission deadline or required evidence...'}
+                    rows={3}
+                    className="w-full bg-white hover:border-[#7026ED]/60 focus:bg-white border border-slate-200 rounded-2xl p-3 text-xs sm:text-[13px] font-medium text-[#061651] placeholder:text-slate-400 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs leading-relaxed resize-none"
                   />
-                  <p className="text-[10px] text-slate-500 mt-1 font-medium">
-                    {formType === 'add'
-                      ? (language === 'vi' ? 'Điểm cộng (dương, VD: +2, +3)' : 'Bonus points (positive, e.g. +2, +3)')
-                      : formType === 'deduct'
-                      ? (language === 'vi' ? 'Điểm trừ (âm, VD: -2, -5)' : 'Penalty points (negative, e.g. -2, -5)')
-                      : (language === 'vi' ? 'Mốc điểm hoặc ghi chú' : 'Score milestone or note')}
-                  </p>
                 </div>
-              </div>
 
-              {/* 3. Tên nội dung tiêu chí */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  {language === 'vi' ? 'Tên nội dung quy định / tiêu chí:' : 'Rule / Criterion Title:'} <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder={language === 'vi' ? 'VD: Đại diện CLB tham gia Hội thảo cấp ĐHQGHN' : 'e.g. Represent club at VNU-level workshop'}
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs"
-                  required
-                />
-              </div>
+                {/* 6. Tùy chọn nâng cao */}
+                <div className="p-3.5 sm:p-4 bg-purple-50/60 rounded-2xl border border-purple-200/80 space-y-2.5">
+                  <span className="font-bold text-[#061651] block text-xs sm:text-[12.5px] flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-[#7026ED]" />
+                    <span>{language === 'vi' ? 'Tùy chọn cơ chế CLB:' : 'Club Mechanism Options:'}</span>
+                  </span>
 
-              {/* 4. Danh mục */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  {language === 'vi' ? 'Danh mục phân loại:' : 'Category Classification:'}
-                </label>
-                <select
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs cursor-pointer"
-                >
-                  <option value="Nhiệm vụ & Tiến độ">{language === 'vi' ? 'Nhiệm vụ & Tiến độ' : 'Tasks & Progress'}</option>
-                  <option value="Tương tác & Mạng xã hội">{language === 'vi' ? 'Tương tác & Mạng xã hội' : 'Social & Interaction'}</option>
-                  <option value="Kỷ luật & Deadline">{language === 'vi' ? 'Kỷ luật & Deadline' : 'Discipline & Deadlines'}</option>
-                  <option value="Họp & Kỷ luật">{language === 'vi' ? 'Họp & Kỷ luật' : 'Meetings & Attendance'}</option>
-                  <option value="Đối ngoại & Sự kiện">{language === 'vi' ? 'Đối ngoại & Sự kiện' : 'External Affairs & Events'}</option>
-                  <option value="Khen thưởng & Đóng góp">{language === 'vi' ? 'Khen thưởng & Đóng góp' : 'Awards & Contributions'}</option>
-                  <option value="Nguyên tắc vận hành">{language === 'vi' ? 'Nguyên tắc vận hành' : 'Operational Principles'}</option>
-                </select>
-              </div>
-
-              {/* 5. Điều kiện áp dụng & Chi tiết */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  {language === 'vi' ? 'Điều kiện áp dụng & Minh chứng yêu cầu:' : 'Conditions & Required Proof:'}
-                </label>
-                <textarea
-                  value={formCondition}
-                  onChange={(e) => setFormCondition(e.target.value)}
-                  placeholder={language === 'vi' ? 'Mô tả cụ thể trường hợp áp dụng, căn cứ xét điểm, thời hạn nộp hoặc minh chứng cần có...' : 'Describe specific case, scoring basis, submission deadline or required evidence...'}
-                  rows={3}
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#1351D8] focus:ring-2 focus:ring-[#1351D8]/10 transition shadow-2xs leading-relaxed"
-                />
-              </div>
-
-              {/* 6. Tùy chọn nâng cao */}
-              <div className="p-3.5 bg-gradient-to-r from-blue-50/60 to-indigo-50/40 rounded-2xl border border-blue-200/70 space-y-2.5">
-                <span className="font-bold text-[#0F172A] block text-xs flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-[#1351D8]" />
-                  <span>{language === 'vi' ? 'Tùy chọn cơ chế CLB:' : 'Club Mechanism Options:'}</span>
-                </span>
-
-                {formType === 'deduct' && (
-                  <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={formCoreMultiplier}
-                      onChange={(e) => setFormCoreMultiplier(e.target.checked)}
-                      className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 bg-white mt-0.5 cursor-pointer"
-                    />
-                    <span>
-                      {language === 'vi' ? (
-                        <>Áp dụng chế tài <strong>phạt gấp đôi (×2)</strong> cho Core Team</>
-                      ) : (
-                        <>Apply <strong>double penalty (×2)</strong> for Core Team</>
-                      )}
-                    </span>
-                  </label>
-                )}
-
-                {formType === 'add' && (
-                  <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={formMonthlyCap}
-                      onChange={(e) => setFormMonthlyCap(e.target.checked)}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-white mt-0.5 cursor-pointer"
-                    />
-                    <span>
-                      {language === 'vi' ? (
-                        <>Tính vào <strong>điểm tương tác tối đa 15 điểm/tháng</strong> (tránh cày điểm ảo)</>
-                      ) : (
-                        <>Count towards <strong>monthly 15-point interaction cap</strong> (anti-farming)</>
-                      )}
-                    </span>
-                  </label>
-                )}
-
-                <div className="text-[11px] text-slate-600 font-medium bg-white/70 p-2.5 rounded-xl border border-blue-200/50 leading-relaxed">
-                  {language === 'vi' ? (
-                    <>Sau khi thêm, quy định này sẽ ngay lập tức xuất hiện trong mục <strong>Chấm điểm & Duyệt</strong> để Ban Nhân sự và Ban Chủ nhiệm áp dụng.</>
-                  ) : (
-                    <>Once added, this rule will immediately become available in <strong>Scoring & Approval</strong> for HR and Exec Board.</>
+                  {formType === 'deduct' && (
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={formCoreMultiplier}
+                        onChange={(e) => setFormCoreMultiplier(e.target.checked)}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 bg-white border-slate-300 mt-0.5 cursor-pointer"
+                      />
+                      <span>
+                        {language === 'vi' ? (
+                          <>Áp dụng chế tài <strong className="text-rose-700 font-bold">phạt gấp đôi (×2)</strong> cho Core Team</>
+                        ) : (
+                          <>Apply <strong className="text-rose-700 font-bold">double penalty (×2)</strong> for Core Team</>
+                        )}
+                      </span>
+                    </label>
                   )}
+
+                  {formType === 'add' && (
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={formMonthlyCap}
+                        onChange={(e) => setFormMonthlyCap(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-white border-slate-300 mt-0.5 cursor-pointer"
+                      />
+                      <span>
+                        {language === 'vi' ? (
+                          <>Tính vào <strong className="text-emerald-700 font-bold">điểm tương tác tối đa 15 điểm/tháng</strong> (tránh cày điểm ảo)</>
+                        ) : (
+                          <>Count towards <strong className="text-emerald-700 font-bold">monthly 15-point interaction cap</strong> (anti-farming)</>
+                        )}
+                      </span>
+                    </label>
+                  )}
+
+                  <div className="text-[11px] text-slate-600 font-medium bg-white/80 p-2.5 rounded-xl border border-purple-200/60 leading-relaxed">
+                    {language === 'vi' ? (
+                      <>Sau khi thêm, quy định này sẽ ngay lập tức xuất hiện trong mục <strong>Chấm điểm & Duyệt</strong> để Ban Nhân sự và Ban Chủ nhiệm áp dụng.</>
+                    ) : (
+                      <>Once added, this rule will immediately become available in <strong>Scoring & Approval</strong> for HR and Exec Board.</>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              {/* Sticky Modal Footer Action Buttons */}
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-white/95 backdrop-blur-xs flex items-center gap-2.5 sm:gap-3 sm:justify-end shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200/90 text-slate-700 font-bold text-xs hover:bg-slate-50 transition shadow-2xs active:scale-95 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-[13px] text-center transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   {language === 'vi' ? 'Hủy bỏ' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-bold text-xs shadow-xs hover:shadow transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-6 py-2.5 rounded-2xl text-xs sm:text-[13px] font-bold text-white bg-[#7026ED] hover:bg-[#621fde] text-center shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
                   <span>{language === 'vi' ? 'Lưu Quy Định CLB' : 'Save Club Regulation'}</span>
