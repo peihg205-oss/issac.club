@@ -32,7 +32,7 @@ export function ThemeSwitch({ className = '', size = 'md' }: ThemeSwitchProps) {
       ? 'Switch to Light mode'
       : 'Switch to Dark mode'
 
-  const sizeClass = size === 'sm' ? 'text-[11px]' : 'text-[12.5px] sm:text-[13px]'
+  const sizeClass = size === 'sm' ? 'theme-switch-sm' : 'theme-switch-md'
 
   return (
     <label
