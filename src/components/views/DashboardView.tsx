@@ -131,9 +131,9 @@ export function DashboardView({
   return (
     <div className="space-y-6">
       {/* 1. Header trang chuẩn nhận diện dự án CLB + Card Thời Tiết & Giờ Hà Nội */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-1">
-        {/* Bên trái: Tiêu đề + Mascot + Lời chào + 2 nút hành động ở ngay dưới */}
-        <div className="flex flex-col gap-3.5 flex-1 min-w-0">
+      <div className="flex flex-col md:flex-row lg:grid lg:grid-cols-4 md:items-center justify-between gap-3 sm:gap-4 pb-1">
+        {/* Bên trái: Tiêu đề + Mascot + Lời chào + 2 nút hành động ở ngay dưới (chiếm 3 cột đầu) */}
+        <div className="flex flex-col gap-3.5 lg:col-span-3 min-w-0 flex-1">
           <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap sm:flex-nowrap">
             <div>
               <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
@@ -211,9 +211,9 @@ export function DashboardView({
           </div>
         </div>
 
-        {/* Bên phải: Widget Thời tiết & Giờ Hà Nội cân đối tuyệt đẹp (Style Uiverse KSAplay) */}
-        <div className="shrink-0 self-start md:self-center">
-          <HanoiWeatherCard />
+        {/* Bên phải: Widget Thời tiết & Giờ Hà Nội (bằng đúng cái cột thứ 4 dưới) */}
+        <div className="lg:col-span-1 w-full md:w-[280px] lg:w-full shrink-0 flex justify-start lg:justify-end">
+          <HanoiWeatherCard className="w-full" />
         </div>
       </div>
 

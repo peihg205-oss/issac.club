@@ -189,7 +189,8 @@
   flex-direction: column;
   align-items: center;
   height: 125px;
-  width: 252px;
+  width: 100%;
+  max-width: 100%;
   border-radius: 22px;
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);

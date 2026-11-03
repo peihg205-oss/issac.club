@@ -102,7 +102,7 @@ function getWeatherMeta(code: number, lang: 'vi' | 'en') {
 const VI_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 const EN_DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
-export function HanoiWeatherCard() {
+export function HanoiWeatherCard({ className = '' }: { className?: string } = {}) {
   const { language } = useLanguage()
   const [weatherData, setWeatherData] = useState<HanoiWeatherData>(FALLBACK_WEATHER)
   const [timeState, setTimeState] = useState({
@@ -238,7 +238,7 @@ export function HanoiWeatherCard() {
 
   return (
     <div
-      className="weather-widget"
+      className={`weather-widget ${className}`}
       title={
         language === 'vi'
           ? `Thời tiết Hà Nội: ${activeWeather.text}, ${activeWeather.temp} (${activeWeather.range})`
