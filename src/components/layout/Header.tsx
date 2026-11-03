@@ -165,50 +165,53 @@ export function Header({
               <ThemeSwitch size="sm" />
             </div>
 
-            {/* Desktop: Cả 2 cờ Việt Nam và UK chuẩn Ảnh 1 (Không có viền bọc ngoài) */}
-            <div className="hidden sm:flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setLanguage('vi')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-                  language === 'vi'
-                    ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-105'
-                    : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                }`}
-                title="Tiếng Việt (Vietnamese)"
-              >
-                <img
-                  src="/flag-vn.svg"
-                  alt="Vietnam Flag"
-                  className="w-6 h-4 object-cover rounded-[2px] block"
-                />
-              </button>
+            {/* Desktop: Cụm Cờ Ngôn Ngữ + Theme Switch Cân Giữa + Vạch Phân Cách */}
+            <div className="hidden sm:flex items-center">
+              {/* Cả 2 cờ Việt Nam và UK */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('vi')}
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                    language === 'vi'
+                      ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-105'
+                      : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                  }`}
+                  title="Tiếng Việt (Vietnamese)"
+                >
+                  <img
+                    src="/flag-vn.svg"
+                    alt="Vietnam Flag"
+                    className="w-6 h-4 object-cover rounded-[2px] block"
+                  />
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setLanguage('en')}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
-                  language === 'en'
-                    ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-105'
-                    : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                }`}
-                title="English (United Kingdom)"
-              >
-                <img
-                  src="/flag-uk.svg"
-                  alt="UK Flag"
-                  className="w-6 h-4 object-cover rounded-[2px] block"
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                    language === 'en'
+                      ? 'bg-white dark:bg-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-105'
+                      : 'opacity-55 hover:opacity-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                  }`}
+                  title="English (United Kingdom)"
+                >
+                  <img
+                    src="/flag-uk.svg"
+                    alt="UK Flag"
+                    className="w-6 h-4 object-cover rounded-[2px] block"
+                  />
+                </button>
+              </div>
+
+              {/* Theme Switch (Sáng / Tối) - Cân giữa hoàn hảo giữa icon English và vạch phân cách | */}
+              <div className="flex items-center sm:pl-[10px] sm:pr-[16px] md:pl-[14px] md:pr-[20px]">
+                <ThemeSwitch />
+              </div>
+
+              {/* Divider line | */}
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
             </div>
-
-            {/* Theme Switch (Sáng / Tối) ngay phía bên phải cạnh ngôn ngữ */}
-            <div className="hidden sm:flex items-center pl-0.5">
-              <ThemeSwitch />
-            </div>
-
-            {/* Divider line */}
-            <div className="hidden sm:block h-4 w-px bg-slate-200 dark:bg-slate-700" />
 
             {/* Home Navigation */}
             <button
