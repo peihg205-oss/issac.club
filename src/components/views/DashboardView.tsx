@@ -134,9 +134,10 @@ export function DashboardView({
       <div className="flex flex-col md:flex-row lg:grid lg:grid-cols-4 md:items-center justify-between gap-3 sm:gap-4 pb-1">
         {/* Bên trái: Tiêu đề + Mascot + Lời chào + 2 nút hành động ở ngay dưới (chiếm 3 cột đầu) */}
         <div className="flex flex-col gap-3.5 lg:col-span-3 min-w-0 flex-1">
-          <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap sm:flex-nowrap">
-            <div>
-              <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
+          <div className="flex items-start justify-between gap-3">
+            {/* Cụm Tiêu đề & Lời chào (thụt lề pl-11 trên mobile để không bị nút 9 chấm che) */}
+            <div className="min-w-0 flex-1 pl-11 sm:pl-0">
+              <h1 className="text-xl sm:text-2xl lg:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
                 {t('dashboard.title')}
               </h1>
               <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
@@ -144,32 +145,32 @@ export function DashboardView({
               </p>
             </div>
 
-            {/* Mascot Chibi hoạt động năng động - Hộp thoại nằm bên cạnh chuẩn style ảnh 2 */}
+            {/* Mascot Chibi hoạt động năng động - Đặt gọn gàng cân đối bên phải tiêu đề, có bóng thoại sinh động */}
             <div
               onClick={handleMascotClick}
-              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none self-start"
               title="Bấm vào tớ để nghe lời động viên nhé!"
             >
               <img
                 src="/issac-mascot.png"
                 alt="iSSAC Chibi Mascot"
-                className={`w-14 h-14 sm:w-[68px] sm:h-[68px] object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
+                className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-[68px] lg:h-[68px] object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.12)] transition-all duration-300 ${
                   isMascotCheering
                     ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(0,132,200,0.4)]'
-                    : 'animate-mascot-fly hover:scale-115 hover:rotate-3'
+                    : 'animate-mascot-fly hover:scale-110 hover:rotate-3'
                 }`}
               />
 
-              {/* Bubble tooltip nằm bên cạnh mascot chuẩn style ảnh 2 (ẩn trên mobile để không tràn viền) */}
+              {/* Bubble tooltip nằm bên cạnh / dưới mascot - Hiển thị mượt mà cả trên mobile & desktop */}
               <div
-                className={`absolute left-full ml-2.5 sm:ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
+                className={`absolute right-0 sm:left-full sm:right-auto top-full sm:top-1/2 sm:-translate-y-1/2 sm:ml-3 mt-1.5 sm:mt-0 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0084c8] to-[#0284C7] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 flex items-center border border-white/25 ${
                   isMascotCheering || showMascotBubble
-                    ? 'opacity-100 scale-105 translate-x-1 pointer-events-auto'
+                    ? 'opacity-100 scale-100 pointer-events-auto'
                     : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
                 }`}
               >
                 {/* Mũi tên chỉ về phía mascot */}
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-b border-white/25" />
+                <div className="absolute -top-1 right-5 sm:top-1/2 sm:-left-1 sm:right-auto sm:-translate-y-1/2 w-2 h-2 bg-[#0084c8] rotate-45 border-l border-t sm:border-t-0 sm:border-b border-white/25" />
                 <span className="relative z-10 select-none tracking-tight">
                   {language === 'vi' ? issacMascotQuotesVi[mascotMessageIdx] : issacMascotQuotesEn[mascotMessageIdx]}
                 </span>
