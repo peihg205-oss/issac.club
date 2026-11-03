@@ -361,7 +361,7 @@ export function RulesView() {
     setFormType(type)
     setFormCode(suggestNextCode(type))
     setFormName('')
-    setFormPoints(type === 'deduct' ? -2 : type === 'add' ? 2 : 'Quy chuẩn')
+    setFormPoints(type === 'principle' ? 'Quy chuẩn' : 2)
     setFormCategory(
       type === 'add'
         ? 'Nhiệm vụ & Tiến độ'
@@ -379,7 +379,7 @@ export function RulesView() {
     setFormType(type)
     setFormCode(suggestNextCode(type))
     if (type === 'deduct') {
-      setFormPoints(-2)
+      setFormPoints(2)
       setFormCoreMultiplier(true)
       setFormMonthlyCap(false)
       setFormCategory('Kỷ luật & Deadline')
@@ -1382,126 +1382,7 @@ export function RulesView() {
 
                   <div>
                     {/* Stepper hoặc Input tuỳ formType */}
-                    {formType === 'add' ? (
-                      <>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
-                            {language === 'vi' ? 'Mức điểm cộng:' : 'Bonus Points:'} <span className="text-rose-500">*</span>
-                          </label>
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 5].map((preset) => (
-                              <button
-                                key={preset}
-                                type="button"
-                                onClick={() => setFormPoints(preset)}
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                                  Number(formPoints) === preset
-                                    ? 'bg-emerald-600 text-white shadow-2xs'
-                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
-                                }`}
-                              >
-                                +{preset}đ
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-2 sm:py-2.5 shadow-2xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15 transition">
-                          <button
-                            type="button"
-                            onClick={() => setFormPoints((prev) => Math.max(1, (Number(prev) || 1) - 1))}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
-                            title="Giảm 1 điểm"
-                          >
-                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                          </button>
-                          <div className="flex-1 flex items-center justify-center gap-1 px-1">
-                            <span className="text-xs font-bold text-emerald-600">+</span>
-                            <input
-                              type="number"
-                              step="1"
-                              min="1"
-                              value={Math.abs(Number(formPoints) || 0)}
-                              onChange={(e) => setFormPoints(Math.abs(Number(e.target.value)))}
-                              className="w-12 text-center text-xs sm:text-[13px] font-extrabold text-emerald-700 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              required
-                            />
-                            <span className="text-[11px] sm:text-xs font-bold text-slate-400 select-none">
-                              {language === 'vi' ? 'điểm' : 'pts'}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setFormPoints((prev) => (Number(prev) || 0) + 1)}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
-                            title="Tăng 1 điểm"
-                          >
-                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      </>
-                    ) : formType === 'deduct' ? (
-                      <>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
-                            {language === 'vi' ? 'Mức điểm trừ:' : 'Penalty Points:'} <span className="text-rose-500">*</span>
-                          </label>
-                          <div className="flex items-center gap-1">
-                            {[-1, -2, -3, -5].map((preset) => (
-                              <button
-                                key={preset}
-                                type="button"
-                                onClick={() => setFormPoints(preset)}
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition cursor-pointer ${
-                                  Number(formPoints) === preset
-                                    ? 'bg-rose-600 text-white shadow-2xs'
-                                    : 'bg-rose-50 hover:bg-rose-100 text-rose-700'
-                                }`}
-                              >
-                                {preset}đ
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-2 sm:py-2.5 shadow-2xs focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/15 transition">
-                          <button
-                            type="button"
-                            onClick={() => setFormPoints((prev) => -Math.abs(Math.min(-1, (Number(prev) || -1) - 1)))}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
-                            title="Trừ thêm 1 điểm"
-                          >
-                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                          </button>
-                          <div className="flex-1 flex items-center justify-center gap-1 px-1">
-                            <input
-                              type="number"
-                              step="1"
-                              max="-1"
-                              value={formPoints}
-                              onChange={(e) => {
-                                const val = Number(e.target.value)
-                                setFormPoints(val > 0 ? -val : val)
-                              }}
-                              className="w-14 text-center text-xs sm:text-[13px] font-extrabold text-rose-600 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              required
-                            />
-                            <span className="text-[11px] sm:text-xs font-bold text-slate-400 select-none">
-                              {language === 'vi' ? 'điểm' : 'pts'}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setFormPoints((prev) => {
-                              const cur = Number(prev) || -1
-                              return cur < -1 ? cur + 1 : -1
-                            })}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
-                            title="Bớt trừ 1 điểm"
-                          >
-                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      </>
-                    ) : (
+                    {formType === 'principle' ? (
                       <>
                         <div className="flex items-center justify-between mb-1.5">
                           <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
@@ -1513,9 +1394,9 @@ export function RulesView() {
                                 key={preset}
                                 type="button"
                                 onClick={() => setFormPoints(preset)}
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-medium transition cursor-pointer ${
                                   formPoints === preset
-                                    ? 'bg-[#7026ED] text-white shadow-2xs'
+                                    ? 'bg-[#7026ED] text-white shadow-2xs font-bold'
                                     : 'bg-purple-50 hover:bg-purple-100 text-[#7026ED]'
                                 }`}
                               >
@@ -1533,12 +1414,83 @@ export function RulesView() {
                           required
                         />
                       </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs sm:text-[13px] font-bold text-[#061651] block">
+                            {language === 'vi' ? 'Mức điểm:' : 'Points:'} <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 5].map((preset) => {
+                              const isSelected = Math.abs(Number(formPoints)) === preset
+                              return (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => setFormPoints(preset)}
+                                  className={`px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold transition cursor-pointer ${
+                                    isSelected
+                                      ? formType === 'add'
+                                        ? 'bg-emerald-600 text-white shadow-2xs'
+                                        : 'bg-rose-600 text-white shadow-2xs'
+                                      : 'bg-slate-100 hover:bg-slate-200/80 text-slate-600'
+                                  }`}
+                                >
+                                  {preset}đ
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        <div
+                          className={`flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-2.5 py-1.5 shadow-2xs transition ${
+                            formType === 'add'
+                              ? 'focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/15'
+                              : 'focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/15'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setFormPoints((prev) => Math.max(1, (Math.abs(Number(prev)) || 1) - 1))}
+                            className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
+                            title="Giảm 1 điểm"
+                          >
+                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+
+                          <div className="flex-1 flex items-center justify-center gap-1.5">
+                            <input
+                              type="number"
+                              step="1"
+                              min="1"
+                              value={Math.abs(Number(formPoints)) || ''}
+                              onChange={(e) => setFormPoints(Math.abs(Number(e.target.value)))}
+                              className={`w-12 text-center text-sm font-black bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                formType === 'add' ? 'text-emerald-700' : 'text-rose-600'
+                              }`}
+                              required
+                            />
+                            <span className="text-xs font-semibold text-slate-400 select-none">
+                              {language === 'vi' ? 'điểm' : 'pts'}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setFormPoints((prev) => (Math.abs(Number(prev)) || 0) + 1)}
+                            className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 flex items-center justify-center transition active:scale-90 shrink-0 cursor-pointer"
+                            title="Tăng 1 điểm"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                        </div>
+                      </>
                     )}
                     <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
                       {formType === 'add'
                         ? (language === 'vi' ? 'Điểm thưởng khi hoàn thành xuất sắc' : 'Bonus points for outstanding contribution')
                         : formType === 'deduct'
-                        ? (language === 'vi' ? 'Điểm trừ căn cứ theo mức độ vi phạm' : 'Penalty points based on violation severity')
+                        ? (language === 'vi' ? 'Điểm trừ căn cứ theo mức độ vi phạm (Core Team ×2)' : 'Penalty points based on violation (Core Team ×2)')
                         : (language === 'vi' ? 'Mốc điểm hoặc định mức nguyên tắc' : 'Standard score milestone or principle')}
                     </p>
                   </div>
