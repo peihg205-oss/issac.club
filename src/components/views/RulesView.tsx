@@ -1318,9 +1318,6 @@ export function RulesView() {
                         <Award className="w-4 h-4 text-emerald-700" />
                       </div>
                       <span className="font-bold text-xs truncate max-w-full">{language === 'vi' ? 'Điểm cộng (+)' : 'Bonus (+)'}</span>
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
-                        {language === 'vi' ? '+2đ chuẩn' : '+2 pts standard'}
-                      </span>
                     </button>
 
                     <button
@@ -1336,9 +1333,6 @@ export function RulesView() {
                         <ShieldAlert className="w-4 h-4 text-rose-700" />
                       </div>
                       <span className="font-bold text-xs truncate max-w-full">{language === 'vi' ? 'Điểm trừ (-)' : 'Penalty (-)'}</span>
-                      <span className="text-[10px] font-semibold text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded">
-                        {language === 'vi' ? '-2đ (Core ×2)' : '-2 pts (Core ×2)'}
-                      </span>
                     </button>
 
                     <button
@@ -1354,9 +1348,6 @@ export function RulesView() {
                         <Scale className="w-4 h-4 text-[#7026ED]" />
                       </div>
                       <span className="font-bold text-xs truncate max-w-full">{language === 'vi' ? 'Nguyên tắc (P)' : 'Principle (P)'}</span>
-                      <span className="text-[10px] font-semibold text-[#7026ED] bg-purple-100/70 px-1.5 py-0.5 rounded">
-                        {language === 'vi' ? 'Quy chuẩn' : 'Standard'}
-                      </span>
                     </button>
                   </div>
                 </div>
