@@ -14,8 +14,6 @@ import {
   Edit3,
   Save,
   Send,
-  Star,
-  MessageSquare,
   ChevronDown,
   Check,
   X,
@@ -676,9 +674,8 @@ export function SurveyView() {
               {/* Criteria 1: Đánh giá mức độ hoàn thành công việc */}
               <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="text-amber-500">⭐</span>
-                    <span>1. Đánh giá mức độ hoàn thành công việc</span>
+                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200">
+                    1. Đánh giá mức độ hoàn thành công việc
                   </label>
                   {Number(currentScore1) > 0 ? (
                     <span className="text-[11px] sm:text-xs font-semibold text-[#0B63E5] dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-md sm:rounded-lg">
@@ -714,9 +711,8 @@ export function SurveyView() {
               {/* Criteria 2: Đánh giá tinh thần phối hợp & làm việc nhóm */}
               <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="text-blue-500">👥</span>
-                    <span>2. Đánh giá tinh thần phối hợp & làm việc nhóm</span>
+                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200">
+                    2. Đánh giá tinh thần phối hợp & làm việc nhóm
                   </label>
                   {Number(currentScore2) > 0 ? (
                     <span className="text-[11px] sm:text-xs font-semibold text-[#0B63E5] dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-md sm:rounded-lg">
@@ -752,9 +748,8 @@ export function SurveyView() {
               {/* Criteria 3: Đánh giá sự chủ động, trách nhiệm */}
               <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="text-amber-500">💡</span>
-                    <span>3. Đánh giá sự chủ động, trách nhiệm</span>
+                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200">
+                    3. Đánh giá sự chủ động, trách nhiệm
                   </label>
                   {Number(currentScore3) > 0 ? (
                     <span className="text-[11px] sm:text-xs font-semibold text-[#0B63E5] dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-md sm:rounded-lg">
@@ -789,9 +784,8 @@ export function SurveyView() {
 
               {/* Criteria 4: Nhận xét tổng quan */}
               <div className="space-y-1.5">
-                <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-blue-600" />
-                  <span>4. Nhận xét tổng quan</span>
+                <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200">
+                  4. Nhận xét tổng quan
                 </label>
                 <textarea
                   value={currentFeedback}
@@ -804,9 +798,8 @@ export function SurveyView() {
 
               {/* Criteria 5: Đề xuất/kiến nghị (nếu có) */}
               <div className="space-y-1.5">
-                <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-600" />
-                  <span>5. Đề xuất/kiến nghị (nếu có)</span>
+                <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200">
+                  5. Đề xuất/kiến nghị (nếu có)
                 </label>
                 <textarea
                   value={currentSuggestion}
@@ -819,8 +812,7 @@ export function SurveyView() {
 
               {/* Action Buttons for current member pinned at bottom */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   <span>
                     {[Number(currentScore1) > 0, Number(currentScore2) > 0, Number(currentScore3) > 0].filter(Boolean).length === 3
                       ? 'Đã hoàn tất điểm 3 tiêu chí chính'
