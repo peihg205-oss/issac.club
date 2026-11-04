@@ -17,6 +17,10 @@ import {
   ChevronRight,
   Play,
   Pause,
+  IdCard,
+  GraduationCap,
+  Calendar,
+  Clock,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
@@ -37,6 +41,8 @@ export interface SurveyEvaluation {
 
 export interface SurveyTargetMember {
   memberCode: string
+  studentId?: string
+  className?: string
   fullName: string
   departmentName: string
   position: string
@@ -151,6 +157,8 @@ export function SurveyView() {
       .filter((m) => m.member_code !== currentUser?.memberCode)
       .map((m, idx) => ({
         memberCode: m.member_code,
+        studentId: (m as unknown as { student_id?: string }).student_id || m.member_code,
+        className: (m as unknown as { class_name?: string }).class_name,
         fullName: m.full_name,
         departmentName: m.department_name,
         position: m.position,
@@ -650,16 +658,16 @@ export function SurveyView() {
       {selectedMember ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
           {/* LEFT: Thông tin thành viên được đánh giá */}
-          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between">
-            {/* Title */}
-            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between gap-4">
+            {/* Header with Title */}
+            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">
               Thông tin thành viên được đánh giá
             </h3>
 
-            {/* Profile Section (Vertically centered to eliminate empty gap) */}
-            <div className="my-auto py-5 sm:py-6 flex items-center gap-4 sm:gap-5">
+            {/* Profile Hero Box with clean background container */}
+            <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/80 flex items-center gap-4 sm:gap-4.5">
               {/* Large Avatar */}
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-slate-200/80 dark:border-slate-700 bg-purple-100 dark:bg-purple-950/40 shrink-0 shadow-xs flex items-center justify-center">
+              <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-white dark:border-slate-700 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-slate-800 dark:to-slate-700 shrink-0 shadow-xs flex items-center justify-center">
                 {selectedMember.avatarUrl ? (
                   <Image
                     src={selectedMember.avatarUrl}
@@ -668,42 +676,123 @@ export function SurveyView() {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center font-black text-3xl text-purple-700 dark:text-purple-300">
+                  <div className="w-full h-full flex items-center justify-center font-black text-2xl text-blue-700 dark:text-blue-300">
                     {selectedMember.initials}
                   </div>
                 )}
               </div>
 
               {/* Details */}
-              <div className="min-w-0 space-y-2">
-                <h4 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white truncate">
+              <div className="min-w-0 flex-1 space-y-1">
+                <h4 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight truncate">
                   {selectedMember.fullName}
                 </h4>
 
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  <Briefcase className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-medium">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="truncate">
                     {formatMemberPosition(selectedMember.position, selectedMember.departmentName)}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-medium">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="truncate">
                     {selectedMember.email}
                   </span>
                 </div>
 
-                <div className="pt-0.5">
-                  <span className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950/60 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
+                <div className="pt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
                     {selectedMember.departmentName.replace('Ban ', '')}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800">
+                    <Sparkles className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>Core Team</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Context & Metadata Grid (Fills the card meaningfully, balanced and cohesive) */}
+            <div className="grid grid-cols-2 gap-2.5 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl p-3 sm:p-3.5 border border-slate-100 dark:border-slate-800/80 text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-100/70 dark:bg-blue-900/40 text-[#0B63E5] flex items-center justify-center shrink-0">
+                  <IdCard className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium block truncate">
+                    Mã số / MSSV
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                    {selectedMember.studentId || selectedMember.memberCode}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100/70 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium block truncate">
+                    Chi đoàn / Lớp
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                    {selectedMember.className || 'Khóa 2024'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-100/70 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium block truncate">
+                    Sự kiện khảo sát
+                  </span>
+                  <span className="font-bold text-[#0B63E5] dark:text-blue-400 block truncate">
+                    {selectedEvent}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    evaluations[selectedMember.memberCode]?.status === 'completed'
+                      ? 'bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-amber-100/70 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  {evaluations[selectedMember.memberCode]?.status === 'completed' ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : (
+                    <Clock className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium block truncate">
+                    Trạng thái của bạn
+                  </span>
+                  <span
+                    className={`font-bold block truncate ${
+                      evaluations[selectedMember.memberCode]?.status === 'completed'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    {evaluations[selectedMember.memberCode]?.status === 'completed'
+                      ? 'Đã nộp đánh giá'
+                      : 'Chưa đánh giá'}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* 2 Mini Stat Boxes at bottom */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {/* Stat 1: Lượt đánh giá */}
               <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#0B63E5] flex items-center justify-center shrink-0">
