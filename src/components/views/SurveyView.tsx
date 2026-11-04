@@ -328,10 +328,11 @@ export function SurveyView() {
 
   // Carousel auto-scroll & manual navigation state
   const carouselRef = useRef<HTMLDivElement>(null)
+  const firstSetRef = useRef<HTMLDivElement>(null)
   const [isCarouselHovered, setIsCarouselHovered] = useState<boolean>(false)
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState<boolean>(true)
 
-  // Smooth continuous auto-scroll loop (Thanh đang chạy tự động)
+  // Smooth continuous infinite circular loop (1 vòng tròn lặp đi lặp lại vô tận)
   useEffect(() => {
     if (!isAutoScrollEnabled) return
     const container = carouselRef.current
@@ -346,15 +347,15 @@ export function SurveyView() {
       lastTime = time
 
       if (!isCarouselHovered && container) {
-        // Smooth linear motion ~36px per second
-        const step = (36 * delta) / 1000
-        const maxScroll = container.scrollWidth - container.clientWidth
+        // Continuous smooth linear motion ~34px per second
+        const step = (34 * delta) / 1000
+        const singleSetWidth = firstSetRef.current?.offsetWidth || 0
 
-        if (maxScroll > 10) {
-          if (container.scrollLeft >= maxScroll - 2) {
-            container.scrollLeft = 0
-          } else {
-            container.scrollLeft += step
+        if (singleSetWidth > 0) {
+          container.scrollLeft += step
+          // Vòng lặp tròn vô tận: khi cuộn hết 1 set, trừ đúng singleSetWidth (hoàn toàn liền mạch không giật)
+          if (container.scrollLeft >= singleSetWidth) {
+            container.scrollLeft -= singleSetWidth
           }
         }
       }
@@ -366,11 +367,18 @@ export function SurveyView() {
     return () => cancelAnimationFrame(animationFrameId)
   }, [isAutoScrollEnabled, isCarouselHovered])
 
-  // Scroll manually via Left / Right buttons
+  // Scroll manually via Left / Right buttons with infinite wrap support
   const handleScrollCarousel = (direction: 'left' | 'right') => {
     if (!carouselRef.current) return
+    const container = carouselRef.current
+    const singleSetWidth = firstSetRef.current?.offsetWidth || 0
     const scrollAmount = 260
-    carouselRef.current.scrollBy({
+
+    if (direction === 'left' && container.scrollLeft <= 20 && singleSetWidth > 0) {
+      container.scrollLeft += singleSetWidth
+    }
+
+    container.scrollBy({
       left: direction === 'left' ? -scrollAmount : scrollAmount,
       behavior: 'smooth',
     })
@@ -540,92 +548,101 @@ export function SurveyView() {
           </button>
         </div>
 
-        {/* Scrollable container */}
+        {/* Scrollable container for infinite circular loop */}
         <div
           ref={carouselRef}
           onTouchStart={() => setIsCarouselHovered(true)}
           onTouchEnd={() => setTimeout(() => setIsCarouselHovered(false), 2000)}
-          className="flex items-center gap-2.5 sm:gap-4 overflow-x-auto pb-1 px-4 sm:px-6 no-scrollbar scroll-smooth"
+          className="flex items-center overflow-x-auto pb-1 px-4 sm:px-6 no-scrollbar select-none"
         >
-          {targetMembers.map((member) => {
-            const isSelected = member.memberCode === selectedMember?.memberCode
-            const isEvaluated =
-              evaluations[member.memberCode]?.status === 'completed'
+          {/* Loop Set 0, 1, 2 for seamless infinite circle */}
+          {[0, 1, 2].map((setIndex) => (
+            <div
+              key={`set-${setIndex}`}
+              ref={setIndex === 0 ? firstSetRef : undefined}
+              className="flex items-center gap-2.5 sm:gap-4 shrink-0 pr-2.5 sm:pr-4"
+            >
+              {targetMembers.map((member) => {
+                const isSelected = member.memberCode === selectedMember?.memberCode
+                const isEvaluated =
+                  evaluations[member.memberCode]?.status === 'completed'
 
-            return (
-              <button
-                key={member.memberCode}
-                id={`member-card-${member.memberCode}`}
-                type="button"
-                onClick={() => handleSelectMember(member.memberCode)}
-                className={`relative flex flex-col items-center justify-center p-3 rounded-2xl min-w-[115px] sm:min-w-[130px] shrink-0 transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-2 border-[#0B63E5] bg-blue-50/80 dark:bg-blue-950/50 shadow-xs'
-                    : isEvaluated
-                    ? 'border border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/25 hover:bg-emerald-50/70'
-                    : 'border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                {/* Corner checkmark on the CARD (completely away from avatar) */}
-                {isEvaluated && (
-                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
-                  </span>
-                )}
+                return (
+                  <button
+                    key={`${member.memberCode}-set-${setIndex}`}
+                    id={setIndex === 0 ? `member-card-${member.memberCode}` : undefined}
+                    type="button"
+                    onClick={() => handleSelectMember(member.memberCode)}
+                    className={`relative flex flex-col items-center justify-center p-3 rounded-2xl min-w-[115px] sm:min-w-[130px] shrink-0 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-2 border-[#0B63E5] bg-blue-50/80 dark:bg-blue-950/50 shadow-xs'
+                        : isEvaluated
+                        ? 'border border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/25 hover:bg-emerald-50/70'
+                        : 'border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {/* Corner checkmark on the CARD (completely away from avatar) */}
+                    {isEvaluated && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                    )}
 
-                {/* Avatar with clean outline / ring, completely unblocked */}
-                <div
-                  className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center mb-1.5 shadow-xs transition-all ${
-                    isEvaluated
-                      ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
-                      : 'border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
-                  }`}
-                >
-                  {member.avatarUrl ? (
-                    <Image
-                      src={member.avatarUrl}
-                      alt={member.fullName}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
+                    {/* Avatar with clean outline / ring, completely unblocked */}
                     <div
-                      className={`w-full h-full flex items-center justify-center font-bold text-sm ${
-                        member.initialBg || 'bg-blue-100 text-blue-700'
+                      className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center mb-1.5 shadow-xs transition-all ${
+                        isEvaluated
+                          ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+                          : 'border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
                       }`}
                     >
-                      {member.initials}
+                      {member.avatarUrl ? (
+                        <Image
+                          src={member.avatarUrl}
+                          alt={member.fullName}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`w-full h-full flex items-center justify-center font-bold text-sm ${
+                            member.initialBg || 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
+                          {member.initials}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Member Name (2 lines without cutting off) */}
-                <span
-                  className={`text-xs font-bold text-center leading-tight line-clamp-2 h-7.5 flex items-center justify-center max-w-[105px] ${
-                    isSelected
-                      ? 'text-[#0B63E5] dark:text-blue-400'
-                      : isEvaluated
-                      ? 'text-emerald-950 dark:text-emerald-200'
-                      : 'text-slate-800 dark:text-slate-200'
-                  }`}
-                >
-                  {member.fullName}
-                </span>
+                    {/* Member Name (2 lines without cutting off) */}
+                    <span
+                      className={`text-xs font-bold text-center leading-tight line-clamp-2 h-7.5 flex items-center justify-center max-w-[105px] ${
+                        isSelected
+                          ? 'text-[#0B63E5] dark:text-blue-400'
+                          : isEvaluated
+                          ? 'text-emerald-950 dark:text-emerald-200'
+                          : 'text-slate-800 dark:text-slate-200'
+                      }`}
+                    >
+                      {member.fullName}
+                    </span>
 
-                {/* Status Pill Badge: completely distinct and easy to recognize */}
-                {isEvaluated ? (
-                  <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    <span>Đã đánh giá</span>
-                  </span>
-                ) : (
-                  <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/60">
-                    <span>Chưa đánh giá</span>
-                  </span>
-                )}
-              </button>
-            )
-          })}
+                    {/* Status Pill Badge: completely distinct and easy to recognize */}
+                    {isEvaluated ? (
+                      <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        <span>Đã đánh giá</span>
+                      </span>
+                    ) : (
+                      <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/60">
+                        <span>Chưa đánh giá</span>
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
         </div>
       </div>
 
