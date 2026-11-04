@@ -411,10 +411,10 @@ export function SurveyView() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
               Khảo sát Core Team sự kiện iSSAC
             </h1>
-            <div className="relative w-8 h-10 sm:w-9 sm:h-11 shrink-0 -mt-1.5">
+            <div className="relative w-9 h-11 sm:w-11 sm:h-13 shrink-0 -mt-1.5">
               <Image
                 src="/member-mascot.png"
                 alt="iSSAC Core Team Mascot"
@@ -423,7 +423,7 @@ export function SurveyView() {
               />
             </div>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
             Nơi ghi nhận góp ý để cải thiện chất lượng tổ chức và phối hợp trong các sự kiện của CLB.
           </p>
         </div>
@@ -433,14 +433,14 @@ export function SurveyView() {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 px-5 py-3.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left: Event selector & Live status grouped logically together */}
         <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap">
-          <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-bold text-[#061651] dark:text-slate-200 whitespace-nowrap">
             Sự kiện khảo sát
           </span>
           <div className="relative" ref={eventDropdownRef}>
             <button
               type="button"
               onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
-              className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center gap-2.5 shadow-2xs transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center gap-2.5 shadow-2xs transition-colors cursor-pointer"
             >
               <span>{selectedEvent}</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
@@ -629,7 +629,7 @@ export function SurveyView() {
                           ? 'text-[#0B63E5] dark:text-blue-400'
                           : isEvaluated
                           ? 'text-emerald-950 dark:text-emerald-200'
-                          : 'text-slate-800 dark:text-slate-200'
+                          : 'text-[#061651] dark:text-slate-200'
                       }`}
                     >
                       {member.fullName}
@@ -660,7 +660,7 @@ export function SurveyView() {
           {/* LEFT: Thông tin thành viên được đánh giá */}
           <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between gap-4">
             {/* Header with Title */}
-            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">
+            <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
               Thông tin thành viên được đánh giá
             </h3>
 
@@ -684,7 +684,7 @@ export function SurveyView() {
 
               {/* Details */}
               <div className="min-w-0 flex-1 space-y-1">
-                <h4 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight truncate">
+                <h4 className="text-lg sm:text-xl font-black text-[#061651] dark:text-white leading-tight truncate">
                   {selectedMember.fullName}
                 </h4>
 
@@ -723,7 +723,7 @@ export function SurveyView() {
                   <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium block truncate">
                     Mã số / MSSV
                   </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                  <span className="font-bold text-[#061651] dark:text-slate-200 block truncate">
                     {selectedMember.studentId || selectedMember.memberCode}
                   </span>
                 </div>
@@ -737,7 +737,7 @@ export function SurveyView() {
                   <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium block truncate">
                     Chi đoàn / Lớp
                   </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                  <span className="font-bold text-[#061651] dark:text-slate-200 block truncate">
                     {selectedMember.className || 'Khóa 2024'}
                   </span>
                 </div>
@@ -798,7 +798,7 @@ export function SurveyView() {
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-2xl font-black text-slate-900 dark:text-white block leading-none py-0.5">
+                  <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
                     {selectedMember.reviewsCount || 3}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
@@ -813,7 +813,7 @@ export function SurveyView() {
                   <Star className="w-5 h-5 fill-emerald-600" />
                 </div>
                 <div>
-                  <span className="text-2xl font-black text-slate-900 dark:text-white block leading-none py-0.5">
+                  <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
                     {selectedMember.averageScore
                       ? `${selectedMember.averageScore.toFixed(1)}/5`
                       : '4.0/5'}
@@ -828,13 +828,13 @@ export function SurveyView() {
 
           {/* RIGHT: Phiếu khảo sát sau sự kiện */}
           <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
-            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
               Phiếu khảo sát sau sự kiện
             </h3>
 
             {/* Question 1: Rating */}
             <div className="space-y-2">
-              <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+              <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
                 <span className="text-red-500 font-bold">*</span>
                 <span>
                   Sau sự kiện, bạn đánh giá {memberFirstName} thế nào?
@@ -853,14 +853,14 @@ export function SurveyView() {
                       className={`py-2.5 sm:py-3 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-[#0B63E5] border-[#0B63E5] text-white shadow-md shadow-blue-500/25'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-300 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600'
                       }`}
                     >
                       <div
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mb-1 transition-colors ${
                           isSelected
                             ? 'bg-white text-[#0B63E5]'
-                            : 'border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400'
+                            : 'border border-slate-300 dark:border-slate-600 text-[#061651] dark:text-slate-400'
                         }`}
                       >
                         {opt.score}
@@ -869,7 +869,7 @@ export function SurveyView() {
                         className={`text-xs font-bold ${
                           isSelected
                             ? 'text-white'
-                            : 'text-slate-600 dark:text-slate-400'
+                            : 'text-[#061651] dark:text-slate-400'
                         }`}
                       >
                         {opt.label}
@@ -882,7 +882,7 @@ export function SurveyView() {
 
             {/* Question 2: Feedback */}
             <div className="space-y-1.5">
-              <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+              <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
                 <span className="text-red-500 font-bold">*</span>
                 <span>Vài lời nhận xét về {memberFirstName}</span>
               </label>
@@ -891,13 +891,13 @@ export function SurveyView() {
                 onChange={(e) => setCurrentFeedback(e.target.value)}
                 rows={2}
                 placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
               />
             </div>
 
             {/* Question 3: Improvement */}
             <div className="space-y-1.5">
-              <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+              <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
                 <span className="text-red-500 font-bold">*</span>
                 <span>Mong muốn cải thiện gì?</span>
               </label>
@@ -906,7 +906,7 @@ export function SurveyView() {
                 onChange={(e) => setCurrentImprovement(e.target.value)}
                 rows={2}
                 placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
               />
             </div>
 
@@ -915,7 +915,7 @@ export function SurveyView() {
               <button
                 type="button"
                 onClick={handleSkip}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-95"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 Bỏ qua
               </button>
@@ -943,14 +943,14 @@ export function SurveyView() {
           <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 text-[#0B63E5] flex items-center justify-center shrink-0">
             <Info className="w-5 h-5" />
           </div>
-          <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+          <span className="text-sm sm:text-base font-black text-[#061651] dark:text-white">
             Lưu ý khảo sát
           </span>
         </div>
 
         <div className="hidden sm:block w-px h-8 bg-slate-200 dark:bg-slate-700" />
 
-        <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1">
+        <ul className="text-xs sm:text-sm text-[#061651]/90 dark:text-slate-300 space-y-1 font-medium">
           <li className="flex items-center gap-2">
             <span className="text-[#0B63E5] font-black">•</span>
             <span>Đánh giá mang tính xây dựng</span>
@@ -983,12 +983,12 @@ export function SurveyView() {
             <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">
+            <h3 className="text-xl font-black text-[#061651] dark:text-white mb-2">
               Hoàn thành tất cả đánh giá!
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
               Bạn đã gửi đánh giá cho toàn bộ thành viên Core Team trong sự kiện{' '}
-              <strong className="text-slate-800 dark:text-slate-200">
+              <strong className="text-[#061651] dark:text-slate-200">
                 {selectedEvent}
               </strong>
               . Cảm ơn những đóng góp xây dựng của bạn cho CLB iSSAC!
