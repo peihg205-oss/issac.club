@@ -13,6 +13,10 @@ import {
   Info,
   CheckCircle2,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
@@ -302,7 +306,7 @@ export function SurveyView() {
       targetMembers.find((m) => updated[m.memberCode]?.status !== 'completed')
 
     if (nextMember) {
-      setSelectedMemberCode(nextMember.memberCode)
+      handleSelectMember(nextMember.memberCode)
     } else {
       setShowSuccessModal(true)
     }
@@ -316,9 +320,72 @@ export function SurveyView() {
     )
     const nextMember = targetMembers[currentIndex + 1] || targetMembers[0]
     if (nextMember) {
-      setSelectedMemberCode(nextMember.memberCode)
+      handleSelectMember(nextMember.memberCode)
       setToastMessage(`Đã chuyển sang ${nextMember.fullName}`)
       setTimeout(() => setToastMessage(null), 2500)
+    }
+  }
+
+  // Carousel auto-scroll & manual navigation state
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const [isCarouselHovered, setIsCarouselHovered] = useState<boolean>(false)
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState<boolean>(true)
+
+  // Smooth continuous auto-scroll loop (Thanh đang chạy tự động)
+  useEffect(() => {
+    if (!isAutoScrollEnabled) return
+    const container = carouselRef.current
+    if (!container) return
+
+    let animationFrameId: number
+    let lastTime: number | null = null
+
+    const animateScroll = (time: number) => {
+      if (!lastTime) lastTime = time
+      const delta = time - lastTime
+      lastTime = time
+
+      if (!isCarouselHovered && container) {
+        // Smooth linear motion ~36px per second
+        const step = (36 * delta) / 1000
+        const maxScroll = container.scrollWidth - container.clientWidth
+
+        if (maxScroll > 10) {
+          if (container.scrollLeft >= maxScroll - 2) {
+            container.scrollLeft = 0
+          } else {
+            container.scrollLeft += step
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animateScroll)
+    }
+
+    animationFrameId = requestAnimationFrame(animateScroll)
+    return () => cancelAnimationFrame(animationFrameId)
+  }, [isAutoScrollEnabled, isCarouselHovered])
+
+  // Scroll manually via Left / Right buttons
+  const handleScrollCarousel = (direction: 'left' | 'right') => {
+    if (!carouselRef.current) return
+    const scrollAmount = 260
+    carouselRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    })
+  }
+
+  // Select member and smoothly center them into view
+  const handleSelectMember = (memberCode: string) => {
+    setSelectedMemberCode(memberCode)
+    const cardEl = document.getElementById(`member-card-${memberCode}`)
+    if (cardEl) {
+      cardEl.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      })
     }
   }
 
@@ -420,9 +487,66 @@ export function SurveyView() {
         </div>
       </div>
 
-      {/* 3. HORIZONTAL MEMBER BAR / CAROUSEL */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-3 sm:p-4 shadow-sm">
-        <div className="flex items-center gap-2.5 sm:gap-4 overflow-x-auto pb-1 scrollbar-thin">
+      {/* 3. HORIZONTAL MEMBER BAR / CAROUSEL (Tự động cuộn / Auto-scroll) */}
+      <div
+        className="relative group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-3 sm:p-4 shadow-sm"
+        onMouseEnter={() => setIsCarouselHovered(true)}
+        onMouseLeave={() => setIsCarouselHovered(false)}
+      >
+        {/* Navigation Button Left */}
+        <button
+          type="button"
+          onClick={() => handleScrollCarousel('left')}
+          className="absolute -left-3 sm:left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-blue-50 hover:text-[#0B63E5] hover:scale-105 transition-all cursor-pointer"
+          title="Cuộn sang trái"
+          aria-label="Cuộn sang trái"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Navigation Button Right */}
+        <button
+          type="button"
+          onClick={() => handleScrollCarousel('right')}
+          className="absolute -right-3 sm:right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-blue-50 hover:text-[#0B63E5] hover:scale-105 transition-all cursor-pointer"
+          title="Cuộn sang phải"
+          aria-label="Cuộn sang phải"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        {/* Subtle Fade Edge Gradients */}
+        <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent pointer-events-none z-10 rounded-l-2xl" />
+        <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent pointer-events-none z-10 rounded-r-2xl" />
+
+        {/* Auto-scroll status pill in the corner */}
+        <div className="absolute top-2 right-4 z-20 hidden group-hover:flex items-center gap-1.5 transition-opacity">
+          <button
+            type="button"
+            onClick={() => setIsAutoScrollEnabled(!isAutoScrollEnabled)}
+            className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-[#0B63E5] shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+          >
+            {isAutoScrollEnabled ? (
+              <>
+                <Pause className="w-2.5 h-2.5" />
+                <span>Tạm dừng chạy</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-2.5 h-2.5" />
+                <span>Tiếp tục chạy</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Scrollable container */}
+        <div
+          ref={carouselRef}
+          onTouchStart={() => setIsCarouselHovered(true)}
+          onTouchEnd={() => setTimeout(() => setIsCarouselHovered(false), 2000)}
+          className="flex items-center gap-2.5 sm:gap-4 overflow-x-auto pb-1 px-4 sm:px-6 no-scrollbar scroll-smooth"
+        >
           {targetMembers.map((member) => {
             const isSelected = member.memberCode === selectedMember?.memberCode
             const isEvaluated =
@@ -431,8 +555,9 @@ export function SurveyView() {
             return (
               <button
                 key={member.memberCode}
+                id={`member-card-${member.memberCode}`}
                 type="button"
-                onClick={() => setSelectedMemberCode(member.memberCode)}
+                onClick={() => handleSelectMember(member.memberCode)}
                 className={`relative flex flex-col items-center justify-center p-3 rounded-2xl min-w-[115px] sm:min-w-[130px] shrink-0 transition-all cursor-pointer ${
                   isSelected
                     ? 'border-2 border-[#0B63E5] bg-blue-50/80 dark:bg-blue-950/50 shadow-xs'
