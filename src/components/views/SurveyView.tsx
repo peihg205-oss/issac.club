@@ -432,7 +432,7 @@ export function SurveyView() {
             <button
               type="button"
               onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
-              className="px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center gap-2.5 shadow-2xs transition-colors cursor-pointer"
             >
               <span>{selectedEvent}</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
@@ -465,31 +465,36 @@ export function SurveyView() {
           </div>
         </div>
 
-        {/* Middle: Live indicator badge */}
-        <div className="flex items-center gap-4">
-          <div className="hidden md:block w-px h-5 bg-slate-200 dark:bg-slate-750" />
+        {/* Divider 1 */}
+        <div className="hidden md:block w-px h-5 bg-slate-200 dark:bg-slate-750" />
 
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800">
+        {/* Middle: Live indicator badge */}
+        <div className="flex items-center justify-center">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span>Đang mở khảo sát</span>
           </span>
-
-          <div className="hidden md:block w-px h-5 bg-slate-200 dark:bg-slate-750" />
         </div>
+
+        {/* Divider 2 */}
+        <div className="hidden md:block w-px h-5 bg-slate-200 dark:bg-slate-750" />
 
         {/* Right: Evaluated count badge */}
         <div className="flex items-center">
-          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
-            <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400" />
+          <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs">
+            <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400 shrink-0" />
             <span>
               Đã đánh giá:{' '}
-              <strong className="font-black text-blue-900 dark:text-blue-200">
+              <strong className="font-black text-blue-900 dark:text-blue-100">
                 {completedCount}/{totalTargetCount}
               </strong>{' '}
               Core Team
+            </span>
+            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[10px] font-black text-[#0B63E5] dark:text-blue-200">
+              {Math.round((completedCount / Math.max(totalTargetCount, 1)) * 100)}%
             </span>
           </span>
         </div>
