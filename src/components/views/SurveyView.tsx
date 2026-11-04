@@ -514,305 +514,307 @@ export function SurveyView() {
       </div>
 
       {/* MAIN 2-COLUMN EVALUATION WORKSPACE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
         {/* LEFT COLUMN: Danh sách đánh giá Core Team */}
-        <div className="lg:col-span-5 xl:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between h-full">
-          <div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex-shrink-0 mb-3">
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
               <span>Danh sách đánh giá ({targetMembers.length} thành viên)</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Bạn cần đánh giá các thành viên Core Team (trừ Ban Chủ nhiệm và bản thân).
             </p>
+          </div>
 
-            {/* Member List */}
-            <div className="space-y-2 overflow-y-auto pr-1">
-              {targetMembers.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 text-xs">
-                  Không tìm thấy thành viên Core Team nào.
-                </div>
-              ) : (
-                targetMembers.map((member) => {
-                  const isSelected = member.memberCode === selectedMember?.memberCode
-                  const isEvaluated =
-                    evaluations[member.memberCode]?.status === 'completed'
+          {/* Member List */}
+          <div className="flex-1 flex flex-col justify-between gap-2 overflow-y-auto pr-1 min-h-0">
+            {targetMembers.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                Không tìm thấy thành viên Core Team nào.
+              </div>
+            ) : (
+              targetMembers.map((member) => {
+                const isSelected = member.memberCode === selectedMember?.memberCode
+                const isEvaluated =
+                  evaluations[member.memberCode]?.status === 'completed'
 
-                  return (
-                    <div
-                      key={member.memberCode}
-                      onClick={() => setSelectedMemberCode(member.memberCode)}
-                      className={`w-full p-2.5 sm:p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-2 border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-sm ring-2 ring-blue-400/20'
-                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      {/* Left: Avatar & Info */}
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {/* Avatar */}
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-sm">
-                          {member.avatarUrl ? (
-                            <Image
-                              src={member.avatarUrl}
-                              alt={member.fullName}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div
-                              className={`w-full h-full flex items-center justify-center border ${
-                                member.initialBg || 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
-                              {member.initials}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="min-w-0 text-left flex-1">
-                          <p
-                            className={`text-sm font-bold truncate ${
-                              isSelected
-                                ? 'text-blue-900 dark:text-blue-300'
-                                : 'text-slate-800 dark:text-slate-200'
+                return (
+                  <div
+                    key={member.memberCode}
+                    onClick={() => setSelectedMemberCode(member.memberCode)}
+                    className={`w-full p-2.5 sm:p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-2 border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-sm ring-2 ring-blue-400/20'
+                        : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Left: Avatar & Info */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Avatar */}
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-sm">
+                        {member.avatarUrl ? (
+                          <Image
+                            src={member.avatarUrl}
+                            alt={member.fullName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={`w-full h-full flex items-center justify-center border ${
+                              member.initialBg || 'bg-slate-100 text-slate-700'
                             }`}
                           >
-                            {member.fullName}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {member.position} • {member.departmentName}
-                          </p>
-                        </div>
+                            {member.initials}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Right: Status Pill & Chevron */}
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        {isEvaluated ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            <span>Đã đánh giá</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                            Chưa đánh giá
-                          </span>
-                        )}
-                        <ChevronRight
-                          className={`w-4 h-4 ${
-                            isSelected ? 'text-blue-600' : 'text-slate-400'
+                      {/* Info */}
+                      <div className="min-w-0 text-left flex-1">
+                        <p
+                          className={`text-sm font-bold truncate ${
+                            isSelected
+                              ? 'text-blue-900 dark:text-blue-300'
+                              : 'text-slate-800 dark:text-slate-200'
                           }`}
-                        />
+                        >
+                          {member.fullName}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {member.position} • {member.departmentName}
+                        </p>
                       </div>
                     </div>
-                  )
-                })
-              )}
-            </div>
+
+                    {/* Right: Status Pill & Chevron */}
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {isEvaluated ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Đã đánh giá</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          Chưa đánh giá
+                        </span>
+                      )}
+                      <ChevronRight
+                        className={`w-4 h-4 ${
+                          isSelected ? 'text-blue-600' : 'text-slate-400'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
 
         {/* RIGHT COLUMN: Form Đánh giá Thành viên */}
-        <div className="lg:col-span-7 xl:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between h-full space-y-5">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between">
           {selectedMember ? (
             <>
-              {/* Selected Member Profile Banner */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-3.5">
-                  <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-base shadow-sm border border-slate-200 dark:border-slate-700">
-                    {selectedMember.avatarUrl ? (
-                      <Image
-                        src={selectedMember.avatarUrl}
-                        alt={selectedMember.fullName}
-                        fill
-                        className="object-cover"
-                      />
+              <div className="space-y-4">
+                {/* Selected Member Profile Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-base shadow-sm border border-slate-200 dark:border-slate-700">
+                      {selectedMember.avatarUrl ? (
+                        <Image
+                          src={selectedMember.avatarUrl}
+                          alt={selectedMember.fullName}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`w-full h-full flex items-center justify-center ${
+                            selectedMember.initialBg || 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {selectedMember.initials}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                        {selectedMember.fullName}
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                        {selectedMember.position} • {selectedMember.departmentName}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Badges on right */}
+                  <div className="flex items-center gap-2">
+                    {evaluations[selectedMember.memberCode]?.status === 'completed' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Đã đánh giá</span>
+                      </span>
                     ) : (
-                      <div
-                        className={`w-full h-full flex items-center justify-center ${
-                          selectedMember.initialBg || 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {selectedMember.initials}
-                      </div>
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                        Chưa hoàn thành
+                      </span>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEvaluation(false)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Chỉnh sửa</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Criteria 1: Đánh giá mức độ hoàn thành công việc */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <span className="text-amber-500">⭐</span>
+                      <span>1. Đánh giá mức độ hoàn thành công việc</span>
+                    </label>
+                    {Number(currentScore1) > 0 && (
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
+                        {currentScore1} / 10 điểm
+                      </span>
                     )}
                   </div>
 
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
-                      {selectedMember.fullName}
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                      {selectedMember.position} • {selectedMember.departmentName}
-                    </p>
+                  {/* 1-10 Pill Rating Buttons */}
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
+                      const isSelected = Number(currentScore1) === Number(score)
+                      return (
+                        <button
+                          key={score}
+                          type="button"
+                          onClick={() => setCurrentScore1(score)}
+                          className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-300 dark:ring-blue-500'
+                              : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300'
+                          }`}
+                        >
+                          {score}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
-                {/* Status Badges on right */}
-                <div className="flex items-center gap-2">
-                  {evaluations[selectedMember.memberCode]?.status === 'completed' ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>Đã đánh giá</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                      Chưa hoàn thành
-                    </span>
-                  )}
+                {/* Criteria 2: Đánh giá tinh thần phối hợp & làm việc nhóm */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <span className="text-blue-500">👥</span>
+                      <span>2. Đánh giá tinh thần phối hợp & làm việc nhóm</span>
+                    </label>
+                    {Number(currentScore2) > 0 && (
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
+                        {currentScore2} / 10 điểm
+                      </span>
+                    )}
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSaveEvaluation(false)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>Chỉnh sửa</span>
-                  </button>
+                  {/* 1-10 Pill Rating Buttons */}
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
+                      const isSelected = Number(currentScore2) === Number(score)
+                      return (
+                        <button
+                          key={score}
+                          type="button"
+                          onClick={() => setCurrentScore2(score)}
+                          className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-300 dark:ring-blue-500'
+                              : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300'
+                          }`}
+                        >
+                          {score}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* Criteria 1: Đánh giá mức độ hoàn thành công việc */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
+                {/* Criteria 3: Đánh giá sự chủ động, trách nhiệm */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <span className="text-amber-500">💡</span>
+                      <span>3. Đánh giá sự chủ động, trách nhiệm</span>
+                    </label>
+                    {Number(currentScore3) > 0 && (
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
+                        {currentScore3} / 10 điểm
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 1-10 Pill Rating Buttons */}
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
+                      const isSelected = Number(currentScore3) === Number(score)
+                      return (
+                        <button
+                          key={score}
+                          type="button"
+                          onClick={() => setCurrentScore3(score)}
+                          className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-300 dark:ring-blue-500'
+                              : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300'
+                          }`}
+                        >
+                          {score}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Criteria 4: Nhận xét tổng quan */}
+                <div className="space-y-1.5">
                   <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="text-amber-500">⭐</span>
-                    <span>1. Đánh giá mức độ hoàn thành công việc</span>
+                    <MessageSquare className="w-4 h-4 text-blue-600" />
+                    <span>4. Nhận xét tổng quan</span>
                   </label>
-                  {Number(currentScore1) > 0 && (
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
-                      {currentScore1} / 10 điểm
-                    </span>
-                  )}
+                  <textarea
+                    value={currentFeedback}
+                    onChange={(e) => setCurrentFeedback(e.target.value)}
+                    rows={2}
+                    placeholder="Nhập nhận xét về ưu điểm, mức độ hoàn thành và thái độ làm việc của thành viên..."
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 text-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 resize-y"
+                  />
                 </div>
 
-                {/* 1-10 Pill Rating Buttons */}
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
-                    const isSelected = Number(currentScore1) === Number(score)
-                    return (
-                      <button
-                        key={score}
-                        type="button"
-                        onClick={() => setCurrentScore1(score)}
-                        className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-300 dark:ring-blue-500'
-                            : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300'
-                        }`}
-                      >
-                        {score}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Criteria 2: Đánh giá tinh thần phối hợp & làm việc nhóm */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
+                {/* Criteria 5: Đề xuất/kiến nghị (nếu có) */}
+                <div className="space-y-1.5">
                   <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="text-blue-500">👥</span>
-                    <span>2. Đánh giá tinh thần phối hợp & làm việc nhóm</span>
+                    <Target className="w-4 h-4 text-blue-600" />
+                    <span>5. Đề xuất/kiến nghị (nếu có)</span>
                   </label>
-                  {Number(currentScore2) > 0 && (
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
-                      {currentScore2} / 10 điểm
-                    </span>
-                  )}
-                </div>
-
-                {/* 1-10 Pill Rating Buttons */}
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
-                    const isSelected = Number(currentScore2) === Number(score)
-                    return (
-                      <button
-                        key={score}
-                        type="button"
-                        onClick={() => setCurrentScore2(score)}
-                        className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-300 dark:ring-blue-500'
-                            : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300'
-                        }`}
-                      >
-                        {score}
-                      </button>
-                    )
-                  })}
+                  <textarea
+                    value={currentSuggestion}
+                    onChange={(e) => setCurrentSuggestion(e.target.value)}
+                    rows={2}
+                    placeholder="Nhập đề xuất, góp ý cải thiện hoặc kiến nghị hỗ trợ..."
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 text-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 resize-y"
+                  />
                 </div>
               </div>
 
-              {/* Criteria 3: Đánh giá sự chủ động, trách nhiệm */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="text-amber-500">💡</span>
-                    <span>3. Đánh giá sự chủ động, trách nhiệm</span>
-                  </label>
-                  {Number(currentScore3) > 0 && (
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
-                      {currentScore3} / 10 điểm
-                    </span>
-                  )}
-                </div>
-
-                {/* 1-10 Pill Rating Buttons */}
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
-                    const isSelected = Number(currentScore3) === Number(score)
-                    return (
-                      <button
-                        key={score}
-                        type="button"
-                        onClick={() => setCurrentScore3(score)}
-                        className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-105 ring-2 ring-blue-300 dark:ring-blue-500'
-                            : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300'
-                        }`}
-                      >
-                        {score}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Criteria 4: Nhận xét tổng quan */}
-              <div className="space-y-2">
-                <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-blue-600" />
-                  <span>4. Nhận xét tổng quan</span>
-                </label>
-                <textarea
-                  value={currentFeedback}
-                  onChange={(e) => setCurrentFeedback(e.target.value)}
-                  rows={2}
-                  placeholder="Nhập nhận xét về ưu điểm, mức độ hoàn thành và thái độ làm việc của thành viên..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 text-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 resize-y"
-                />
-              </div>
-
-              {/* Criteria 5: Đề xuất/kiến nghị (nếu có) */}
-              <div className="space-y-2">
-                <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-600" />
-                  <span>5. Đề xuất/kiến nghị (nếu có)</span>
-                </label>
-                <textarea
-                  value={currentSuggestion}
-                  onChange={(e) => setCurrentSuggestion(e.target.value)}
-                  rows={2}
-                  placeholder="Nhập đề xuất, góp ý cải thiện hoặc kiến nghị hỗ trợ..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 text-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 resize-y"
-                />
-              </div>
-
-              {/* Action Buttons for current member */}
-              <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              {/* Action Buttons for current member pinned at bottom */}
+              <div className="flex flex-wrap items-center justify-end gap-3 pt-3.5 mt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => handleSaveEvaluation(false)}
