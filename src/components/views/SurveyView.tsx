@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   Target,
   Calendar,
+  Clock,
   ChevronRight,
   CheckCircle2,
   Lock,
@@ -427,86 +428,87 @@ export function SurveyView() {
         </div>
       </div>
 
-      {/* 4 KPI / STAT CARDS: Blue, Amber, Green with Progress, Purple */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4.5">
-        {/* Card 1: Thành viên Core Team (Blue #F0F9FF) */}
-        <div className="rounded-2xl p-4 sm:p-5 bg-[#F0F9FF] dark:bg-sky-950/25 border border-[#E0F2FE] dark:border-sky-900/40 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#E0F2FE] dark:bg-sky-900/50 flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#0284C7] dark:text-sky-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-[13px] font-semibold text-slate-600 dark:text-slate-400 truncate">
+      {/* 4 Thẻ Chỉ Số KPI (Chuẩn Style DashboardView / Ảnh 1: Nền Pastel, Icon Tròn Viền Mảnh Bên Phải, Số Nổi Bật) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: Thành viên Core Team */}
+        <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] dark:bg-sky-950/25 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-400 block truncate">
               Thành viên Core Team
-            </p>
-            <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                {totalCoreNonBCN}
-              </span>
-              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                thành viên
-              </span>
-            </div>
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#0284C7] dark:text-sky-400 block tracking-tight leading-none py-0.5">
+              {totalCoreNonBCN}
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#0284C7] dark:text-sky-400 block">
+              {totalCoreNonBCN} thành viên
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 dark:border-sky-700/60 bg-white/70 dark:bg-slate-800/70 flex items-center justify-center text-[#0284C7] dark:text-sky-400 shrink-0 shadow-2xs">
+            <Users className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 2: Lượt đánh giá của bạn (Amber #FFFBEB) */}
-        <div className="rounded-2xl p-4 sm:p-5 bg-[#FFFBEB] dark:bg-amber-950/25 border border-[#FEF3C7] dark:border-amber-900/40 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#FEF3C7] dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
-            <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-[#D97706] dark:text-amber-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-[13px] font-semibold text-slate-600 dark:text-slate-400 truncate">
+        {/* Card 2: Lượt đánh giá của bạn */}
+        <div className="p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] dark:bg-amber-950/25 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-400 block truncate">
               Lượt đánh giá của bạn
-            </p>
-            <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                {completedCount} / {totalTargetCount}
-              </span>
-              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                đã hoàn thành
-              </span>
-            </div>
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#D97706] dark:text-amber-400 block tracking-tight leading-none py-0.5">
+              {completedCount} / {totalTargetCount}
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#D97706] dark:text-amber-400 block">
+              Đã hoàn thành
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 dark:border-amber-700/60 bg-white/70 dark:bg-slate-800/70 flex items-center justify-center text-[#D97706] dark:text-amber-400 shrink-0 shadow-2xs">
+            <Clock className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 3: Tiến độ của bạn (Green #F0FDF4 with Progress Bar) */}
-        <div className="rounded-2xl p-4 sm:p-5 bg-[#F0FDF4] dark:bg-emerald-950/25 border border-[#DCFCE7] dark:border-emerald-900/40 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#DCFCE7] dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
-            <Target className="w-5 h-5 sm:w-6 sm:h-6 text-[#059669] dark:text-emerald-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs sm:text-[13px] font-semibold text-slate-600 dark:text-slate-400 truncate">
+        {/* Card 3: Tiến độ của bạn */}
+        <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] dark:bg-emerald-950/25 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-400 block truncate">
               Tiến độ của bạn
-            </p>
-            <div className="flex items-center gap-2.5 mt-1">
-              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+            </span>
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] dark:text-emerald-400 tracking-tight leading-none">
                 {completionPercent}%
               </span>
-              {/* Green Progress Bar */}
-              <div className="flex-1 bg-slate-200/90 dark:bg-slate-700/80 rounded-full h-2.5 overflow-hidden">
+              <div className="w-12 sm:w-16 bg-slate-200/90 dark:bg-slate-700 rounded-full h-2 overflow-hidden shrink-0">
                 <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                  className="bg-[#16A34A] h-full rounded-full transition-all duration-500"
                   style={{ width: `${completionPercent}%` }}
                 />
               </div>
             </div>
+            <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block">
+              {completionPercent === 100
+                ? 'Đã hoàn tất 100%'
+                : `Còn lại ${totalTargetCount - completedCount} thành viên`}
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 dark:border-emerald-700/60 bg-white/70 dark:bg-slate-800/70 flex items-center justify-center text-[#16A34A] dark:text-emerald-400 shrink-0 shadow-2xs">
+            <CheckCircle2 className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
 
-        {/* Card 4: Hạn hoàn thành (Purple #FAF5FF) */}
-        <div className="rounded-2xl p-4 sm:p-5 bg-[#FAF5FF] dark:bg-purple-950/25 border border-[#F3E8FF] dark:border-purple-900/40 shadow-sm flex items-center gap-3.5 transition-all hover:shadow-md">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#F3E8FF] dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0">
-            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-[#9333EA] dark:text-purple-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-[13px] font-semibold text-slate-600 dark:text-slate-400 truncate">
+        {/* Card 4: Hạn hoàn thành */}
+        <div className="p-3.5 sm:p-4 rounded-xl bg-[#FAF5FF] dark:bg-purple-950/25 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-400 block truncate">
               Hạn hoàn thành
-            </p>
-            <div className="flex items-baseline mt-0.5">
-              <span className="text-sm sm:text-base font-black text-purple-700 dark:text-purple-300">
-                23:59 - 05/11/2026
-              </span>
-            </div>
+            </span>
+            <span className="text-2xl sm:text-[28px] font-black text-[#9333EA] dark:text-purple-400 block tracking-tight leading-none py-0.5">
+              23:59
+            </span>
+            <span className="text-[11.5px] font-semibold text-[#9333EA] dark:text-purple-400 block">
+              05/11/2026
+            </span>
+          </div>
+          <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-purple-300/70 dark:border-purple-700/60 bg-white/70 dark:bg-slate-800/70 flex items-center justify-center text-[#9333EA] dark:text-purple-400 shrink-0 shadow-2xs">
+            <Calendar className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
       </div>
