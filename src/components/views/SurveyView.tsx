@@ -414,12 +414,13 @@ export function SurveyView() {
             <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
               Khảo sát Core Team sự kiện iSSAC
             </h1>
-            <div className="relative w-9 h-11 sm:w-11 sm:h-13 shrink-0 -mt-1.5">
+            <div className="relative w-10 h-12 sm:w-12 sm:h-14 shrink-0 -mt-2">
               <Image
-                src="/member-mascot.png"
+                src="/survey-mascot.png"
                 alt="iSSAC Core Team Mascot"
                 fill
                 className="object-contain"
+                priority
               />
             </div>
           </div>
