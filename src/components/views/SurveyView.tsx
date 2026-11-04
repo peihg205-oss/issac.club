@@ -480,91 +480,91 @@ export function SurveyView() {
         </div>
       </div>
 
-      {/* 4. MAIN 2-COLUMN SECTION: Left Member Info (~35%) : Right Survey Form (~65%) */}
+      {/* 4. MAIN 2-COLUMN SECTION: Left Member Info (~40%) : Right Survey Form (~60%) */}
       {selectedMember ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
           {/* LEFT: Thông tin thành viên được đánh giá */}
-          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-6">
-            <div>
-              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white mb-5">
-                Thông tin thành viên được đánh giá
-              </h3>
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+            {/* Title */}
+            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+              Thông tin thành viên được đánh giá
+            </h3>
 
-              <div className="flex items-center gap-4">
-                {/* Large Avatar */}
-                <div className="relative w-24 h-24 sm:w-26 sm:h-26 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-purple-100 dark:bg-purple-950/40 shrink-0 shadow-sm flex items-center justify-center">
-                  {selectedMember.avatarUrl ? (
-                    <Image
-                      src={selectedMember.avatarUrl}
-                      alt={selectedMember.fullName}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-black text-2xl text-purple-700 dark:text-purple-300">
-                      {selectedMember.initials}
-                    </div>
-                  )}
+            {/* Profile Section (Vertically centered to eliminate empty gap) */}
+            <div className="my-auto py-5 sm:py-6 flex items-center gap-4 sm:gap-5">
+              {/* Large Avatar */}
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-slate-200/80 dark:border-slate-700 bg-purple-100 dark:bg-purple-950/40 shrink-0 shadow-xs flex items-center justify-center">
+                {selectedMember.avatarUrl ? (
+                  <Image
+                    src={selectedMember.avatarUrl}
+                    alt={selectedMember.fullName}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-black text-3xl text-purple-700 dark:text-purple-300">
+                    {selectedMember.initials}
+                  </div>
+                )}
+              </div>
+
+              {/* Details */}
+              <div className="min-w-0 space-y-2">
+                <h4 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white truncate">
+                  {selectedMember.fullName}
+                </h4>
+
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                  <Briefcase className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="truncate">
+                    {formatMemberPosition(selectedMember.position, selectedMember.departmentName)}
+                  </span>
                 </div>
 
-                {/* Details */}
-                <div className="min-w-0 space-y-1.5">
-                  <h4 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white truncate">
-                    {selectedMember.fullName}
-                  </h4>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="truncate">
+                    {selectedMember.email}
+                  </span>
+                </div>
 
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-                    <Briefcase className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span className="truncate">
-                      {formatMemberPosition(selectedMember.position, selectedMember.departmentName)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span className="truncate">
-                      {selectedMember.email}
-                    </span>
-                  </div>
-
-                  <div className="pt-0.5">
-                    <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950/60 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
-                      {selectedMember.departmentName.replace('Ban ', '')}
-                    </span>
-                  </div>
+                <div className="pt-0.5">
+                  <span className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950/60 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
+                    {selectedMember.departmentName.replace('Ban ', '')}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* 2 Mini Stat Boxes at bottom */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-2">
               {/* Stat 1: Lượt đánh giá */}
-              <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3">
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#0B63E5] flex items-center justify-center shrink-0">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white block leading-none py-0.5">
+                  <span className="text-2xl font-black text-slate-900 dark:text-white block leading-none py-0.5">
                     {selectedMember.reviewsCount || 3}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
                     lượt đánh giá
                   </span>
                 </div>
               </div>
 
               {/* Stat 2: Điểm TB */}
-              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3">
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 flex items-center justify-center shrink-0">
                   <Star className="w-5 h-5 fill-emerald-600" />
                 </div>
                 <div>
-                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white block leading-none py-0.5">
+                  <span className="text-2xl font-black text-slate-900 dark:text-white block leading-none py-0.5">
                     {selectedMember.averageScore
                       ? `${selectedMember.averageScore.toFixed(1)}/5`
                       : '4.0/5'}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
                     điểm TB
                   </span>
                 </div>
@@ -573,7 +573,7 @@ export function SurveyView() {
           </div>
 
           {/* RIGHT: Phiếu khảo sát sau sự kiện */}
-          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-5">
+          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
             <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
               Phiếu khảo sát sau sự kiện
             </h3>
@@ -635,9 +635,9 @@ export function SurveyView() {
               <textarea
                 value={currentFeedback}
                 onChange={(e) => setCurrentFeedback(e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-y"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
               />
             </div>
 
@@ -650,14 +650,14 @@ export function SurveyView() {
               <textarea
                 value={currentImprovement}
                 onChange={(e) => setCurrentImprovement(e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-y"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
               />
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-1">
               <button
                 type="button"
                 onClick={handleSkip}
