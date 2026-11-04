@@ -433,13 +433,29 @@ export function SurveyView() {
                 key={member.memberCode}
                 type="button"
                 onClick={() => setSelectedMemberCode(member.memberCode)}
-                className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl min-w-[105px] sm:min-w-[125px] shrink-0 transition-all cursor-pointer ${
+                className={`relative flex flex-col items-center justify-center p-3 rounded-2xl min-w-[115px] sm:min-w-[130px] shrink-0 transition-all cursor-pointer ${
                   isSelected
-                    ? 'border-2 border-[#0B63E5] bg-blue-50/80 dark:bg-blue-950/50 shadow-sm'
+                    ? 'border-2 border-[#0B63E5] bg-blue-50/80 dark:bg-blue-950/50 shadow-xs'
+                    : isEvaluated
+                    ? 'border border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/25 hover:bg-emerald-50/70'
                     : 'border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700 mb-2 shadow-xs bg-slate-100 dark:bg-slate-800">
+                {/* Corner checkmark on the CARD (completely away from avatar) */}
+                {isEvaluated && (
+                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </span>
+                )}
+
+                {/* Avatar with clean outline / ring, completely unblocked */}
+                <div
+                  className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center mb-1.5 shadow-xs transition-all ${
+                    isEvaluated
+                      ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+                      : 'border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
+                  }`}
+                >
                   {member.avatarUrl ? (
                     <Image
                       src={member.avatarUrl}
@@ -456,24 +472,32 @@ export function SurveyView() {
                       {member.initials}
                     </div>
                   )}
-
-                  {/* Green checkmark badge if evaluated */}
-                  {isEvaluated && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-xs border-2 border-white dark:border-slate-900">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
                 </div>
 
+                {/* Member Name (2 lines without cutting off) */}
                 <span
                   className={`text-xs font-bold text-center leading-tight line-clamp-2 h-7.5 flex items-center justify-center max-w-[105px] ${
                     isSelected
                       ? 'text-[#0B63E5] dark:text-blue-400'
+                      : isEvaluated
+                      ? 'text-emerald-950 dark:text-emerald-200'
                       : 'text-slate-800 dark:text-slate-200'
                   }`}
                 >
                   {member.fullName}
                 </span>
+
+                {/* Status Pill Badge: completely distinct and easy to recognize */}
+                {isEvaluated ? (
+                  <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    <span>Đã đánh giá</span>
+                  </span>
+                ) : (
+                  <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100/80 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/60">
+                    <span>Chưa đánh giá</span>
+                  </span>
+                )}
               </button>
             )
           })}
