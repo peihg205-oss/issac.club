@@ -24,6 +24,26 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
+import { useLanguage } from '@/lib/context/LanguageContext'
+
+// Quotes for survey mascot speech bubble
+const SURVEY_MASCOT_QUOTES_VI = [
+  'Đánh giá công tâm, cùng nhau tiến bộ nhé! ✨',
+  'Mỗi góp ý của bạn là một bước phát triển của iSSAC! 💙',
+  'Khảo sát Core Team giúp sự kiện sau bùng nổ hơn! 🚀',
+  'Cùng xây dựng iSSAC đoàn kết và vững mạnh nha! 🌟',
+  'Đừng quên gửi phiếu khảo sát cho tất cả Core Team nhé! 📋',
+  'Cảm ơn bạn đã luôn nhiệt huyết cùng CLB! 🔥',
+]
+
+const SURVEY_MASCOT_QUOTES_EN = [
+  'Fair evaluation, growing together! ✨',
+  'Your feedback makes iSSAC even better! 💙',
+  'Core Team survey helps next events shine! 🚀',
+  'Building a united and strong iSSAC! 🌟',
+  'Remember to submit surveys for all Core Team! 📋',
+  'Thank you for your passion with iSSAC! 🔥',
+]
 
 export interface SurveyEvaluation {
   targetMemberCode: string
@@ -112,6 +132,31 @@ const RATING_OPTIONS = [
 export function SurveyView() {
   const { currentUser } = useAuth()
   const { members } = useClub()
+  const { language } = useLanguage()
+
+  // Mascot interaction & animated speech note state
+  const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
+  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
+  const [mascotMessageIdx, setMascotMessageIdx] = useState<number>(0)
+  const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleMascotClick = () => {
+    setIsMascotCheering(true)
+    setShowMascotBubble(true)
+    setMascotMessageIdx((prev) => (prev + 1) % SURVEY_MASCOT_QUOTES_VI.length)
+    setTimeout(() => setIsMascotCheering(false), 850)
+
+    if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
+    bubbleTimeoutRef.current = setTimeout(() => {
+      setShowMascotBubble(false)
+    }, 2800)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
+    }
+  }, [])
 
   // Selected event
   const [selectedEvent, setSelectedEvent] = useState<string>('1st Meeting')
@@ -414,14 +459,40 @@ export function SurveyView() {
             <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
               Khảo sát Core Team sự kiện iSSAC
             </h1>
-            <div className="relative w-10 h-12 sm:w-12 sm:h-14 shrink-0 -mt-2">
-              <Image
+
+            {/* Mascot Chibi với hiệu ứng động tương tác & note thoại như các trang khác */}
+            <div
+              onClick={handleMascotClick}
+              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none -mt-1.5"
+              title="Bấm vào tớ để nghe lời nhắn nhé!"
+            >
+              {/* Ảnh Mascot với hiệu ứng bay bổng tự nhiên & nhào lộn vui nhộn khi click */}
+              <img
                 src="/survey-mascot.png"
                 alt="iSSAC Core Team Mascot"
-                fill
-                className="object-contain"
-                priority
+                className={`w-11 h-14 sm:w-13 sm:h-16 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
+                  isMascotCheering
+                    ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
+                    : 'animate-mascot-fly hover:scale-120 hover:rotate-6'
+                }`}
               />
+
+              {/* Note / Bubble tooltip động đặt bên cạnh mascot */}
+              <div
+                className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
+                  showMascotBubble || isMascotCheering
+                    ? 'opacity-100 scale-105 translate-x-1'
+                    : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+                }`}
+              >
+                {/* Mũi tên chỉ về phía mascot */}
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0284C7] rotate-45 border-l border-b border-white/25" />
+                <span className="relative z-10 select-none tracking-tight">
+                  {language === 'vi'
+                    ? SURVEY_MASCOT_QUOTES_VI[mascotMessageIdx]
+                    : SURVEY_MASCOT_QUOTES_EN[mascotMessageIdx]}
+                </span>
+              </div>
             </div>
           </div>
           <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
