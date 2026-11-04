@@ -674,14 +674,14 @@ export function SurveyView() {
               </div>
 
               {/* Criteria 1: Đánh giá mức độ hoàn thành công việc */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                     <span className="text-amber-500">⭐</span>
                     <span>1. Đánh giá mức độ hoàn thành công việc</span>
                   </label>
                   {Number(currentScore1) > 0 ? (
-                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#0B63E5] dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-md sm:rounded-lg">
                       {currentScore1} / 10 điểm
                     </span>
                   ) : (
@@ -698,10 +698,10 @@ export function SurveyView() {
                         key={score}
                         type="button"
                         onClick={() => setCurrentScore1(score)}
-                        className={`h-10 sm:h-10.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
+                        className={`h-8 sm:h-8.5 rounded-lg sm:rounded-xl text-xs sm:text-[13px] font-semibold transition-all flex items-center justify-center cursor-pointer ${
                           isSelected
-                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-102 ring-2 ring-blue-300 dark:ring-blue-500'
-                            : 'border border-slate-200/90 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50/80 dark:hover:bg-slate-700 hover:border-blue-300 hover:text-blue-600'
+                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold shadow-sm shadow-blue-500/25'
+                            : 'border border-slate-200/90 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:bg-blue-50/80 dark:hover:bg-slate-700 hover:border-blue-300 hover:text-[#0B63E5]'
                         }`}
                       >
                         {score}
@@ -712,14 +712,14 @@ export function SurveyView() {
               </div>
 
               {/* Criteria 2: Đánh giá tinh thần phối hợp & làm việc nhóm */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                     <span className="text-blue-500">👥</span>
                     <span>2. Đánh giá tinh thần phối hợp & làm việc nhóm</span>
                   </label>
                   {Number(currentScore2) > 0 ? (
-                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#0B63E5] dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-md sm:rounded-lg">
                       {currentScore2} / 10 điểm
                     </span>
                   ) : (
@@ -736,10 +736,10 @@ export function SurveyView() {
                         key={score}
                         type="button"
                         onClick={() => setCurrentScore2(score)}
-                        className={`h-10 sm:h-10.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
+                        className={`h-8 sm:h-8.5 rounded-lg sm:rounded-xl text-xs sm:text-[13px] font-semibold transition-all flex items-center justify-center cursor-pointer ${
                           isSelected
-                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-102 ring-2 ring-blue-300 dark:ring-blue-500'
-                            : 'border border-slate-200/90 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50/80 dark:hover:bg-slate-700 hover:border-blue-300 hover:text-blue-600'
+                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold shadow-sm shadow-blue-500/25'
+                            : 'border border-slate-200/90 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:bg-blue-50/80 dark:hover:bg-slate-700 hover:border-blue-300 hover:text-[#0B63E5]'
                         }`}
                       >
                         {score}
@@ -750,14 +750,14 @@ export function SurveyView() {
               </div>
 
               {/* Criteria 3: Đánh giá sự chủ động, trách nhiệm */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm sm:text-[15px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <label className="text-sm sm:text-[14.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                     <span className="text-amber-500">💡</span>
                     <span>3. Đánh giá sự chủ động, trách nhiệm</span>
                   </label>
                   {Number(currentScore3) > 0 ? (
-                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-[11px] sm:text-xs font-semibold text-[#0B63E5] dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 px-2.5 py-0.5 rounded-md sm:rounded-lg">
                       {currentScore3} / 10 điểm
                     </span>
                   ) : (
@@ -774,10 +774,10 @@ export function SurveyView() {
                         key={score}
                         type="button"
                         onClick={() => setCurrentScore3(score)}
-                        className={`h-10 sm:h-10.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center cursor-pointer ${
+                        className={`h-8 sm:h-8.5 rounded-lg sm:rounded-xl text-xs sm:text-[13px] font-semibold transition-all flex items-center justify-center cursor-pointer ${
                           isSelected
-                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white shadow-md shadow-blue-500/30 scale-102 ring-2 ring-blue-300 dark:ring-blue-500'
-                            : 'border border-slate-200/90 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50/80 dark:hover:bg-slate-700 hover:border-blue-300 hover:text-blue-600'
+                            ? 'bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold shadow-sm shadow-blue-500/25'
+                            : 'border border-slate-200/90 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:bg-blue-50/80 dark:hover:bg-slate-700 hover:border-blue-300 hover:text-[#0B63E5]'
                         }`}
                       >
                         {score}
