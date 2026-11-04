@@ -422,9 +422,9 @@ export function SurveyView() {
       </div>
 
       {/* 2. EVENT & STATUS BAR */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 px-5 py-3.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-        {/* Left: Event selector */}
-        <div className="flex items-center gap-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 px-5 py-3.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Left: Event selector & Live status grouped logically together */}
+        <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap">
           <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
             Sự kiện khảo sát
           </span>
@@ -463,14 +463,12 @@ export function SurveyView() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Divider 1 */}
-        <div className="hidden md:block w-px h-5 bg-slate-200 dark:bg-slate-750" />
+          {/* Divider between Event and Live Status */}
+          <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-700" />
 
-        {/* Middle: Live indicator badge */}
-        <div className="flex items-center justify-center">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
+          {/* Live indicator badge */}
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -479,11 +477,8 @@ export function SurveyView() {
           </span>
         </div>
 
-        {/* Divider 2 */}
-        <div className="hidden md:block w-px h-5 bg-slate-200 dark:bg-slate-750" />
-
-        {/* Right: Evaluated count badge */}
-        <div className="flex items-center">
+        {/* Right: Evaluated count & progress badge */}
+        <div className="flex items-center self-end md:self-auto">
           <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs">
             <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400 shrink-0" />
             <span>
