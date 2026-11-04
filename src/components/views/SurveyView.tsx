@@ -706,9 +706,8 @@ export function SurveyView() {
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
                     {selectedMember.departmentName.replace('Ban ', '')}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800">
-                    <Sparkles className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
-                    <span>Core Team</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800">
+                    Core Team
                   </span>
                 </div>
               </div>
