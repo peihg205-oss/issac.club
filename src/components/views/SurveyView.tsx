@@ -514,111 +514,111 @@ export function SurveyView() {
       </div>
 
       {/* MAIN 2-COLUMN EVALUATION WORKSPACE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
         {/* LEFT COLUMN: Danh sách đánh giá Core Team */}
-        <div className="lg:col-span-5 xl:col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-4">
+        <div className="lg:col-span-5 xl:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col justify-between h-full">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
               <span>Danh sách đánh giá ({targetMembers.length} thành viên)</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-3">
               Bạn cần đánh giá các thành viên Core Team (trừ Ban Chủ nhiệm và bản thân).
             </p>
-          </div>
 
-          {/* Member List */}
-          <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
-            {targetMembers.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                Không tìm thấy thành viên Core Team nào.
-              </div>
-            ) : (
-              targetMembers.map((member) => {
-                const isSelected = member.memberCode === selectedMember?.memberCode
-                const isEvaluated =
-                  evaluations[member.memberCode]?.status === 'completed'
+            {/* Member List */}
+            <div className="space-y-2 overflow-y-auto pr-1">
+              {targetMembers.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  Không tìm thấy thành viên Core Team nào.
+                </div>
+              ) : (
+                targetMembers.map((member) => {
+                  const isSelected = member.memberCode === selectedMember?.memberCode
+                  const isEvaluated =
+                    evaluations[member.memberCode]?.status === 'completed'
 
-                return (
-                  <div
-                    key={member.memberCode}
-                    onClick={() => setSelectedMemberCode(member.memberCode)}
-                    className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-2 border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-sm ring-2 ring-blue-400/20'
-                        : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300'
-                    }`}
-                  >
-                    {/* Left: Avatar & Info */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Avatar */}
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                        {member.avatarUrl ? (
-                          <Image
-                            src={member.avatarUrl}
-                            alt={member.fullName}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div
-                            className={`w-full h-full flex items-center justify-center border ${
-                              member.initialBg || 'bg-slate-100 text-slate-700'
+                  return (
+                    <div
+                      key={member.memberCode}
+                      onClick={() => setSelectedMemberCode(member.memberCode)}
+                      className={`w-full p-2.5 sm:p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-2 border-blue-500 bg-blue-50/70 dark:bg-blue-950/30 shadow-sm ring-2 ring-blue-400/20'
+                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300'
+                      }`}
+                    >
+                      {/* Left: Avatar & Info */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Avatar */}
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-sm">
+                          {member.avatarUrl ? (
+                            <Image
+                              src={member.avatarUrl}
+                              alt={member.fullName}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div
+                              className={`w-full h-full flex items-center justify-center border ${
+                                member.initialBg || 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {member.initials}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="min-w-0 text-left flex-1">
+                          <p
+                            className={`text-sm font-bold truncate ${
+                              isSelected
+                                ? 'text-blue-900 dark:text-blue-300'
+                                : 'text-slate-800 dark:text-slate-200'
                             }`}
                           >
-                            {member.initials}
-                          </div>
+                            {member.fullName}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {member.position} • {member.departmentName}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Status Pill & Chevron */}
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        {isEvaluated ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Đã đánh giá</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            Chưa đánh giá
+                          </span>
                         )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="min-w-0 text-left">
-                        <p
-                          className={`text-sm font-bold truncate ${
-                            isSelected
-                              ? 'text-blue-900 dark:text-blue-300'
-                              : 'text-slate-800 dark:text-slate-200'
+                        <ChevronRight
+                          className={`w-4 h-4 ${
+                            isSelected ? 'text-blue-600' : 'text-slate-400'
                           }`}
-                        >
-                          {member.fullName}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {member.position} • {member.departmentName}
-                        </p>
+                        />
                       </div>
                     </div>
-
-                    {/* Right: Status Pill & Chevron */}
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      {isEvaluated ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Đã đánh giá</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          Chưa đánh giá
-                        </span>
-                      )}
-                      <ChevronRight
-                        className={`w-4 h-4 ${
-                          isSelected ? 'text-blue-600' : 'text-slate-400'
-                        }`}
-                      />
-                    </div>
-                  </div>
-                )
-              })
-            )}
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: Form Đánh giá Thành viên */}
-        <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-7 shadow-sm space-y-6">
+        <div className="lg:col-span-7 xl:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between h-full space-y-5">
           {selectedMember ? (
             <>
               {/* Selected Member Profile Banner */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3.5">
                   <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-base shadow-sm border border-slate-200 dark:border-slate-700">
                     {selectedMember.avatarUrl ? (
