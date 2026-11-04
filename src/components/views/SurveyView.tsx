@@ -56,7 +56,7 @@ export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
     targetMemberCode: '24310069',
     targetMemberName: 'Lê Trần Thuỳ Nguyên',
     targetMemberDept: 'Ban Tư vấn',
-    targetMemberRole: 'Trưởng ban • Ban Tư vấn',
+    targetMemberRole: 'Trưởng ban - Ban Tư vấn',
     avatarUrl: '/thuy-nguyen-avatar.png',
     initials: 'N',
     q1_work: 9,
@@ -73,7 +73,7 @@ export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
     targetMemberCode: '24310088',
     targetMemberName: 'Trần Đức Thắng',
     targetMemberDept: 'Ban Truyền thông',
-    targetMemberRole: 'Trưởng ban • Ban Truyền thông',
+    targetMemberRole: 'Trưởng ban - Ban Truyền thông',
     avatarUrl: '/thang-avatar.png',
     initials: 'T',
     q1_work: 8,
@@ -280,7 +280,7 @@ export function SurveyView() {
       targetMemberCode: selectedMember.memberCode,
       targetMemberName: selectedMember.fullName,
       targetMemberDept: selectedMember.departmentName,
-      targetMemberRole: `${selectedMember.position} • ${selectedMember.departmentName}`,
+      targetMemberRole: `${selectedMember.position} - ${selectedMember.departmentName}`,
       avatarUrl: selectedMember.avatarUrl,
       initials: selectedMember.initials,
       q1_work: Number(currentScore1),
@@ -583,7 +583,7 @@ export function SurveyView() {
                           {member.fullName}
                         </p>
                         <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {member.position} • {member.departmentName}
+                          {member.position} - {member.departmentName}
                         </p>
                       </div>
                     </div>
@@ -644,7 +644,7 @@ export function SurveyView() {
                       {selectedMember.fullName}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                      {selectedMember.position} • {selectedMember.departmentName}
+                      {selectedMember.position} - {selectedMember.departmentName}
                     </p>
                   </div>
                 </div>
