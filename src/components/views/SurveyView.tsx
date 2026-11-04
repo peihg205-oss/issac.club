@@ -824,7 +824,7 @@ export function SurveyView() {
                   <button
                     type="button"
                     onClick={() => handleSaveEvaluation(false)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer active:scale-95"
+                    className="h-10 inline-flex items-center justify-center gap-2 px-4.5 sm:px-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm shadow-sm transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                   >
                     <Save className="w-4 h-4 text-blue-600" />
                     <span>Lưu đánh giá</span>
@@ -833,9 +833,9 @@ export function SurveyView() {
                   <button
                     type="button"
                     onClick={() => handleSaveEvaluation(true)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer active:scale-95"
+                    className="h-10 inline-flex items-center justify-center gap-2 px-4.5 sm:px-5 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                   >
-                    <span>Lưu & Tiếp tục thành viên tiếp theo</span>
+                    <span>Lưu & Tiếp tục</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -850,58 +850,58 @@ export function SurveyView() {
       </div>
 
       {/* BOTTOM FOOTER SUBMISSION BANNER */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
         {/* Left: Lock/Unlock Status */}
-        <div className="flex items-center gap-3.5 w-full md:w-auto">
+        <div className="flex items-center gap-3.5 min-w-0 flex-1 w-full lg:w-auto">
           <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
               canSubmit
                 ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             }`}
           >
             {canSubmit ? (
-              <Unlock className="w-6 h-6 text-emerald-600" />
+              <Unlock className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
             ) : (
-              <Lock className="w-6 h-6 text-slate-400" />
+              <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
             )}
           </div>
 
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
               {isSurveySubmitted
                 ? 'Đã nộp khảo sát thành công'
                 : canSubmit
                 ? 'Đã sẵn sàng nộp khảo sát!'
                 : 'Chưa thể nộp khảo sát'}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
               {isSurveySubmitted
                 ? 'Bản khảo sát của bạn đã được ghi nhận vào hệ thống.'
                 : canSubmit
                 ? `Tuyệt vời! Bạn đã hoàn thành ${completedCount}/${totalTargetCount} đánh giá. Hãy kiểm tra lại và nhấn nộp.`
-                : `Bạn cần hoàn thành đánh giá tất cả ${totalTargetCount} thành viên Core Team trong danh sách để mở nút nộp.`}
+                : `Bạn cần hoàn thành đánh giá tất cả ${totalTargetCount} thành viên trong danh sách để mở nút nộp.`}
             </p>
           </div>
         </div>
 
         {/* Right: 3-step Stepper + Submit Button */}
-        <div className="flex items-center gap-3 sm:gap-4 w-full md:w-auto justify-end flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2.5 sm:gap-4 shrink-0 w-full lg:w-auto justify-end">
           {/* Step 1: Đánh giá từng thành viên */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
+            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </div>
-            <span className="hidden sm:inline">Đánh giá từng thành viên</span>
+            <span>Đánh giá từng thành viên</span>
           </div>
 
           {/* Line connector */}
-          <div className="w-6 sm:w-10 h-0.5 bg-slate-200 dark:bg-slate-700" />
+          <div className="w-4 sm:w-8 h-0.5 bg-slate-200 dark:bg-slate-700 shrink-0" />
 
           {/* Step 2: Hoàn thành X/X */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                 canSubmit
                   ? 'bg-emerald-500 text-white'
                   : 'border-2 border-slate-300 dark:border-slate-600 text-slate-500'
@@ -909,20 +909,20 @@ export function SurveyView() {
             >
               {canSubmit ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : completedCount}
             </div>
-            <span className="hidden sm:inline">
+            <span>
               Hoàn thành {completedCount}/{totalTargetCount}
             </span>
           </div>
 
           {/* Line connector */}
-          <div className="w-6 sm:w-10 h-0.5 bg-slate-200 dark:bg-slate-700" />
+          <div className="w-4 sm:w-8 h-0.5 bg-slate-200 dark:bg-slate-700 shrink-0" />
 
           {/* Step 3: Nộp khảo sát Button */}
-          <div>
+          <div className="shrink-0">
             {isSurveySubmitted ? (
               <button
                 disabled
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-bold shadow-sm opacity-90 cursor-default"
+                className="h-10 inline-flex items-center justify-center gap-2 px-5 sm:px-6 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-bold shadow-sm opacity-90 cursor-default whitespace-nowrap shrink-0"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Đã nộp</span>
@@ -931,7 +931,7 @@ export function SurveyView() {
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/25 active:scale-95 transition-all cursor-pointer animate-pulse"
+                className="h-10 inline-flex items-center justify-center gap-2 px-6 sm:px-7 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Send className="w-4 h-4" />
                 <span>Nộp khảo sát ngay</span>
@@ -939,7 +939,7 @@ export function SurveyView() {
             ) : (
               <button
                 disabled
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 cursor-not-allowed"
+                className="h-10 inline-flex items-center justify-center gap-2 px-5 sm:px-6 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 cursor-not-allowed whitespace-nowrap shrink-0"
               >
                 <Lock className="w-4 h-4" />
                 <span>Nộp khảo sát</span>
