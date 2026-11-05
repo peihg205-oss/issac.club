@@ -596,77 +596,97 @@ export function BcnSurveyReportView({
               </div>
             </div>
 
-            {/* HÀNG 4 THẺ CHỈ SỐ MỐC CHUẨN ĐÁNH GIÁ (Style Ảnh 2 / ComparisonChart) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4 pt-1 pb-1">
+            {/* HÀNG 4 THẺ CHỈ SỐ MỐC CHUẨN ĐÁNH GIÁ (Chuẩn Style Ảnh 2) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-1 pb-1">
               {/* Card 1: Mục tiêu Tốt */}
-              <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] dark:bg-emerald-950/20 flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100/70 dark:bg-emerald-900/50 text-[#16A34A] dark:text-emerald-300 flex items-center justify-center shrink-0">
-                  <Flag className="w-4.5 h-4.5 fill-current" />
-                </div>
-                <div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] dark:bg-emerald-950/30 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                <div className="space-y-0.5">
+                  <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block">
                     Mục tiêu Tốt
                   </span>
-                  <span className="text-base sm:text-lg font-black text-[#16A34A] dark:text-emerald-400 block">
-                    4.8 - 5.0 điểm
-                  </span>
-                  <span className="text-[11px] text-[#16A34A] dark:text-emerald-400 font-semibold block">
+                  <div className="flex items-baseline gap-1 py-0.5">
+                    <span className="text-lg sm:text-[22px] font-black text-[#16A34A] dark:text-emerald-400 tracking-tight leading-none">
+                      4.8 - 5.0
+                    </span>
+                    <span className="text-[11.5px] font-bold text-[#16A34A]/80 dark:text-emerald-300">
+                      điểm
+                    </span>
+                  </div>
+                  <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block">
                     Xuất sắc
                   </span>
+                </div>
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#16A34A] shrink-0">
+                  <Flag className="w-4.5 h-4.5 stroke-[1.75]" />
                 </div>
               </div>
 
               {/* Card 2: Mức chuẩn CLB */}
-              <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] dark:bg-sky-950/20 flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
-                <div className="w-9 h-9 rounded-lg bg-sky-100/70 dark:bg-sky-900/50 text-[#0284C7] dark:text-sky-300 flex items-center justify-center shrink-0">
-                  <Target className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0F9FF] dark:bg-sky-950/30 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                <div className="space-y-0.5">
+                  <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block">
                     Mức chuẩn CLB
                   </span>
-                  <span className="text-base sm:text-lg font-black text-[#0284C7] dark:text-sky-400 block">
-                    4.0 - 4.7 điểm
-                  </span>
-                  <span className="text-[11px] text-[#0284C7] dark:text-sky-400 font-semibold block">
+                  <div className="flex items-baseline gap-1 py-0.5">
+                    <span className="text-lg sm:text-[22px] font-black text-[#0284C7] dark:text-sky-400 tracking-tight leading-none">
+                      4.0 - 4.7
+                    </span>
+                    <span className="text-[11.5px] font-bold text-[#0284C7]/80 dark:text-sky-300">
+                      điểm
+                    </span>
+                  </div>
+                  <span className="text-[11.5px] font-semibold text-[#0284C7] dark:text-sky-400 block">
                     Đạt yêu cầu
                   </span>
+                </div>
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#0284C7] shrink-0">
+                  <Target className="w-4.5 h-4.5 stroke-[1.75]" />
                 </div>
               </div>
 
               {/* Card 3: Mốc khởi điểm */}
-              <div className="p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] dark:bg-amber-950/20 flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
-                <div className="w-9 h-9 rounded-lg bg-amber-100/70 dark:bg-amber-900/50 text-[#D97706] dark:text-amber-300 flex items-center justify-center shrink-0">
-                  <TrendingUp className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#FFFBEB] dark:bg-amber-950/30 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                <div className="space-y-0.5">
+                  <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block">
                     Mốc khởi điểm
                   </span>
-                  <span className="text-base sm:text-lg font-black text-[#D97706] dark:text-amber-400 block">
-                    Dưới 4.0 điểm
-                  </span>
-                  <span className="text-[11px] text-[#D97706] dark:text-amber-400 font-semibold block">
+                  <div className="flex items-baseline gap-1 py-0.5">
+                    <span className="text-lg sm:text-[22px] font-black text-[#D97706] dark:text-amber-400 tracking-tight leading-none">
+                      Dưới 4.0
+                    </span>
+                    <span className="text-[11.5px] font-bold text-[#D97706]/80 dark:text-amber-300">
+                      điểm
+                    </span>
+                  </div>
+                  <span className="text-[11.5px] font-semibold text-[#D97706] dark:text-amber-400 block">
                     Cần cố gắng
                   </span>
+                </div>
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#D97706] shrink-0">
+                  <TrendingUp className="w-4.5 h-4.5 stroke-[1.75]" />
                 </div>
               </div>
 
               {/* Card 4: Thang điểm */}
-              <div className="p-3.5 sm:p-4 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/40 flex items-center gap-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
-                  <Gauge className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/40 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                <div className="space-y-0.5">
+                  <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block">
                     Thang điểm
                   </span>
-                  <span className="text-base sm:text-lg font-black text-[#061651] dark:text-white block">
-                    0 - 5.0 điểm
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-normal block">
+                  <div className="flex items-baseline gap-1 py-0.5">
+                    <span className="text-lg sm:text-[22px] font-black text-[#061651] dark:text-white tracking-tight leading-none">
+                      0 - 5.0
+                    </span>
+                    <span className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400">
+                      điểm
+                    </span>
+                  </div>
+                  <span className="text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 block">
                     Thang điểm chuẩn
                   </span>
+                </div>
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                  <Gauge className="w-4.5 h-4.5 stroke-[1.75]" />
                 </div>
               </div>
             </div>
