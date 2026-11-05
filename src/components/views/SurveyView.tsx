@@ -513,8 +513,8 @@ export function SurveyView() {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* 1. HEADER SECTION & MODE SWITCHER TABS (Góc bên phải) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/90 dark:border-slate-800 pb-3">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
@@ -560,11 +560,9 @@ export function SurveyView() {
             Nơi ghi nhận góp ý để cải thiện chất lượng tổ chức và phối hợp trong các sự kiện của CLB
           </p>
         </div>
-      </div>
 
-      {/* 2. MODE SWITCHER TABS: [Phiếu khảo sát sự kiện] & [Báo cáo đánh giá Core Team (BCN)] */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/90 dark:border-slate-800 pb-2">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+        {/* Mode Switcher Tabs đặt ở góc bên phải */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shrink-0 self-start md:self-center">
           <button
             type="button"
             onClick={() => setViewMode('survey')}
