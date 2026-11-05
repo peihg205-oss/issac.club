@@ -700,7 +700,7 @@ export function BcnSurveyReportView({
                 return (
                   <div
                     key={member.member_code}
-                    className="p-3.5 sm:p-4 rounded-xl border border-slate-150 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    className="p-3.5 sm:p-4 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
                   >
                     {/* Member Info */}
                     <div className="flex items-center gap-3.5 min-w-[240px]">
@@ -713,7 +713,7 @@ export function BcnSurveyReportView({
                             ? 'bg-slate-200 text-slate-700 border border-slate-300'
                             : idx === 2
                             ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            : 'bg-white/80 dark:bg-slate-800 text-slate-500 border border-slate-200/80 dark:border-slate-700'
                         }`}
                       >
                         {idx + 1}
@@ -1093,25 +1093,25 @@ export function BcnSurveyReportView({
 
                   {/* 4 Criteria Gauges for this member */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-                    <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-150 dark:border-slate-800">
+                    <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Trách nhiệm</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
                         {fmtScore(activeMemberObj.stats.criteriaAverages.responsibility || 4.8, 1)}★
                       </span>
                     </div>
-                    <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-150 dark:border-slate-800">
+                    <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Thực thi nhiệm vụ</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
                         {fmtScore(activeMemberObj.stats.criteriaAverages.taskDelivery || 4.7, 1)}★
                       </span>
                     </div>
-                    <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-150 dark:border-slate-800">
+                    <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Phối hợp & Giao tiếp</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
                         {fmtScore(activeMemberObj.stats.criteriaAverages.collaboration || 4.8, 1)}★
                       </span>
                     </div>
-                    <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-150 dark:border-slate-800">
+                    <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Chủ động sáng tạo</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
                         {fmtScore(activeMemberObj.stats.criteriaAverages.initiative || 4.9, 1)}★
