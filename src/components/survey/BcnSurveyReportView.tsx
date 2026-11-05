@@ -779,20 +779,6 @@ export function BcnSurveyReportView({
                           style={{ width: `${percent}%` }}
                         />
                       </div>
-
-                      {/* Star breakdown mini pills */}
-                      <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 flex-wrap">
-                        <span>5★: {stats.starCounts[5]}</span>
-                        <span>•</span>
-                        <span>4★: {stats.starCounts[4]}</span>
-                        <span>•</span>
-                        <span>3★: {stats.starCounts[3]}</span>
-                        <span>•</span>
-                        <span>1-2★: {stats.starCounts[1] + stats.starCounts[2]}</span>
-                        <span className="ml-auto font-medium text-slate-400">
-                          {stats.totalReviews} lượt nhận xét
-                        </span>
-                      </div>
                     </div>
 
                     {/* Action button to jump to detailed feedback */}
