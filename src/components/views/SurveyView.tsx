@@ -906,9 +906,9 @@ export function SurveyView() {
 
       {/* 4. MAIN 2-COLUMN SECTION: Left Member Info (~40%) : Right Survey Form (~60%) */}
       {selectedMember ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
           {/* LEFT: Thông tin thành viên được đánh giá */}
-          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between gap-4">
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm space-y-4">
             {/* Header with Title */}
             <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
               Thông tin thành viên được đánh giá
@@ -1150,7 +1150,7 @@ export function SurveyView() {
                   Phiếu khảo sát sau sự kiện
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 border border-sky-200/80">
-                  Điểm TB: {calculatedAvgScore}★ / 5.0
+                  Điểm TB: {calculatedAvgScore} / 5.0
                 </span>
               </div>
 
@@ -1212,33 +1212,34 @@ export function SurveyView() {
                 </div>
               </div>
 
-              {/* 2. Nhận xét tự luận */}
-              <div className="space-y-1.5">
-                <label className="text-xs sm:text-[13.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                  <span className="text-red-500 font-bold">*</span>
-                  <span>Vài lời nhận xét về {memberFirstName}</span>
-                </label>
-                <textarea
-                  value={currentFeedback}
-                  onChange={(e) => setCurrentFeedback(e.target.value)}
-                  rows={2}
-                  placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
-                />
-              </div>
+              {/* 2 & 3. Nhận xét tự luận & Mong muốn cải thiện (Bố cục 2 cột cân đối, hài hòa với cột thông tin) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-0.5">
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                    <span className="text-red-500 font-bold">*</span>
+                    <span>Vài lời nhận xét về {memberFirstName}</span>
+                  </label>
+                  <textarea
+                    value={currentFeedback}
+                    onChange={(e) => setCurrentFeedback(e.target.value)}
+                    rows={2}
+                    placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
+                  />
+                </div>
 
-              {/* 3. Mong muốn cải thiện */}
-              <div className="space-y-1.5">
-                <label className="text-xs sm:text-[13.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                  <span>Mong muốn cải thiện gì?</span>
-                </label>
-                <textarea
-                  value={currentImprovement}
-                  onChange={(e) => setCurrentImprovement(e.target.value)}
-                  rows={2}
-                  placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
-                />
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                    <span>Mong muốn cải thiện gì?</span>
+                  </label>
+                  <textarea
+                    value={currentImprovement}
+                    onChange={(e) => setCurrentImprovement(e.target.value)}
+                    rows={2}
+                    placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
+                  />
+                </div>
               </div>
 
               {/* 4. Các câu hỏi mở rộng do BCN thiết lập riêng cho sự kiện (nếu có) */}
