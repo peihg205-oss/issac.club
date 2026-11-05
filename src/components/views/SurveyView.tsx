@@ -593,16 +593,6 @@ export function SurveyView() {
           >
             <BarChart3 className="w-4 h-4" />
             <span>Báo cáo đánh giá Core Team</span>
-            {/* Pill BCN badge */}
-            <span
-              className={`px-2 py-0.5 text-[10px] font-black rounded-md tracking-wider border select-none transition-colors ${
-                viewMode === 'bcn_report'
-                  ? 'bg-white/20 text-white border-white/30'
-                  : 'bg-blue-100 text-[#0B63E5] dark:bg-blue-900/60 dark:text-blue-300 border-blue-200/80'
-              }`}
-            >
-              BCN
-            </span>
             {!isBCN && (
               <Lock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
             )}
