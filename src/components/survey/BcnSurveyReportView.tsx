@@ -40,13 +40,13 @@ import {
 } from '@/lib/surveyData'
 import { formatMemberPosition } from '@/components/views/SurveyView'
 
-// Helper to format scores replacing all decimal dots '.' with '-' per project requirements
+// Helper to format scores with standard decimal dots '.'
 export function fmtScore(val: number | string | undefined | null, decimals: 1 | 2 = 1): string {
-  if (val === undefined || val === null) return '0-0'
+  if (val === undefined || val === null) return '0.0'
   if (typeof val === 'number') {
-    return val.toFixed(decimals).replace(/\./g, '-')
+    return val.toFixed(decimals)
   }
-  return String(val).replace(/\./g, '-')
+  return String(val)
 }
 
 interface BcnSurveyReportViewProps {
@@ -221,7 +221,7 @@ export function BcnSurveyReportView({
   const overallKpis = useMemo(() => {
     const totalReviews = eventFeedbacks.length
     const totalScore = eventFeedbacks.reduce((acc, f) => acc + f.rating, 0)
-    const avgScore = totalReviews > 0 ? (totalScore / totalReviews).toFixed(2).replace(/\./g, '-') : '0-00'
+    const avgScore = totalReviews > 0 ? (totalScore / totalReviews).toFixed(2) : '0.00'
 
     const starsTotal: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
     eventFeedbacks.forEach((f) => {
@@ -481,7 +481,7 @@ export function BcnSurveyReportView({
                 {overallKpis.avgScore}
               </span>
               <span className="text-xs font-bold text-[#D97706]/70 dark:text-amber-300/70">
-                / 5-0
+                / 5.0
               </span>
             </div>
             <span className="text-[11.5px] font-semibold text-[#D97706] dark:text-amber-400 block hover:underline">
@@ -567,7 +567,7 @@ export function BcnSurveyReportView({
                     Xếp hạng & Tiến trình Điểm đánh giá Core Team
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Thanh đo điểm trung bình (thang 5-0) và phân bố lượt nhận xét của từng thành viên
+                    Thanh đo điểm trung bình (thang 5.0) và phân bố lượt nhận xét của từng thành viên
                   </p>
                 </div>
               </div>
@@ -608,7 +608,7 @@ export function BcnSurveyReportView({
                     Mục tiêu Tốt
                   </span>
                   <span className="text-base sm:text-lg font-black text-[#16A34A] dark:text-emerald-400 block">
-                    4-8 - 5-0 điểm
+                    4.8 - 5.0 điểm
                   </span>
                   <span className="text-[11px] text-[#16A34A] dark:text-emerald-400 font-semibold block">
                     Xuất sắc
@@ -626,7 +626,7 @@ export function BcnSurveyReportView({
                     Mức chuẩn CLB
                   </span>
                   <span className="text-base sm:text-lg font-black text-[#0284C7] dark:text-sky-400 block">
-                    4-0 - 4-7 điểm
+                    4.0 - 4.7 điểm
                   </span>
                   <span className="text-[11px] text-[#0284C7] dark:text-sky-400 font-semibold block">
                     Đạt yêu cầu
@@ -644,7 +644,7 @@ export function BcnSurveyReportView({
                     Mốc khởi điểm
                   </span>
                   <span className="text-base sm:text-lg font-black text-[#D97706] dark:text-amber-400 block">
-                    Dưới 4-0 điểm
+                    Dưới 4.0 điểm
                   </span>
                   <span className="text-[11px] text-[#D97706] dark:text-amber-400 font-semibold block">
                     Cần cố gắng
@@ -662,7 +662,7 @@ export function BcnSurveyReportView({
                     Thang điểm
                   </span>
                   <span className="text-base sm:text-lg font-black text-[#061651] dark:text-white block">
-                    0 - 5-0 điểm
+                    0 - 5.0 điểm
                   </span>
                   <span className="text-[11px] text-slate-400 font-normal block">
                     Thang điểm chuẩn
@@ -742,7 +742,7 @@ export function BcnSurveyReportView({
                           <span className="font-black text-sm text-[#061651] dark:text-white">
                             {stats.avgScore > 0 ? fmtScore(stats.avgScore, 2) : 'Chưa có'}
                           </span>
-                          <span className="text-slate-400">/ 5-0</span>
+                          <span className="text-slate-400">/ 5.0</span>
                         </div>
                       </div>
 
@@ -763,11 +763,11 @@ export function BcnSurveyReportView({
                       {/* Star breakdown mini pills */}
                       <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 flex-wrap">
                         <span>5★: {stats.starCounts[5]}</span>
-                        <span>-</span>
+                        <span>•</span>
                         <span>4★: {stats.starCounts[4]}</span>
-                        <span>-</span>
+                        <span>•</span>
                         <span>3★: {stats.starCounts[3]}</span>
-                        <span>-</span>
+                        <span>•</span>
                         <span>1-2★: {stats.starCounts[1] + stats.starCounts[2]}</span>
                         <span className="ml-auto font-medium text-slate-400">
                           {stats.totalReviews} lượt nhận xét
@@ -854,28 +854,28 @@ export function BcnSurveyReportView({
                 {[
                   {
                     name: 'Tinh thần trách nhiệm & Chủ động',
-                    score: '4-8',
+                    score: '4.8',
                     scoreNum: 4.8,
                     desc: 'Có mặt đúng giờ, chủ động nhận việc và hoàn thành đúng hạn',
                     color: 'from-blue-500 to-indigo-600',
                   },
                   {
                     name: 'Hiệu quả thực thi nhiệm vụ',
-                    score: '4-7',
+                    score: '4.7',
                     scoreNum: 4.7,
                     desc: 'Chất lượng ấn phẩm, kỹ thuật, đón tiếp đạt chuẩn cao',
                     color: 'from-emerald-500 to-teal-600',
                   },
                   {
                     name: 'Kỹ năng phối hợp & Giao tiếp',
-                    score: '4-6',
+                    score: '4.6',
                     scoreNum: 4.6,
                     desc: 'Trao đổi nhịp nhàng giữa các ban, thái độ hòa đồng',
                     color: 'from-purple-500 to-pink-600',
                   },
                   {
                     name: 'Tác phong & Xử lý phát sinh',
-                    score: '4-5',
+                    score: '4.5',
                     scoreNum: 4.5,
                     desc: 'Bình tĩnh ứng phó tình huống trên sân khấu và hậu trường',
                     color: 'from-amber-500 to-orange-600',
@@ -886,7 +886,7 @@ export function BcnSurveyReportView({
                       <span className="font-bold text-[#061651] dark:text-white">
                         {crit.name}
                       </span>
-                      <span className="font-extrabold text-[#0B63E5]">{crit.score} / 5-0</span>
+                      <span className="font-extrabold text-[#0B63E5]">{crit.score} / 5.0</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
@@ -1051,7 +1051,7 @@ export function BcnSurveyReportView({
                           </span>
                         </div>
                         <p className="text-xs sm:text-[13px] text-slate-500 font-medium mt-0.5">
-                          {formatMemberPosition(activeMemberObj.member.position, activeMemberObj.member.department_name || '')} - Mã SV: {activeMemberObj.member.student_id || activeMemberObj.member.member_code} - Lớp: {activeMemberObj.member.class_name || 'Khóa 2024'}
+                          {formatMemberPosition(activeMemberObj.member.position, activeMemberObj.member.department_name || '')} • Mã SV: {activeMemberObj.member.student_id || activeMemberObj.member.member_code} • Lớp: {activeMemberObj.member.class_name || 'Khóa 2024'}
                         </p>
                       </div>
                     </div>
@@ -1061,9 +1061,9 @@ export function BcnSurveyReportView({
                       <div className="flex items-center gap-1.5">
                         <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
                         <span className="text-2xl font-black text-[#061651] dark:text-white">
-                          {activeMemberObj.stats.avgScore > 0 ? fmtScore(activeMemberObj.stats.avgScore, 2) : '4-50'}
+                          {activeMemberObj.stats.avgScore > 0 ? fmtScore(activeMemberObj.stats.avgScore, 2) : '4.50'}
                         </span>
-                        <span className="text-xs text-slate-400">/ 5-0</span>
+                        <span className="text-xs text-slate-400">/ 5.0</span>
                       </div>
                       <span className="text-xs text-amber-800 dark:text-amber-300 font-bold">
                         {activeMemberObj.stats.totalReviews} lượt nhận xét
@@ -1191,14 +1191,14 @@ export function BcnSurveyReportView({
                             {/* Stars Badge */}
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200">
                               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                              <span>{item.rating} / 5-0</span>
+                              <span>{item.rating} / 5.0</span>
                               <span className="font-normal text-[11px] text-amber-700/80">
                                 ({item.rating === 5 ? 'Xuất sắc' : item.rating === 4 ? 'Rất tốt' : 'Tốt'})
                               </span>
                             </span>
 
                             <span className="text-[11px] text-slate-400 hidden sm:inline">
-                              {new Date(item.submittedAt).toLocaleDateString('vi-VN').replace(/\//g, '-').replace(/\./g, '-')}
+                              {new Date(item.submittedAt).toLocaleDateString('vi-VN')}
                             </span>
                           </div>
                         </div>
