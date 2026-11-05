@@ -209,6 +209,28 @@ export default function AdminPage() {
     }
   }
 
+  if (!isAuthChecked || !currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC]">
+        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (currentUser.role === 'member') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC] p-4 text-center">
+        <div className="bg-white p-6 rounded-2xl shadow-md max-w-md">
+          <h3 className="font-bold text-slate-800 mb-2">Không có quyền truy cập</h3>
+          <p className="text-xs text-slate-500 mb-4">Trang quản trị chỉ dành cho Cán bộ CLB (BCN, HR, Trưởng/Phó Ban).</p>
+          <button onClick={() => router.replace('/')} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold cursor-pointer">
+            Về Trang chủ
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Role Banner Notification */}

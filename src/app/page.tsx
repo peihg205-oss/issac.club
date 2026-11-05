@@ -122,6 +122,18 @@ export default function AppHome() {
     setSelectedMember(null)
   }
 
+  // Khi chưa xác thực xong hoặc chưa đăng nhập, không render giao diện dashboard mà chuyển hướng an toàn về /login
+  if (!isAuthChecked || !currentUser) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-[#FAFBFC] dark:bg-[#0B1120]">
+        <div className="w-9 h-9 border-3 border-[#0B63E5] border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          Đang xác thực phiên đăng nhập CLB iSSAC...
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen flex flex-col bg-[#E7ECF1] dark:bg-[#0B1120] overflow-hidden transition-colors duration-200">
       {/* Top Header - Full Width spanning the top 100% */}
