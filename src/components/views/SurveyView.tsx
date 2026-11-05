@@ -1104,35 +1104,6 @@ export function SurveyView() {
                   </p>
                 </div>
 
-                {/* 3 Privacy & Integrity Guarantees */}
-                <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-lg mx-auto text-left">
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 space-y-0.5">
-                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Bảo mật ẩn danh
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-tight">
-                      Ẩn danh đối với các thành viên khác
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 space-y-0.5">
-                    <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Không thể xem lại
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-tight">
-                      Ẩn điểm và lời nhận xét đã nộp
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 space-y-0.5">
-                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
-                      <Lock className="w-3.5 h-3.5" /> Khóa chỉnh sửa
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-tight">
-                      Dữ liệu đã ghi nhận vào BCN
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* Bottom Navigation */}
