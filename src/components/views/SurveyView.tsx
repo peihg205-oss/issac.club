@@ -21,10 +21,17 @@ import {
   GraduationCap,
   Calendar,
   Clock,
+  BarChart3,
+  Lock,
+  ShieldAlert,
+  ClipboardEdit,
+  Eye,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
+import { BcnSurveyReportView } from '@/components/survey/BcnSurveyReportView'
+import { saveNewSurveyFeedback } from '@/lib/surveyData'
 
 // Quotes for survey mascot speech bubble
 const SURVEY_MASCOT_QUOTES_VI = [
@@ -130,9 +137,21 @@ const RATING_OPTIONS = [
 ]
 
 export function SurveyView() {
-  const { currentUser } = useAuth()
+  const { currentUser, isBCN, switchUser } = useAuth()
   const { members } = useClub()
   const { language } = useLanguage()
+
+  // Navigation mode: 'survey' (phiếu đánh giá) vs 'bcn_report' (báo cáo & feedback dành riêng cho BCN)
+  const [viewMode, setViewMode] = useState<'survey' | 'bcn_report'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('mode') === 'bcn' || p.get('report') === 'true') {
+        return 'bcn_report'
+      }
+    }
+    return 'survey'
+  })
+  const [showBcnLockModal, setShowBcnLockModal] = useState<boolean>(false)
 
   // Mascot interaction & animated speech note state
   const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
@@ -345,6 +364,42 @@ export function SurveyView() {
       console.error(e)
     }
 
+    // Đồng thời lưu vào kho dữ liệu đánh giá chéo dành riêng cho Ban Chủ nhiệm xem báo cáo
+    try {
+      saveNewSurveyFeedback({
+        id: `fb-sub-${Date.now()}-${selectedMember.memberCode}`,
+        event: selectedEvent,
+        targetMemberCode: selectedMember.memberCode,
+        targetMemberName: selectedMember.fullName,
+        targetDepartment: selectedMember.departmentName,
+        targetPosition: selectedMember.position,
+        targetAvatarUrl: selectedMember.avatarUrl,
+        evaluatorMemberCode: currentUser?.memberCode || 'eval-user',
+        evaluatorName: currentUser?.name || 'Thành viên CLB',
+        evaluatorDept: currentUser?.departmentName || 'Core Team',
+        evaluatorRole:
+          currentUser?.roleTitle ||
+          (isBCN ? 'Ban Chủ nhiệm' : 'Thành viên CLB'),
+        evaluatorAvatarUrl: currentUser?.avatarUrl,
+        rating: currentRating,
+        feedback:
+          currentFeedback.trim() ||
+          'Thành viên hoàn thành tốt nhiệm vụ được giao, nhiệt tình hỗ trợ sự kiện.',
+        improvement:
+          currentImprovement.trim() ||
+          'Tiếp tục duy trì tinh thần trách nhiệm và chủ động trong các hoạt động tiếp theo.',
+        criteriaScores: {
+          responsibility: currentRating,
+          taskDelivery: currentRating,
+          collaboration: currentRating,
+          initiative: currentRating,
+        },
+        submittedAt: new Date().toISOString(),
+      })
+    } catch (saveErr) {
+      console.error('Failed to sync feedback to BCN storage', saveErr)
+    }
+
     setToastMessage(`Đã nộp đánh giá cho ${selectedMember.fullName}!`)
     setTimeout(() => setToastMessage(null), 3000)
 
@@ -501,11 +556,86 @@ export function SurveyView() {
         </div>
       </div>
 
-      {/* 2. EVENT & STATUS BAR */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 px-5 py-3.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Left: Event selector & Live status grouped logically together */}
-        <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap">
-          <span className="text-xs sm:text-sm font-bold text-[#061651] dark:text-slate-200 whitespace-nowrap">
+      {/* 2. MODE SWITCHER TABS: [Phiếu khảo sát sự kiện] & [Báo cáo đánh giá Core Team (BCN)] */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/90 dark:border-slate-800 pb-2">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode('survey')}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              viewMode === 'survey'
+                ? 'bg-white dark:bg-slate-900 text-[#0B63E5] shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <ClipboardEdit className="w-4 h-4" />
+            <span>Phiếu khảo sát sự kiện</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (isBCN) {
+                setViewMode('bcn_report')
+              } else {
+                setShowBcnLockModal(true)
+              }
+            }}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
+              viewMode === 'bcn_report'
+                ? 'bg-[#0B63E5] text-white shadow-md shadow-blue-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Báo cáo đánh giá Core Team</span>
+            {/* Pill BCN badge */}
+            <span
+              className={`px-2 py-0.5 text-[10px] font-black rounded-md tracking-wider border select-none transition-colors ${
+                viewMode === 'bcn_report'
+                  ? 'bg-white/20 text-white border-white/30'
+                  : 'bg-blue-100 text-[#0B63E5] dark:bg-blue-900/60 dark:text-blue-300 border-blue-200/80'
+              }`}
+            >
+              BCN
+            </span>
+            {!isBCN && (
+              <Lock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+            )}
+          </button>
+        </div>
+
+        {/* Current user role info pill */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-200/70 dark:border-slate-800 self-start sm:self-auto shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Tài khoản:</span>
+          <strong className="text-[#061651] dark:text-white font-bold">
+            {currentUser?.name || 'Người dùng'}
+          </strong>
+          {isBCN ? (
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider bg-blue-100 text-[#0B63E5] dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200/80">
+              BCN
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+              Thành viên
+            </span>
+          )}
+        </div>
+      </div>
+
+      {viewMode === 'bcn_report' ? (
+        <BcnSurveyReportView
+          selectedEvent={selectedEvent}
+          onSwitchToSurvey={() => setViewMode('survey')}
+        />
+      ) : (
+        <>
+          {/* 3. EVENT & STATUS BAR */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 px-5 py-3.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Left: Event selector & Live status grouped logically together */}
+            <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap">
+              <span className="text-xs sm:text-sm font-bold text-[#061651] dark:text-slate-200 whitespace-nowrap">
             Sự kiện khảo sát
           </span>
           <div className="relative" ref={eventDropdownRef}>
@@ -1037,6 +1167,8 @@ export function SurveyView() {
           </li>
         </ul>
       </div>
+        </>
+      )}
 
       {/* TOAST MESSAGE */}
       {toastMessage && (
@@ -1072,6 +1204,52 @@ export function SurveyView() {
             >
               Đóng và tiếp tục
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* BCN ACCESS LOCK MODAL */}
+      {showBcnLockModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-800">
+              <Lock className="w-8 h-8" />
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#0B63E5] dark:text-blue-300 text-xs font-black mb-3 border border-blue-200/80">
+              <span>ĐẶC QUYỀN BAN CHỦ NHIỆM</span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-black text-[#061651] dark:text-white mb-2">
+              Quyền truy cập bị giới hạn
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 text-left bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+              Theo quy định bảo mật khảo sát nội bộ của iSSAC, các phiếu đánh giá chéo giữa các thành viên, chi tiết góp ý sau sự kiện và biểu đồ xếp hạng hoạt động Core Team chỉ mở cho tài khoản <strong className="text-[#0B63E5]">Ban Chủ nhiệm (BCN)</strong> nhằm đảm bảo tính khách quan và an tâm khi góp ý.
+            </p>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-5 text-left">
+              Tài khoản hiện tại: <strong className="text-slate-800 dark:text-slate-200">{currentUser?.name}</strong> ({currentUser?.roleTitle || 'Thành viên'}).
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBcnLockModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Đã hiểu
+              </button>
+              {switchUser && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    switchUser('user-hiep')
+                    setShowBcnLockModal(false)
+                    setViewMode('bcn_report')
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Xem quyền BCN</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
