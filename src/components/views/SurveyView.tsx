@@ -1099,7 +1099,7 @@ export function SurveyView() {
                   <h4 className="text-base sm:text-lg font-extrabold text-[#061651] dark:text-white">
                     Phiếu đánh giá cho {selectedMember.fullName} đã được nộp
                   </h4>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed text-center sm:text-justify sm:[text-align-last:center] sm:[text-justify:inter-word] [text-wrap:balance]">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed text-justify [text-align-last:left] [text-justify:inter-word]">
                     Theo quy chế bảo mật khảo sát nội bộ của CLB iSSAC, sau khi đã hoàn tất nộp đánh giá, dữ liệu được chuyển thẳng vào cơ sở dữ liệu bảo mật của Ban Chủ nhiệm. Bạn <strong className="text-slate-700 dark:text-slate-200 font-bold">không thể xem lại điểm số, nhận xét đã gửi hay chỉnh&nbsp;sửa</strong> nhằm đảm bảo tính bảo mật và công tâm tuyệt đối.
                   </p>
                 </div>
