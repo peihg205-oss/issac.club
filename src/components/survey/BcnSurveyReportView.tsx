@@ -1236,8 +1236,7 @@ export function BcnSurveyReportView({
 
                         {/* Question 1: Nhận xét sau sự kiện */}
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          <span className="text-xs font-bold text-[#061651] dark:text-slate-200">
                             Nhận xét sau sự kiện:
                           </span>
                           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed font-normal">
@@ -1247,8 +1246,7 @@ export function BcnSurveyReportView({
 
                         {/* Question 2: Mong muốn cải thiện */}
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span className="text-xs font-bold text-amber-800 dark:text-amber-400">
                             Góp ý / Mong muốn cải thiện:
                           </span>
                           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-amber-50/30 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100/70 dark:border-amber-900/30 leading-relaxed font-normal">
