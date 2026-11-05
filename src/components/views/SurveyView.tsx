@@ -568,7 +568,7 @@ export function SurveyView() {
             onClick={() => setViewMode('survey')}
             className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               viewMode === 'survey'
-                ? 'bg-white dark:bg-slate-900 text-[#0B63E5] shadow-xs'
+                ? 'bg-[#0284C7] text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -587,7 +587,7 @@ export function SurveyView() {
             }}
             className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
               viewMode === 'bcn_report'
-                ? 'bg-[#0B63E5] text-white shadow-md shadow-blue-500/20'
+                ? 'bg-[#0284C7] text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
