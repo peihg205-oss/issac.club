@@ -31,7 +31,14 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 import { BcnSurveyReportView } from '@/components/survey/BcnSurveyReportView'
-import { saveNewSurveyFeedback } from '@/lib/surveyData'
+import {
+  saveNewSurveyFeedback,
+  getStoredSurveyEvents,
+  SurveyEventItem,
+  CORE_EVALUATION_CRITERIA,
+  getStoredCustomQuestions,
+  SurveyQuestionItem,
+} from '@/lib/surveyData'
 
 // Quotes for survey mascot speech bubble
 const SURVEY_MASCOT_QUOTES_VI = [
@@ -177,17 +184,27 @@ export function SurveyView() {
     }
   }, [])
 
-  // Selected event
+  // Selected event & dynamic events list from BCN management
   const [selectedEvent, setSelectedEvent] = useState<string>('1st Meeting')
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState<boolean>(false)
   const eventDropdownRef = useRef<HTMLDivElement>(null)
 
-  const EVENT_OPTIONS = [
-    '1st Meeting',
-    'First Meeting - T10/2026',
-    'Gen 3 Recruitment',
-    'Workshop Sharing',
-  ]
+  const [surveyEvents, setSurveyEvents] = useState<SurveyEventItem[]>(() =>
+    getStoredSurveyEvents()
+  )
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setSurveyEvents(getStoredSurveyEvents())
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
+  const eventOptions = useMemo(() => {
+    const names = surveyEvents.map((e) => e.name)
+    return names.length > 0 ? names : ['1st Meeting']
+  }, [surveyEvents])
 
   // Close event dropdown on outside click
   useEffect(() => {
@@ -246,10 +263,42 @@ export function SurveyView() {
     useState<Record<string, SurveyEvaluation>>({})
   const [selectedMemberCode, setSelectedMemberCode] = useState<string>('')
 
-  // Form input state
-  const [currentRating, setCurrentRating] = useState<number>(4)
+  // Form input state: 4 Core Criteria (Trách nhiệm, Thực thi, Phối hợp, Sáng tạo)
+  const [criteriaScores, setCriteriaScores] = useState<{
+    responsibility: number
+    taskDelivery: number
+    collaboration: number
+    initiative: number
+  }>({
+    responsibility: 5,
+    taskDelivery: 5,
+    collaboration: 5,
+    initiative: 5,
+  })
+
+  // Calculated overall average score from 4 core criteria
+  const calculatedAvgScore = useMemo(() => {
+    const sum =
+      criteriaScores.responsibility +
+      criteriaScores.taskDelivery +
+      criteriaScores.collaboration +
+      criteriaScores.initiative
+    return Number((sum / 4).toFixed(1))
+  }, [criteriaScores])
+
+  const [currentRating, setCurrentRating] = useState<number>(5)
   const [currentFeedback, setCurrentFeedback] = useState<string>('')
   const [currentImprovement, setCurrentImprovement] = useState<string>('')
+
+  // Custom questions for this event configured by BCN
+  const [customQuestions, setCustomQuestions] = useState<SurveyQuestionItem[]>(() =>
+    getStoredCustomQuestions(selectedEvent)
+  )
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string | number>>({})
+
+  useEffect(() => {
+    setCustomQuestions(getStoredCustomQuestions(selectedEvent))
+  }, [selectedEvent])
 
   // Toast / Feedback message
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -303,13 +352,20 @@ export function SurveyView() {
       const existing = evaluations[selectedMember.memberCode]
       // Nếu đã hoàn thành nộp rồi thì không nạp lại dữ liệu cũ vào ô nhập (bảo mật tuyệt đối, không cho xem lại)
       if (existing && existing.status !== 'completed') {
-        setCurrentRating(existing.rating || 4)
+        setCurrentRating(existing.rating || 5)
         setCurrentFeedback(existing.feedback || '')
         setCurrentImprovement(existing.improvement || '')
       } else {
-        setCurrentRating(4)
+        setCurrentRating(5)
+        setCriteriaScores({
+          responsibility: 5,
+          taskDelivery: 5,
+          collaboration: 5,
+          initiative: 5,
+        })
         setCurrentFeedback('')
         setCurrentImprovement('')
+        setCustomAnswers({})
       }
     }
   }, [selectedMemberCode, evaluations, selectedMember])
@@ -351,7 +407,7 @@ export function SurveyView() {
       targetMemberRole: `${selectedMember.position} - ${selectedMember.departmentName}`,
       avatarUrl: selectedMember.avatarUrl,
       initials: selectedMember.initials,
-      rating: currentRating,
+      rating: calculatedAvgScore,
       feedback: currentFeedback.trim(),
       improvement: currentImprovement.trim(),
       status: 'completed',
@@ -386,8 +442,7 @@ export function SurveyView() {
         evaluatorRole:
           currentUser?.roleTitle ||
           (isBCN ? 'Ban Chủ nhiệm' : 'Thành viên CLB'),
-        evaluatorAvatarUrl: currentUser?.avatarUrl,
-        rating: currentRating,
+        rating: calculatedAvgScore,
         feedback:
           currentFeedback.trim() ||
           'Thành viên hoàn thành tốt nhiệm vụ được giao, nhiệt tình hỗ trợ sự kiện.',
@@ -395,10 +450,10 @@ export function SurveyView() {
           currentImprovement.trim() ||
           'Tiếp tục duy trì tinh thần trách nhiệm và chủ động trong các hoạt động tiếp theo.',
         criteriaScores: {
-          responsibility: currentRating,
-          taskDelivery: currentRating,
-          collaboration: currentRating,
-          initiative: currentRating,
+          responsibility: criteriaScores.responsibility,
+          taskDelivery: criteriaScores.taskDelivery,
+          collaboration: criteriaScores.collaboration,
+          initiative: criteriaScores.initiative,
         },
         submittedAt: new Date().toISOString(),
       })
@@ -603,6 +658,7 @@ export function SurveyView() {
       {viewMode === 'bcn_report' ? (
         <BcnSurveyReportView
           selectedEvent={selectedEvent}
+          onSelectEvent={(evt) => setSelectedEvent(evt)}
           onSwitchToSurvey={() => setViewMode('survey')}
         />
       ) : (
@@ -626,7 +682,7 @@ export function SurveyView() {
 
             {isEventDropdownOpen && (
               <div className="absolute left-0 mt-1.5 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-30 animate-in fade-in zoom-in-95 duration-100">
-                {EVENT_OPTIONS.map((event) => (
+                {eventOptions.map((event) => (
                   <button
                     key={event}
                     type="button"
@@ -634,15 +690,15 @@ export function SurveyView() {
                       setSelectedEvent(event)
                       setIsEventDropdownOpen(false)
                     }}
-                    className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-750 transition-colors ${
+                    className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between hover:bg-sky-50 dark:hover:bg-slate-750 transition-colors ${
                       selectedEvent === event
-                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-slate-700'
+                        ? 'text-[#0284C7] dark:text-sky-400 bg-sky-50/60 dark:bg-slate-700 font-bold'
                         : 'text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <span>{event}</span>
                     {selectedEvent === event && (
-                      <Check className="w-3.5 h-3.5 text-blue-600" />
+                      <Check className="w-3.5 h-3.5 text-[#0284C7]" />
                     )}
                   </button>
                 ))}
@@ -1118,61 +1174,77 @@ export function SurveyView() {
             </div>
           ) : (
             <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
-              <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
-                Phiếu khảo sát sau sự kiện
-              </h3>
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
+                  Phiếu khảo sát sau sự kiện
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 border border-sky-200/80">
+                  Điểm TB: {calculatedAvgScore}★ / 5.0
+                </span>
+              </div>
 
-              {/* Question 1: Rating */}
-              <div className="space-y-2">
-                <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                  <span className="text-red-500 font-bold">*</span>
-                  <span>
-                    Sau sự kiện, bạn đánh giá {memberFirstName} thế nào?
-                  </span>
-                </label>
+              {/* 1. Bộ 4 Tiêu chí Cốt lõi (Trách nhiệm, Thực thi, Phối hợp, Sáng tạo - Khớp Ảnh 2) */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs sm:text-sm font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1.5">
+                    <span className="text-red-500 font-bold">*</span>
+                    <span>Chấm điểm 4 Tiêu chí Cốt lõi của {memberFirstName}:</span>
+                  </label>
+                  <p className="text-[11px] text-slate-400">
+                    Bấm chọn thang điểm 1 đến 5 sao cho từng tiêu chí cốt lõi của CLB iSSAC
+                  </p>
+                </div>
 
-                {/* 5 Rating buttons */}
-                <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                  {RATING_OPTIONS.map((opt) => {
-                    const isSelected = currentRating === opt.score
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {CORE_EVALUATION_CRITERIA.map((crit) => {
+                    const score = criteriaScores[crit.key]
                     return (
-                      <button
-                        key={opt.score}
-                        type="button"
-                        onClick={() => setCurrentRating(opt.score)}
-                        className={`py-2.5 sm:py-3 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#0B63E5] border-[#0B63E5] text-white shadow-md shadow-blue-500/25'
-                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-300 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600'
-                        }`}
+                      <div
+                        key={crit.key}
+                        className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/60 space-y-1.5"
                       >
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mb-1 transition-colors ${
-                            isSelected
-                              ? 'bg-white text-[#0B63E5]'
-                              : 'border border-slate-300 dark:border-slate-600 text-[#061651] dark:text-slate-400'
-                          }`}
-                        >
-                          {opt.score}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                            {crit.shortLabel}
+                          </span>
+                          <span className="text-xs font-black text-[#0284C7]">
+                            {score}.0★
+                          </span>
                         </div>
-                        <span
-                          className={`text-xs font-bold ${
-                            isSelected
-                              ? 'text-white'
-                              : 'text-[#061651] dark:text-slate-400'
-                          }`}
-                        >
-                          {opt.label}
-                        </span>
-                      </button>
+                        <p className="text-[10px] text-slate-400 line-clamp-1">
+                          {crit.description}
+                        </p>
+                        <div className="grid grid-cols-5 gap-1 pt-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() =>
+                                setCriteriaScores((prev) => ({
+                                  ...prev,
+                                  [crit.key]: star,
+                                }))
+                              }
+                              className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                                score === star
+                                  ? 'bg-[#0284C7] text-white shadow-2xs'
+                                  : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-600 border border-slate-200/80 dark:border-slate-600'
+                              }`}
+                            >
+                              <span>{star}</span>
+                              <Star className={`w-2.5 h-2.5 ${score === star ? 'fill-white' : 'fill-slate-300 text-slate-300'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Question 2: Feedback */}
+              {/* 2. Nhận xét tự luận */}
               <div className="space-y-1.5">
-                <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                <label className="text-xs sm:text-[13.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
                   <span className="text-red-500 font-bold">*</span>
                   <span>Vài lời nhận xét về {memberFirstName}</span>
                 </label>
@@ -1181,14 +1253,13 @@ export function SurveyView() {
                   onChange={(e) => setCurrentFeedback(e.target.value)}
                   rows={2}
                   placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
                 />
               </div>
 
-              {/* Question 3: Improvement */}
+              {/* 3. Mong muốn cải thiện */}
               <div className="space-y-1.5">
-                <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                  <span className="text-red-500 font-bold">*</span>
+                <label className="text-xs sm:text-[13.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
                   <span>Mong muốn cải thiện gì?</span>
                 </label>
                 <textarea
@@ -1196,9 +1267,78 @@ export function SurveyView() {
                   onChange={(e) => setCurrentImprovement(e.target.value)}
                   rows={2}
                   placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
                 />
               </div>
+
+              {/* 4. Các câu hỏi mở rộng do BCN thiết lập riêng cho sự kiện (nếu có) */}
+              {customQuestions.length > 0 && (
+                <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <span className="text-xs font-bold text-slate-500 block">
+                    Câu hỏi mở rộng của sự kiện:
+                  </span>
+                  {customQuestions.map((q) => (
+                    <div key={q.id} className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                        {q.required && <span className="text-red-500">*</span>}
+                        <span>{q.title}</span>
+                      </label>
+                      {q.description && (
+                        <p className="text-[11px] text-slate-400">{q.description}</p>
+                      )}
+                      {q.type === 'textarea' ? (
+                        <textarea
+                          value={(customAnswers[q.id] as string) || ''}
+                          onChange={(e) =>
+                            setCustomAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          rows={2}
+                          placeholder="Nhập câu trả lời..."
+                          className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      ) : q.type === 'rating_stars' ? (
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() =>
+                                setCustomAnswers((prev) => ({
+                                  ...prev,
+                                  [q.id]: star,
+                                }))
+                              }
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                                (customAnswers[q.id] || 5) === star
+                                  ? 'bg-[#0284C7] text-white'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                              }`}
+                            >
+                              <span>{star}★</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={(customAnswers[q.id] as string) || ''}
+                          onChange={(e) =>
+                            setCustomAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="Nhập câu trả lời ngắn..."
+                          className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Bottom Actions */}
               <div className="flex items-center justify-end gap-3 pt-1">
@@ -1213,7 +1353,7 @@ export function SurveyView() {
                 <button
                   type="button"
                   onClick={handleSubmitEvaluation}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer active:scale-95"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/20 transition-all cursor-pointer active:scale-95"
                 >
                   <Send className="w-4 h-4" />
                   <span>Nộp khảo sát</span>
@@ -1289,7 +1429,7 @@ export function SurveyView() {
             <button
               type="button"
               onClick={() => setShowSuccessModal(false)}
-              className="w-full py-3 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-sm shadow-md shadow-sky-500/20 transition-all cursor-pointer"
             >
               Đóng và tiếp tục
             </button>
@@ -1304,14 +1444,14 @@ export function SurveyView() {
             <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-800">
               <Lock className="w-8 h-8" />
             </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#0B63E5] dark:text-blue-300 text-xs font-black mb-3 border border-blue-200/80">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 text-xs font-black mb-3 border border-sky-200/80">
               <span>ĐẶC QUYỀN BAN CHỦ NHIỆM</span>
             </div>
             <h3 className="text-lg sm:text-xl font-black text-[#061651] dark:text-white mb-2">
               Quyền truy cập bị giới hạn
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 text-left bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
-              Theo quy định bảo mật khảo sát nội bộ của iSSAC, các phiếu đánh giá chéo giữa các thành viên, chi tiết góp ý sau sự kiện và biểu đồ xếp hạng hoạt động Core Team chỉ mở cho tài khoản <strong className="text-[#0B63E5]">Ban Chủ nhiệm (BCN)</strong> nhằm đảm bảo tính khách quan và an tâm khi góp ý.
+              Theo quy định bảo mật khảo sát nội bộ của iSSAC, các phiếu đánh giá chéo giữa các thành viên, chi tiết góp ý sau sự kiện và biểu đồ xếp hạng hoạt động Core Team chỉ mở cho tài khoản <strong className="text-[#0284C7]">Ban Chủ nhiệm (BCN)</strong> nhằm đảm bảo tính khách quan và an tâm khi góp ý.
             </p>
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-5 text-left">
               Tài khoản hiện tại: <strong className="text-slate-800 dark:text-slate-200">{currentUser?.name}</strong> ({currentUser?.roleTitle || 'Thành viên'}).
@@ -1332,7 +1472,7 @@ export function SurveyView() {
                     setShowBcnLockModal(false)
                     setViewMode('bcn_report')
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Xem quyền BCN</span>

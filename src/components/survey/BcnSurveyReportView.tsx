@@ -31,6 +31,7 @@ import {
   Target,
   Gauge,
   Trophy,
+  Sliders,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
@@ -39,6 +40,7 @@ import {
   SurveyFeedbackItem,
 } from '@/lib/surveyData'
 import { formatMemberPosition } from '@/components/views/SurveyView'
+import { BcnSurveyConfigManager } from '@/components/survey/BcnSurveyConfigManager'
 
 // Helper to format scores with standard decimal dots '.'
 export function fmtScore(val: number | string | undefined | null, decimals: 1 | 2 = 1): string {
@@ -51,11 +53,13 @@ export function fmtScore(val: number | string | undefined | null, decimals: 1 | 
 
 interface BcnSurveyReportViewProps {
   selectedEvent: string
+  onSelectEvent?: (event: string) => void
   onSwitchToSurvey?: () => void
 }
 
 export function BcnSurveyReportView({
   selectedEvent,
+  onSelectEvent,
   onSwitchToSurvey,
 }: BcnSurveyReportViewProps) {
   const { isBCN, currentUser } = useAuth()
@@ -74,9 +78,12 @@ export function BcnSurveyReportView({
     window.addEventListener('storage', handleStorage)
     return () => window.removeEventListener('storage', handleStorage)
   }, [selectedEvent])
-  const [reportTab, setReportTab] = useState<'charts' | 'feedbacks'>(() => {
+  const [reportTab, setReportTab] = useState<'charts' | 'feedbacks' | 'management'>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search)
+      if (p.get('subtab') === 'management' || p.get('subtab') === 'events' || p.get('tab3') === 'true') {
+        return 'management'
+      }
       if (p.get('subtab') === 'feedbacks' || p.get('reportTab') === 'feedbacks') {
         return 'feedbacks'
       }
@@ -399,9 +406,9 @@ export function BcnSurveyReportView({
           </div>
         </div>
 
-        {/* Sub-tab Switcher: Charts vs Feedbacks */}
+        {/* Sub-tab Switcher: Charts vs Feedbacks vs Management (Khớp Ảnh 1) */}
         <div className="flex items-center justify-between gap-3 pt-4 flex-wrap">
-          <div className="flex items-center gap-2 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+          <div className="flex items-center gap-2 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex-wrap">
             <button
               type="button"
               onClick={() => setReportTab('charts')}
@@ -426,8 +433,24 @@ export function BcnSurveyReportView({
             >
               <MessageSquare className="w-4 h-4 text-[#0284C7]" />
               <span>Đọc nhận xét chi tiết từng người</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#0B63E5] dark:bg-blue-900/50">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/50">
                 {eventFeedbacks.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setReportTab('management')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                reportTab === 'management'
+                  ? 'bg-white dark:bg-slate-900 text-[#0284C7] dark:text-sky-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Sliders className="w-4 h-4 text-[#0284C7]" />
+              <span>Tạo sự kiện & Câu hỏi đánh giá</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80">
+                BCN
               </span>
             </button>
           </div>
@@ -439,8 +462,9 @@ export function BcnSurveyReportView({
         </div>
       </div>
 
-      {/* 2. 4 THẺ CHỈ SỐ KPI CHUẨN STYLE ẢNH 2 (Nền Pastel Nhạt Không Viền, Bo Góc rounded-xl, Đổ Bóng Khối Box) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 2. 4 THẺ CHỈ SỐ KPI CHUẨN STYLE ẢNH 2 (Chỉ hiện khi xem Charts hoặc Feedbacks) */}
+      {reportTab !== 'management' && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* KPI Card 1: Tổng lượt đánh giá (Style Thẻ Xanh Dương Nhạt #F0F9FF) */}
         <div
           onClick={() => setReportTab('feedbacks')}
@@ -550,6 +574,7 @@ export function BcnSurveyReportView({
           </div>
         </div>
       </div>
+      )}
 
       {/* 3. TAB 1: CHARTS & CORE TEAM LEADERBOARD (Chuẩn Style Ảnh 2) */}
       {reportTab === 'charts' && (
@@ -1246,6 +1271,15 @@ export function BcnSurveyReportView({
             )}
           </div>
         </div>
+      )}
+
+      {/* 4. SUB-TAB 3: TẠO SỰ KIỆN & CÂU HỎI ĐÁNH GIÁ (BCN MANAGEMENT) */}
+      {reportTab === 'management' && (
+        <BcnSurveyConfigManager
+          selectedEvent={selectedEvent}
+          onSelectEvent={onSelectEvent}
+          onSwitchToSurvey={onSwitchToSurvey}
+        />
       )}
     </div>
   )

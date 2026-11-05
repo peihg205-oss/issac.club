@@ -459,6 +459,132 @@ export const INITIAL_SURVEY_FEEDBACKS: SurveyFeedbackItem[] = [
 ]
 
 // ============================================================
+// Core Evaluation Criteria (Bộ 4 tiêu chí cốt lõi)
+// ============================================================
+export interface CoreCriterion {
+  key: 'responsibility' | 'taskDelivery' | 'collaboration' | 'initiative'
+  label: string
+  shortLabel: string
+  description: string
+  weight: number
+}
+
+export const CORE_EVALUATION_CRITERIA: CoreCriterion[] = [
+  {
+    key: 'responsibility',
+    label: 'Tinh thần trách nhiệm',
+    shortLabel: 'Trách nhiệm',
+    description: 'Tỉ mỉ, đúng hạn, tận tâm và không bỏ lửng đầu việc được giao',
+    weight: 1,
+  },
+  {
+    key: 'taskDelivery',
+    label: 'Thực thi nhiệm vụ',
+    shortLabel: 'Thực thi nhiệm vụ',
+    description: 'Chất lượng đầu ra công việc, độ chuẩn xác và cam kết tiến độ',
+    weight: 1,
+  },
+  {
+    key: 'collaboration',
+    label: 'Phối hợp & Giao tiếp',
+    shortLabel: 'Phối hợp & Giao tiếp',
+    description: 'Tương tác nhịp nhàng, lắng nghe đồng đội và phản hồi nhanh chóng',
+    weight: 1,
+  },
+  {
+    key: 'initiative',
+    label: 'Chủ động sáng tạo',
+    shortLabel: 'Chủ động sáng tạo',
+    description: 'Đề xuất giải pháp mới, linh hoạt ứng biến trong các tình huống phát sinh',
+    weight: 1,
+  },
+]
+
+// ============================================================
+// Survey Events & Questions Configuration
+// ============================================================
+export interface SurveyQuestionItem {
+  id: string
+  title: string
+  description?: string
+  type: 'rating_stars' | 'textarea' | 'text'
+  required: boolean
+  isCore?: boolean
+  criteriaKey?: 'responsibility' | 'taskDelivery' | 'collaboration' | 'initiative'
+}
+
+export interface SurveyEventItem {
+  id: string
+  name: string
+  date: string
+  status: 'active' | 'closed'
+  description: string
+  targetGroup: string
+  customQuestions?: SurveyQuestionItem[]
+  createdAt: string
+}
+
+export const SURVEY_EVENTS_STORAGE_KEY = 'issac_survey_events_v2'
+export const SURVEY_QUESTIONS_STORAGE_KEY = 'issac_survey_custom_questions_v2'
+
+export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
+  {
+    id: 'evt-01',
+    name: '1st Meeting',
+    date: '2026-10-15',
+    status: 'active',
+    description: 'Phiếu khảo sát và đánh giá chéo thành viên Core Team trong sự kiện First Meeting mở màn năm học',
+    targetGroup: 'Toàn bộ Core Team (trừ BCN)',
+    createdAt: '2026-10-15T08:00:00.000Z',
+  },
+  {
+    id: 'evt-02',
+    name: 'First Meeting - T10/2026',
+    date: '2026-10-22',
+    status: 'closed',
+    description: 'Đánh giá sau buổi họp toàn thể ban chuyên môn tháng 10',
+    targetGroup: 'Core Team các ban',
+    createdAt: '2026-10-22T08:00:00.000Z',
+  },
+  {
+    id: 'evt-03',
+    name: 'Gen 3 Recruitment',
+    date: '2026-10-28',
+    status: 'closed',
+    description: 'Khảo sát hiệu quả công tác tuyển quân và phỏng vấn thế hệ Gen 3',
+    targetGroup: 'Core Team tham gia phỏng vấn',
+    createdAt: '2026-10-28T08:00:00.000Z',
+  },
+  {
+    id: 'evt-04',
+    name: 'Workshop Sharing',
+    date: '2026-11-02',
+    status: 'closed',
+    description: 'Đánh giá phối hợp tổ chức buổi chia sẻ kỹ năng và chuyên môn',
+    targetGroup: 'Ban tổ chức Workshop',
+    createdAt: '2026-11-02T08:00:00.000Z',
+  },
+]
+
+// Default questions template for events
+export const DEFAULT_EVENT_CUSTOM_QUESTIONS: SurveyQuestionItem[] = [
+  {
+    id: 'q-custom-1',
+    title: 'Điểm ấn tượng nhất khi làm việc cùng thành viên này trong sự kiện?',
+    description: 'Ghi nhận những đóng góp nổi bật hoặc khoảnh khắc hỗ trợ đồng đội tốt',
+    type: 'textarea',
+    required: false,
+  },
+  {
+    id: 'q-custom-2',
+    title: 'Mức độ sẵn sàng tiếp tục đồng hành trong sự kiện tiếp theo (1 - 5 sao)',
+    description: 'Đánh giá mức độ ăn ý và mong muốn tiếp tục phối hợp',
+    type: 'rating_stars',
+    required: false,
+  },
+]
+
+// ============================================================
 // Data access helpers
 // ============================================================
 
@@ -487,9 +613,93 @@ export function saveNewSurveyFeedback(item: SurveyFeedbackItem): SurveyFeedbackI
     )
     const updated = [item, ...filtered]
     localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(updated))
+    window.dispatchEvent(new Event('storage'))
     return updated
   } catch (err) {
     console.error('Failed to save survey feedback:', err)
     return INITIAL_SURVEY_FEEDBACKS
   }
 }
+
+export function getStoredSurveyEvents(): SurveyEventItem[] {
+  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  try {
+    const raw = localStorage.getItem(SURVEY_EVENTS_STORAGE_KEY)
+    if (!raw) {
+      localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(INITIAL_SURVEY_EVENTS))
+      return INITIAL_SURVEY_EVENTS
+    }
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SURVEY_EVENTS
+  } catch {
+    return INITIAL_SURVEY_EVENTS
+  }
+}
+
+export function saveNewSurveyEvent(item: SurveyEventItem): SurveyEventItem[] {
+  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  try {
+    const current = getStoredSurveyEvents()
+    const filtered = current.filter((e) => e.id !== item.id && e.name.toLowerCase() !== item.name.toLowerCase())
+    const updated = [item, ...filtered]
+    localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(updated))
+    window.dispatchEvent(new Event('storage'))
+    return updated
+  } catch (err) {
+    console.error('Failed to save survey event:', err)
+    return INITIAL_SURVEY_EVENTS
+  }
+}
+
+export function updateSurveyEventStatus(id: string, status: 'active' | 'closed'): SurveyEventItem[] {
+  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  try {
+    const current = getStoredSurveyEvents()
+    const updated = current.map((e) => (e.id === id ? { ...e, status } : e))
+    localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(updated))
+    window.dispatchEvent(new Event('storage'))
+    return updated
+  } catch (err) {
+    console.error('Failed to update survey event status:', err)
+    return INITIAL_SURVEY_EVENTS
+  }
+}
+
+export function deleteSurveyEvent(id: string): SurveyEventItem[] {
+  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  try {
+    const current = getStoredSurveyEvents()
+    const updated = current.filter((e) => e.id !== id)
+    localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(updated))
+    window.dispatchEvent(new Event('storage'))
+    return updated
+  } catch (err) {
+    console.error('Failed to delete survey event:', err)
+    return INITIAL_SURVEY_EVENTS
+  }
+}
+
+export function getStoredCustomQuestions(eventId: string): SurveyQuestionItem[] {
+  if (typeof window === 'undefined') return DEFAULT_EVENT_CUSTOM_QUESTIONS
+  try {
+    const raw = localStorage.getItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${eventId}`)
+    if (!raw) {
+      return DEFAULT_EVENT_CUSTOM_QUESTIONS
+    }
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : DEFAULT_EVENT_CUSTOM_QUESTIONS
+  } catch {
+    return DEFAULT_EVENT_CUSTOM_QUESTIONS
+  }
+}
+
+export function saveCustomQuestions(eventId: string, questions: SurveyQuestionItem[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${eventId}`, JSON.stringify(questions))
+    window.dispatchEvent(new Event('storage'))
+  } catch (err) {
+    console.error('Failed to save custom questions:', err)
+  }
+}
+
