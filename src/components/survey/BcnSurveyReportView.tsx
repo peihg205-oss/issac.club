@@ -485,7 +485,7 @@ export function BcnSurveyReportView({
               </span>
             </div>
             <span className="text-[11.5px] font-semibold text-[#D97706] dark:text-amber-400 block hover:underline">
-              ★ Đạt mức Xuất sắc toàn diện
+              Đạt mức Xuất sắc toàn diện
             </span>
           </div>
           <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#D97706] shrink-0">
