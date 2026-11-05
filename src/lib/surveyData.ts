@@ -575,13 +575,6 @@ export const DEFAULT_EVENT_CUSTOM_QUESTIONS: SurveyQuestionItem[] = [
     type: 'textarea',
     required: false,
   },
-  {
-    id: 'q-custom-2',
-    title: 'Mức độ sẵn sàng tiếp tục đồng hành trong sự kiện tiếp theo (1 - 5 sao)',
-    description: 'Đánh giá mức độ ăn ý và mong muốn tiếp tục phối hợp',
-    type: 'rating_stars',
-    required: false,
-  },
 ]
 
 // ============================================================
@@ -687,7 +680,12 @@ export function getStoredCustomQuestions(eventId: string): SurveyQuestionItem[] 
       return DEFAULT_EVENT_CUSTOM_QUESTIONS
     }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : DEFAULT_EVENT_CUSTOM_QUESTIONS
+    if (Array.isArray(parsed)) {
+      return parsed.filter(
+        (q) => q.id !== 'q-custom-2' && !q.title.includes('Mức độ sẵn sàng tiếp tục đồng hành')
+      )
+    }
+    return DEFAULT_EVENT_CUSTOM_QUESTIONS
   } catch {
     return DEFAULT_EVENT_CUSTOM_QUESTIONS
   }
