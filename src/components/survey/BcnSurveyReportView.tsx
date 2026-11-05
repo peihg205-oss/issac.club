@@ -1082,7 +1082,7 @@ export function BcnSurveyReportView({
                           </span>
                         </div>
                         <p className="text-xs sm:text-[13px] text-slate-500 font-medium mt-0.5">
-                          {formatMemberPosition(activeMemberObj.member.position, activeMemberObj.member.department_name || '')} • Mã SV: {activeMemberObj.member.student_id || activeMemberObj.member.member_code} • Lớp: {activeMemberObj.member.class_name || 'Khóa 2024'}
+                          {formatMemberPosition(activeMemberObj.member.position, activeMemberObj.member.department_name || '')} - Mã SV: {activeMemberObj.member.student_id || activeMemberObj.member.member_code} - Lớp: {activeMemberObj.member.class_name || 'Khóa 2024'}
                         </p>
                       </div>
                     </div>
