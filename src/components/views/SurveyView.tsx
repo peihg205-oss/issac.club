@@ -1179,13 +1179,13 @@ export function SurveyView() {
                             {crit.shortLabel}
                           </span>
                           <span className="text-xs font-black text-[#0284C7]">
-                            {score}.0★
+                            {score}.0
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-400 line-clamp-1">
                           {crit.description}
                         </p>
-                        <div className="grid grid-cols-5 gap-1 pt-0.5">
+                        <div className="grid grid-cols-5 gap-1.5 pt-0.5">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <button
                               key={star}
@@ -1196,14 +1196,13 @@ export function SurveyView() {
                                   [crit.key]: star,
                                 }))
                               }
-                              className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-0.5 ${
+                              className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                                 score === star
                                   ? 'bg-[#0284C7] text-white shadow-2xs'
                                   : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-600 border border-slate-200/80 dark:border-slate-600'
                               }`}
                             >
                               <span>{star}</span>
-                              <Star className={`w-2.5 h-2.5 ${score === star ? 'fill-white' : 'fill-slate-300 text-slate-300'}`} />
                             </button>
                           ))}
                         </div>
@@ -1288,7 +1287,7 @@ export function SurveyView() {
                                   : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                               }`}
                             >
-                              <span>{star}★</span>
+                              <span>{star}</span>
                             </button>
                           ))}
                         </div>
