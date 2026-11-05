@@ -551,7 +551,7 @@ export function SurveyView() {
             </div>
           </div>
           <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
-            Nơi ghi nhận góp ý để cải thiện chất lượng tổ chức và phối hợp trong các sự kiện của CLB.
+            Nơi ghi nhận góp ý để cải thiện chất lượng tổ chức và phối hợp trong các sự kiện của CLB
           </p>
         </div>
       </div>
