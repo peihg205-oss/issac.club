@@ -301,7 +301,8 @@ export function SurveyView() {
   useEffect(() => {
     if (selectedMember) {
       const existing = evaluations[selectedMember.memberCode]
-      if (existing) {
+      // Nếu đã hoàn thành nộp rồi thì không nạp lại dữ liệu cũ vào ô nhập (bảo mật tuyệt đối, không cho xem lại)
+      if (existing && existing.status !== 'completed') {
         setCurrentRating(existing.rating || 4)
         setCurrentFeedback(existing.feedback || '')
         setCurrentImprovement(existing.improvement || '')
@@ -312,6 +313,11 @@ export function SurveyView() {
       }
     }
   }, [selectedMemberCode, evaluations, selectedMember])
+
+  // Trạng thái thành viên đang chọn đã nộp đánh giá hay chưa
+  const isSelectedMemberCompleted = Boolean(
+    selectedMember && evaluations[selectedMember.memberCode]?.status === 'completed'
+  )
 
   // Completion calculation
   const totalTargetCount = targetMembers.length
@@ -689,19 +695,35 @@ export function SurveyView() {
 
         {/* Right: Evaluated count & progress badge */}
         <div className="flex items-center self-end md:self-auto">
-          <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs">
-            <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400 shrink-0" />
-            <span>
-              Đã đánh giá:{' '}
-              <strong className="font-black text-blue-900 dark:text-blue-100">
-                {completedCount}/{totalTargetCount}
-              </strong>{' '}
-              Core Team
+          {completedCount === totalTargetCount ? (
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>
+                Đã nộp toàn bộ:{' '}
+                <strong className="font-black text-emerald-800 dark:text-emerald-200">
+                  {completedCount}/{totalTargetCount}
+                </strong>{' '}
+                Core Team
+              </span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-[10px] font-black text-emerald-700 dark:text-emerald-300 flex items-center gap-0.5">
+                <Lock className="w-2.5 h-2.5" /> 100%
+              </span>
             </span>
-            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[10px] font-black text-[#0B63E5] dark:text-blue-200">
-              {Math.round((completedCount / Math.max(totalTargetCount, 1)) * 100)}%
+          ) : (
+            <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs">
+              <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400 shrink-0" />
+              <span>
+                Đã đánh giá:{' '}
+                <strong className="font-black text-blue-900 dark:text-blue-100">
+                  {completedCount}/{totalTargetCount}
+                </strong>{' '}
+                Core Team
+              </span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[10px] font-black text-[#0B63E5] dark:text-blue-200">
+                {Math.round((completedCount / Math.max(totalTargetCount, 1)) * 100)}%
+              </span>
             </span>
-          </span>
+          )}
         </div>
       </div>
 
@@ -1028,110 +1050,207 @@ export function SurveyView() {
             </div>
           </div>
 
-          {/* RIGHT: Phiếu khảo sát sau sự kiện */}
-          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
-            <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
-              Phiếu khảo sát sau sự kiện
-            </h3>
-
-            {/* Question 1: Rating */}
-            <div className="space-y-2">
-              <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                <span className="text-red-500 font-bold">*</span>
-                <span>
-                  Sau sự kiện, bạn đánh giá {memberFirstName} thế nào?
+          {/* RIGHT: Phiếu khảo sát sau sự kiện (Trạng thái Đã Nộp & Khóa Bảo Mật HOẶC Form Điền Mới) */}
+          {isSelectedMemberCompleted ? (
+            <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-5">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
+                  Phiếu khảo sát sau sự kiện
+                </h3>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Đã nộp & Khóa bảo mật</span>
                 </span>
-              </label>
+              </div>
 
-              {/* 5 Rating buttons */}
-              <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                {RATING_OPTIONS.map((opt) => {
-                  const isSelected = currentRating === opt.score
-                  return (
-                    <button
-                      key={opt.score}
-                      type="button"
-                      onClick={() => setCurrentRating(opt.score)}
-                      className={`py-2.5 sm:py-3 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#0B63E5] border-[#0B63E5] text-white shadow-md shadow-blue-500/25'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-300 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600'
-                      }`}
-                    >
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mb-1 transition-colors ${
-                          isSelected
-                            ? 'bg-white text-[#0B63E5]'
-                            : 'border border-slate-300 dark:border-slate-600 text-[#061651] dark:text-slate-400'
-                        }`}
-                      >
-                        {opt.score}
-                      </div>
-                      <span
-                        className={`text-xs font-bold ${
-                          isSelected
-                            ? 'text-white'
-                            : 'text-[#061651] dark:text-slate-400'
-                        }`}
-                      >
-                        {opt.label}
-                      </span>
-                    </button>
+              {/* Locked Notice Box */}
+              <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-6 sm:p-7 border border-slate-100 dark:border-slate-800 text-center space-y-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
+                  <Lock className="w-7 h-7 stroke-[2]" />
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-base sm:text-lg font-extrabold text-[#061651] dark:text-white">
+                    Phiếu đánh giá cho {selectedMember.fullName} đã được nộp
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+                    Theo quy chế bảo mật khảo sát nội bộ của CLB iSSAC, sau khi đã hoàn tất nộp đánh giá, dữ liệu được chuyển thẳng vào cơ sở dữ liệu bảo mật của Ban Chủ nhiệm. Bạn <strong className="text-slate-700 dark:text-slate-200 font-bold">không thể xem lại điểm số, nhận xét đã gửi hay chỉnh sửa</strong> nhằm đảm bảo tính bảo mật và công tâm tuyệt đối.
+                  </p>
+                </div>
+
+                {/* 3 Privacy & Integrity Guarantees */}
+                <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-lg mx-auto text-left">
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 space-y-0.5">
+                    <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Bảo mật ẩn danh
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-tight">
+                      Ẩn danh đối với các thành viên khác
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 space-y-0.5">
+                    <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Không thể xem lại
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-tight">
+                      Ẩn điểm và lời nhận xét đã nộp
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 space-y-0.5">
+                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5" /> Khóa chỉnh sửa
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-tight">
+                      Dữ liệu đã ghi nhận vào BCN
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Navigation */}
+              <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {completedCount === totalTargetCount ? (
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold">
+                      <Sparkles className="w-4 h-4" /> Đã hoàn thành tất cả {totalTargetCount} thành viên
+                    </span>
+                  ) : (
+                    <span>Đã nộp {completedCount}/{totalTargetCount} thành viên</span>
+                  )}
+                </span>
+
+                {/* If next unevaluated member exists, show button to jump to them */}
+                {(() => {
+                  const nextUnevaluated = targetMembers.find(
+                    (m) => evaluations[m.memberCode]?.status !== 'completed'
                   )
-                })}
+                  if (nextUnevaluated) {
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectMember(nextUnevaluated.memberCode)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+                      >
+                        <span>Đánh giá tiếp: {nextUnevaluated.fullName}</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    )
+                  }
+                  return (
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Khảo sát đã hoàn tất
+                    </span>
+                  )
+                })()}
               </div>
             </div>
+          ) : (
+            <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+              <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
+                Phiếu khảo sát sau sự kiện
+              </h3>
 
-            {/* Question 2: Feedback */}
-            <div className="space-y-1.5">
-              <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                <span className="text-red-500 font-bold">*</span>
-                <span>Vài lời nhận xét về {memberFirstName}</span>
-              </label>
-              <textarea
-                value={currentFeedback}
-                onChange={(e) => setCurrentFeedback(e.target.value)}
-                rows={2}
-                placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
-              />
+              {/* Question 1: Rating */}
+              <div className="space-y-2">
+                <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                  <span className="text-red-500 font-bold">*</span>
+                  <span>
+                    Sau sự kiện, bạn đánh giá {memberFirstName} thế nào?
+                  </span>
+                </label>
+
+                {/* 5 Rating buttons */}
+                <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                  {RATING_OPTIONS.map((opt) => {
+                    const isSelected = currentRating === opt.score
+                    return (
+                      <button
+                        key={opt.score}
+                        type="button"
+                        onClick={() => setCurrentRating(opt.score)}
+                        className={`py-2.5 sm:py-3 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#0B63E5] border-[#0B63E5] text-white shadow-md shadow-blue-500/25'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-300 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600'
+                        }`}
+                      >
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mb-1 transition-colors ${
+                            isSelected
+                              ? 'bg-white text-[#0B63E5]'
+                              : 'border border-slate-300 dark:border-slate-600 text-[#061651] dark:text-slate-400'
+                          }`}
+                        >
+                          {opt.score}
+                        </div>
+                        <span
+                          className={`text-xs font-bold ${
+                            isSelected
+                              ? 'text-white'
+                              : 'text-[#061651] dark:text-slate-400'
+                          }`}
+                        >
+                          {opt.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Question 2: Feedback */}
+              <div className="space-y-1.5">
+                <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                  <span className="text-red-500 font-bold">*</span>
+                  <span>Vài lời nhận xét về {memberFirstName}</span>
+                </label>
+                <textarea
+                  value={currentFeedback}
+                  onChange={(e) => setCurrentFeedback(e.target.value)}
+                  rows={2}
+                  placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
+                />
+              </div>
+
+              {/* Question 3: Improvement */}
+              <div className="space-y-1.5">
+                <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                  <span className="text-red-500 font-bold">*</span>
+                  <span>Mong muốn cải thiện gì?</span>
+                </label>
+                <textarea
+                  value={currentImprovement}
+                  onChange={(e) => setCurrentImprovement(e.target.value)}
+                  rows={2}
+                  placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
+                />
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-95"
+                >
+                  Bỏ qua
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSubmitEvaluation}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer active:scale-95"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Nộp khảo sát</span>
+                </button>
+              </div>
             </div>
-
-            {/* Question 3: Improvement */}
-            <div className="space-y-1.5">
-              <label className="text-sm sm:text-[14.5px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                <span className="text-red-500 font-bold">*</span>
-                <span>Mong muốn cải thiện gì?</span>
-              </label>
-              <textarea
-                value={currentImprovement}
-                onChange={(e) => setCurrentImprovement(e.target.value)}
-                rows={2}
-                placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[64px] resize-y"
-              />
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="flex items-center justify-end gap-3 pt-1">
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-95"
-              >
-                Bỏ qua
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSubmitEvaluation}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer active:scale-95"
-              >
-                <Send className="w-4 h-4" />
-                <span>Nộp khảo sát</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400">
