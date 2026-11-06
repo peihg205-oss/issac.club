@@ -455,7 +455,7 @@ export function BcnSurveyConfigManager({
                     Bộ 4 Tiêu chí Cốt lõi
                   </h5>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Thang điểm 1 - 5 sao <span className="text-slate-300 dark:text-slate-600 font-light mx-1">|</span> Bắt buộc <span className="text-slate-300 dark:text-slate-600 font-light mx-1">|</span> Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
+                    Thang điểm 1 - 5 sao <span className="text-slate-300 dark:text-slate-600 mx-1">-</span> Bắt buộc <span className="text-slate-300 dark:text-slate-600 mx-1">-</span> Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
                   </p>
                 </div>
               </div>
@@ -474,7 +474,7 @@ export function BcnSurveyConfigManager({
                     {crit.shortLabel}
                   </span>
                   <span className="text-[11px] text-amber-500 dark:text-amber-400 font-bold block">
-                    1.0 — 5.0 ★
+                    1.0 – 5.0 ★
                   </span>
                 </div>
               ))}
@@ -492,7 +492,7 @@ export function BcnSurveyConfigManager({
                   Vài lời nhận xét về thành viên sau sự kiện
                 </h5>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Đoạn văn tự luận (Textarea) <span className="text-slate-300 dark:text-slate-600 font-light mx-1.5">|</span> Bắt buộc điền
+                  Đoạn văn tự luận (Textarea) <span className="text-slate-300 dark:text-slate-600 mx-1">-</span> Bắt buộc điền
                 </p>
               </div>
             </div>
@@ -511,7 +511,7 @@ export function BcnSurveyConfigManager({
                   Mong muốn cải thiện gì trong các sự kiện tới?
                 </h5>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Đoạn văn tự luận (Textarea) <span className="text-slate-300 dark:text-slate-600 font-light mx-1.5">|</span> Tùy chọn
+                  Đoạn văn tự luận (Textarea) <span className="text-slate-300 dark:text-slate-600 mx-1">-</span> Tùy chọn
                 </p>
               </div>
             </div>
