@@ -455,7 +455,7 @@ export function BcnSurveyConfigManager({
                     Bộ 4 Tiêu chí Cốt lõi (bắt buộc)
                   </h5>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Thang điểm 1 - 5 sao. Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
+                    Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
                   </p>
                 </div>
               </div>
