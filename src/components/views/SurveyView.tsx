@@ -1115,18 +1115,18 @@ export function SurveyView() {
                 </span>
               </div>
 
-              {/* Locked Notice Box: Styled after Image 2 layout with left icon and clean title/desc */}
-              <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-800/80 flex items-start gap-4 sm:gap-5 shadow-xs">
-                <div className="text-[#0284C7] dark:text-sky-400 shrink-0 mt-0.5">
-                  <Lock className="w-8 h-8 stroke-[2.2]" />
+              {/* Locked Notice Box: Styled strictly to project design system */}
+              <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-800/80 flex items-start gap-4 sm:gap-4.5 shadow-2xs">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100/90 dark:border-blue-900/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                  <Lock className="w-6 h-6 stroke-[2.2]" />
                 </div>
 
                 <div className="space-y-1.5 flex-1 min-w-0 text-left">
-                  <h4 className="text-base sm:text-lg font-bold text-[#0284C7] dark:text-sky-400">
+                  <h4 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
                     Phiếu đánh giá cho {selectedMember.fullName} đã được nộp
                   </h4>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Theo quy chế bảo mật khảo sát nội bộ của CLB iSSAC, sau khi đã hoàn tất nộp đánh giá, dữ liệu được chuyển thẳng vào cơ sở dữ liệu bảo mật của Ban Chủ nhiệm. Bạn <strong className="text-slate-800 dark:text-white font-bold">không thể xem lại điểm số, nhận xét đã gửi hay chỉnh sửa</strong> nhằm đảm bảo tính bảo mật và công tâm tuyệt đối.
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Theo quy chế bảo mật khảo sát nội bộ của CLB iSSAC, sau khi đã hoàn tất nộp đánh giá, dữ liệu được chuyển thẳng vào cơ sở dữ liệu bảo mật của Ban Chủ nhiệm. Bạn <strong className="text-slate-700 dark:text-slate-200 font-bold">không thể xem lại điểm số, nhận xét đã gửi hay chỉnh sửa</strong> nhằm đảm bảo tính bảo mật và công tâm tuyệt đối.
                   </p>
                 </div>
               </div>
