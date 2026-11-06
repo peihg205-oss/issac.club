@@ -906,9 +906,9 @@ export function SurveyView() {
 
       {/* 4. MAIN 2-COLUMN SECTION: Left Member Info (~40%) : Right Survey Form (~60%) */}
       {selectedMember ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
           {/* LEFT: Thông tin thành viên được đánh giá */}
-          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between gap-3.5">
             {/* Header with Title */}
             <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
               Thông tin thành viên được đánh giá
@@ -1073,6 +1073,32 @@ export function SurveyView() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Lưu ý khảo sát: Lấp đầy góc dưới cột thông tin giúp giao diện cân đối và hài hòa */}
+            <div className="bg-blue-50/50 dark:bg-slate-800/60 rounded-2xl p-3 sm:p-3.5 border border-blue-100/80 dark:border-slate-700/80 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
+                  <Info className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-[#061651] dark:text-white">
+                  Lưu ý khảo sát
+                </span>
+              </div>
+              <ul className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 space-y-1 font-medium pl-1">
+                <li className="flex items-center gap-1.5">
+                  <span className="text-[#0284C7] dark:text-sky-400 font-black">•</span>
+                  <span>Đánh giá mang tính xây dựng</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className="text-[#0284C7] dark:text-sky-400 font-black">•</span>
+                  <span>Thông tin dùng để cải thiện phối hợp nội bộ</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className="text-[#0284C7] dark:text-sky-400 font-black">•</span>
+                  <span>Mỗi sự kiện chỉ gửi một lần</span>
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -1339,34 +1365,6 @@ export function SurveyView() {
         </div>
       )}
 
-      {/* 5. LƯU Ý KHẢO SÁT BANNER */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 text-[#0B63E5] flex items-center justify-center shrink-0">
-            <Info className="w-5 h-5" />
-          </div>
-          <span className="text-sm sm:text-base font-black text-[#061651] dark:text-white">
-            Lưu ý khảo sát
-          </span>
-        </div>
-
-        <div className="hidden sm:block w-px h-8 bg-slate-200 dark:bg-slate-700" />
-
-        <ul className="text-xs sm:text-sm text-[#061651]/90 dark:text-slate-300 space-y-1 font-medium">
-          <li className="flex items-center gap-2">
-            <span className="text-[#0B63E5] font-black">•</span>
-            <span>Đánh giá mang tính xây dựng</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-[#0B63E5] font-black">•</span>
-            <span>Thông tin dùng để cải thiện phối hợp nội bộ</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-[#0B63E5] font-black">•</span>
-            <span>Mỗi sự kiện chỉ gửi một lần</span>
-          </li>
-        </ul>
-      </div>
         </>
       )}
 
