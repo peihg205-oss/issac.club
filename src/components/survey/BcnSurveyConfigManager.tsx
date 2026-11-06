@@ -215,27 +215,32 @@ export function BcnSurveyConfigManager({
         </div>
       )}
 
-      {/* TOP BANNER */}
-      <div className="bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent dark:from-sky-950/40 dark:via-blue-950/20 rounded-3xl border border-sky-200/80 dark:border-sky-900/60 p-6 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="space-y-1.5 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200/80">
-            <Sliders className="w-3.5 h-3.5 text-[#0284C7]" />
-            <span>QUẢN TRỊ KHẢO SÁT BAN CHỦ NHIỆM (BCN)</span>
+      {/* COMPACT TOOLBAR (STYLE CHUẨN GỌN GÀNG THEO HỆ THỐNG DỰ ÁN) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:px-5 sm:py-3.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-100 dark:border-sky-900/50">
+            <Sliders className="w-4 h-4" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#061651] dark:text-white tracking-tight">
-            Thiết lập Sự kiện & Câu hỏi Đánh giá Core Team
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            Tạo các sự kiện đánh giá sau mỗi kỳ hoạt động, cấu hình các câu hỏi nhận xét mở rộng.
-            Hệ thống luôn cố định <strong>Bộ 4 Tiêu chí Cốt lõi</strong> làm thước đo tính điểm chuẩn của iSSAC.
-          </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-[#061651] dark:text-white tracking-tight">
+                Thiết lập Sự kiện & Câu hỏi Đánh giá
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-300 border border-sky-100 dark:border-sky-900/50 hidden sm:inline-block">
+                Cốt lõi 4 tiêu chí
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate sm:whitespace-normal mt-0.5">
+              Tạo kỳ khảo sát mới, quản lý câu hỏi mở rộng và duy trì bộ 4 tiêu chí chuẩn
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => setShowCreateEventModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/20 flex items-center gap-2 transition active:scale-95 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Tạo sự kiện mới</span>
@@ -245,9 +250,9 @@ export function BcnSurveyConfigManager({
             <button
               type="button"
               onClick={onSwitchToSurvey}
-              className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
             >
-              <Eye className="w-4 h-4 text-[#0284C7]" />
+              <Eye className="w-3.5 h-3.5 text-[#0284C7] dark:text-sky-400" />
               <span>Xem trang điền phiếu</span>
             </button>
           )}
