@@ -236,13 +236,13 @@ export function BcnSurveyConfigManager({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
           <button
             type="button"
             onClick={() => setShowCreateEventModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-white shrink-0" />
             <span>Tạo sự kiện mới</span>
           </button>
 
@@ -250,9 +250,9 @@ export function BcnSurveyConfigManager({
             <button
               type="button"
               onClick={onSwitchToSurvey}
-              className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+              className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
             >
-              <Eye className="w-3.5 h-3.5 text-[#0284C7] dark:text-sky-400" />
+              <Eye className="w-4 h-4 text-[#0284C7] dark:text-sky-400 shrink-0" />
               <span>Xem trang điền phiếu</span>
             </button>
           )}
@@ -343,9 +343,9 @@ export function BcnSurveyConfigManager({
           <button
             type="button"
             onClick={() => setShowCreateEventModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none self-start sm:self-auto"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4 text-white shrink-0" />
             <span>Thêm sự kiện</span>
           </button>
         </div>
@@ -467,9 +467,9 @@ export function BcnSurveyConfigManager({
           <button
             type="button"
             onClick={() => setShowAddQuestionModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none self-start sm:self-auto"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4 text-white shrink-0" />
             <span>Thêm câu hỏi mới</span>
           </button>
         </div>
