@@ -565,7 +565,7 @@ export function BcnSurveyReportView({
 
                           <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
                             <span>{evt.date}{evt.endDate ? ` → ${evt.endDate}` : ''}</span>
-                            <span>•</span>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
                             <span className="text-slate-500 dark:text-slate-400 font-medium">
                               {evtReviewCount} phiếu nộp
                             </span>
