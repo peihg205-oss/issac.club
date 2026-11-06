@@ -452,7 +452,7 @@ export function BcnSurveyConfigManager({
                 </div>
                 <div>
                   <h5 className="font-extrabold text-[#061651] dark:text-white text-xs sm:text-sm">
-                    Bộ 4 Tiêu chí Cốt lõi (Thang điểm 1 - 5 sao • Bắt buộc)
+                    Bộ 4 Tiêu chí Cốt lõi (Thang điểm 1 - 5 sao <span className="text-slate-300 dark:text-slate-600 font-light mx-1.5">|</span> Bắt buộc)
                   </h5>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
@@ -492,7 +492,7 @@ export function BcnSurveyConfigManager({
                   Vài lời nhận xét về thành viên sau sự kiện
                 </h5>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Đoạn văn tự luận (Textarea) • Bắt buộc điền
+                  Đoạn văn tự luận (Textarea) <span className="text-slate-300 dark:text-slate-600 font-light mx-1.5">|</span> Bắt buộc điền
                 </p>
               </div>
             </div>
@@ -511,7 +511,7 @@ export function BcnSurveyConfigManager({
                   Mong muốn cải thiện gì trong các sự kiện tới?
                 </h5>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Đoạn văn tự luận (Textarea) • Tùy chọn
+                  Đoạn văn tự luận (Textarea) <span className="text-slate-300 dark:text-slate-600 font-light mx-1.5">|</span> Tùy chọn
                 </p>
               </div>
             </div>
