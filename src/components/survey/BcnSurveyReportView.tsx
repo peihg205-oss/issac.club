@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import {
   Users,
@@ -19,6 +19,9 @@ import {
   Briefcase,
   Mail,
   ChevronRight,
+  ChevronDown,
+  Check,
+  Plus,
   TrendingUp,
   BarChart3,
   Sparkles,
@@ -38,6 +41,8 @@ import { useClub } from '@/lib/context/ClubContext'
 import {
   getStoredSurveyFeedbacks,
   SurveyFeedbackItem,
+  getStoredSurveyEvents,
+  SurveyEventItem,
 } from '@/lib/surveyData'
 import { formatMemberPosition } from '@/components/views/SurveyView'
 import { BcnSurveyConfigManager } from '@/components/survey/BcnSurveyConfigManager'
@@ -69,15 +74,35 @@ export function BcnSurveyReportView({
   const [feedbacks, setFeedbacks] = useState<SurveyFeedbackItem[]>(() =>
     getStoredSurveyFeedbacks()
   )
+  const [events, setEvents] = useState<SurveyEventItem[]>(() =>
+    getStoredSurveyEvents()
+  )
+  const [isEventPickerOpen, setIsEventPickerOpen] = useState(false)
+  const eventPickerRef = useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFeedbacks(getStoredSurveyFeedbacks())
+    setEvents(getStoredSurveyEvents())
     const handleStorage = () => {
       setFeedbacks(getStoredSurveyFeedbacks())
+      setEvents(getStoredSurveyEvents())
     }
     window.addEventListener('storage', handleStorage)
     return () => window.removeEventListener('storage', handleStorage)
   }, [selectedEvent])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        eventPickerRef.current &&
+        !eventPickerRef.current.contains(e.target as Node)
+      ) {
+        setIsEventPickerOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   const [reportTab, setReportTab] = useState<'charts' | 'feedbacks' | 'management'>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search)
@@ -455,12 +480,124 @@ export function BcnSurveyReportView({
             </button>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold shadow-2xs">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>Cập nhật theo thời gian thực từ cơ sở dữ liệu</span>
+          {/* Hộp chọn sự kiện khảo sát dành cho BCN (Thay thế badge thời gian thực theo yêu cầu người dùng) */}
+          <div ref={eventPickerRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsEventPickerOpen(!isEventPickerOpen)}
+              className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 hover:border-[#0284C7] dark:hover:border-sky-500 shadow-2xs hover:shadow-xs transition-all cursor-pointer group text-left"
+            >
+              <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4" />
+              </div>
+
+              <div className="flex flex-col min-w-0 pr-1">
+                <span className="text-[10px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500 leading-tight">
+                  Sự kiện khảo sát
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-black text-[#061651] dark:text-white truncate max-w-[180px]">
+                    {selectedEvent}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-900/60 text-[#0284C7] dark:text-sky-300">
+                    {eventFeedbacks.length} lượt
+                  </span>
+                </div>
+              </div>
+
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                  isEventPickerOpen
+                    ? 'rotate-180 text-[#0284C7]'
+                    : 'group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                }`}
+              />
+            </button>
+
+            {/* Dropdown Menu Danh sách sự kiện để chọn */}
+            {isEventPickerOpen && (
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Chọn sự kiện để xem báo cáo
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    {events.length} sự kiện
+                  </span>
+                </div>
+
+                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                  {events.map((evt) => {
+                    const isSelected = evt.name === selectedEvent
+                    const evtReviewCount = feedbacks.filter((f) => f.event === evt.name).length
+
+                    return (
+                      <button
+                        key={evt.id}
+                        type="button"
+                        onClick={() => {
+                          if (onSelectEvent) {
+                            onSelectEvent(evt.name)
+                          }
+                          setIsEventPickerOpen(false)
+                        }}
+                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between gap-2.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-sky-50/80 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 font-bold border border-sky-200/70 dark:border-sky-800'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold truncate block">
+                              {evt.name}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-black shrink-0 ${
+                                evt.status === 'active'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                  : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                              }`}
+                            >
+                              {evt.status === 'active' ? 'Đang mở' : 'Đã đóng'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                            <span>{evt.date}</span>
+                            <span>•</span>
+                            <span className="text-slate-500 dark:text-slate-400 font-medium">
+                              {evtReviewCount} phiếu nộp
+                            </span>
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-[#0284C7] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Phím tắt chuyển nhanh sang Quản lý sự kiện */}
+                <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReportTab('management')
+                      setIsEventPickerOpen(false)
+                    }}
+                    className="w-full py-1.5 px-3 rounded-lg text-center text-xs font-bold text-[#0284C7] dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/50 transition cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Quản lý & Tạo sự kiện mới</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
