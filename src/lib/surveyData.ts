@@ -517,12 +517,22 @@ export interface SurveyQuestionItem {
 export interface SurveyEventItem {
   id: string
   name: string
-  date: string
+  date: string       // Ngày bắt đầu / ngày diễn ra (YYYY-MM-DD)
+  endDate?: string   // Ngày kết thúc / hạn chót khảo sát (YYYY-MM-DD)
   status: 'active' | 'closed'
   description: string
   targetGroup: string
   customQuestions?: SurveyQuestionItem[]
   createdAt: string
+}
+
+export function isSurveyEventExpired(event: SurveyEventItem): boolean {
+  if (event.status === 'closed') return true
+  if (event.endDate) {
+    const today = new Date().toISOString().slice(0, 10)
+    return today > event.endDate
+  }
+  return false
 }
 
 export const SURVEY_EVENTS_STORAGE_KEY = 'issac_survey_events_v2'
@@ -533,6 +543,7 @@ export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
     id: 'evt-01',
     name: '1st Meeting',
     date: '2026-10-15',
+    endDate: '2026-11-30',
     status: 'active',
     description: 'Phiếu khảo sát và đánh giá chéo thành viên Core Team trong sự kiện First Meeting mở màn năm học',
     targetGroup: 'Toàn bộ Core Team (trừ BCN)',
@@ -542,6 +553,7 @@ export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
     id: 'evt-02',
     name: 'First Meeting - T10/2026',
     date: '2026-10-22',
+    endDate: '2026-10-31',
     status: 'closed',
     description: 'Đánh giá sau buổi họp toàn thể ban chuyên môn tháng 10',
     targetGroup: 'Core Team các ban',
@@ -551,6 +563,7 @@ export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
     id: 'evt-03',
     name: 'Gen 3 Recruitment',
     date: '2026-10-28',
+    endDate: '2026-11-04',
     status: 'closed',
     description: 'Khảo sát hiệu quả công tác tuyển quân và phỏng vấn thế hệ Gen 3',
     targetGroup: 'Core Team tham gia phỏng vấn',
@@ -560,6 +573,7 @@ export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
     id: 'evt-04',
     name: 'Workshop Sharing',
     date: '2026-11-02',
+    endDate: '2026-11-05',
     status: 'closed',
     description: 'Đánh giá phối hợp tổ chức buổi chia sẻ kỹ năng và chuyên môn',
     targetGroup: 'Ban tổ chức Workshop',

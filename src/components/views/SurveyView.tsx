@@ -40,6 +40,7 @@ import {
   CORE_EVALUATION_CRITERIA,
   getStoredCustomQuestions,
   SurveyQuestionItem,
+  isSurveyEventExpired,
 } from '@/lib/surveyData'
 
 // Quotes for survey mascot speech bubble
@@ -207,6 +208,17 @@ export function SurveyView() {
     return () => window.removeEventListener('storage', handleStorage)
   }, [])
 
+  // Read event param from URL if provided
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const evtParam = params.get('event')
+      if (evtParam) {
+        setSelectedEvent(decodeURIComponent(evtParam))
+      }
+    }
+  }, [])
+
   const eventOptions = useMemo(() => {
     const names = surveyEvents.map((e) => e.name)
     return names.length > 0 ? names : ['1st Meeting']
@@ -230,6 +242,30 @@ export function SurveyView() {
   const currentEventStorageKey = useMemo(() => {
     return `issac_survey_evaluations_${encodeURIComponent(selectedEvent)}`
   }, [selectedEvent])
+
+  // Chi tiết thông tin sự kiện hiện tại
+  const currentEventItem = useMemo(() => {
+    return surveyEvents.find((e) => e.name === selectedEvent) || null
+  }, [surveyEvents, selectedEvent])
+
+  // Kiểm tra thời hạn sự kiện (đã quá endDate hoặc status === 'closed')
+  const isEventClosedOrExpired = useMemo(() => {
+    if (!currentEventItem) return false
+    return isSurveyEventExpired(currentEventItem)
+  }, [currentEventItem])
+
+  // Kiểm tra thành viên có thuộc Core Team (hoặc BCN) hay không
+  // Yêu cầu: "thành viên core không khảo sát sẽ không điền được"
+  const isCoreUser = useMemo(() => {
+    if (isBCN) return true
+    if (!currentUser) return false
+    if (currentUser.isCore) return true
+    const found = members.find((m) => m.member_code === currentUser.memberCode)
+    return Boolean(found?.is_core)
+  }, [currentUser, isBCN, members])
+
+  // Chỉ cho phép điền phiếu nếu là Core Team VÀ sự kiện còn hạn khảo sát
+  const canSubmitSurvey = Boolean(isCoreUser && !isEventClosedOrExpired)
 
   // Lọc tất cả thành viên Core Team trong CLB, TRỪ Ban Chủ nhiệm và TRỪ người đang đánh giá nếu họ là core
   const targetMembers: SurveyTargetMember[] = useMemo(() => {
@@ -423,6 +459,16 @@ export function SurveyView() {
   // Submit evaluation for current member
   const handleSubmitEvaluation = () => {
     if (!selectedMember) return
+
+    if (!canSubmitSurvey) {
+      if (!isCoreUser) {
+        setToastMessage('Bạn không thuộc Core Team nên không có quyền gửi đánh giá!')
+      } else {
+        setToastMessage('Sự kiện khảo sát đã kết thúc hoặc đã đóng!')
+      }
+      setTimeout(() => setToastMessage(null), 3000)
+      return
+    }
 
     if (!currentRating || currentRating === 0) {
       setToastMessage('Vui lòng chọn mức đánh giá từ 1 đến 5!')
@@ -741,14 +787,31 @@ export function SurveyView() {
           {/* Divider between Event and Live Status */}
           <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-700" />
 
-          {/* Live indicator badge */}
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          {/* Live indicator / Expiration status badge */}
+          {isEventClosedOrExpired ? (
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-50/90 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+              <span>{currentEventItem?.status === 'closed' ? 'Đã đóng khảo sát' : 'Đã hết hạn'}</span>
+              {currentEventItem?.endDate && (
+                <span className="text-[11px] font-normal opacity-80">
+                  (Hạn: {currentEventItem.endDate})
+                </span>
+              )}
             </span>
-            <span>Đang mở khảo sát</span>
-          </span>
+          ) : (
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Đang mở khảo sát</span>
+              {currentEventItem?.endDate && (
+                <span className="text-[11px] font-normal opacity-90 hidden sm:inline">
+                  (Hạn chót: {currentEventItem.endDate})
+                </span>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Right: Evaluated count & progress badge */}
@@ -1218,6 +1281,26 @@ export function SurveyView() {
                 </span>
               </div>
 
+              {/* CẢNH BÁO NẾU KHÔNG THUỘC CORE TEAM HOẶC SỰ KIỆN ĐÃ ĐÓNG / HẾT HẠN */}
+              {!isCoreUser ? (
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-2.5 text-xs leading-relaxed">
+                  <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold">Chỉ dành cho Thành viên Core Team:</strong>
+                    Tài khoản của bạn hiện là thành viên thường nên không thể điền phiếu đánh giá này.
+                  </div>
+                </div>
+              ) : isEventClosedOrExpired ? (
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/90 dark:border-rose-800 text-rose-800 dark:text-rose-200 flex items-start gap-2.5 text-xs leading-relaxed">
+                  <Clock className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold">Sự kiện khảo sát đã kết thúc:</strong>
+                    Kỳ khảo sát cho sự kiện &quot;{selectedEvent}&quot; đã kết thúc vào ngày{' '}
+                    <strong>{currentEventItem?.endDate || currentEventItem?.date}</strong>. Hệ thống đã khóa và ngừng nhận thêm phiếu đánh giá.
+                  </div>
+                </div>
+              ) : null}
+
               {/* 1. Bộ 4 Tiêu chí Cốt lõi (Trách nhiệm, Thực thi, Phối hợp, Sáng tạo - Khớp Ảnh 2) */}
               <div className="space-y-3">
                 <div>
@@ -1380,7 +1463,8 @@ export function SurveyView() {
                 <button
                   type="button"
                   onClick={handleSkip}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-95"
+                  disabled={!canSubmitSurvey}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Bỏ qua
                 </button>
@@ -1388,10 +1472,25 @@ export function SurveyView() {
                 <button
                   type="button"
                   onClick={handleSubmitEvaluation}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/20 transition-all cursor-pointer active:scale-95"
+                  disabled={!canSubmitSurvey}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm shadow-md shadow-sky-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Nộp khảo sát</span>
+                  {!isCoreUser ? (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Không thuộc Core Team</span>
+                    </>
+                  ) : isEventClosedOrExpired ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      <span>Khảo sát đã kết thúc</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Nộp khảo sát</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

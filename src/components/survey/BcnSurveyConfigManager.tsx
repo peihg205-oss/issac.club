@@ -22,6 +22,7 @@ import {
   BarChart3,
   MessageSquare,
   Lock,
+  X,
 } from 'lucide-react'
 import {
   CORE_EVALUATION_CRITERIA,
@@ -34,6 +35,7 @@ import {
   getStoredCustomQuestions,
   saveCustomQuestions,
   getStoredSurveyFeedbacks,
+  isSurveyEventExpired,
 } from '@/lib/surveyData'
 
 interface BcnSurveyConfigManagerProps {
@@ -58,9 +60,14 @@ export function BcnSurveyConfigManager({
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
+  const [newEventEndDate, setNewEventEndDate] = useState<string>(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 7)
+    return d.toISOString().split('T')[0]
+  })
   const [newEventDesc, setNewEventDesc] = useState<string>('')
   const [newEventStatus, setNewEventStatus] = useState<'active' | 'closed'>('active')
-  const [newEventTarget, setNewEventTarget] = useState<string>('Toàn bộ Core Team')
+  const [newEventTarget, setNewEventTarget] = useState<string>('Toàn bộ Core Team (trừ BCN)')
   const [eventErrorMessage, setEventErrorMessage] = useState<string>('')
 
   // 2. Custom Questions State for currently selected event
@@ -87,6 +94,13 @@ export function BcnSurveyConfigManager({
     setCustomQuestions(getStoredCustomQuestions(selectedEvent))
   }, [selectedEvent])
 
+  // Support openModal query param for direct navigation or deep linking
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('openModal=create-event')) {
+      setShowCreateEventModal(true)
+    }
+  }, [])
+
   // Sync on storage event
   useEffect(() => {
     const handleStorage = () => {
@@ -106,14 +120,20 @@ export function BcnSurveyConfigManager({
       return
     }
 
+    if (newEventDate && newEventEndDate && newEventEndDate < newEventDate) {
+      setEventErrorMessage('Ngày kết thúc phải diễn ra sau hoặc cùng Ngày bắt đầu!')
+      return
+    }
+
     const newId = `evt-${Date.now()}`
     const item: SurveyEventItem = {
       id: newId,
       name: newEventName.trim(),
       date: newEventDate || new Date().toISOString().split('T')[0],
+      endDate: newEventEndDate || undefined,
       status: newEventStatus,
       description: newEventDesc.trim() || 'Phiếu khảo sát & đánh giá chéo thành viên Core Team',
-      targetGroup: newEventTarget.trim() || 'Toàn bộ Core Team',
+      targetGroup: newEventTarget.trim() || 'Toàn bộ Core Team (trừ BCN)',
       createdAt: new Date().toISOString(),
     }
 
@@ -314,15 +334,19 @@ export function BcnSurveyConfigManager({
                           Đang xem
                         </span>
                       )}
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          evt.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/80'
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                        }`}
-                      >
-                        {evt.status === 'active' ? '● Đang mở khảo sát' : '○ Đã đóng'}
-                      </span>
+                      {isSurveyEventExpired(evt) ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200/80">
+                          Hết hạn khảo sát
+                        </span>
+                      ) : evt.status === 'active' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/80">
+                          ● Đang mở khảo sát
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                          ○ Đã đóng
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
@@ -335,7 +359,10 @@ export function BcnSurveyConfigManager({
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1 font-medium">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      {evt.date}
+                      <span>{evt.date}</span>
+                      {evt.endDate && (
+                        <span className="text-slate-400">→ <strong className="text-slate-700 dark:text-slate-300">{evt.endDate}</strong></span>
+                      )}
                     </span>
                     <span className="flex items-center gap-1 font-bold text-[#061651] dark:text-slate-200">
                       <MessageSquare className="w-3.5 h-3.5 text-[#0284C7]" />
@@ -539,38 +566,51 @@ export function BcnSurveyConfigManager({
         </div>
       </div>
 
-      {/* MODAL 1: TẠO SỰ KIỆN MỚI */}
+      {/* MODAL 1: TẠO SỰ KIỆN MỚI (STYLE CHUẨN DISPUTE MODAL CỦA DỰ ÁN) */}
       {showCreateEventModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 text-[#0284C7] flex items-center justify-center font-bold">
-                  <Calendar className="w-4 h-4" />
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCreateEventModal(false)
+          }}
+          className="fixed inset-0 z-50 bg-[#0B1E48]/55 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[28px] max-w-[540px] w-full p-5 sm:p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.22)] border border-slate-100/90 dark:border-slate-800 space-y-4 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center border border-sky-200/50 dark:border-sky-800 shrink-0">
+                  <Calendar className="w-5 h-5 text-[#0284C7] dark:text-sky-400" />
                 </div>
-                <h3 className="text-lg font-black text-[#061651] dark:text-white">
-                  Tạo sự kiện đánh giá mới
-                </h3>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-[17px] font-extrabold text-[#061651] dark:text-white tracking-tight truncate">
+                    Tạo sự kiện đánh giá mới
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-normal mt-0.5 truncate">
+                    Thiết lập thời hạn khảo sát và cấu hình mở phiếu cho Core Team
+                  </p>
+                </div>
               </div>
+
               <button
                 type="button"
                 onClick={() => setShowCreateEventModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center justify-center transition cursor-pointer shrink-0"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {eventErrorMessage && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold flex items-center gap-2">
+              <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs font-bold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{eventErrorMessage}</span>
               </div>
             )}
 
-            <form onSubmit={handleCreateEvent} className="space-y-4">
+            <form onSubmit={handleCreateEvent} className="space-y-3.5">
+              {/* Tên sự kiện */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
                   Tên sự kiện đánh giá <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -578,54 +618,72 @@ export function BcnSurveyConfigManager({
                   value={newEventName}
                   onChange={(e) => setNewEventName(e.target.value)}
                   placeholder="Ví dụ: 2nd Meeting, Workshop Sharing Gen 3..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Hàng 2 cột: Ngày bắt đầu & Ngày kết thúc */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Ngày diễn ra
+                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
+                    Ngày diễn ra (Bắt đầu)
                   </label>
                   <input
                     type="date"
                     value={newEventDate}
                     onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
+                    Ngày kết thúc (Hạn chót) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={newEventEndDate}
+                    onChange={(e) => setNewEventEndDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Hàng 2 cột: Trạng thái & Đối tượng */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
                     Trạng thái ban đầu
                   </label>
                   <select
                     value={newEventStatus}
                     onChange={(e) => setNewEventStatus(e.target.value as 'active' | 'closed')}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
                   >
                     <option value="active">Đang mở khảo sát</option>
-                    <option value="closed">Đã đóng</option>
+                    <option value="closed">Đã đóng khảo sát</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
+                    Đối tượng đánh giá
+                  </label>
+                  <input
+                    type="text"
+                    value={newEventTarget}
+                    onChange={(e) => setNewEventTarget(e.target.value)}
+                    placeholder="Toàn bộ Core Team (trừ BCN)"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  />
                 </div>
               </div>
 
+              {/* Mô tả */}
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Đối tượng đánh giá
-                </label>
-                <input
-                  type="text"
-                  value={newEventTarget}
-                  onChange={(e) => setNewEventTarget(e.target.value)}
-                  placeholder="Toàn bộ Core Team (trừ BCN)"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
                   Mô tả / Hướng dẫn khảo sát
                 </label>
                 <textarea
@@ -633,23 +691,36 @@ export function BcnSurveyConfigManager({
                   onChange={(e) => setNewEventDesc(e.target.value)}
                   rows={2}
                   placeholder="Ghi chú mục tiêu hoặc lưu ý khảo sát cho sự kiện này..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs resize-y"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Lưu ý thời hạn & đối tượng */}
+              <div className="p-3 bg-sky-50/70 dark:bg-sky-950/40 rounded-2xl border border-sky-200/70 dark:border-sky-800 text-xs text-sky-950 dark:text-sky-200 leading-relaxed flex items-start gap-2">
+                <Clock className="w-4 h-4 text-[#0284C7] dark:text-sky-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-[#061651] dark:text-white">Quy định điền phiếu: </span>
+                  <span>
+                    Khảo sát sẽ tự động kết thúc sau <strong>Ngày kết thúc</strong>. Thành viên không nằm trong danh sách Core Team hoặc khi khảo sát đã hết hạn/đóng sẽ <strong>không thể điền phiếu đánh giá</strong>.
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer buttons */}
+              <div className="pt-2 flex items-center gap-2.5 sm:gap-3 sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setShowCreateEventModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] text-center transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-md transition cursor-pointer"
+                  className="flex-1 sm:flex-initial h-10 px-5 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  Lưu & Kích hoạt sự kiện
+                  <Calendar className="w-4 h-4" />
+                  <span>Lưu &amp; Kích hoạt sự kiện</span>
                 </button>
               </div>
             </form>
