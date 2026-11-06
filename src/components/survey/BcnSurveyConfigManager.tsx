@@ -452,10 +452,10 @@ export function BcnSurveyConfigManager({
                 </div>
                 <div>
                   <h5 className="font-extrabold text-[#061651] dark:text-white text-xs sm:text-sm">
-                    Bộ 4 Tiêu chí Cốt lõi (Thang điểm 1 - 5 sao <span className="text-slate-300 dark:text-slate-600 font-light mx-1.5">|</span> Bắt buộc)
+                    Bộ 4 Tiêu chí Cốt lõi
                   </h5>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Thang điểm 1 - 5 sao <span className="text-slate-300 dark:text-slate-600 font-light mx-1">|</span> Bắt buộc <span className="text-slate-300 dark:text-slate-600 font-light mx-1">|</span> Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
                   </p>
                 </div>
               </div>
