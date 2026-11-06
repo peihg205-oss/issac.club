@@ -1132,16 +1132,20 @@ export function SurveyView() {
               </div>
 
               {/* Bottom Navigation */}
-              <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 gap-3 flex-wrap">
+                <div>
                   {completedCount === totalTargetCount ? (
-                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold">
-                      <Sparkles className="w-4 h-4" /> Đã hoàn thành tất cả {totalTargetCount} thành viên
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-2xs">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Đã hoàn tất tất cả {totalTargetCount} thành viên</span>
                     </span>
                   ) : (
-                    <span>Đã nộp {completedCount}/{totalTargetCount} thành viên</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300 shadow-2xs">
+                      <span className="w-2 h-2 rounded-full bg-[#0284C7] shrink-0" />
+                      <span>Đã hoàn thành: <strong className="font-extrabold text-[#061651] dark:text-white">{completedCount}/{totalTargetCount}</strong> thành viên</span>
+                    </div>
                   )}
-                </span>
+                </div>
 
                 {/* If next unevaluated member exists, show button to jump to them */}
                 {(() => {
@@ -1153,16 +1157,20 @@ export function SurveyView() {
                       <button
                         type="button"
                         onClick={() => handleSelectMember(nextUnevaluated.memberCode)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B63E5] hover:bg-[#0954C3] text-white font-bold text-xs shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="group inline-flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-[13px] font-semibold shadow-sm hover:shadow-md hover:shadow-sky-500/20 transition-all cursor-pointer active:scale-95"
                       >
-                        <span>Đánh giá tiếp: {nextUnevaluated.fullName}</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <span className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                          {nextUnevaluated.initials}
+                        </span>
+                        <span>Đánh giá tiếp: <strong className="font-black text-white">{nextUnevaluated.fullName}</strong></span>
+                        <ChevronRight className="w-4 h-4 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-1" />
                       </button>
                     )
                   }
                   return (
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Khảo sát đã hoàn tất
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Khảo sát đã hoàn tất</span>
                     </span>
                   )
                 })()}
