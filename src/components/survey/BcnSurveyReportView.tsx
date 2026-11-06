@@ -455,8 +455,11 @@ export function BcnSurveyReportView({
             </button>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold shadow-2xs">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
             <span>Cập nhật theo thời gian thực từ cơ sở dữ liệu</span>
           </div>
         </div>
