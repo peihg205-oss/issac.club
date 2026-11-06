@@ -57,7 +57,6 @@ export function BcnSurveyConfigManager({
 
   // Create Event Form State
   const [showCreateEventModal, setShowCreateEventModal] = useState<boolean>(false)
-  const [newEventType, setNewEventType] = useState<'meeting' | 'workshop' | 'event'>('meeting')
   const [newEventName, setNewEventName] = useState<string>('')
   const [newEventDate, setNewEventDate] = useState<string>(() => {
     const today = new Date()
@@ -606,74 +605,6 @@ export function BcnSurveyConfigManager({
             {/* Scrollable Form Body */}
             <form onSubmit={handleCreateEvent} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-4 sm:p-5.5 space-y-4 text-xs overscroll-contain">
-                {/* 1. Chọn loại sự kiện khảo sát: 3 Thẻ tương tác chuẩn Image 1 */}
-                <div>
-                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-2">
-                    Loại hình sự kiện &amp; quy chuẩn:
-                  </label>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewEventType('meeting')
-                        if (!newEventName || newEventName.includes('Workshop') || newEventName.includes('Recruitment')) {
-                          setNewEventName('2nd Meeting')
-                        }
-                      }}
-                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                        newEventType === 'meeting'
-                          ? 'border-sky-300 dark:border-sky-700 bg-sky-50/80 dark:bg-sky-950/60 text-sky-950 dark:text-sky-200 shadow-xs ring-2 ring-[#0284C7]/20'
-                          : 'border-slate-200/90 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/60 text-[#0284C7] dark:text-sky-300 flex items-center justify-center font-black text-xs shadow-2xs">
-                        <Users className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-xs truncate max-w-full">Họp Core Team</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewEventType('workshop')
-                        if (!newEventName || newEventName.includes('Meeting') || newEventName.includes('Recruitment')) {
-                          setNewEventName('Workshop Sharing Gen 3')
-                        }
-                      }}
-                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                        newEventType === 'workshop'
-                          ? 'border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 shadow-xs ring-2 ring-[#7026ED]/20'
-                          : 'border-slate-200/90 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/60 text-[#7026ED] dark:text-purple-300 flex items-center justify-center font-black text-xs shadow-2xs">
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-xs truncate max-w-full">Workshop</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewEventType('event')
-                        if (!newEventName || newEventName.includes('Meeting') || newEventName.includes('Workshop')) {
-                          setNewEventName('Gen 3 Recruitment')
-                        }
-                      }}
-                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
-                        newEventType === 'event'
-                          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 shadow-xs ring-2 ring-emerald-500/20'
-                          : 'border-slate-200/90 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-black text-xs shadow-2xs">
-                        <Award className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
-                      </div>
-                      <span className="font-bold text-xs truncate max-w-full">Sự kiện CLB</span>
-                    </button>
-                  </div>
-                </div>
-
                 {eventErrorMessage && (
                   <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs font-bold flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
@@ -681,7 +612,7 @@ export function BcnSurveyConfigManager({
                   </div>
                 )}
 
-                {/* 2. Tên sự kiện đánh giá */}
+                {/* 1. Tên sự kiện đánh giá */}
                 <div>
                   <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
                     Tên sự kiện đánh giá: <span className="text-rose-500">*</span>
