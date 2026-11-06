@@ -1274,8 +1274,7 @@ export function BcnSurveyReportView({
                 {/* BCN Private Note Box for this member */}
                 <div className="bg-[#FFFBEB] dark:bg-amber-950/30 rounded-2xl p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-[#D97706] dark:text-amber-400 flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5 text-[#D97706] dark:text-amber-400" />
+                    <span className="text-xs font-bold text-[#D97706] dark:text-amber-400">
                       Ghi chú nội bộ của Ban Chủ nhiệm về thành viên này (Bảo mật)
                     </span>
                     {toastNoteSaved && (
