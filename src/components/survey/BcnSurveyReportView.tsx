@@ -1256,11 +1256,56 @@ export function BcnSurveyReportView({
                             {item.improvement || 'Thành viên hoàn thành tốt, không có yêu cầu cải thiện'}
                           </p>
                         </div>
+
+                        {/* 4 Core Criteria Breakdown */}
+                        {item.criteriaScores && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
+                              <span className="text-slate-400 block font-medium">Trách nhiệm</span>
+                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.responsibility}★</span>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
+                              <span className="text-slate-400 block font-medium">Thực thi nhiệm vụ</span>
+                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.taskDelivery}★</span>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
+                              <span className="text-slate-400 block font-medium">Phối hợp & Giao tiếp</span>
+                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.collaboration}★</span>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
+                              <span className="text-slate-400 block font-medium">Chủ động sáng tạo</span>
+                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.initiative}★</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Event Custom Answers */}
+                        {item.customAnswers && Object.keys(item.customAnswers).length > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            {Object.entries(item.customAnswers).map(([qKey, ans]) => (
+                              <div key={qKey} className="text-xs bg-sky-50/60 dark:bg-sky-950/30 p-2.5 rounded-xl border border-sky-100 dark:border-sky-900/40">
+                                <span className="font-bold text-[#0284C7] dark:text-sky-300 block mb-0.5">{qKey}</span>
+                                <span className="text-slate-700 dark:text-slate-300 font-medium">{String(ans)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-400 text-xs">
-                      Không có nhận xét nào phù hợp với bộ lọc sao đã chọn
+                      {eventFeedbacks.length === 0 ? (
+                        <div className="space-y-2 py-4">
+                          <p className="text-slate-600 dark:text-slate-300 font-bold text-sm">
+                            Sự kiện &ldquo;{selectedEvent}&rdquo; là sự kiện mới, chưa có dữ liệu đánh giá nào.
+                          </p>
+                          <p className="text-slate-400 text-xs max-w-md mx-auto">
+                            Khi các thành viên Core Team gửi phiếu đánh giá cho sự kiện này, toàn bộ lịch sử chi tiết, điểm 4 tiêu chí cốt lõi và các câu hỏi mở rộng sẽ được ghi lại đầy đủ tại đây.
+                          </p>
+                        </div>
+                      ) : (
+                        <span>Không có nhận xét nào phù hợp với bộ lọc sao đã chọn</span>
+                      )}
                     </div>
                   )}
                 </div>

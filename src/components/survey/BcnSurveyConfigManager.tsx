@@ -118,6 +118,13 @@ export function BcnSurveyConfigManager({
     }
 
     const updated = saveNewSurveyEvent(item)
+    try {
+      // Đảm bảo sự kiện mới tạo luôn là mới hẳn (0 đánh giá, sạch sẽ dữ liệu)
+      localStorage.setItem(`issac_survey_evaluations_${encodeURIComponent(item.name)}`, JSON.stringify({}))
+    } catch (err) {
+      console.error(err)
+    }
+
     setEvents(updated)
     setNewEventName('')
     setNewEventDesc('')
@@ -141,6 +148,11 @@ export function BcnSurveyConfigManager({
   // Handle Delete Event
   const handleDeleteEvent = (id: string, name: string) => {
     if (confirm(`Bạn có chắc muốn xóa sự kiện "${name}"?`)) {
+      try {
+        localStorage.removeItem(`issac_survey_evaluations_${encodeURIComponent(name)}`)
+      } catch (err) {
+        console.error(err)
+      }
       const updated = deleteSurveyEvent(id)
       setEvents(updated)
       showToast(`Đã xóa sự kiện "${name}"!`)

@@ -24,6 +24,7 @@ export interface SurveyFeedbackItem {
     collaboration: number // Phối hợp & Giao tiếp (1-5)
     initiative: number // Tác phong & Chủ động (1-5)
   }
+  customAnswers?: Record<string, string | number>
   submittedAt: string
 }
 
@@ -700,4 +701,32 @@ export function saveCustomQuestions(eventId: string, questions: SurveyQuestionIt
     console.error('Failed to save custom questions:', err)
   }
 }
+
+export const EVENT_EVALS_PREFIX = 'issac_survey_evaluations_'
+
+export function getStoredEventEvaluations(eventName: string): Record<string, any> | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const key = `${EVENT_EVALS_PREFIX}${encodeURIComponent(eventName)}`
+    const raw = localStorage.getItem(key)
+    if (raw) {
+      return JSON.parse(raw)
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function saveStoredEventEvaluations(eventName: string, evals: Record<string, any>): void {
+  if (typeof window === 'undefined') return
+  try {
+    const key = `${EVENT_EVALS_PREFIX}${encodeURIComponent(eventName)}`
+    localStorage.setItem(key, JSON.stringify(evals))
+    window.dispatchEvent(new Event('storage'))
+  } catch (err) {
+    console.error('Failed to save event evaluations:', err)
+  }
+}
+
 

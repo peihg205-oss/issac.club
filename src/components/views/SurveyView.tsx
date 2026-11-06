@@ -33,8 +33,10 @@ import { useLanguage } from '@/lib/context/LanguageContext'
 import { BcnSurveyReportView } from '@/components/survey/BcnSurveyReportView'
 import {
   saveNewSurveyFeedback,
+  getStoredSurveyFeedbacks,
   getStoredSurveyEvents,
   SurveyEventItem,
+  SurveyFeedbackItem,
   CORE_EVALUATION_CRITERIA,
   getStoredCustomQuestions,
   SurveyQuestionItem,
@@ -192,10 +194,14 @@ export function SurveyView() {
   const [surveyEvents, setSurveyEvents] = useState<SurveyEventItem[]>(() =>
     getStoredSurveyEvents()
   )
+  const [storedFeedbacks, setStoredFeedbacks] = useState<SurveyFeedbackItem[]>(() =>
+    getStoredSurveyFeedbacks()
+  )
 
   useEffect(() => {
     const handleStorage = () => {
       setSurveyEvents(getStoredSurveyEvents())
+      setStoredFeedbacks(getStoredSurveyFeedbacks())
     }
     window.addEventListener('storage', handleStorage)
     return () => window.removeEventListener('storage', handleStorage)
@@ -220,11 +226,16 @@ export function SurveyView() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Storage key
-  const storageKey = 'issac_survey_core_event_v2'
+  // Dynamic Storage key per event - Đảm bảo mỗi sự kiện có kho đánh giá và lịch sử riêng biệt
+  const currentEventStorageKey = useMemo(() => {
+    return `issac_survey_evaluations_${encodeURIComponent(selectedEvent)}`
+  }, [selectedEvent])
 
   // Lọc tất cả thành viên Core Team trong CLB, TRỪ Ban Chủ nhiệm và TRỪ người đang đánh giá nếu họ là core
   const targetMembers: SurveyTargetMember[] = useMemo(() => {
+    // Lấy toàn bộ nhận xét đã nộp thuộc riêng sự kiện đang chọn
+    const currentEventFeedbacks = storedFeedbacks.filter((f) => f.event === selectedEvent)
+
     return members
       .filter((m) => m.is_core)
       // Loại trừ Ban Chủ nhiệm theo yêu cầu người dùng
@@ -236,27 +247,36 @@ export function SurveyView() {
       )
       // Loại trừ chính người đang đăng nhập nếu họ thuộc danh sách (không tự đánh giá bản thân)
       .filter((m) => m.member_code !== currentUser?.memberCode)
-      .map((m, idx) => ({
-        memberCode: m.member_code,
-        studentId: (m as unknown as { student_id?: string }).student_id || m.member_code,
-        className: (m as unknown as { class_name?: string }).class_name,
-        fullName: m.full_name,
-        departmentName: m.department_name,
-        position: m.position,
-        avatarUrl: m.avatar_url,
-        initials: m.full_name.trim().split(' ').pop()?.[0]?.toUpperCase() || 'M',
-        initialBg:
-          m.department_slug === 'truyen-thong'
-            ? 'bg-blue-100 text-blue-700 border-blue-200'
-            : m.department_slug === 'tu-van'
-            ? 'bg-amber-100 text-amber-700 border-amber-200'
-            : 'bg-purple-100 text-purple-700 border-purple-200',
-        email: m.email || `${m.member_code.toLowerCase()}@vnuis.edu.vn`,
-        isCore: true,
-        reviewsCount: 3 + (idx % 3),
-        averageScore: 4.0 + (idx % 2 === 0 ? 0.5 : 0),
-      }))
-  }, [members, currentUser])
+      .map((m) => {
+        const memberReviews = currentEventFeedbacks.filter(
+          (f) => f.targetMemberCode === m.member_code
+        )
+        const reviewsCount = memberReviews.length
+        const totalRating = memberReviews.reduce((sum, r) => sum + r.rating, 0)
+        const averageScore = reviewsCount > 0 ? Number((totalRating / reviewsCount).toFixed(1)) : 0
+
+        return {
+          memberCode: m.member_code,
+          studentId: (m as unknown as { student_id?: string }).student_id || m.member_code,
+          className: (m as unknown as { class_name?: string }).class_name,
+          fullName: m.full_name,
+          departmentName: m.department_name,
+          position: m.position,
+          avatarUrl: m.avatar_url,
+          initials: m.full_name.trim().split(' ').pop()?.[0]?.toUpperCase() || 'M',
+          initialBg:
+            m.department_slug === 'truyen-thong'
+              ? 'bg-blue-100 text-blue-700 border-blue-200'
+              : m.department_slug === 'tu-van'
+              ? 'bg-amber-100 text-amber-700 border-amber-200'
+              : 'bg-purple-100 text-purple-700 border-purple-200',
+          email: m.email || `${m.member_code.toLowerCase()}@vnuis.edu.vn`,
+          isCore: true,
+          reviewsCount,
+          averageScore,
+        }
+      })
+  }, [members, currentUser, storedFeedbacks, selectedEvent])
 
   // Evaluations state
   const [evaluations, setEvaluations] =
@@ -304,23 +324,33 @@ export function SurveyView() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false)
 
-  // Load from localStorage or initialize with mock data
+  // Load from localStorage specifically for the selectedEvent
   useEffect(() => {
     try {
-      const savedEvaluations = localStorage.getItem(storageKey)
+      const savedEvaluations = localStorage.getItem(currentEventStorageKey)
       if (savedEvaluations) {
         setEvaluations(JSON.parse(savedEvaluations))
       } else {
-        setEvaluations(INITIAL_CORE_EVALUATIONS)
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify(INITIAL_CORE_EVALUATIONS)
-        )
+        // Chỉ gán mock evaluations cho sự kiện mẫu ban đầu '1st Meeting'
+        if (selectedEvent === '1st Meeting') {
+          setEvaluations(INITIAL_CORE_EVALUATIONS)
+          localStorage.setItem(
+            currentEventStorageKey,
+            JSON.stringify(INITIAL_CORE_EVALUATIONS)
+          )
+        } else {
+          // Bất kỳ sự kiện mới nào khác ĐỀU LÀ MỚI HẲN (bắt đầu từ 0 đánh giá)
+          setEvaluations({})
+          localStorage.setItem(
+            currentEventStorageKey,
+            JSON.stringify({})
+          )
+        }
       }
     } catch {
-      setEvaluations(INITIAL_CORE_EVALUATIONS)
+      setEvaluations({})
     }
-  }, [storageKey])
+  }, [currentEventStorageKey, selectedEvent])
 
   // Set default selected member: prefer Trần Đức Thắng to match mockup if exists, else first target
   useEffect(() => {
@@ -421,14 +451,14 @@ export function SurveyView() {
 
     setEvaluations(updated)
     try {
-      localStorage.setItem(storageKey, JSON.stringify(updated))
+      localStorage.setItem(currentEventStorageKey, JSON.stringify(updated))
     } catch (e) {
       console.error(e)
     }
 
     // Đồng thời lưu vào kho dữ liệu đánh giá chéo dành riêng cho Ban Chủ nhiệm xem báo cáo
     try {
-      saveNewSurveyFeedback({
+      const updatedFeedbacks = saveNewSurveyFeedback({
         id: `fb-sub-${Date.now()}-${selectedMember.memberCode}`,
         event: selectedEvent,
         targetMemberCode: selectedMember.memberCode,
@@ -455,8 +485,10 @@ export function SurveyView() {
           collaboration: criteriaScores.collaboration,
           initiative: criteriaScores.initiative,
         },
+        customAnswers: { ...customAnswers },
         submittedAt: new Date().toISOString(),
       })
+      setStoredFeedbacks(updatedFeedbacks)
     } catch (saveErr) {
       console.error('Failed to sync feedback to BCN storage', saveErr)
     }
@@ -1051,7 +1083,7 @@ export function SurveyView() {
                 </div>
                 <div>
                   <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
-                    {selectedMember.reviewsCount || 3}
+                    {selectedMember.reviewsCount ?? 0}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
                     lượt đánh giá
@@ -1066,12 +1098,12 @@ export function SurveyView() {
                 </div>
                 <div>
                   <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
-                    {selectedMember.averageScore
+                    {selectedMember.averageScore != null && (selectedMember.reviewsCount ?? 0) > 0
                       ? `${selectedMember.averageScore.toFixed(1)}/5`
-                      : '4.0/5'}
+                      : '— / 5'}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-                    điểm TB
+                    {(selectedMember.reviewsCount ?? 0) > 0 ? 'điểm TB' : 'chưa có đánh giá'}
                   </span>
                 </div>
               </div>
