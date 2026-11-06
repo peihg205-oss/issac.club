@@ -397,59 +397,48 @@ export function BcnSurveyReportView({
             </p>
           </div>
 
-          {/* Action buttons styled to match Image 2 (Primary Orange + Secondary White Pill) */}
+          {/* Action buttons (Xuất dữ liệu chuẩn style dự án) */}
           <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
             <button
               type="button"
               onClick={handleExportReport}
-              className="h-10 px-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(249,115,22,0.22)] hover:shadow-[0_4px_10px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none"
-              title="Xuất báo cáo JSON tổng hợp"
+              className="h-10 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none focus:outline-none focus:ring-0"
+              title="Xuất báo cáo tổng hợp dữ liệu"
             >
-              <Download className="w-4 h-4 text-white shrink-0" />
+              <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
               <span>Xuất dữ liệu</span>
             </button>
-
-            {onSwitchToSurvey && (
-              <button
-                type="button"
-                onClick={onSwitchToSurvey}
-                className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
-              >
-                <FileText className="w-4 h-4 text-[#0284C7]" />
-                <span>Trang điền phiếu</span>
-              </button>
-            )}
           </div>
         </div>
 
         {/* Sub-tab Switcher: Charts vs Feedbacks vs Management (Khớp Ảnh 1) */}
         <div className="flex items-center justify-between gap-3 pt-4 flex-wrap">
-          <div className="flex items-center gap-2 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex-wrap">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex-wrap">
             <button
               type="button"
               onClick={() => setReportTab('charts')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
                 reportTab === 'charts'
-                  ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs'
+                  ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <BarChart3 className="w-4 h-4 text-[#0284C7]" />
+              <BarChart3 className="w-4 h-4 text-[#0284C7] shrink-0" />
               <span>Biểu đồ & Xếp hạng Core Team</span>
             </button>
 
             <button
               type="button"
               onClick={() => setReportTab('feedbacks')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
                 reportTab === 'feedbacks'
-                  ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs'
+                  ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <MessageSquare className="w-4 h-4 text-[#0284C7]" />
+              <MessageSquare className="w-4 h-4 text-[#0284C7] shrink-0" />
               <span>Đọc nhận xét chi tiết từng người</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/50">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-100 text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300">
                 {eventFeedbacks.length}
               </span>
             </button>
@@ -457,26 +446,23 @@ export function BcnSurveyReportView({
             <button
               type="button"
               onClick={() => setReportTab('management')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
                 reportTab === 'management'
-                  ? 'bg-white dark:bg-slate-900 text-[#0284C7] dark:text-sky-400 shadow-xs'
+                  ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Sliders className="w-4 h-4 text-[#0284C7]" />
+              <Sliders className="w-4 h-4 text-[#0284C7] shrink-0" />
               <span>Tạo sự kiện & Câu hỏi đánh giá</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80">
-                BCN
-              </span>
             </button>
           </div>
 
-          {/* Hộp chọn sự kiện khảo sát dành cho BCN (Thay thế badge thời gian thực theo yêu cầu người dùng) */}
+          {/* Hộp chọn sự kiện khảo sát dành cho BCN (Cân đối chiều cao và padding chuẩn) */}
           <div ref={eventPickerRef} className="relative">
             <button
               type="button"
               onClick={() => setIsEventPickerOpen(!isEventPickerOpen)}
-              className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 hover:border-[#0284C7] dark:hover:border-sky-500 shadow-2xs hover:shadow-xs transition-all cursor-pointer group text-left"
+              className="h-10 sm:h-11 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 hover:border-[#0284C7] dark:hover:border-sky-500 shadow-2xs hover:shadow-xs transition-all cursor-pointer group text-left flex items-center gap-2.5 focus:outline-none focus:ring-0 active:scale-95"
             >
               <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
                 <Calendar className="w-4 h-4" />
