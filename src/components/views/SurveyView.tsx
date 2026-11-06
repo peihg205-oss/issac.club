@@ -909,10 +909,12 @@ export function SurveyView() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
           {/* LEFT: Thông tin thành viên được đánh giá */}
           <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between gap-3.5">
-            {/* Header with Title */}
-            <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
-              Thông tin thành viên được đánh giá
-            </h3>
+            {/* Header with Title: Căn chuẩn ngang hàng tuyệt đối với cột phiếu khảo sát */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800 min-h-[42px]">
+              <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
+                Thông tin thành viên được đánh giá
+              </h3>
+            </div>
 
             {/* Profile Hero Box with clean background container */}
             <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/80 flex items-center gap-4 sm:gap-4.5">
@@ -1104,9 +1106,9 @@ export function SurveyView() {
 
           {/* RIGHT: Phiếu khảo sát sau sự kiện (Trạng thái Đã Nộp & Khóa Bảo Mật HOẶC Form Điền Mới) */}
           {isSelectedMemberCompleted ? (
-            <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-5">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
+            <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-5">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800 min-h-[42px]">
+                <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
                   Phiếu khảo sát sau sự kiện
                 </h3>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80">
@@ -1175,8 +1177,8 @@ export function SurveyView() {
             </div>
           ) : (
             <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3.5 min-h-[42px]">
+                <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white leading-snug">
                   Phiếu khảo sát sau sự kiện
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 border border-sky-200/80">
