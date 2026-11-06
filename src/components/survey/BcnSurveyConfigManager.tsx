@@ -259,69 +259,7 @@ export function BcnSurveyConfigManager({
         </div>
       </div>
 
-      {/* SECTION 1: 4 CORE CRITERIA - IMAGE 2 STYLE */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-7 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-sky-100 text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300 flex items-center justify-center font-bold">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
-                Bộ 4 Tiêu chí Cốt lõi (Core Criteria)
-              </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200">
-                Thước đo cốt lõi • Bắt buộc
-              </span>
-            </div>
-            <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400">
-              Các tiêu chí này được tính điểm trực tiếp (thang 1.0 - 5.0★) trong mỗi lượt đánh giá chéo và hiển thị đồng bộ trên biểu đồ xếp hạng.
-            </p>
-          </div>
-        </div>
 
-        {/* 4 Cards matching Image 2 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-          {CORE_EVALUATION_CRITERIA.map((criterion, idx) => {
-            const icons = [ShieldCheck, CheckCircle2, Users, Sparkles]
-            const Icon = icons[idx % icons.length]
-            return (
-              <div
-                key={criterion.key}
-                className="bg-[#F8FAFC] dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/70 dark:border-slate-700/60 shadow-[0_2px_8px_rgba(0,0,0,0.04)] relative group transition hover:border-sky-300 dark:hover:border-sky-600"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-[13px] font-bold text-slate-500 dark:text-slate-400">
-                    {criterion.shortLabel}
-                  </span>
-                  <div className="w-7 h-7 rounded-lg bg-sky-100/80 text-[#0284C7] dark:bg-sky-950/80 dark:text-sky-300 flex items-center justify-center">
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-2xl sm:text-[26px] font-black text-[#061651] dark:text-white tracking-tight">
-                    {idx === 0 ? '4.9' : idx === 1 ? '4.8' : '4.9'}
-                  </span>
-                  <span className="text-amber-500 font-extrabold text-lg">★</span>
-                  <span className="text-[11px] text-slate-400 font-medium ml-1">/ 5.0</span>
-                </div>
-
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
-                  {criterion.description}
-                </p>
-
-                <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
-                  <span className="text-[#0284C7] dark:text-sky-400 font-bold flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Cố định trên form
-                  </span>
-                  <span className="text-slate-400">Trọng số 1x</span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
 
       {/* SECTION 2: DANH SÁCH SỰ KIỆN ĐÁNH GIÁ (Events List & Management) */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-7 shadow-sm space-y-5">
@@ -477,23 +415,41 @@ export function BcnSurveyConfigManager({
         {/* List of questions for this event */}
         <div className="space-y-3">
           {/* 1. Core criteria row overview */}
-          <div className="p-4 rounded-2xl bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-[#0284C7] text-white flex items-center justify-center font-bold text-xs">
-                1 - 4
+          <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg bg-[#0284C7] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                  1 - 4
+                </div>
+                <div>
+                  <h5 className="font-extrabold text-[#061651] dark:text-white text-xs sm:text-sm">
+                    Bộ 4 Tiêu chí Cốt lõi (Thang điểm 1 - 5 sao • Bắt buộc)
+                  </h5>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
+                  </p>
+                </div>
               </div>
-              <div>
-                <h5 className="font-extrabold text-[#061651] dark:text-white text-xs sm:text-sm">
-                  Bộ 4 câu hỏi chấm điểm tiêu chí cốt lõi (Trách nhiệm, Thực thi, Phối hợp, Sáng tạo)
-                </h5>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Thang điểm 1 đến 5 sao • Bắt buộc có trong mọi phiếu khảo sát
-                </p>
-              </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/50 border border-blue-200/80 shrink-0">
+                Cố định chuẩn CLB
+              </span>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/50 border border-blue-200 shrink-0">
-              Cố định chuẩn CLB
-            </span>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+              {CORE_EVALUATION_CRITERIA.map((crit) => (
+                <div
+                  key={crit.key}
+                  className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-center space-y-0.5"
+                >
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block truncate">
+                    {crit.shortLabel}
+                  </span>
+                  <span className="text-[11px] text-amber-500 dark:text-amber-400 font-bold block">
+                    1.0 — 5.0 ★
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* 2. Default General Feedback Questions */}
