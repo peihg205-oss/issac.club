@@ -23,6 +23,8 @@ import {
   MessageSquare,
   Lock,
   X,
+  Shield,
+  ChevronDown,
 } from 'lucide-react'
 import {
   CORE_EVALUATION_CRITERIA,
@@ -55,6 +57,7 @@ export function BcnSurveyConfigManager({
 
   // Create Event Form State
   const [showCreateEventModal, setShowCreateEventModal] = useState<boolean>(false)
+  const [newEventType, setNewEventType] = useState<'meeting' | 'workshop' | 'event'>('meeting')
   const [newEventName, setNewEventName] = useState<string>('')
   const [newEventDate, setNewEventDate] = useState<string>(() => {
     const today = new Date()
@@ -566,161 +569,251 @@ export function BcnSurveyConfigManager({
         </div>
       </div>
 
-      {/* MODAL 1: TẠO SỰ KIỆN MỚI (STYLE CHUẨN DISPUTE MODAL CỦA DỰ ÁN) */}
+      {/* MODAL 1: TẠO SỰ KIỆN MỚI (CHUẨN STYLE CHÍNH XÁC NHƯ ẢNH 1 - RULESVIEW) */}
       {showCreateEventModal && (
         <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowCreateEventModal(false)
           }}
-          className="fixed inset-0 z-50 bg-[#0B1E48]/55 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
         >
-          <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[28px] max-w-[540px] w-full p-5 sm:p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.22)] border border-slate-100/90 dark:border-slate-800 space-y-4 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[28px] max-w-xl w-full border border-slate-100 dark:border-slate-800 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header (Fixed / Shrink-0) */}
+            <div className="p-4 sm:p-5 sm:pb-3.5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between bg-white dark:bg-slate-900 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center border border-sky-200/50 dark:border-sky-800 shrink-0">
-                  <Calendar className="w-5 h-5 text-[#0284C7] dark:text-sky-400" />
+                <div className="w-9.5 h-9.5 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-2xs border bg-[#F0F9FF] dark:bg-sky-950/60 border-sky-200/80 dark:border-sky-800 text-[#0284C7] dark:text-sky-400">
+                  <Calendar className="w-5 h-5 stroke-[1.8]" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm sm:text-[17px] font-extrabold text-[#061651] dark:text-white tracking-tight truncate">
+                  <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white tracking-tight truncate">
                     Tạo sự kiện đánh giá mới
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-normal mt-0.5 truncate">
-                    Thiết lập thời hạn khảo sát và cấu hình mở phiếu cho Core Team
+                  <p className="text-[11px] sm:text-xs text-[#64748B] dark:text-slate-400 font-medium truncate mt-0.5">
+                    Thiết lập thời hạn khảo sát và cấu hình mở phiếu cho Core Team.
                   </p>
                 </div>
               </div>
-
               <button
                 type="button"
                 onClick={() => setShowCreateEventModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center justify-center transition cursor-pointer shrink-0"
+                className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center cursor-pointer shrink-0 ml-2"
+                title="Đóng modal"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
 
-            {eventErrorMessage && (
-              <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{eventErrorMessage}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateEvent} className="space-y-3.5">
-              {/* Tên sự kiện */}
-              <div>
-                <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
-                  Tên sự kiện đánh giá <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newEventName}
-                  onChange={(e) => setNewEventName(e.target.value)}
-                  placeholder="Ví dụ: 2nd Meeting, Workshop Sharing Gen 3..."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
-                  required
-                />
-              </div>
-
-              {/* Hàng 2 cột: Ngày bắt đầu & Ngày kết thúc */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleCreateEvent} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5.5 space-y-4 text-xs overscroll-contain">
+                {/* 1. Chọn loại sự kiện khảo sát: 3 Thẻ tương tác chuẩn Image 1 */}
                 <div>
-                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
-                    Ngày diễn ra (Bắt đầu)
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-2">
+                    Loại hình sự kiện &amp; quy chuẩn:
                   </label>
-                  <input
-                    type="date"
-                    value={newEventDate}
-                    onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
-                  />
+                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewEventType('meeting')
+                        if (!newEventName || newEventName.includes('Workshop') || newEventName.includes('Recruitment')) {
+                          setNewEventName('2nd Meeting')
+                        }
+                      }}
+                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
+                        newEventType === 'meeting'
+                          ? 'border-sky-300 dark:border-sky-700 bg-sky-50/80 dark:bg-sky-950/60 text-sky-950 dark:text-sky-200 shadow-xs ring-2 ring-[#0284C7]/20'
+                          : 'border-slate-200/90 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/60 text-[#0284C7] dark:text-sky-300 flex items-center justify-center font-black text-xs shadow-2xs">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs truncate max-w-full">Họp Core Team</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewEventType('workshop')
+                        if (!newEventName || newEventName.includes('Meeting') || newEventName.includes('Recruitment')) {
+                          setNewEventName('Workshop Sharing Gen 3')
+                        }
+                      }}
+                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
+                        newEventType === 'workshop'
+                          ? 'border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 shadow-xs ring-2 ring-[#7026ED]/20'
+                          : 'border-slate-200/90 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/60 text-[#7026ED] dark:text-purple-300 flex items-center justify-center font-black text-xs shadow-2xs">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs truncate max-w-full">Workshop</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewEventType('event')
+                        if (!newEventName || newEventName.includes('Meeting') || newEventName.includes('Workshop')) {
+                          setNewEventName('Gen 3 Recruitment')
+                        }
+                      }}
+                      className={`py-3 px-2 sm:px-3 rounded-2xl text-xs font-bold border transition-all text-center flex flex-col items-center gap-1.5 cursor-pointer ${
+                        newEventType === 'event'
+                          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 shadow-xs ring-2 ring-emerald-500/20'
+                          : 'border-slate-200/90 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-black text-xs shadow-2xs">
+                        <Award className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
+                      </div>
+                      <span className="font-bold text-xs truncate max-w-full">Sự kiện CLB</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
-                    Ngày kết thúc (Hạn chót) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={newEventEndDate}
-                    onChange={(e) => setNewEventEndDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
-                    required
-                  />
-                </div>
-              </div>
+                {eventErrorMessage && (
+                  <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{eventErrorMessage}</span>
+                  </div>
+                )}
 
-              {/* Hàng 2 cột: Trạng thái & Đối tượng */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 2. Tên sự kiện đánh giá */}
                 <div>
-                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
-                    Trạng thái ban đầu
-                  </label>
-                  <select
-                    value={newEventStatus}
-                    onChange={(e) => setNewEventStatus(e.target.value as 'active' | 'closed')}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
-                  >
-                    <option value="active">Đang mở khảo sát</option>
-                    <option value="closed">Đã đóng khảo sát</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
-                    Đối tượng đánh giá
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                    Tên sự kiện đánh giá: <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={newEventTarget}
-                    onChange={(e) => setNewEventTarget(e.target.value)}
-                    placeholder="Toàn bộ Core Team (trừ BCN)"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                    value={newEventName}
+                    onChange={(e) => setNewEventName(e.target.value)}
+                    placeholder="VD: 2nd Meeting, Workshop Sharing Gen 3..."
+                    className="w-full h-[42px] bg-white dark:bg-slate-800 hover:border-[#0284C7]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                    required
+                  />
+                  <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                    Tên đợt đánh giá hiển thị trên thanh chọn sự kiện và toàn bộ phiếu khảo sát
+                  </p>
+                </div>
+
+                {/* 3. Thời gian: Bắt đầu & Kết thúc */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                      Ngày diễn ra (Bắt đầu):
+                    </label>
+                    <input
+                      type="date"
+                      value={newEventDate}
+                      onChange={(e) => setNewEventDate(e.target.value)}
+                      className="w-full h-[42px] bg-white dark:bg-slate-800 hover:border-[#0284C7]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
+                    />
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                      Thời điểm chính thức mở cổng tiếp nhận đánh giá
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                      Ngày kết thúc (Hạn chót): <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={newEventEndDate}
+                      onChange={(e) => setNewEventEndDate(e.target.value)}
+                      className="w-full h-[42px] bg-white dark:bg-slate-800 hover:border-[#0284C7]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
+                      required
+                    />
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                      Hạn chót tiếp nhận phiếu (tự động khóa cổng sau ngày này)
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4. Trạng thái & Đối tượng */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                  <div>
+                    <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                      Trạng thái ban đầu:
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={newEventStatus}
+                        onChange={(e) => setNewEventStatus(e.target.value as 'active' | 'closed')}
+                        className="w-full h-[42px] appearance-none bg-white dark:bg-slate-800 hover:border-[#0284C7]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 pr-10 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
+                      >
+                        <option value="active">Đang mở khảo sát</option>
+                        <option value="closed">Đã đóng khảo sát</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                      Mở cho thành viên điền ngay hoặc lưu bản nháp
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                      Đối tượng đánh giá:
+                    </label>
+                    <input
+                      type="text"
+                      value={newEventTarget}
+                      onChange={(e) => setNewEventTarget(e.target.value)}
+                      placeholder="Toàn bộ Core Team (trừ BCN)"
+                      className="w-full h-[42px] bg-white dark:bg-slate-800 hover:border-[#0284C7]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                    />
+                    <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                      Phạm vi các thành viên tham gia đánh giá chéo
+                    </p>
+                  </div>
+                </div>
+
+                {/* 5. Mô tả / Hướng dẫn khảo sát */}
+                <div>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                    Mô tả / Hướng dẫn khảo sát:
+                  </label>
+                  <textarea
+                    value={newEventDesc}
+                    onChange={(e) => setNewEventDesc(e.target.value)}
+                    placeholder="Mô tả cụ thể bối cảnh sự kiện, lưu ý chấm điểm hoặc hướng dẫn thành viên Core Team..."
+                    rows={3}
+                    className="w-full bg-white dark:bg-slate-800 hover:border-[#0284C7]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-xs sm:text-[13px] font-medium text-[#061651] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs leading-relaxed resize-none"
                   />
                 </div>
-              </div>
 
-              {/* Mô tả */}
-              <div>
-                <label className="text-[13px] font-bold text-[#061651] dark:text-slate-200 mb-1.5 block">
-                  Mô tả / Hướng dẫn khảo sát
-                </label>
-                <textarea
-                  value={newEventDesc}
-                  onChange={(e) => setNewEventDesc(e.target.value)}
-                  rows={2}
-                  placeholder="Ghi chú mục tiêu hoặc lưu ý khảo sát cho sự kiện này..."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs resize-y"
-                />
-              </div>
-
-              {/* Lưu ý thời hạn & đối tượng */}
-              <div className="p-3 bg-sky-50/70 dark:bg-sky-950/40 rounded-2xl border border-sky-200/70 dark:border-sky-800 text-xs text-sky-950 dark:text-sky-200 leading-relaxed flex items-start gap-2">
-                <Clock className="w-4 h-4 text-[#0284C7] dark:text-sky-400 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-[#061651] dark:text-white">Quy định điền phiếu: </span>
-                  <span>
-                    Khảo sát sẽ tự động kết thúc sau <strong>Ngày kết thúc</strong>. Thành viên không nằm trong danh sách Core Team hoặc khi khảo sát đã hết hạn/đóng sẽ <strong>không thể điền phiếu đánh giá</strong>.
+                {/* 6. Tùy chọn cơ chế CLB & Quy định khảo sát (Chuẩn Image 1) */}
+                <div className="p-3.5 sm:p-4 bg-sky-50/60 dark:bg-sky-950/40 rounded-2xl border border-sky-200/80 dark:border-sky-800/80 space-y-2.5">
+                  <span className="font-bold text-[#061651] dark:text-white block text-xs sm:text-[12.5px] flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-[#0284C7] dark:text-sky-400" />
+                    <span>Tùy chọn cơ chế CLB &amp; Quy định khảo sát:</span>
                   </span>
+
+                  <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium bg-white/80 dark:bg-slate-800/80 p-2.5 rounded-xl border border-sky-200/60 dark:border-sky-800/60 leading-relaxed">
+                    Sau khi thêm, sự kiện này sẽ ngay lập tức xuất hiện trong mục <strong>Sự kiện khảo sát</strong> để toàn thể thành viên Core Team điền phiếu và Ban Chủ nhiệm theo dõi tiến độ. Khảo sát sẽ tự động kết thúc sau <strong>Ngày kết thúc</strong>.
+                  </div>
                 </div>
               </div>
 
-              {/* Footer buttons */}
-              <div className="pt-2 flex items-center gap-2.5 sm:gap-3 sm:justify-end">
+              {/* Sticky Modal Footer Action Buttons (Chuẩn Image 1) */}
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs flex items-center gap-2.5 sm:gap-3 sm:justify-end shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCreateEventModal(false)}
                   className="flex-1 sm:flex-initial px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] text-center transition active:scale-95 cursor-pointer shadow-2xs"
                 >
-                  Hủy
+                  Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 sm:flex-initial h-10 px-5 rounded-2xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 sm:flex-initial px-6 py-2.5 rounded-2xl text-xs sm:text-[13px] font-bold text-white bg-[#0284C7] hover:bg-[#0369A1] text-center shadow-sm shadow-[#0284C7]/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span>Lưu &amp; Kích hoạt sự kiện</span>
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>Lưu sự kiện khảo sát</span>
                 </button>
               </div>
             </form>
@@ -728,105 +821,147 @@ export function BcnSurveyConfigManager({
         </div>
       )}
 
-      {/* MODAL 2: THÊM CÂU HỎI MỞ RỘNG */}
+      {/* MODAL 2: THÊM CÂU HỎI MỞ RỘNG (CHUẨN STYLE CHÍNH XÁC NHƯ ẢNH 1 - RULESVIEW) */}
       {showAddQuestionModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
-                  <FileText className="w-4 h-4" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0B1E48]/60 backdrop-blur-xs animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddQuestionModal(false)
+          }}
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[28px] max-w-xl w-full border border-slate-100 dark:border-slate-800 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header (Fixed / Shrink-0) */}
+            <div className="p-4 sm:p-5 sm:pb-3.5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between bg-white dark:bg-slate-900 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9.5 h-9.5 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-2xs border bg-[#FAF5FF] dark:bg-purple-950/60 border-purple-200/80 dark:border-purple-800 text-[#7026ED] dark:text-purple-400">
+                  <FileText className="w-5 h-5 stroke-[1.8]" />
                 </div>
-                <h3 className="text-lg font-black text-[#061651] dark:text-white">
-                  Thêm câu hỏi đánh giá mới
-                </h3>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white tracking-tight truncate">
+                    Thêm câu hỏi đánh giá mới
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-[#64748B] dark:text-slate-400 font-medium truncate mt-0.5">
+                    Bổ sung câu hỏi tùy chỉnh cho sự kiện &quot;{selectedEvent}&quot;.
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddQuestionModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold cursor-pointer"
+                className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center cursor-pointer shrink-0 ml-2"
+                title="Đóng modal"
               >
-                ✕
+                <X className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
 
-            {questionError && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{questionError}</span>
-              </div>
-            )}
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleAddQuestion} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5.5 space-y-4 text-xs overscroll-contain">
+                {questionError && (
+                  <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-300 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{questionError}</span>
+                  </div>
+                )}
 
-            <form onSubmit={handleAddQuestion} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Tiêu đề câu hỏi <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newQuestionTitle}
-                  onChange={(e) => setNewQuestionTitle(e.target.value)}
-                  placeholder="Ví dụ: Điểm cần phát huy tốt nhất trong sự kiện này?"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  Gợi ý / Mô tả câu hỏi
-                </label>
-                <input
-                  type="text"
-                  value={newQuestionDesc}
-                  onChange={(e) => setNewQuestionDesc(e.target.value)}
-                  placeholder="Hướng dẫn thành viên cách trả lời ngắn gọn..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+                {/* 1. Tiêu đề câu hỏi */}
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Loại câu hỏi
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                    Nội dung câu hỏi đánh giá: <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    value={newQuestionType}
-                    onChange={(e) => setNewQuestionType(e.target.value as 'rating_stars' | 'textarea' | 'text')}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
-                  >
-                    <option value="textarea">Đoạn văn tự luận (Nhiều dòng)</option>
-                    <option value="rating_stars">Đánh giá sao (1 - 5 sao)</option>
-                    <option value="text">Câu trả lời ngắn (1 dòng)</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={newQuestionTitle}
+                    onChange={(e) => setNewQuestionTitle(e.target.value)}
+                    placeholder="VD: Điểm cần phát huy tốt nhất của thành viên trong sự kiện này?"
+                    className="w-full h-[42px] bg-white dark:bg-slate-800 hover:border-[#7026ED]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
+                    required
+                  />
+                  <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                    Tiêu đề câu hỏi hiển thị trực tiếp trong biểu mẫu khảo sát của thành viên
+                  </p>
                 </div>
 
-                <div className="flex items-center pt-5">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-slate-700 dark:text-slate-300">
+                {/* 2. Loại câu hỏi */}
+                <div>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                    Hình thức trả lời:
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={newQuestionType}
+                      onChange={(e) => setNewQuestionType(e.target.value as 'rating_stars' | 'textarea' | 'text')}
+                      className="w-full h-[42px] appearance-none bg-white dark:bg-slate-800 hover:border-[#7026ED]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 pr-10 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs cursor-pointer"
+                    >
+                      <option value="textarea">Đoạn văn tự luận (Nhiều dòng góp ý)</option>
+                      <option value="rating_stars">Đánh giá sao (Thang điểm 1 - 5 sao)</option>
+                      <option value="text">Câu trả lời ngắn (1 dòng)</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                  <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                    Định dạng ô nhập liệu khi thành viên làm bài khảo sát
+                  </p>
+                </div>
+
+                {/* 3. Gợi ý / Mô tả câu hỏi */}
+                <div>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block mb-1.5">
+                    Gợi ý / Hướng dẫn trả lời:
+                  </label>
+                  <input
+                    type="text"
+                    value={newQuestionDesc}
+                    onChange={(e) => setNewQuestionDesc(e.target.value)}
+                    placeholder="VD: Nêu ngắn gọn 1-2 hành động cụ thể bạn đánh giá cao..."
+                    className="w-full h-[42px] bg-white dark:bg-slate-800 hover:border-[#7026ED]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 text-xs sm:text-[13px] font-medium text-[#061651] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs"
+                  />
+                  <p className="text-[10.5px] text-slate-400 mt-1 font-medium truncate">
+                    Lời nhắc gợi ý giúp thành viên trả lời đúng trọng tâm
+                  </p>
+                </div>
+
+                {/* 4. Tùy chọn bắt buộc */}
+                <div className="p-3.5 sm:p-4 bg-purple-50/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200/80 dark:border-purple-800/80 space-y-2.5">
+                  <span className="font-bold text-[#061651] dark:text-white block text-xs sm:text-[12.5px] flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-[#7026ED] dark:text-purple-400" />
+                    <span>Cấu hình tính chất câu hỏi:</span>
+                  </span>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
                     <input
                       type="checkbox"
                       checked={newQuestionRequired}
                       onChange={(e) => setNewQuestionRequired(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#0284C7] focus:ring-sky-500 cursor-pointer"
+                      className="w-4 h-4 rounded text-[#7026ED] focus:ring-[#7026ED] bg-white border-slate-300 mt-0.5 cursor-pointer"
                     />
-                    <span>Bắt buộc phải trả lời</span>
+                    <span>
+                      Yêu cầu <strong className="text-purple-700 dark:text-purple-300 font-bold">bắt buộc điền</strong> (thành viên không được bỏ trống câu hỏi này)
+                    </span>
                   </label>
+
+                  <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium bg-white/80 dark:bg-slate-800/80 p-2.5 rounded-xl border border-purple-200/60 dark:border-purple-800/60 leading-relaxed">
+                    Câu hỏi mới sẽ tự động được thêm vào phiếu khảo sát của sự kiện &quot;<strong>{selectedEvent}</strong>&quot; bên cạnh 4 tiêu chí cốt lõi chuẩn.
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Sticky Modal Footer Action Buttons (Chuẩn Image 1) */}
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs flex items-center gap-2.5 sm:gap-3 sm:justify-end shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAddQuestionModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] text-center transition active:scale-95 cursor-pointer shadow-2xs"
                 >
-                  Hủy
+                  Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-md transition cursor-pointer"
+                  className="flex-1 sm:flex-initial px-6 py-2.5 rounded-2xl text-xs sm:text-[13px] font-bold text-white bg-[#7026ED] hover:bg-[#621fde] text-center shadow-sm shadow-[#7026ED]/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  Thêm câu hỏi
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>Lưu câu hỏi mới</span>
                 </button>
               </div>
             </form>
