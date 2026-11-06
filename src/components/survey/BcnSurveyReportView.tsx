@@ -6,7 +6,6 @@ import {
   Users,
   Star,
   Award,
-  Crown,
   Lock,
   MessageSquare,
   Filter,
@@ -392,14 +391,6 @@ export function BcnSurveyReportView({
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#061651] dark:text-white tracking-tight">
                 Báo cáo Đánh giá Khảo sát Core Team
               </h2>
-              {/* BCN Badge matching sidebar style */}
-              <span className="px-2.5 py-0.5 text-xs font-black rounded-md tracking-wider bg-blue-100 text-[#0B63E5] dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
-                BCN
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200/80">
-                <Crown className="w-3 h-3 text-amber-500" />
-                <span>Bảo mật nội bộ</span>
-              </span>
             </div>
             <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400">
               Tổng hợp điểm số, biểu đồ phân tích và toàn bộ nhận xét chéo của các thành viên trong sự kiện <strong className="text-[#061651] dark:text-slate-200">{selectedEvent}</strong>
