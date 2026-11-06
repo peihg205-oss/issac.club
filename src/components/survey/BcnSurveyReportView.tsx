@@ -1297,9 +1297,8 @@ export function BcnSurveyReportView({
 
                 {/* Feedbacks Stream Header & Filter */}
                 <div className="flex items-center justify-between gap-3 pt-2">
-                  <h4 className="text-base font-black text-[#061651] dark:text-white flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-[#0B63E5]" />
-                    <span>Chi tiết nhận xét từ các thành viên ({activeMemberReviews.length})</span>
+                  <h4 className="text-base font-black text-[#061651] dark:text-white">
+                    Chi tiết nhận xét từ các thành viên ({activeMemberReviews.length})
                   </h4>
 
                   {/* Rating Filter */}
