@@ -244,7 +244,7 @@ export function SurveyView() {
         departmentName: m.department_name,
         position: m.position,
         avatarUrl: m.avatar_url,
-        initials: m.full_name.trim().slice(-1),
+        initials: m.full_name.trim().split(' ').pop()?.[0]?.toUpperCase() || 'M',
         initialBg:
           m.department_slug === 'truyen-thong'
             ? 'bg-blue-100 text-blue-700 border-blue-200'
@@ -1157,11 +1157,8 @@ export function SurveyView() {
                       <button
                         type="button"
                         onClick={() => handleSelectMember(nextUnevaluated.memberCode)}
-                        className="group inline-flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-[13px] font-semibold shadow-sm hover:shadow-md hover:shadow-sky-500/20 transition-all cursor-pointer active:scale-95"
+                        className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-[13px] font-semibold shadow-sm hover:shadow-md hover:shadow-sky-500/20 transition-all cursor-pointer active:scale-95"
                       >
-                        <span className="w-5 h-5 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-black shrink-0">
-                          {nextUnevaluated.initials}
-                        </span>
                         <span>Đánh giá tiếp: <strong className="font-black text-white">{nextUnevaluated.fullName}</strong></span>
                         <ChevronRight className="w-4 h-4 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-1" />
                       </button>
