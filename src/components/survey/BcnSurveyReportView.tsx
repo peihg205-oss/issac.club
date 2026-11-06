@@ -1228,7 +1228,7 @@ export function BcnSurveyReportView({
                     </div>
 
                     {/* Overall Score Badge */}
-                    <div className="flex items-center gap-3 sm:flex-col sm:items-end self-start sm:self-auto bg-amber-50/70 dark:bg-amber-950/30 p-3 sm:p-3.5 rounded-2xl border border-amber-200/80">
+                    <div className="flex items-center gap-3 sm:flex-col sm:items-end self-start sm:self-auto bg-[#FFFBEB] dark:bg-amber-950/30 p-3 sm:p-3.5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <div className="flex items-center gap-1.5">
                         <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
                         <span className="text-2xl font-black text-[#061651] dark:text-white">
@@ -1272,10 +1272,10 @@ export function BcnSurveyReportView({
                 </div>
 
                 {/* BCN Private Note Box for this member */}
-                <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl border border-amber-200/70 dark:border-amber-900/40 p-4 sm:p-5">
+                <div className="bg-[#FFFBEB] dark:bg-amber-950/30 rounded-2xl p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="text-xs font-bold text-[#D97706] dark:text-amber-400 flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-[#D97706] dark:text-amber-400" />
                       Ghi chú nội bộ của Ban Chủ nhiệm về thành viên này (Bảo mật)
                     </span>
                     {toastNoteSaved && (
@@ -1289,9 +1289,9 @@ export function BcnSurveyReportView({
                     defaultValue={bcnNotes[activeMemberObj.member.member_code] || ''}
                     onBlur={(e) => handleSaveBcnNote(activeMemberObj.member.member_code, e.target.value)}
                     placeholder="Nhập ghi chú riêng của BCN (định hướng bồi dưỡng, phân công sự kiện tới, lưu ý khen thưởng...)"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/80 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D97706]/40 transition shadow-2xs"
                   />
-                  <span className="text-[10px] text-amber-800/70 dark:text-amber-400 mt-1 block">
+                  <span className="text-[10px] text-[#D97706]/80 dark:text-amber-400/80 mt-1 block">
                     Ghi chú tự động lưu khi bạn bấm ra ngoài ô nhập. Chỉ BCN mới thấy được phần này.
                   </span>
                 </div>
