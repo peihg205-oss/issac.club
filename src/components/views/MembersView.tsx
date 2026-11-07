@@ -7,7 +7,6 @@ import { useLanguage } from '@/lib/context/LanguageContext'
 import { type RosterMember, getMemberAvatarUrl } from '@/lib/clubData'
 import { AddMemberModal } from '@/components/admin/AddMemberModal'
 import { EditMemberModal } from '@/components/admin/EditMemberModal'
-import { ScoreModal } from '@/components/admin/ScoreModal'
 import {
   Download,
   UserPlus,
@@ -27,7 +26,6 @@ import {
   Sparkles,
   Shield,
   Trash2,
-  PlusCircle,
 } from 'lucide-react'
 
 // Helper tra cứu ngành học chi tiết từ mã lớp
@@ -56,12 +54,9 @@ interface MembersViewProps {
 }
 
 export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }: MembersViewProps) {
-  const { isBCN, canAddOrProposeScore, canScoreMember } = useAuth()
+  const { isBCN } = useAuth()
   const { members, deleteMember } = useClub()
   const { language, t } = useLanguage()
-
-  const [scoreModalOpen, setScoreModalOpen] = useState<boolean>(false)
-  const [selectedScoreMemberCode, setSelectedScoreMemberCode] = useState<string | undefined>(undefined)
 
   // Xử lý xóa thành viên
   const handleDeleteMember = (member: RosterMember) => {
@@ -322,30 +317,6 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
             <span>{language === 'vi' ? 'Xuất file (.CSV)' : 'Export (.CSV)'}</span>
           </button>
 
-          {/* Nút Đề xuất cho điểm / Chấm điểm (Dành cho BCN, Ban Nhân sự và Trưởng/Phó ban các ban) */}
-          {canAddOrProposeScore && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedScoreMemberCode(undefined)
-                setScoreModalOpen(true)
-              }}
-              className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95 cursor-pointer"
-              title={isBCN ? 'Chấm và duyệt điểm thành viên' : 'Đề xuất cho điểm thành viên (Ban Chủ nhiệm phê duyệt cuối)'}
-            >
-              <PlusCircle className="w-4 h-4 stroke-[2.2] flex-shrink-0" />
-              <span>
-                {isBCN
-                  ? language === 'vi'
-                    ? 'Chấm / Duyệt Điểm'
-                    : 'Score / Approve'
-                  : language === 'vi'
-                  ? 'Đề Xuất Cho Điểm'
-                  : 'Propose Points'}
-              </span>
-            </button>
-          )}
-
           {/* Nút Thêm thành viên mới */}
           <button
             type="button"
@@ -356,7 +327,7 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
                 alert('Chỉ Ban Chủ nhiệm mới có quyền thêm thành viên mới theo quy chế CLB.')
               }
             }}
-            className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-[#061651] border border-slate-200/90 hover:border-slate-300 font-bold text-xs sm:text-[13px] transition shadow-2xs hover:shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95 cursor-pointer"
             title={isBCN ? 'Thêm thành viên mới vào danh sách' : 'Chỉ Ban Chủ nhiệm có quyền'}
           >
             <UserPlus className="w-4 h-4 stroke-[2.2] flex-shrink-0" />
@@ -769,24 +740,9 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
                           </span>
                         </td>
 
-                        {/* 8. Thao tác */}
+                        {/* 8. Thao tác Sửa & Xóa */}
                         <td className="py-3 px-3 text-center align-middle whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
-                            {canScoreMember(member).allowed && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedScoreMemberCode(member.member_code)
-                                  setScoreModalOpen(true)
-                                }}
-                                className="px-2.5 py-1 rounded-lg text-xs font-bold text-sky-700 bg-sky-50/80 hover:bg-sky-100 border border-sky-300/80 transition shadow-2xs inline-flex items-center gap-1 cursor-pointer active:scale-95"
-                                title={isBCN ? 'Chấm điểm cho thành viên này' : 'Đề xuất cho điểm thành viên này (BCN duyệt cuối)'}
-                              >
-                                <PlusCircle className="w-3 h-3 flex-shrink-0 text-sky-600" />
-                                <span>{isBCN ? (language === 'vi' ? 'Chấm' : 'Score') : (language === 'vi' ? 'Điểm' : 'Score')}</span>
-                              </button>
-                            )}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -870,13 +826,6 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
           </div>
         </div>
       </div>
-
-      {/* Modal đề xuất / chấm điểm */}
-      <ScoreModal
-        isOpen={scoreModalOpen}
-        onClose={() => setScoreModalOpen(false)}
-        initialMemberCode={selectedScoreMemberCode}
-      />
 
       {/* Modal thêm thành viên mới */}
       <AddMemberModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />
