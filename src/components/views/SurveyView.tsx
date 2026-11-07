@@ -136,29 +136,13 @@ export function SurveyView() {
   })
   const [showBcnLockModal, setShowBcnLockModal] = useState<boolean>(false)
 
-  // Mascot interaction & animated speech note state
+  // Mascot interaction when clicked
   const [isMascotCheering, setIsMascotCheering] = useState<boolean>(false)
-  const [showMascotBubble, setShowMascotBubble] = useState<boolean>(false)
-  const [mascotMessageIdx, setMascotMessageIdx] = useState<number>(0)
-  const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleMascotClick = () => {
     setIsMascotCheering(true)
-    setShowMascotBubble(true)
-    setMascotMessageIdx((prev) => (prev + 1) % SURVEY_MASCOT_QUOTES_VI.length)
     setTimeout(() => setIsMascotCheering(false), 850)
-
-    if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
-    bubbleTimeoutRef.current = setTimeout(() => {
-      setShowMascotBubble(false)
-    }, 2800)
   }
-
-  useEffect(() => {
-    return () => {
-      if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current)
-    }
-  }, [])
 
   // Selected event & dynamic events list from BCN management
   const [selectedEvent, setSelectedEvent] = useState<string>(() => {
@@ -647,9 +631,9 @@ export function SurveyView() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto pb-12 pt-3 sm:pt-5">
+    <div className="space-y-6 pb-12">
       {/* 1. HEADER SECTION & MODE SWITCHER TABS (Góc bên phải) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/90 dark:border-slate-800 pb-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
         <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
           {/* Cụm Tiêu đề & Lời dẫn mô tả chuẩn style Dashboard (Ảnh 1) */}
           <div className="min-w-0 flex-1 sm:flex-initial">
@@ -661,10 +645,10 @@ export function SurveyView() {
             </p>
           </div>
 
-          {/* Mascot Chibi với hiệu ứng động tương tác & note thoại như các trang khác */}
+                    {/* Mascot Chibi với hiệu ứng động tương tác khi click (đã bỏ hẳn note/bubble theo yêu cầu) */}
           <div
             onClick={handleMascotClick}
-            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+            className="relative cursor-pointer inline-flex items-center shrink-0 select-none"
           >
             {/* Ảnh Mascot với hiệu ứng bay bổng tự nhiên & nhào lộn vui nhộn khi click */}
             <img
@@ -676,23 +660,6 @@ export function SurveyView() {
                   : 'animate-mascot-fly hover:scale-120 hover:rotate-6'
               }`}
             />
-
-                        {/* Note / Bubble tooltip động đặt PHÍA TRÊN mascot - neo góc phải mascot và mở rộng sang trái (không bao giờ chèn vào nút tab bên phải) */}
-            <div
-              className={`absolute bottom-full mb-2.5 right-0 sm:right-1 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-50 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
-                showMascotBubble || isMascotCheering
-                  ? 'opacity-100 scale-105 -translate-y-1'
-                  : 'opacity-0 group-hover:opacity-100 group-hover:-translate-y-0.5'
-              }`}
-            >
-              {/* Mũi tên chỉ xuống đầu mascot */}
-              <div className="absolute -bottom-1 right-5 w-2 h-2 bg-[#0369A1] rotate-45 border-r border-b border-white/25" />
-              <span className="relative z-10 select-none tracking-tight">
-                {language === 'vi'
-                  ? SURVEY_MASCOT_QUOTES_VI[mascotMessageIdx]
-                  : SURVEY_MASCOT_QUOTES_EN[mascotMessageIdx]}
-              </span>
-            </div>
           </div>
         </div>
 
