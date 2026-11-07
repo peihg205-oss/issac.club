@@ -109,35 +109,7 @@ export function formatMemberPosition(position: string, departmentName: string): 
 }
 
 // Initial mock evaluations for realistic display matching project style and mockup
-export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
-  '24310069': {
-    targetMemberCode: '24310069',
-    targetMemberName: 'Lê Trần Thuỳ Nguyên',
-    targetMemberDept: 'Ban Tư vấn',
-    targetMemberRole: 'Trưởng ban Tư vấn',
-    avatarUrl: '/thuy-nguyen-avatar.png',
-    initials: 'N',
-    rating: 9.5,
-    feedback:
-      'Hỗ trợ sự kiện rất nhiệt tình, giải đáp thắc mắc của tân sinh viên nhanh chóng và chu đáo.',
-    improvement: 'Tiếp tục phát huy tinh thần năng động và truyền lửa cho team.',
-    status: 'completed',
-    updatedAt: '2026-11-01T20:30:00.000Z',
-  },
-  '25070407': {
-    targetMemberCode: '25070407',
-    targetMemberName: 'Vũ Đình Hải',
-    targetMemberDept: 'Ban Truyền thông',
-    targetMemberRole: 'Phó ban Truyền thông',
-    avatarUrl: '/vu-dinh-hai-avatar.png',
-    initials: 'H',
-    rating: 9.2,
-    feedback: 'Nhiệt tình phụ trách kỹ thuật và hình ảnh trong suốt sự kiện.',
-    improvement: 'Cần phân công việc chi tiết hơn cho các thành viên trong ban.',
-    status: 'completed',
-    updatedAt: '2026-11-02T14:20:00.000Z',
-  },
-}
+export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {}
 
 const RATING_OPTIONS = [
   { score: 1, label: 'Chưa tốt' },
@@ -258,7 +230,7 @@ export function SurveyView() {
 
   // Dynamic Storage key per event - Đảm bảo mỗi sự kiện có kho đánh giá và lịch sử riêng biệt
   const currentEventStorageKey = useMemo(() => {
-    return `issac_survey_evaluations_${encodeURIComponent(selectedEvent)}`
+    return `issac_survey_evaluations_v5_${encodeURIComponent(selectedEvent)}`
   }, [selectedEvent])
 
   // Chi tiết thông tin sự kiện hiện tại
@@ -379,21 +351,9 @@ export function SurveyView() {
       if (savedEvaluations) {
         setEvaluations(JSON.parse(savedEvaluations))
       } else {
-        // Gán mock evaluations cho sự kiện '1st Meeting' hoặc 'Đánh giá hoạt động Core Team T10'
-        if (selectedEvent === '1st Meeting' || selectedEvent === 'Đánh giá hoạt động Core Team T10') {
-          setEvaluations(INITIAL_CORE_EVALUATIONS)
-          localStorage.setItem(
-            currentEventStorageKey,
-            JSON.stringify(INITIAL_CORE_EVALUATIONS)
-          )
-        } else {
-          // Bất kỳ sự kiện mới nào khác ĐỀU LÀ MỚI HẲN (bắt đầu từ 0 đánh giá)
-          setEvaluations({})
-          localStorage.setItem(
-            currentEventStorageKey,
-            JSON.stringify({})
-          )
-        }
+        // Khởi tạo sự kiện mới bắt đầu hoàn toàn sạch sẽ từ 0 đánh giá
+        setEvaluations({})
+        localStorage.setItem(currentEventStorageKey, JSON.stringify({}))
       }
     } catch {
       setEvaluations({})
@@ -1197,9 +1157,9 @@ export function SurveyView() {
               </div>
 
               {/* Stat 2: Điểm TB */}
-              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Star className="w-5 h-5 fill-emerald-600" />
+              <div className={`${(selectedMember.reviewsCount ?? 0) > 0 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/40' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60'} border rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5`}>
+                <div className={`w-10 h-10 rounded-xl ${(selectedMember.reviewsCount ?? 0) > 0 ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'} flex items-center justify-center shrink-0`}>
+                  <Star className={`w-5 h-5 ${(selectedMember.reviewsCount ?? 0) > 0 ? 'fill-emerald-600' : 'text-slate-400'}`} />
                 </div>
                 <div>
                   <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">

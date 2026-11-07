@@ -167,15 +167,7 @@ export function BcnSurveyReportView({
 
   // Feedbacks for current event
   const eventFeedbacks = useMemo(() => {
-    const direct = feedbacks.filter((f) => f.event === selectedEvent)
-    if (direct.length > 0) return direct
-    if (selectedEvent === 'Đánh giá hoạt động Core Team T10' || selectedEvent === '1st Meeting') {
-      const fallback = feedbacks.filter(
-        (f) => f.event === 'Đánh giá hoạt động Core Team T10' || f.event === '1st Meeting'
-      )
-      if (fallback.length > 0) return fallback
-    }
-    return direct
+    return feedbacks.filter((f) => f.event === selectedEvent)
   }, [feedbacks, selectedEvent])
 
   // Member Analytics Map
@@ -276,7 +268,7 @@ export function BcnSurveyReportView({
 
     // Tỷ lệ đánh giá tích cực: rating >= 8.0 trên thang 10 (Mức Tốt & Xuất sắc)
     const positiveCount = eventFeedbacks.filter((f) => f.rating >= 8.0).length
-    const positiveRate = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 100
+    const positiveRate = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 0
 
     const topMember = totalReviews > 0 ? memberRankings[0] : null
 
@@ -765,7 +757,7 @@ export function BcnSurveyReportView({
               </span>
             </div>
             <span className="text-[11.5px] font-semibold text-[#D97706] dark:text-amber-400 block hover:underline">
-              Đạt mức Xuất sắc toàn diện
+              {overallKpis.totalReviews > 0 ? 'Đạt mức Xuất sắc toàn diện' : 'Chưa có dữ liệu khảo sát'}
             </span>
           </div>
           <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#D97706] shrink-0">
@@ -791,7 +783,7 @@ export function BcnSurveyReportView({
               </span>
             </div>
             <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block hover:underline">
-              Đóng góp tinh thần đoàn kết cao
+              {overallKpis.totalReviews > 0 ? 'Đóng góp tinh thần đoàn kết cao' : 'Chưa có phiếu gửi'}
             </span>
           </div>
           <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#16A34A] shrink-0">
