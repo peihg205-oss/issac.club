@@ -1,6 +1,7 @@
+
 'use client'
 
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import Image from 'next/image'
 import {
   Users,
@@ -19,7 +20,6 @@ import {
   Mail,
   ChevronRight,
   ChevronDown,
-  Check,
   Plus,
   TrendingUp,
   BarChart3,
@@ -39,8 +39,8 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { useClub } from '@/lib/context/ClubContext'
 import {
   getStoredSurveyFeedbacks,
-  SurveyFeedbackItem,
   getStoredSurveyEvents,
+  SurveyFeedbackItem,
   SurveyEventItem,
 } from '@/lib/surveyData'
 import { formatMemberPosition } from '@/components/views/SurveyView'
@@ -57,7 +57,7 @@ export function fmtScore(val: number | string | undefined | null, decimals: 1 | 
 
 interface BcnSurveyReportViewProps {
   selectedEvent: string
-  onSelectEvent?: (event: string) => void
+  onSelectEvent?: (eventName: string) => void
   onSwitchToSurvey?: () => void
 }
 
@@ -73,24 +73,15 @@ export function BcnSurveyReportView({
   const [feedbacks, setFeedbacks] = useState<SurveyFeedbackItem[]>(() =>
     getStoredSurveyFeedbacks()
   )
-  const [events, setEvents] = useState<SurveyEventItem[]>(() =>
+  const [surveyEvents, setSurveyEvents] = useState<SurveyEventItem[]>(() =>
     getStoredSurveyEvents()
   )
+
   const [isEventPickerOpen, setIsEventPickerOpen] = useState(false)
-  const eventPickerRef = useRef<HTMLDivElement>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const eventPickerRef = React.useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    setFeedbacks(getStoredSurveyFeedbacks())
-    setEvents(getStoredSurveyEvents())
-    const handleStorage = () => {
-      setFeedbacks(getStoredSurveyFeedbacks())
-      setEvents(getStoredSurveyEvents())
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [selectedEvent])
-
-  useEffect(() => {
+  React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
         eventPickerRef.current &&
@@ -102,14 +93,35 @@ export function BcnSurveyReportView({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-  const [reportTab, setReportTab] = useState<'charts' | 'feedbacks' | 'management'>(() => {
+
+  // Feedback counts by event for picker dropdown
+  const feedbackCountsByEvent = useMemo(() => {
+    const counts: Record<string, number> = {}
+    feedbacks.forEach((f) => {
+      counts[f.event] = (counts[f.event] || 0) + 1
+    })
+    return counts
+  }, [feedbacks])
+
+  React.useEffect(() => {
+    setFeedbacks(getStoredSurveyFeedbacks())
+    setSurveyEvents(getStoredSurveyEvents())
+    const handleStorage = () => {
+      setFeedbacks(getStoredSurveyFeedbacks())
+      setSurveyEvents(getStoredSurveyEvents())
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [selectedEvent])
+
+  const [reportTab, setReportTab] = useState<'charts' | 'feedbacks' | 'config'>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search)
-      if (p.get('subtab') === 'management' || p.get('subtab') === 'events' || p.get('tab3') === 'true') {
-        return 'management'
-      }
       if (p.get('subtab') === 'feedbacks' || p.get('reportTab') === 'feedbacks') {
         return 'feedbacks'
+      }
+      if (p.get('subtab') === 'config' || p.get('subtab') === 'events') {
+        return 'config'
       }
     }
     return 'charts'
@@ -248,31 +260,96 @@ export function BcnSurveyReportView({
       })
   }, [coreMembers, memberStatsMap])
 
-  // Overall Event KPIs
+  // Overall Event KPIs (Thang điểm 10.0)
   const overallKpis = useMemo(() => {
     const totalReviews = eventFeedbacks.length
     const totalScore = eventFeedbacks.reduce((acc, f) => acc + f.rating, 0)
     const avgScore = totalReviews > 0 ? (totalScore / totalReviews).toFixed(2) : '0.00'
 
-    const starsTotal: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-    eventFeedbacks.forEach((f) => {
-      const s = Math.min(5, Math.max(1, Math.round(f.rating))) as 1 | 2 | 3 | 4 | 5
-      starsTotal[s] = (starsTotal[s] || 0) + 1
-    })
-
-    const positiveCount = (starsTotal[4] || 0) + (starsTotal[5] || 0)
+    // Tỷ lệ đánh giá tích cực: rating >= 8.0 trên thang 10 (Mức Tốt & Xuất sắc)
+    const positiveCount = eventFeedbacks.filter((f) => f.rating >= 8.0).length
     const positiveRate = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 100
 
-    const topMember = memberRankings[0]
+    const topMember = totalReviews > 0 ? memberRankings[0] : null
 
     return {
       totalReviews,
       avgScore,
       positiveRate,
-      starsTotal,
       topMember,
     }
   }, [eventFeedbacks, memberRankings])
+
+  // Phân bố Điểm số Đánh giá trên Thang điểm 10.0 của sự kiện (thay thế cho 5 sao cũ)
+  const scoreDistribution = useMemo(() => {
+    const ranges = [
+      { key: '9-10', label: '9.0 - 10.0', tag: 'Xuất sắc', color: 'bg-emerald-500' },
+      { key: '8-8.9', label: '8.0 - 8.9', tag: 'Rất tốt', color: 'bg-blue-500' },
+      { key: '7-7.9', label: '7.0 - 7.9', tag: 'Đạt chuẩn', color: 'bg-sky-500' },
+      { key: '5-6.9', label: '5.0 - 6.9', tag: 'Trung bình', color: 'bg-amber-500' },
+      { key: 'below-5', label: 'Dưới 5.0', tag: 'Cần nỗ lực', color: 'bg-rose-500' },
+    ]
+
+    const counts: Record<string, number> = {
+      '9-10': 0,
+      '8-8.9': 0,
+      '7-7.9': 0,
+      '5-6.9': 0,
+      'below-5': 0,
+    }
+
+    eventFeedbacks.forEach((f) => {
+      const r = f.rating
+      if (r >= 9.0) counts['9-10']++
+      else if (r >= 8.0) counts['8-8.9']++
+      else if (r >= 7.0) counts['7-7.9']++
+      else if (r >= 5.0) counts['5-6.9']++
+      else counts['below-5']++
+    })
+
+    const total = eventFeedbacks.length
+
+    return ranges.map((item) => {
+      const count = counts[item.key] || 0
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0
+      return {
+        ...item,
+        count,
+        pct,
+      }
+    })
+  }, [eventFeedbacks])
+
+  // Overall event criteria averages across all feedbacks (tính trung bình toàn sự kiện từ Core Team)
+  const eventCriteriaAverages = useMemo(() => {
+    if (eventFeedbacks.length === 0) {
+      return {
+        responsibility: 0,
+        taskDelivery: 0,
+        collaboration: 0,
+        initiative: 0,
+      }
+    }
+    let totalResp = 0
+    let totalTask = 0
+    let totalCollab = 0
+    let totalInit = 0
+
+    eventFeedbacks.forEach((f) => {
+      totalResp += typeof f.criteriaScores?.responsibility === 'number' ? f.criteriaScores.responsibility : f.rating
+      totalTask += typeof f.criteriaScores?.taskDelivery === 'number' ? f.criteriaScores.taskDelivery : f.rating
+      totalCollab += typeof f.criteriaScores?.collaboration === 'number' ? f.criteriaScores.collaboration : f.rating
+      totalInit += typeof f.criteriaScores?.initiative === 'number' ? f.criteriaScores.initiative : f.rating
+    })
+
+    const len = eventFeedbacks.length
+    return {
+      responsibility: Number((totalResp / len).toFixed(1)),
+      taskDelivery: Number((totalTask / len).toFixed(1)),
+      collaboration: Number((totalCollab / len).toFixed(1)),
+      initiative: Number((totalInit / len).toFixed(1)),
+    }
+  }, [eventFeedbacks])
 
   // Filtered members for feedback reading
   const filteredRankings = useMemo(() => {
@@ -299,14 +376,14 @@ export function BcnSurveyReportView({
     return found || memberRankings[0] || null
   }, [memberRankings, selectedMemberCode])
 
-  // Filtered reviews of active member
+  // Filtered reviews of active member (theo thang điểm 10)
   const activeMemberReviews = useMemo(() => {
     if (!activeMemberObj) return []
     return activeMemberObj.stats.reviews.filter((r) => {
-      if (selectedRatingFilter !== 'all') {
-        const targetRating = Number(selectedRatingFilter)
-        if (Math.round(r.rating) !== targetRating) return false
-      }
+      if (selectedRatingFilter === 'all') return true
+      if (selectedRatingFilter === 'top') return r.rating >= 8.5
+      if (selectedRatingFilter === 'good') return r.rating >= 7.0 && r.rating < 8.5
+      if (selectedRatingFilter === 'need_improve') return r.rating < 7.0
       return true
     })
   }, [activeMemberObj, selectedRatingFilter])
@@ -393,25 +470,84 @@ export function BcnSurveyReportView({
               </h2>
             </div>
             <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400">
-              Tổng hợp điểm số, biểu đồ phân tích và toàn bộ nhận xét chéo của các thành viên trong sự kiện <strong className="text-[#061651] dark:text-slate-200">{selectedEvent}</strong>
+              {reportTab === 'config' ? (
+                <span>Thiết lập các đợt mở phiếu khảo sát, quản lý câu hỏi mở rộng và duy trì bộ 4 tiêu chí chuẩn</span>
+              ) : reportTab === 'feedbacks' ? (
+                <span>
+                  Toàn bộ nhận xét chéo, đánh giá chi tiết 4 tiêu chí và ghi chú BCN trong sự kiện{' '}
+                  <strong className="text-[#061651] dark:text-slate-200">{selectedEvent || 'Chưa chọn sự kiện'}</strong>
+                </span>
+              ) : (
+                <span>
+                  Tổng hợp điểm số, biểu đồ phân tích và toàn bộ nhận xét chéo của các thành viên trong sự kiện{' '}
+                  <strong className="text-[#061651] dark:text-slate-200">{selectedEvent || 'Chưa chọn sự kiện'}</strong>
+                </span>
+              )}
             </p>
           </div>
 
-          {/* Action buttons (Xuất dữ liệu chuẩn style dự án) */}
+          {/* Action buttons (Style chuẩn theo từng tab) */}
           <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
-            <button
-              type="button"
-              onClick={handleExportReport}
-              className="h-10 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none focus:outline-none focus:ring-0"
-              title="Xuất báo cáo tổng hợp dữ liệu"
-            >
-              <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
-              <span>Xuất dữ liệu</span>
-            </button>
+            {reportTab === 'config' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none"
+                >
+                  <Plus className="w-4 h-4 text-white shrink-0" />
+                  <span>Tạo sự kiện mới</span>
+                </button>
+
+                {onSwitchToSurvey && (
+                  <button
+                    type="button"
+                    onClick={onSwitchToSurvey}
+                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+                  >
+                    <Eye className="w-4 h-4 text-[#0284C7] shrink-0" />
+                    <span>Xem trang điền phiếu</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleExportReport}
+                  className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+                  title="Xuất báo cáo tổng hợp"
+                >
+                  <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
+                  <span>Xuất dữ liệu</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleExportReport}
+                  className="h-10 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none focus:outline-none focus:ring-0"
+                  title="Xuất dữ liệu"
+                >
+                  <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
+                  <span>Xuất dữ liệu</span>
+                </button>
+
+                {onSwitchToSurvey && (
+                  <button
+                    type="button"
+                    onClick={onSwitchToSurvey}
+                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+                  >
+                    <Eye className="w-4 h-4 text-[#0284C7] shrink-0" />
+                    <span>Trang điền phiếu</span>
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        {/* Sub-tab Switcher: Charts vs Feedbacks vs Management (Khớp Ảnh 1) */}
+        {/* Sub-tab Switcher: Charts vs Feedbacks vs Config (Khớp chuẩn Ảnh 3) */}
         <div className="flex items-center justify-between gap-3 pt-4 flex-wrap">
           <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex-wrap">
             <button
@@ -445,9 +581,9 @@ export function BcnSurveyReportView({
 
             <button
               type="button"
-              onClick={() => setReportTab('management')}
+              onClick={() => setReportTab('config')}
               className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
-                reportTab === 'management'
+                reportTab === 'config'
                   ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
@@ -457,7 +593,7 @@ export function BcnSurveyReportView({
             </button>
           </div>
 
-          {/* Hộp chọn sự kiện khảo sát dành cho BCN (Cân đối chiều cao và padding chuẩn) */}
+          {/* Hộp chọn sự kiện khảo sát dành cho BCN (Chuẩn theo Ảnh 3) */}
           <div ref={eventPickerRef} className="relative">
             <button
               type="button"
@@ -467,110 +603,93 @@ export function BcnSurveyReportView({
               <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
                 <Calendar className="w-4 h-4" />
               </div>
-
-              <div className="flex flex-col min-w-0 pr-1">
-                <span className="text-[10px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500 leading-tight">
-                  Sự kiện khảo sát
+              <div className="min-w-0 pr-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block leading-tight">
+                  SỰ KIỆN KHẢO SÁT
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black text-[#061651] dark:text-white truncate max-w-[180px]">
-                    {selectedEvent}
+                  <span className="text-xs sm:text-[13px] font-black text-[#061651] dark:text-white truncate max-w-[140px] sm:max-w-[180px]">
+                    {selectedEvent || 'Chưa chọn sự kiện'}
                   </span>
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-900/60 text-[#0284C7] dark:text-sky-300">
-                    {eventFeedbacks.length} lượt
-                  </span>
+                  {selectedEvent && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-sky-100 text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300">
+                      {eventFeedbacks.length} lượt
+                    </span>
+                  )}
                 </div>
               </div>
-
               <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                  isEventPickerOpen
-                    ? 'rotate-180 text-[#0284C7]'
-                    : 'group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform shrink-0 ${
+                  isEventPickerOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
 
-            {/* Dropdown Menu Danh sách sự kiện để chọn */}
             {isEventPickerOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                    Chọn sự kiện để xem báo cáo
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-400">
-                    {events.length} sự kiện
-                  </span>
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95 duration-150">
+                <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span>Chọn đợt khảo sát</span>
+                  <span>{surveyEvents.length} sự kiện</span>
                 </div>
 
-                <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                  {events.map((evt) => {
-                    const isSelected = evt.name === selectedEvent
-                    const evtReviewCount = feedbacks.filter((f) => f.event === evt.name).length
-
-                    return (
-                      <button
-                        key={evt.id}
-                        type="button"
-                        onClick={() => {
-                          if (onSelectEvent) {
-                            onSelectEvent(evt.name)
-                          }
-                          setIsEventPickerOpen(false)
-                        }}
-                        className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between gap-2.5 cursor-pointer ${
-                          isSelected
-                            ? 'bg-sky-50/80 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 font-bold border border-sky-200/70 dark:border-sky-800'
-                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200'
-                        }`}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold truncate block">
-                              {evt.name}
-                            </span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[9px] font-black shrink-0 ${
-                                evt.status === 'active'
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                                  : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                              }`}
-                            >
-                              {evt.status === 'active' ? 'Đang mở' : 'Đã đóng'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                            <span>{evt.date}{evt.endDate ? ` → ${evt.endDate}` : ''}</span>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">
-                              {evtReviewCount} phiếu nộp
+                <div className="max-h-60 overflow-y-auto space-y-1 py-1">
+                  {surveyEvents.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-slate-400">
+                      Chưa có sự kiện khảo sát nào
+                    </div>
+                  ) : (
+                    surveyEvents.map((evt) => {
+                      const count = feedbackCountsByEvent[evt.name] || 0
+                      const isSelected = selectedEvent === evt.name
+                      return (
+                        <button
+                          key={evt.id}
+                          type="button"
+                          onClick={() => {
+                            onSelectEvent?.(evt.name)
+                            setIsEventPickerOpen(false)
+                          }}
+                          className={`w-full text-left p-2.5 rounded-xl transition flex items-center justify-between gap-2 cursor-pointer ${
+                            isSelected
+                              ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0284C7]'
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs sm:text-sm font-bold truncate block">
+                                {evt.name}
+                              </span>
+                              {evt.status === 'active' ? (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Đang mở" />
+                              ) : (
+                                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" title="Đã đóng" />
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-400 block truncate">
+                              {evt.date}
                             </span>
                           </div>
-                        </div>
-
-                        {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-[#0284C7] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
-                      </button>
-                    )
-                  })}
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                            {count} lượt
+                          </span>
+                        </button>
+                      )
+                    })
+                  )}
                 </div>
 
-                {/* Phím tắt chuyển nhanh sang Quản lý sự kiện */}
-                <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => {
-                      setReportTab('management')
+                      setReportTab('config')
                       setIsEventPickerOpen(false)
                     }}
-                    className="w-full py-1.5 px-3 rounded-lg text-center text-xs font-bold text-[#0284C7] dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/50 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2 px-3 text-center text-xs font-bold text-[#0284C7] hover:bg-sky-50 dark:hover:bg-sky-950/50 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Quản lý & Tạo sự kiện mới</span>
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Quản lý thiết lập tất cả sự kiện</span>
                   </button>
                 </div>
               </div>
@@ -579,9 +698,21 @@ export function BcnSurveyReportView({
         </div>
       </div>
 
-      {/* 2. 4 THẺ CHỈ SỐ KPI CHUẨN STYLE ẢNH 2 (Chỉ hiện khi xem Charts hoặc Feedbacks) */}
-      {reportTab !== 'management' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {reportTab === 'config' ? (
+        <BcnSurveyConfigManager
+          selectedEvent={selectedEvent}
+          onSelectEvent={onSelectEvent}
+          onSwitchToSurvey={onSwitchToSurvey}
+          hideCompactToolbar={true}
+          isCreateModalOpen={isCreateModalOpen}
+          onOpenCreateModal={() => setIsCreateModalOpen(true)}
+          onCloseCreateModal={() => setIsCreateModalOpen(false)}
+        />
+      ) : (
+        <>
+
+      {/* 2. 4 THẺ CHỈ SỐ KPI CHUẨN STYLE ẢNH 2 (Nền Pastel Nhạt Không Viền, Bo Góc rounded-xl, Đổ Bóng Khối Box) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* KPI Card 1: Tổng lượt đánh giá (Style Thẻ Xanh Dương Nhạt #F0F9FF) */}
         <div
           onClick={() => setReportTab('feedbacks')}
@@ -622,7 +753,7 @@ export function BcnSurveyReportView({
                 {overallKpis.avgScore}
               </span>
               <span className="text-xs font-bold text-[#D97706]/70 dark:text-amber-300/70">
-                / 5.0
+                / 10.0
               </span>
             </div>
             <span className="text-[11.5px] font-semibold text-[#D97706] dark:text-amber-400 block hover:underline">
@@ -648,7 +779,7 @@ export function BcnSurveyReportView({
                 {overallKpis.positiveRate}%
               </span>
               <span className="text-[11.5px] font-bold text-[#16A34A]/80 dark:text-emerald-300">
-                4 - 5 sao
+                ≥ 8.0 điểm
               </span>
             </div>
             <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block hover:underline">
@@ -668,30 +799,41 @@ export function BcnSurveyReportView({
               setReportTab('feedbacks')
             }
           }}
-          className="p-3.5 sm:p-4 rounded-xl bg-[#FAF5FF] dark:bg-purple-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
+          className="p-3.5 sm:p-4 rounded-xl bg-[#FAF5FF] dark:bg-purple-950/30 flex items-center justify-between gap-2 cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
         >
-          <div className="space-y-0.5 min-w-0 pr-2">
+          <div className="space-y-0.5 min-w-0 flex-1">
             <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block">
               Điểm cao nhất sự kiện
             </span>
-            <div className="flex items-center gap-1.5 py-0.5">
-              <span className="text-lg sm:text-[20px] font-black text-[#9333EA] dark:text-purple-400 tracking-tight leading-tight truncate">
-                {overallKpis.topMember?.member.full_name || 'Phương Gia Huy'}
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 shrink-0">
-                {fmtScore(overallKpis.topMember?.stats.avgScore || 5.0, 1)}★
+            <div className="py-0.5">
+              <span
+                className="text-base sm:text-[17px] font-black text-[#9333EA] dark:text-purple-400 tracking-tight leading-snug line-clamp-2 break-words block"
+                title={overallKpis.totalReviews > 0 ? overallKpis.topMember?.member.full_name : 'Chưa có dữ liệu'}
+              >
+                {overallKpis.totalReviews > 0 ? (overallKpis.topMember?.member.full_name || 'Chưa có') : 'Chưa có dữ liệu'}
               </span>
             </div>
-            <span className="text-[11.5px] font-semibold text-[#9333EA] dark:text-purple-400 block truncate hover:underline">
-              {overallKpis.topMember?.member.department_name || 'Ban Truyền thông'}
-            </span>
+            <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#9333EA] dark:text-purple-400 flex-wrap">
+              {overallKpis.totalReviews > 0 && overallKpis.topMember ? (
+                <>
+                  <span className="hover:underline truncate max-w-[120px]">
+                    {overallKpis.topMember.member.department_name || 'Ban Tư vấn'}
+                  </span>
+                  <span className="text-purple-300 dark:text-purple-700 font-light select-none">|</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[10.5px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 shrink-0">
+                    {fmtScore(overallKpis.topMember.stats.avgScore, 1)}★
+                  </span>
+                </>
+              ) : (
+                <span className="text-slate-400 font-normal">Đang chờ thành viên đánh giá</span>
+              )}
+            </div>
           </div>
           <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-purple-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#9333EA] shrink-0">
             <Award className="w-4.5 h-4.5 stroke-[1.75]" />
           </div>
         </div>
       </div>
-      )}
 
       {/* 3. TAB 1: CHARTS & CORE TEAM LEADERBOARD (Chuẩn Style Ảnh 2) */}
       {reportTab === 'charts' && (
@@ -709,7 +851,7 @@ export function BcnSurveyReportView({
                     Xếp hạng & Tiến trình Điểm đánh giá Core Team
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Thanh đo điểm trung bình (thang 5.0) và phân bố lượt nhận xét của từng thành viên
+                    Thanh đo điểm trung bình (thang điểm 10.0) và phân bố lượt nhận xét của từng thành viên
                   </p>
                 </div>
               </div>
@@ -726,11 +868,10 @@ export function BcnSurveyReportView({
                     key={dept.id}
                     type="button"
                     onClick={() => setSelectedDeptFilter(dept.id)}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      selectedDeptFilter === dept.id
-                        ? 'bg-[#0284C7] text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${selectedDeptFilter === dept.id
+                      ? 'bg-[#0284C7] text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
                   >
                     {dept.label}
                   </button>
@@ -738,7 +879,7 @@ export function BcnSurveyReportView({
               </div>
             </div>
 
-            {/* HÀNG 4 THẺ CHỈ SỐ MỐC CHUẨN ĐÁNH GIÁ (Chuẩn Style Ảnh 2) */}
+            {/* HÀNG 4 THẺ CHỈ SỐ MỐC CHUẨN ĐÁNH GIÁ (Chuẩn Style Thang 10) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-1 pb-1">
               {/* Card 1: Mục tiêu Tốt */}
               <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0FDF4] dark:bg-emerald-950/30 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
@@ -748,7 +889,7 @@ export function BcnSurveyReportView({
                   </span>
                   <div className="flex items-baseline gap-1 py-0.5">
                     <span className="text-lg sm:text-[22px] font-black text-[#16A34A] dark:text-emerald-400 tracking-tight leading-none">
-                      4.8 - 5.0
+                      8.5 - 10.0
                     </span>
                     <span className="text-[11.5px] font-bold text-[#16A34A]/80 dark:text-emerald-300">
                       điểm
@@ -771,7 +912,7 @@ export function BcnSurveyReportView({
                   </span>
                   <div className="flex items-baseline gap-1 py-0.5">
                     <span className="text-lg sm:text-[22px] font-black text-[#0284C7] dark:text-sky-400 tracking-tight leading-none">
-                      4.0 - 4.7
+                      7.0 - 8.4
                     </span>
                     <span className="text-[11.5px] font-bold text-[#0284C7]/80 dark:text-sky-300">
                       điểm
@@ -794,7 +935,7 @@ export function BcnSurveyReportView({
                   </span>
                   <div className="flex items-baseline gap-1 py-0.5">
                     <span className="text-lg sm:text-[22px] font-black text-[#D97706] dark:text-amber-400 tracking-tight leading-none">
-                      Dưới 4.0
+                      Dưới 7.0
                     </span>
                     <span className="text-[11.5px] font-bold text-[#D97706]/80 dark:text-amber-300">
                       điểm
@@ -817,14 +958,14 @@ export function BcnSurveyReportView({
                   </span>
                   <div className="flex items-baseline gap-1 py-0.5">
                     <span className="text-lg sm:text-[22px] font-black text-[#061651] dark:text-white tracking-tight leading-none">
-                      0 - 5.0
+                      0 - 10.0
                     </span>
                     <span className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400">
                       điểm
                     </span>
                   </div>
                   <span className="text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 block">
-                    Thang điểm chuẩn
+                    Thang điểm 10 chuẩn
                   </span>
                 </div>
                 <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-300/80 dark:border-slate-700 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
@@ -836,7 +977,7 @@ export function BcnSurveyReportView({
             {/* List of Member Performance Bars */}
             <div className="space-y-3.5">
               {filteredRankings.map(({ member, stats }, idx) => {
-                const percent = Math.min(100, Math.max(0, (stats.avgScore / 5) * 100))
+                const percent = Math.min(100, Math.max(0, (stats.avgScore / 10) * 100))
                 const isTop3 = idx < 3 && selectedDeptFilter === 'all'
 
                 return (
@@ -848,15 +989,14 @@ export function BcnSurveyReportView({
                     <div className="flex items-center gap-3.5 min-w-[240px]">
                       {/* Rank Medal */}
                       <span
-                        className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                          idx === 0
-                            ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                            : idx === 1
+                        className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${idx === 0
+                          ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                          : idx === 1
                             ? 'bg-slate-200 text-slate-700 border border-slate-300'
                             : idx === 2
-                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                            : 'bg-white/80 dark:bg-slate-800 text-slate-500 border border-slate-200/80 dark:border-slate-700'
-                        }`}
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                              : 'bg-white/80 dark:bg-slate-800 text-slate-500 border border-slate-200/80 dark:border-slate-700'
+                          }`}
                       >
                         {idx + 1}
                       </span>
@@ -880,7 +1020,7 @@ export function BcnSurveyReportView({
                       {/* Name & Dept */}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-sm text-[#061651] dark:text-white truncate">
+                          <span className="font-extrabold text-sm text-[#061651] dark:text-white truncate" title={member.full_name}>
                             {member.full_name}
                           </span>
                           {isTop3 && (
@@ -904,20 +1044,19 @@ export function BcnSurveyReportView({
                           <span className="font-black text-sm text-[#061651] dark:text-white">
                             {stats.avgScore > 0 ? fmtScore(stats.avgScore, 2) : 'Chưa có'}
                           </span>
-                          <span className="text-slate-400">/ 5.0</span>
+                          <span className="text-slate-400">/ 10.0</span>
                         </div>
                       </div>
 
                       {/* Colored Progress Bar */}
                       <div className="w-full h-3 bg-slate-200/80 dark:bg-slate-700 rounded-full overflow-hidden relative">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            stats.avgScore >= 4.5
-                              ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                              : stats.avgScore >= 4.0
+                          className={`h-full rounded-full transition-all duration-500 ${stats.avgScore >= 8.5
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                            : stats.avgScore >= 7.0
                               ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
                               : 'bg-gradient-to-r from-amber-500 to-orange-400'
-                          }`}
+                            }`}
                           style={{ width: `${percent}%` }}
                         />
                       </div>
@@ -943,49 +1082,43 @@ export function BcnSurveyReportView({
 
           {/* Secondary Grid: 2 Analytical Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-            {/* Card 1: Phân bố số sao đánh giá (Star Rating Breakdown) */}
+            {/* Card 1: Phân bố điểm số đánh giá (Thang điểm 10.0) */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
               <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white mb-1">
-                Phân bố Mức sao Đánh giá
+                Phân bố Điểm số Đánh giá
               </h3>
               <p className="text-xs text-slate-500 mb-5">
-                Tỷ lệ phần trăm các mức đánh giá từ 1 đến 5 sao của sự kiện
+                Tỷ lệ phần trăm các mức điểm trên thang điểm 10.0 của sự kiện
               </p>
 
-              <div className="space-y-3">
-                {[
-                  { star: 5, label: 'Xuất sắc', color: 'bg-emerald-500' },
-                  { star: 4, label: 'Rất tốt', color: 'bg-blue-500' },
-                  { star: 3, label: 'Tốt', color: 'bg-amber-500' },
-                  { star: 2, label: 'Ổn', color: 'bg-orange-400' },
-                  { star: 1, label: 'Chưa tốt', color: 'bg-rose-500' },
-                ].map((item) => {
-                  const count = overallKpis.starsTotal[item.star as 1 | 2 | 3 | 4 | 5] || 0
-                  const pct = overallKpis.totalReviews > 0 ? Math.round((count / overallKpis.totalReviews) * 100) : 0
-
-                  return (
-                    <div key={item.star} className="flex items-center gap-3">
-                      <div className="w-20 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                        <span>{item.star} sao</span>
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <div className="space-y-4">
+                {scoreDistribution.map((item) => (
+                  <div key={item.key} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${item.color} shrink-0`} />
+                        <span className="font-extrabold text-sm text-[#061651] dark:text-white tracking-tight">
+                          {item.label}
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-600 font-light select-none">|</span>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          {item.tag}
+                        </span>
                       </div>
-
-                      <div className="flex-1 h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${item.color}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-
-                      <div className="w-20 text-right text-xs">
-                        <span className="font-extrabold text-[#061651] dark:text-white">
-                          {count}
-                        </span>{' '}
-                        <span className="text-slate-400">({pct}%)</span>
+                      <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                        <span className="font-black text-sm text-[#061651] dark:text-white">{item.count}</span>
+                        <span className="text-slate-400 ml-1.5 font-medium">({item.pct}%)</span>
                       </div>
                     </div>
-                  )
-                })}
+
+                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${item.color}`}
+                        style={{ width: `${item.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -1002,29 +1135,29 @@ export function BcnSurveyReportView({
                 {[
                   {
                     name: 'Tinh thần trách nhiệm & Chủ động',
-                    score: '4.8',
-                    scoreNum: 4.8,
+                    score: eventFeedbacks.length > 0 ? fmtScore(eventCriteriaAverages.responsibility, 1) : 'Chưa có',
+                    scoreNum: eventCriteriaAverages.responsibility,
                     desc: 'Có mặt đúng giờ, chủ động nhận việc và hoàn thành đúng hạn',
                     color: 'from-blue-500 to-indigo-600',
                   },
                   {
                     name: 'Hiệu quả thực thi nhiệm vụ',
-                    score: '4.7',
-                    scoreNum: 4.7,
+                    score: eventFeedbacks.length > 0 ? fmtScore(eventCriteriaAverages.taskDelivery, 1) : 'Chưa có',
+                    scoreNum: eventCriteriaAverages.taskDelivery,
                     desc: 'Chất lượng ấn phẩm, kỹ thuật, đón tiếp đạt chuẩn cao',
                     color: 'from-emerald-500 to-teal-600',
                   },
                   {
                     name: 'Kỹ năng phối hợp & Giao tiếp',
-                    score: '4.6',
-                    scoreNum: 4.6,
+                    score: eventFeedbacks.length > 0 ? fmtScore(eventCriteriaAverages.collaboration, 1) : 'Chưa có',
+                    scoreNum: eventCriteriaAverages.collaboration,
                     desc: 'Trao đổi nhịp nhàng giữa các ban, thái độ hòa đồng',
                     color: 'from-purple-500 to-pink-600',
                   },
                   {
                     name: 'Tác phong & Xử lý phát sinh',
-                    score: '4.5',
-                    scoreNum: 4.5,
+                    score: eventFeedbacks.length > 0 ? fmtScore(eventCriteriaAverages.initiative, 1) : 'Chưa có',
+                    scoreNum: eventCriteriaAverages.initiative,
                     desc: 'Bình tĩnh ứng phó tình huống trên sân khấu và hậu trường',
                     color: 'from-amber-500 to-orange-600',
                   },
@@ -1034,12 +1167,14 @@ export function BcnSurveyReportView({
                       <span className="font-bold text-[#061651] dark:text-white">
                         {crit.name}
                       </span>
-                      <span className="font-extrabold text-[#0B63E5]">{crit.score} / 5.0</span>
+                      <span className="font-extrabold text-[#0B63E5]">
+                        {crit.score}{eventFeedbacks.length > 0 ? ' / 10.0' : ''}
+                      </span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full bg-gradient-to-r ${crit.color}`}
-                        style={{ width: `${(crit.scoreNum / 5) * 100}%` }}
+                        style={{ width: `${(crit.scoreNum / 10) * 100}%` }}
                       />
                     </div>
                     <span className="text-[11px] text-slate-400 mt-0.5 block">
@@ -1089,11 +1224,10 @@ export function BcnSurveyReportView({
                   key={d.id}
                   type="button"
                   onClick={() => setSelectedDeptFilter(d.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    selectedDeptFilter === d.id
-                      ? 'bg-[#061651] text-white shadow-2xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${selectedDeptFilter === d.id
+                    ? 'bg-[#061651] text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                    }`}
                 >
                   {d.label}
                 </button>
@@ -1110,11 +1244,10 @@ export function BcnSurveyReportView({
                     key={member.member_code}
                     type="button"
                     onClick={() => setSelectedMemberCode(member.member_code)}
-                    className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between gap-3 border ${
-                      isSelected
-                        ? 'bg-blue-50/80 dark:bg-blue-950/50 border-[#0B63E5] shadow-xs'
-                        : 'bg-slate-50/60 dark:bg-slate-800/30 border-transparent hover:border-slate-200 dark:hover:border-slate-700'
-                    }`}
+                    className={`w-full text-left p-3 rounded-xl transition-all cursor-pointer flex items-center justify-between gap-3 border ${isSelected
+                      ? 'bg-sky-50/80 dark:bg-sky-950/40 border-sky-300 dark:border-sky-700 shadow-[0_2px_8px_rgba(2,132,199,0.08)]'
+                      : 'bg-[#F1F5F9] dark:bg-slate-800/60 border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:bg-slate-200/70 dark:hover:bg-slate-750'
+                      }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="relative w-10 h-10 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-blue-100 shrink-0">
@@ -1133,11 +1266,11 @@ export function BcnSurveyReportView({
                       </div>
                       <div className="min-w-0">
                         <span
-                          className={`font-bold text-xs block truncate ${
-                            isSelected
-                              ? 'text-[#0B63E5] dark:text-blue-300'
-                              : 'text-slate-800 dark:text-slate-200'
-                          }`}
+                          title={member.full_name}
+                          className={`font-bold text-xs block truncate ${isSelected
+                            ? 'text-[#0B63E5] dark:text-blue-300'
+                            : 'text-slate-800 dark:text-slate-200'
+                            }`}
                         >
                           {member.full_name}
                         </span>
@@ -1198,22 +1331,28 @@ export function BcnSurveyReportView({
                             Core Team
                           </span>
                         </div>
-                        <p className="text-xs sm:text-[13px] text-slate-500 font-medium mt-0.5">
-                          {formatMemberPosition(activeMemberObj.member.position, activeMemberObj.member.department_name || '')} - Mã SV: {activeMemberObj.member.student_id || activeMemberObj.member.member_code} - Lớp: {activeMemberObj.member.class_name || 'Khóa 2024'}
+                        <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 flex items-center flex-wrap gap-x-2 gap-y-0.5">
+                          <span>{formatMemberPosition(activeMemberObj.member.position, activeMemberObj.member.department_name || '')}</span>
+                          <span className="text-slate-300 dark:text-slate-600 font-light select-none">|</span>
+                          <span>Mã SV: {activeMemberObj.member.student_id || activeMemberObj.member.member_code}</span>
+                          <span className="text-slate-300 dark:text-slate-600 font-light select-none">|</span>
+                          <span>Lớp: {activeMemberObj.member.class_name || 'Khóa 2024'}</span>
                         </p>
                       </div>
                     </div>
 
                     {/* Overall Score Badge */}
-                    <div className="flex items-center gap-3 sm:flex-col sm:items-end self-start sm:self-auto bg-[#FFFBEB] dark:bg-amber-950/30 p-3 sm:p-3.5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
+                    <div className="flex items-center gap-3 sm:flex-col sm:items-end self-start sm:self-auto bg-[#FFFBEB] dark:bg-amber-950/30 p-3 sm:p-3.5 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] border-0">
                       <div className="flex items-center gap-1.5">
                         <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
                         <span className="text-2xl font-black text-[#061651] dark:text-white">
-                          {activeMemberObj.stats.avgScore > 0 ? fmtScore(activeMemberObj.stats.avgScore, 2) : '4.50'}
+                          {activeMemberObj.stats.totalReviews > 0
+                            ? fmtScore(activeMemberObj.stats.avgScore, 2)
+                            : 'Chưa có'}
                         </span>
-                        <span className="text-xs text-slate-400">/ 5.0</span>
+                        <span className="text-xs text-slate-400">/ 10.0</span>
                       </div>
-                      <span className="text-xs text-amber-800 dark:text-amber-300 font-bold">
+                      <span className="text-xs text-[#D97706] dark:text-amber-300 font-bold">
                         {activeMemberObj.stats.totalReviews} lượt nhận xét
                       </span>
                     </div>
@@ -1224,34 +1363,42 @@ export function BcnSurveyReportView({
                     <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Trách nhiệm</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
-                        {fmtScore(activeMemberObj.stats.criteriaAverages.responsibility || 4.8, 1)}★
+                        {activeMemberObj.stats.totalReviews > 0
+                          ? `${fmtScore(activeMemberObj.stats.criteriaAverages.responsibility, 1)} / 10`
+                          : 'Chưa có'}
                       </span>
                     </div>
                     <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Thực thi nhiệm vụ</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
-                        {fmtScore(activeMemberObj.stats.criteriaAverages.taskDelivery || 4.7, 1)}★
+                        {activeMemberObj.stats.totalReviews > 0
+                          ? `${fmtScore(activeMemberObj.stats.criteriaAverages.taskDelivery, 1)} / 10`
+                          : 'Chưa có'}
                       </span>
                     </div>
                     <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Phối hợp & Giao tiếp</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
-                        {fmtScore(activeMemberObj.stats.criteriaAverages.collaboration || 4.8, 1)}★
+                        {activeMemberObj.stats.totalReviews > 0
+                          ? `${fmtScore(activeMemberObj.stats.criteriaAverages.collaboration, 1)} / 10`
+                          : 'Chưa có'}
                       </span>
                     </div>
                     <div className="bg-[#F8FAFC] dark:bg-slate-800/40 p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
                       <span className="text-[11px] text-slate-400 block font-medium">Chủ động sáng tạo</span>
                       <span className="text-base font-extrabold text-[#061651] dark:text-white mt-0.5 block">
-                        {fmtScore(activeMemberObj.stats.criteriaAverages.initiative || 4.9, 1)}★
+                        {activeMemberObj.stats.totalReviews > 0
+                          ? `${fmtScore(activeMemberObj.stats.criteriaAverages.initiative, 1)} / 10`
+                          : 'Chưa có'}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* BCN Private Note Box for this member */}
-                <div className="bg-[#FFFBEB] dark:bg-amber-950/30 rounded-2xl p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
+                <div className="bg-[#FFFBEB] dark:bg-amber-950/30 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] border-0 p-4 sm:p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-[#D97706] dark:text-amber-400">
+                    <span className="text-xs font-bold text-[#92400E] dark:text-amber-300">
                       Ghi chú nội bộ của Ban Chủ nhiệm về thành viên này (Bảo mật)
                     </span>
                     {toastNoteSaved && (
@@ -1265,9 +1412,9 @@ export function BcnSurveyReportView({
                     defaultValue={bcnNotes[activeMemberObj.member.member_code] || ''}
                     onBlur={(e) => handleSaveBcnNote(activeMemberObj.member.member_code, e.target.value)}
                     placeholder="Nhập ghi chú riêng của BCN (định hướng bồi dưỡng, phân công sự kiện tới, lưu ý khen thưởng...)"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/80 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D97706]/40 transition shadow-2xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl border-0 shadow-[0_2px_8px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/60 focus:shadow-[0_4px_12px_rgba(217,119,6,0.12)] transition-all min-h-[60px] resize-y"
                   />
-                  <span className="text-[10px] text-[#D97706]/80 dark:text-amber-400/80 mt-1 block">
+                  <span className="text-[10px] text-[#B45309] dark:text-amber-400/80 mt-1.5 block">
                     Ghi chú tự động lưu khi bạn bấm ra ngoài ô nhập. Chỉ BCN mới thấy được phần này.
                   </span>
                 </div>
@@ -1278,21 +1425,25 @@ export function BcnSurveyReportView({
                     Chi tiết nhận xét từ các thành viên ({activeMemberReviews.length})
                   </h4>
 
-                  {/* Rating Filter */}
+                  {/* Rating Filter Thang 10 */}
                   <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-slate-400 text-xs hidden sm:inline">Lọc sao:</span>
-                    {['all', '5', '4', '3'].map((r) => (
+                    <span className="text-slate-400 text-xs hidden sm:inline">Lọc điểm:</span>
+                    {[
+                      { key: 'all', label: 'Tất cả' },
+                      { key: 'top', label: '≥ 8.5' },
+                      { key: 'good', label: '7.0 - 8.4' },
+                      { key: 'need_improve', label: '< 7.0' },
+                    ].map((f) => (
                       <button
-                        key={r}
+                        key={f.key}
                         type="button"
-                        onClick={() => setSelectedRatingFilter(r)}
-                        className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
-                          selectedRatingFilter === r
-                            ? 'bg-[#061651] text-white shadow-2xs'
-                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 hover:text-slate-900'
-                        }`}
+                        onClick={() => setSelectedRatingFilter(f.key)}
+                        className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${selectedRatingFilter === f.key
+                          ? 'bg-[#061651] text-white shadow-2xs'
+                          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 hover:text-slate-900'
+                          }`}
                       >
-                        {r === 'all' ? 'Tất cả' : `${r}★`}
+                        {f.label}
                       </button>
                     ))}
                   </div>
@@ -1337,9 +1488,9 @@ export function BcnSurveyReportView({
                             {/* Stars Badge */}
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200">
                               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                              <span>{item.rating} / 5.0</span>
+                              <span>{item.rating} / 10.0</span>
                               <span className="font-normal text-[11px] text-amber-700/80">
-                                ({item.rating === 5 ? 'Xuất sắc' : item.rating === 4 ? 'Rất tốt' : 'Tốt'})
+                                ({item.rating >= 8.5 ? 'Xuất sắc' : item.rating >= 7.0 ? 'Rất tốt' : 'Tốt'})
                               </span>
                             </span>
 
@@ -1351,7 +1502,8 @@ export function BcnSurveyReportView({
 
                         {/* Question 1: Nhận xét sau sự kiện */}
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-[#061651] dark:text-slate-200">
+                          <span className="text-xs font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                             Nhận xét sau sự kiện:
                           </span>
                           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed font-normal">
@@ -1361,63 +1513,19 @@ export function BcnSurveyReportView({
 
                         {/* Question 2: Mong muốn cải thiện */}
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-amber-800 dark:text-amber-400">
+                          <span className="text-xs font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Góp ý / Mong muốn cải thiện:
                           </span>
                           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-amber-50/30 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100/70 dark:border-amber-900/30 leading-relaxed font-normal">
                             {item.improvement || 'Thành viên hoàn thành tốt, không có yêu cầu cải thiện'}
                           </p>
                         </div>
-
-                        {/* 4 Core Criteria Breakdown */}
-                        {item.criteriaScores && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
-                              <span className="text-slate-400 block font-medium">Trách nhiệm</span>
-                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.responsibility}★</span>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
-                              <span className="text-slate-400 block font-medium">Thực thi nhiệm vụ</span>
-                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.taskDelivery}★</span>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
-                              <span className="text-slate-400 block font-medium">Phối hợp & Giao tiếp</span>
-                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.collaboration}★</span>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-[11px]">
-                              <span className="text-slate-400 block font-medium">Chủ động sáng tạo</span>
-                              <span className="font-extrabold text-[#061651] dark:text-white">{item.criteriaScores.initiative}★</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Event Custom Answers */}
-                        {item.customAnswers && Object.keys(item.customAnswers).length > 0 && (
-                          <div className="space-y-1.5 pt-1">
-                            {Object.entries(item.customAnswers).map(([qKey, ans]) => (
-                              <div key={qKey} className="text-xs bg-sky-50/60 dark:bg-sky-950/30 p-2.5 rounded-xl border border-sky-100 dark:border-sky-900/40">
-                                <span className="font-bold text-[#0284C7] dark:text-sky-300 block mb-0.5">{qKey}</span>
-                                <span className="text-slate-700 dark:text-slate-300 font-medium">{String(ans)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     ))
                   ) : (
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-400 text-xs">
-                      {eventFeedbacks.length === 0 ? (
-                        <div className="space-y-2 py-4">
-                          <p className="text-slate-600 dark:text-slate-300 font-bold text-sm">
-                            Sự kiện &ldquo;{selectedEvent}&rdquo; là sự kiện mới, chưa có dữ liệu đánh giá nào.
-                          </p>
-                          <p className="text-slate-400 text-xs max-w-md mx-auto">
-                            Khi các thành viên Core Team gửi phiếu đánh giá cho sự kiện này, toàn bộ lịch sử chi tiết, điểm 4 tiêu chí cốt lõi và các câu hỏi mở rộng sẽ được ghi lại đầy đủ tại đây.
-                          </p>
-                        </div>
-                      ) : (
-                        <span>Không có nhận xét nào phù hợp với bộ lọc sao đã chọn</span>
-                      )}
+                      Không có nhận xét nào phù hợp với bộ lọc điểm đã chọn
                     </div>
                   )}
                 </div>
@@ -1430,14 +1538,7 @@ export function BcnSurveyReportView({
           </div>
         </div>
       )}
-
-      {/* 4. SUB-TAB 3: TẠO SỰ KIỆN & CÂU HỎI ĐÁNH GIÁ (BCN MANAGEMENT) */}
-      {reportTab === 'management' && (
-        <BcnSurveyConfigManager
-          selectedEvent={selectedEvent}
-          onSelectEvent={onSelectEvent}
-          onSwitchToSurvey={onSwitchToSurvey}
-        />
+        </>
       )}
     </div>
   )

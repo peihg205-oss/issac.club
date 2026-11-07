@@ -365,13 +365,14 @@ export function mergeEvents(
 export function reconcileMemberScores(
   membersList: RosterMember[],
   proposalsList: ProposalItem[],
-  activePeriodId: string = 'month-2026-10'
+  activePeriodId: string = 'month-2026-11'
 ): RosterMember[] {
   const deltaMap = new Map<string, number>()
   const t02CountMap = new Map<string, number>()
 
   for (const p of proposalsList) {
-    if (p.status === 'approved' && (!p.periodId || p.periodId === activePeriodId)) {
+    const pPeriod = p.periodId || 'month-2026-10'
+    if (p.status === 'approved' && pPeriod === activePeriodId) {
       deltaMap.set(p.memberCode, (deltaMap.get(p.memberCode) || 0) + p.points)
       if (p.criterionCode === 'T02') {
         t02CountMap.set(p.memberCode, (t02CountMap.get(p.memberCode) || 0) + 1)
@@ -380,11 +381,10 @@ export function reconcileMemberScores(
   }
 
   const updated = membersList.map((m) => {
-    const delta = deltaMap.get(m.member_code)
-    // Nếu có bản ghi trong sổ cái proposals chu kỳ hiện tại, điểm = 60 + delta (clamp 0..100)
-    // Nếu chưa có bản ghi nào, giữ nguyên mốc 60 điểm chuẩn
+    const delta = deltaMap.get(m.member_code) || 0
+    // Mốc bắt đầu chuẩn là 60 điểm cho tất cả thành viên trong chu kỳ thi đua mới (Quy chế P01)
     const baseScore = 60
-    const calculatedScore = delta !== undefined ? Math.max(0, Math.min(100, baseScore + delta)) : (m.current_score || 60)
+    const calculatedScore = Math.max(0, Math.min(100, baseScore + delta))
     const t02Count = t02CountMap.get(m.member_code) || 0
     return {
       ...m,
@@ -452,6 +452,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   // Đổi chu kỳ hoạt động và đồng bộ lập tức đa nền tảng
   const setCurrentActivePeriodId = (newId: string) => {
     _setCurrentActivePeriodId(newId)
+    currentActivePeriodIdRef.current = newId
     const target = periods.find((p) => p.id === newId)
     if (target?.name) {
       setCurrentActiveMonth(target.name)
@@ -461,11 +462,18 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       isCurrent: p.id === newId,
     }))
     setPeriods(updated)
+    periodsRef.current = updated
+
+    const recalculated = reconcileMemberScores(membersRef.current, proposalsRef.current, newId)
+    membersRef.current = recalculated
+    setMembers(recalculated)
+
     try {
       localStorage.setItem('issac_active_period_id', newId)
       localStorage.setItem('issac_periods_clean_v1', JSON.stringify(updated))
+      localStorage.setItem('issac_members_clean_v1', JSON.stringify(recalculated))
     } catch (e) {}
-    syncToCloud({ activePeriodId: newId, periods: updated })
+    syncToCloud({ activePeriodId: newId, periods: updated, members: recalculated })
   }
 
   // Safe client-side hydration from localStorage to prevent SSR mismatch
@@ -556,7 +564,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           proposalsRef.current = initialProposalList
         }
       }
-      const reconciled = reconcileMemberScores(initialMemberList, initialProposalList, currentActivePeriodId)
+      const savedActivePeriod = localStorage.getItem('issac_active_period_id') || 'month-2026-11'
+      _setCurrentActivePeriodId(savedActivePeriod)
+      currentActivePeriodIdRef.current = savedActivePeriod
+
+      const reconciled = reconcileMemberScores(initialMemberList, initialProposalList, savedActivePeriod)
       membersRef.current = reconciled
       setMembers(reconciled)
     } catch (e) {
@@ -775,7 +787,25 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // 4. Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop, Chống nhảy lại dữ liệu)
+        // 4. Đồng bộ activePeriodId trước để chuẩn hóa điểm số thành viên đúng chu kỳ hiện tại
+        const activePeriodToUse = data.activePeriodId || currentActivePeriodIdRef.current || 'month-2026-11'
+        if (data.activePeriodId && data.activePeriodId !== currentActivePeriodIdRef.current) {
+          currentActivePeriodIdRef.current = data.activePeriodId
+          _setCurrentActivePeriodId(data.activePeriodId)
+          const allPeriods =
+            data.periods && Array.isArray(data.periods)
+              ? data.periods
+              : periodsRef.current
+          const found = allPeriods.find((p: any) => p.id === data.activePeriodId)
+          if (found?.name) {
+            setCurrentActiveMonth(found.name)
+          }
+          try {
+            localStorage.setItem('issac_active_period_id', data.activePeriodId)
+          } catch (e) {}
+        }
+
+        // Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop, Chống nhảy lại dữ liệu)
         if (data.deletedMemberCodes && Array.isArray(data.deletedMemberCodes)) {
           data.deletedMemberCodes.forEach((code: string) => deletedMemberCodesRef.current.add(code))
           try {
@@ -838,8 +868,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             hasLocalNewer = true
           }
 
-          // Tự động chuẩn hóa điểm số thực tế từ sổ cái proposals
-          const reconciled = reconcileMemberScores(merged, latestMergedProposals, currentActivePeriodIdRef.current)
+          // Tự động chuẩn hóa điểm số thực tế từ sổ cái proposals cho chu kỳ đang kích hoạt
+          const reconciled = reconcileMemberScores(merged, latestMergedProposals, activePeriodToUse)
           const isMembersChanged = JSON.stringify(reconciled) !== JSON.stringify(currentMembers)
           if (isMembersChanged) {
             membersRef.current = reconciled

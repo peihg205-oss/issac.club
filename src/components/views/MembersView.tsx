@@ -114,18 +114,18 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
   const [editingMember, setEditingMember] = useState<RosterMember | null>(null)
 
   // Thống kê nhanh chỉ số
-  const totalCount = members.length || 49
-  const coreCount = members.filter((m) => m.is_core).length || 10
-  const avgScore = totalCount > 0 ? (members.reduce((acc, m) => acc + m.current_score, 0) / totalCount).toFixed(1) : '72.3'
-  const warningT02Count = members.filter((m) => m.absent_count_t02 >= 2).length || 0
-  const lowScoreCount = members.filter((m) => m.current_score < 60).length || 5
-  const highScoreCount = members.filter((m) => m.current_score >= 85).length || 4
+  const totalCount = members.length
+  const coreCount = members.filter((m) => m.is_core).length
+  const avgScore = totalCount > 0 ? (members.reduce((acc, m) => acc + m.current_score, 0) / totalCount).toFixed(1) : '60.0'
+  const warningT02Count = members.filter((m) => m.absent_count_t02 >= 2).length
+  const lowScoreCount = members.filter((m) => m.current_score < 60).length
+  const highScoreCount = members.filter((m) => m.current_score >= 85).length
 
   // Số lượng theo ban
-  const bcnCount = members.filter((m) => m.department_slug === 'bcn').length || 3
-  const ttCount = members.filter((m) => m.department_slug === 'truyen-thong').length || 13
-  const tvCount = members.filter((m) => m.department_slug === 'tu-van').length || 25
-  const nsCount = members.filter((m) => m.department_slug === 'nhan-su').length || 8
+  const bcnCount = members.filter((m) => m.department_slug === 'bcn').length
+  const ttCount = members.filter((m) => m.department_slug === 'truyen-thong').length
+  const tvCount = members.filter((m) => m.department_slug === 'tu-van').length
+  const nsCount = members.filter((m) => m.department_slug === 'nhan-su').length
 
   // Bộ lọc dữ liệu nâng cao - Sắp xếp điểm cao nhất lên đầu theo đúng chuẩn thiết kế
   const filtered = useMemo(() => {

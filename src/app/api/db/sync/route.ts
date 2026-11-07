@@ -18,6 +18,8 @@ let cachedCustomRules: any[] | null = null
 let cachedAccounts: any[] | null = null
 let cachedDeletedAccountIds: string[] | null = null
 let cachedDeletedMemberCodes: string[] | null = null
+let cachedActivities: any[] | null = null
+let cachedSchedulePendingRequests: any[] | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET(request: Request) {
@@ -44,6 +46,8 @@ export async function GET(request: Request) {
         'issac_issued_accounts_cloud',
         'issac_deleted_account_ids',
         'issac_deleted_member_codes',
+        'issac_activities_cloud',
+        'issac_schedule_pending_requests',
       ])
 
     if (!error && data && data.length > 0) {
@@ -62,6 +66,8 @@ export async function GET(request: Request) {
       const accountsRow = data.find((r) => r.key === 'issac_issued_accounts_cloud')
       const deletedAccountsRow = data.find((r) => r.key === 'issac_deleted_account_ids')
       const deletedMemberCodesRow = data.find((r) => r.key === 'issac_deleted_member_codes')
+      const activitiesRow = data.find((r) => r.key === 'issac_activities_cloud')
+      const schedulePendingRequestsRow = data.find((r) => r.key === 'issac_schedule_pending_requests')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -78,6 +84,8 @@ export async function GET(request: Request) {
       let accountsFromDb = null
       let deletedAccountIdsFromDb = null
       let deletedMemberCodesFromDb = null
+      let activitiesFromDb = null
+      let schedulePendingRequestsFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -206,6 +214,24 @@ export async function GET(request: Request) {
         }
       }
 
+      if (activitiesRow?.value) {
+        try {
+          activitiesFromDb = JSON.parse(activitiesRow.value)
+          cachedActivities = activitiesFromDb
+        } catch (e) {
+          console.error('Error parsing activities JSON:', e)
+        }
+      }
+
+      if (schedulePendingRequestsRow?.value) {
+        try {
+          schedulePendingRequestsFromDb = JSON.parse(schedulePendingRequestsRow.value)
+          cachedSchedulePendingRequests = schedulePendingRequestsFromDb
+        } catch (e) {
+          console.error('Error parsing schedule pending requests JSON:', e)
+        }
+      }
+
       const activeDeletedEventIds = new Set(deletedEventIdsFromDb || cachedDeletedEventIds || [])
       let finalEvents = eventsFromDb || cachedEvents || []
       if (activeDeletedEventIds.size > 0 && Array.isArray(finalEvents)) {
@@ -268,6 +294,8 @@ export async function GET(request: Request) {
           accounts: finalAccounts,
           deletedAccountIds: Array.from(activeDeletedAccountIds),
           deletedMemberCodes: Array.from(activeDeletedMemberCodes),
+          activities: activitiesFromDb !== null ? activitiesFromDb : cachedActivities,
+          schedulePendingRequests: schedulePendingRequestsFromDb !== null ? schedulePendingRequestsFromDb : (cachedSchedulePendingRequests || []),
           source: 'supabase_cloud',
         },
         {
@@ -326,6 +354,8 @@ export async function GET(request: Request) {
         deletedPeriodIds: cachedDeletedPeriodIds || [],
         accounts: fallbackAccounts,
         deletedAccountIds: Array.from(fallbackDeletedAccountIds),
+        activities: cachedActivities,
+        schedulePendingRequests: cachedSchedulePendingRequests || [],
         source: 'cache_memory',
       },
       {
@@ -391,6 +421,8 @@ export async function POST(request: Request) {
       accountId,
       deletedMemberCodes,
       member,
+      activities,
+      schedulePendingRequests,
     } = body
     const supabase = createAdminClient()
 
@@ -978,6 +1010,44 @@ export async function POST(request: Request) {
       }
     }
 
+    if (activities !== undefined) {
+      cachedActivities = activities
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_activities_cloud',
+              value: JSON.stringify(activities),
+              description: 'Cloud synchronized activities schedule for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (actListErr) {
+        console.warn('Supabase activities upsert notice:', actListErr)
+      }
+    }
+
+    if (schedulePendingRequests !== undefined) {
+      cachedSchedulePendingRequests = schedulePendingRequests
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_schedule_pending_requests',
+              value: JSON.stringify(schedulePendingRequests),
+              description: 'Cloud synchronized schedule pending requests for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (reqErr) {
+        console.warn('Supabase schedule pending requests upsert notice:', reqErr)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       events: cachedEvents,
@@ -995,6 +1065,8 @@ export async function POST(request: Request) {
       accounts: cachedAccounts,
       deletedAccountIds: cachedDeletedAccountIds || [],
       deletedMemberCodes: cachedDeletedMemberCodes || [],
+      activities: cachedActivities,
+      schedulePendingRequests: cachedSchedulePendingRequests || [],
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'

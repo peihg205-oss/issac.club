@@ -11,10 +11,11 @@ import {
   Settings,
   KeyRound,
   Award,
+  Calendar,
   ClipboardCheck,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
-import { canUserManageAccounts } from '@/lib/auth/permissions'
+import { canUserManageAccounts, isUserCoreTeam } from '@/lib/auth/permissions'
 import { useClub } from '@/lib/context/ClubContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 
@@ -22,6 +23,7 @@ export type ActiveNavTab =
   | 'dashboard'
   | 'members'
   | 'core-survey'
+  | 'schedule'
   | 'checkin'
   | 'history'
   | 'rules'
@@ -115,6 +117,10 @@ export function Sidebar({
   // Chỉ Ban Chủ nhiệm mới có quyền quản trị và xem Cấp tài khoản Ban
   const isAccountManager = isBCN || canManageAccounts || canUserManageAccounts(currentUser)
 
+  // Chỉ thành viên Core Team (Ban Chủ nhiệm, Trưởng/Phó ban hoặc thành viên có cờ is_core) mới thấy tab Khảo sát Core Team
+  // Thành viên thường (kể cả thành viên Ban Nhân sự) KHÔNG được thấy tab này!
+  const isCoreUser = isUserCoreTeam(currentUser, members)
+
   // Theme state: defaults to Royal Blue (#1451D8)
   const [themeId, setThemeId] = useState<string>('blue')
   const menuRef = useRef<HTMLDivElement>(null)
@@ -176,10 +182,19 @@ export function Sidebar({
       label: t('nav.members'),
       icon: Users,
     },
+    ...(isCoreUser
+      ? [
+          {
+            id: 'core-survey' as ActiveNavTab,
+            label: t('nav.core_survey', 'Khảo sát Core Team'),
+            icon: Award,
+          },
+        ]
+      : []),
     {
-      id: 'core-survey',
-      label: t('nav.core_survey', 'Khảo sát Core Team'),
-      icon: Award,
+      id: 'schedule',
+      label: t('nav.schedule', 'Lịch hoạt động'),
+      icon: Calendar,
     },
     {
       id: 'checkin',

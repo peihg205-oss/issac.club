@@ -28,6 +28,7 @@ import {
   Eye,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
+import { isUserCoreTeam } from '@/lib/auth/permissions'
 import { useClub } from '@/lib/context/ClubContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 import { BcnSurveyReportView } from '@/components/survey/BcnSurveyReportView'
@@ -255,14 +256,8 @@ export function SurveyView() {
   }, [currentEventItem])
 
   // Kiểm tra thành viên có thuộc Core Team (hoặc BCN) hay không
-  // Yêu cầu: "thành viên core không khảo sát sẽ không điền được"
-  const isCoreUser = useMemo(() => {
-    if (isBCN) return true
-    if (!currentUser) return false
-    if (currentUser.isCore) return true
-    const found = members.find((m) => m.member_code === currentUser.memberCode)
-    return Boolean(found?.is_core)
-  }, [currentUser, isBCN, members])
+  // Yêu cầu: "thành viên core mới có thấy được và vào điền khảo sát"
+  const isCoreUser = useMemo(() => isUserCoreTeam(currentUser, members), [currentUser, members])
 
   // Chỉ cho phép điền phiếu nếu là Core Team VÀ sự kiện còn hạn khảo sát
   const canSubmitSurvey = Boolean(isCoreUser && !isEventClosedOrExpired)
@@ -642,6 +637,36 @@ export function SurveyView() {
         block: 'nearest',
       })
     }
+  }
+
+  if (!isCoreUser) {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-4 text-center">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-10 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-100 dark:border-slate-800 space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-[#061651] dark:text-white">
+            Giới hạn quyền truy cập
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            Chức năng <strong>Khảo sát Core Team</strong> chỉ dành riêng cho các thành viên thuộc Core Team và Ban Chủ nhiệm CLB iSSAC. Tài khoản thành viên thường không có quyền truy cập chức năng này.
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/?tab=dashboard'
+                }
+              }}
+              className="px-6 py-2.5 rounded-xl bg-[#1351D8] hover:bg-[#1044B5] text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer"
+            >
+              Quay lại Bảng điều khiển
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

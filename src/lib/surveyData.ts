@@ -537,6 +537,41 @@ export function isSurveyEventExpired(event: SurveyEventItem): boolean {
 
 export const SURVEY_EVENTS_STORAGE_KEY = 'issac_survey_events_v2'
 export const SURVEY_QUESTIONS_STORAGE_KEY = 'issac_survey_custom_questions_v2'
+export const SURVEY_DELETED_EVENTS_STORAGE_KEY = 'issac_deleted_survey_event_ids'
+
+export function getDeletedSurveyEventIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = localStorage.getItem(SURVEY_DELETED_EVENTS_STORAGE_KEY)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw)
+    return new Set(Array.isArray(parsed) ? parsed : [])
+  } catch {
+    return new Set()
+  }
+}
+
+export function addDeletedSurveyEventId(id: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const set = getDeletedSurveyEventIds()
+    set.add(id)
+    localStorage.setItem(SURVEY_DELETED_EVENTS_STORAGE_KEY, JSON.stringify(Array.from(set)))
+  } catch (err) {
+    console.error('Failed to save deleted survey event id:', err)
+  }
+}
+
+export function removeDeletedSurveyEventId(id: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const set = getDeletedSurveyEventIds()
+    set.delete(id)
+    localStorage.setItem(SURVEY_DELETED_EVENTS_STORAGE_KEY, JSON.stringify(Array.from(set)))
+  } catch (err) {
+    console.error('Failed to remove deleted survey event id:', err)
+  }
+}
 
 export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
   {
@@ -596,18 +631,63 @@ export const DEFAULT_EVENT_CUSTOM_QUESTIONS: SurveyQuestionItem[] = [
 // Data access helpers
 // ============================================================
 
+export function normalizeFeedbacksToScale10(feedbacks: SurveyFeedbackItem[]): SurveyFeedbackItem[] {
+  if (!Array.isArray(feedbacks)) return []
+  return feedbacks.map((f) => {
+    // If rating is <= 5, convert it to 10-point scale (e.g. 5 -> 10, 4.8 -> 9.6)
+    const isScale5 = f.rating <= 5
+    const newRating = isScale5 ? Number((f.rating * 2).toFixed(1)) : f.rating
+    const newScores = f.criteriaScores
+      ? {
+          responsibility: f.criteriaScores.responsibility <= 5 ? Number((f.criteriaScores.responsibility * 2).toFixed(1)) : f.criteriaScores.responsibility,
+          taskDelivery: f.criteriaScores.taskDelivery <= 5 ? Number((f.criteriaScores.taskDelivery * 2).toFixed(1)) : f.criteriaScores.taskDelivery,
+          collaboration: f.criteriaScores.collaboration <= 5 ? Number((f.criteriaScores.collaboration * 2).toFixed(1)) : f.criteriaScores.collaboration,
+          initiative: f.criteriaScores.initiative <= 5 ? Number((f.criteriaScores.initiative * 2).toFixed(1)) : f.criteriaScores.initiative,
+        }
+      : {
+          responsibility: newRating,
+          taskDelivery: newRating,
+          collaboration: newRating,
+          initiative: newRating,
+        }
+    return {
+      ...f,
+      rating: newRating,
+      criteriaScores: newScores,
+    }
+  })
+}
+
 export function getStoredSurveyFeedbacks(): SurveyFeedbackItem[] {
-  if (typeof window === 'undefined') return INITIAL_SURVEY_FEEDBACKS
+  if (typeof window === 'undefined') return normalizeFeedbacksToScale10(INITIAL_SURVEY_FEEDBACKS)
   try {
     const raw = localStorage.getItem(SURVEY_STORAGE_KEY)
-    if (!raw) {
-      localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(INITIAL_SURVEY_FEEDBACKS))
-      return INITIAL_SURVEY_FEEDBACKS
+    if (raw === null) {
+      const normalized = normalizeFeedbacksToScale10(INITIAL_SURVEY_FEEDBACKS)
+      localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(normalized))
+      return normalized
     }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SURVEY_FEEDBACKS
+    return Array.isArray(parsed) ? normalizeFeedbacksToScale10(parsed) : []
   } catch {
-    return INITIAL_SURVEY_FEEDBACKS
+    return []
+  }
+}
+
+export function deleteFeedbacksByEvent(eventName: string): SurveyFeedbackItem[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(SURVEY_STORAGE_KEY)
+    const current: SurveyFeedbackItem[] = raw !== null ? (JSON.parse(raw) || []) : INITIAL_SURVEY_FEEDBACKS
+    if (Array.isArray(current)) {
+      const updated = current.filter((f) => f.event !== eventName)
+      localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    }
+    return []
+  } catch (err) {
+    console.error('Failed to delete feedbacks for event:', err)
+    return []
   }
 }
 
@@ -632,21 +712,27 @@ export function saveNewSurveyFeedback(item: SurveyFeedbackItem): SurveyFeedbackI
 export function getStoredSurveyEvents(): SurveyEventItem[] {
   if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
   try {
+    const deletedIds = getDeletedSurveyEventIds()
     const raw = localStorage.getItem(SURVEY_EVENTS_STORAGE_KEY)
-    if (!raw) {
-      localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(INITIAL_SURVEY_EVENTS))
-      return INITIAL_SURVEY_EVENTS
+    if (raw === null) {
+      const initial = INITIAL_SURVEY_EVENTS.filter((e) => !deletedIds.has(e.id))
+      localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(initial))
+      return initial
     }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SURVEY_EVENTS
+    if (Array.isArray(parsed)) {
+      return parsed.filter((e) => !deletedIds.has(e.id))
+    }
+    return []
   } catch {
-    return INITIAL_SURVEY_EVENTS
+    return []
   }
 }
 
 export function saveNewSurveyEvent(item: SurveyEventItem): SurveyEventItem[] {
-  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  if (typeof window === 'undefined') return [item]
   try {
+    removeDeletedSurveyEventId(item.id)
     const current = getStoredSurveyEvents()
     const filtered = current.filter((e) => e.id !== item.id && e.name.toLowerCase() !== item.name.toLowerCase())
     const updated = [item, ...filtered]
@@ -655,12 +741,12 @@ export function saveNewSurveyEvent(item: SurveyEventItem): SurveyEventItem[] {
     return updated
   } catch (err) {
     console.error('Failed to save survey event:', err)
-    return INITIAL_SURVEY_EVENTS
+    return [item]
   }
 }
 
 export function updateSurveyEventStatus(id: string, status: 'active' | 'closed'): SurveyEventItem[] {
-  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  if (typeof window === 'undefined') return []
   try {
     const current = getStoredSurveyEvents()
     const updated = current.map((e) => (e.id === id ? { ...e, status } : e))
@@ -669,20 +755,48 @@ export function updateSurveyEventStatus(id: string, status: 'active' | 'closed')
     return updated
   } catch (err) {
     console.error('Failed to update survey event status:', err)
-    return INITIAL_SURVEY_EVENTS
+    return []
   }
 }
 
 export function deleteSurveyEvent(id: string): SurveyEventItem[] {
-  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  if (typeof window === 'undefined') return []
   try {
     const current = getStoredSurveyEvents()
+    const targetEvent = current.find((e) => e.id === id)
+    addDeletedSurveyEventId(id)
     const updated = current.filter((e) => e.id !== id)
     localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(updated))
+
+    // Dọn dẹp sạch sẽ toàn bộ dữ liệu phụ thuộc của sự kiện bị xóa
+    if (targetEvent) {
+      try {
+        localStorage.removeItem(`issac_survey_evaluations_${encodeURIComponent(targetEvent.name)}`)
+        localStorage.removeItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${targetEvent.id}`)
+        localStorage.removeItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${encodeURIComponent(targetEvent.name)}`)
+        deleteFeedbacksByEvent(targetEvent.name)
+      } catch (cleanErr) {
+        console.error('Error cleaning event artifacts:', cleanErr)
+      }
+    }
+
     window.dispatchEvent(new Event('storage'))
     return updated
   } catch (err) {
     console.error('Failed to delete survey event:', err)
+    return []
+  }
+}
+
+export function restoreDefaultSurveyEvents(): SurveyEventItem[] {
+  if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
+  try {
+    localStorage.removeItem(SURVEY_DELETED_EVENTS_STORAGE_KEY)
+    localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(INITIAL_SURVEY_EVENTS))
+    window.dispatchEvent(new Event('storage'))
+    return INITIAL_SURVEY_EVENTS
+  } catch (err) {
+    console.error('Failed to restore default survey events:', err)
     return INITIAL_SURVEY_EVENTS
   }
 }

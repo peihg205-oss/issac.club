@@ -35,16 +35,33 @@ export function DashboardView({
   onNavigateToCheckin,
   onNavigateToLeaderboard,
 }: DashboardViewProps) {
-  const { members, activeEvent, events, proposals, currentActiveMonth } = useClub()
+  const {
+    members,
+    activeEvent,
+    events,
+    proposals,
+    currentActiveMonth,
+    currentActivePeriodId,
+    periods,
+  } = useClub()
   const { language, t } = useLanguage()
 
   const totalMembers = members.length
   const totalScore = members.reduce((sum, m) => sum + m.current_score, 0)
   const avgScore = totalMembers > 0 ? (totalScore / totalMembers).toFixed(1) : '60.0'
 
-  // Thống kê đề xuất điểm
-  const pendingCount = proposals.filter((p) => p.status === 'pending_bcn').length
-  const approvedCount = proposals.filter((p) => p.status === 'approved').length
+  // Thống kê đề xuất điểm trong chu kỳ hiện tại
+  const activePeriodId = currentActivePeriodId || periods.find((p) => p.isCurrent)?.id || 'month-2026-11'
+  const pendingCount = proposals.filter(
+    (p) => p.status === 'pending_bcn' && p.memberCode !== 'ALL-CLUB' && !p.id.startsWith('sys-')
+  ).length
+  const approvedThisMonth = proposals.filter(
+    (p) =>
+      p.status === 'approved' &&
+      p.memberCode !== 'ALL-CLUB' &&
+      !p.id.startsWith('sys-') &&
+      (p.periodId === activePeriodId || (!p.periodId && activePeriodId === 'month-2026-10'))
+  ).length
 
   const records = activeEvent?.records || {}
   let countOnTime = 0
@@ -59,9 +76,9 @@ export function DashboardView({
   }
 
   // Thống kê thành viên theo Ban
-  const ttMembers = members.filter((m) => m.department_code === 'B01').length || 14
-  const tvMembers = members.filter((m) => m.department_code === 'B02').length || 23
-  const nsMembers = members.filter((m) => m.department_code === 'B03').length || 8
+  const ttMembers = members.filter((m) => m.department_code === 'B01').length
+  const tvMembers = members.filter((m) => m.department_code === 'B02').length
+  const nsMembers = members.filter((m) => m.department_code === 'B03').length
 
   // Top 5 thành viên dẫn đầu
   const top5Members = [...members].sort((a, b) => b.current_score - a.current_score).slice(0, 5)
@@ -314,7 +331,7 @@ export function DashboardView({
               {t('dashboard.kpi_approved_month')}
             </span>
             <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] block tracking-tight leading-none py-0.5">
-              {approvedCount > 0 ? approvedCount : 581}
+              {approvedThisMonth}
             </span>
             <span className="text-[11.5px] font-semibold text-[#16A34A] block hover:underline">
               {t('dashboard.view_details')}
@@ -357,7 +374,7 @@ export function DashboardView({
             </span>
             <div className="flex items-baseline gap-1.5 py-0.5">
               <span className="text-2xl sm:text-[28px] font-black text-[#16A34A] tracking-tight leading-none">
-                {countOnTime || 41}
+                {countOnTime}
               </span>
               <span className="text-[11.5px] font-bold text-[#16A34A]">
                 {language === 'vi' ? '+1đ / TV' : '+1 pt / mbr'}
@@ -409,7 +426,7 @@ export function DashboardView({
             </span>
             <div className="flex items-baseline gap-1.5 py-0.5">
               <span className="text-2xl sm:text-[28px] font-black text-[#0284C7] tracking-tight leading-none">
-                {countExcused || 6}
+                {countExcused}
               </span>
               <span className="text-[11.5px] font-bold text-[#0284C7]">
                 {language === 'vi' ? '-2đ / TV' : '-2 pt / mbr'}
@@ -434,7 +451,7 @@ export function DashboardView({
               {t('dashboard.kpi_avg_score')}
             </span>
             <span className="text-2xl sm:text-[28px] font-black text-[#061651] block tracking-tight leading-none py-0.5">
-              {avgScore && avgScore !== '60.0' ? `${avgScore}/100` : '72.3/100'}
+              {avgScore}/100
             </span>
             <span className="text-[11.5px] font-semibold text-[#0284C7] block hover:underline">
               {t('dashboard.view_details')}

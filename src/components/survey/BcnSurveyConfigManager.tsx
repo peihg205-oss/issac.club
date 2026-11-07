@@ -44,19 +44,36 @@ interface BcnSurveyConfigManagerProps {
   selectedEvent: string
   onSelectEvent?: (eventName: string) => void
   onSwitchToSurvey?: () => void
+  hideCompactToolbar?: boolean
+  isCreateModalOpen?: boolean
+  onCloseCreateModal?: () => void
+  onOpenCreateModal?: () => void
 }
 
 export function BcnSurveyConfigManager({
   selectedEvent,
   onSelectEvent,
   onSwitchToSurvey,
+  hideCompactToolbar = true,
+  isCreateModalOpen,
+  onCloseCreateModal,
+  onOpenCreateModal,
 }: BcnSurveyConfigManagerProps) {
   // 1. Events State
   const [events, setEvents] = useState<SurveyEventItem[]>(() => getStoredSurveyEvents())
   const [feedbacks, setFeedbacks] = useState(() => getStoredSurveyFeedbacks())
 
-  // Create Event Form State
-  const [showCreateEventModal, setShowCreateEventModal] = useState<boolean>(false)
+  // Create Event Form State: Hỗ trợ cả kích hoạt nội bộ lẫn từ props cha
+  const [internalShowCreateEventModal, setInternalShowCreateEventModal] = useState<boolean>(false)
+  const showCreateEventModal = Boolean(isCreateModalOpen) || internalShowCreateEventModal
+  const setShowCreateEventModal = (open: boolean) => {
+    setInternalShowCreateEventModal(open)
+    if (open) {
+      onOpenCreateModal?.()
+    } else {
+      onCloseCreateModal?.()
+    }
+  }
   const [newEventName, setNewEventName] = useState<string>('')
   const [newEventDate, setNewEventDate] = useState<string>(() => {
     const today = new Date()
@@ -170,16 +187,14 @@ export function BcnSurveyConfigManager({
   // Handle Delete Event
   const handleDeleteEvent = (id: string, name: string) => {
     if (confirm(`Bạn có chắc muốn xóa sự kiện "${name}"?`)) {
-      try {
-        localStorage.removeItem(`issac_survey_evaluations_${encodeURIComponent(name)}`)
-      } catch (err) {
-        console.error(err)
-      }
       const updated = deleteSurveyEvent(id)
       setEvents(updated)
+      setFeedbacks(getStoredSurveyFeedbacks())
       showToast(`Đã xóa sự kiện "${name}"!`)
-      if (selectedEvent === name && updated.length > 0 && onSelectEvent) {
-        onSelectEvent(updated[0].name)
+      if (onSelectEvent) {
+        if (selectedEvent === name) {
+          onSelectEvent(updated.length > 0 ? updated[0].name : '')
+        }
       }
     }
   }
@@ -237,204 +252,234 @@ export function BcnSurveyConfigManager({
         </div>
       )}
 
-      {/* COMPACT TOOLBAR (STYLE CHUẨN GỌN GÀNG THEO HỆ THỐNG DỰ ÁN) */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:px-5 sm:py-3.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-100 dark:border-sky-900/50">
-            <Sliders className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-bold text-[#061651] dark:text-white tracking-tight">
-                Thiết lập Sự kiện & Câu hỏi Đánh giá
-              </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-300 border border-sky-100 dark:border-sky-900/50 hidden sm:inline-block">
-                Cốt lõi 4 tiêu chí
-              </span>
+      {/* COMPACT TOOLBAR (STYLE CHUẨN GỌN GÀNG THEO HỆ THỐNG DỰ ÁN - CHỈ HIỆN KHI STANDALONE) */}
+      {!hideCompactToolbar && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:px-5 sm:py-3.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-100 dark:border-sky-900/50">
+              <Sliders className="w-4 h-4" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate sm:whitespace-normal mt-0.5">
-              Tạo kỳ khảo sát mới, quản lý câu hỏi mở rộng và duy trì bộ 4 tiêu chí chuẩn
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-bold text-[#061651] dark:text-white tracking-tight">
+                  Thiết lập Sự kiện & Câu hỏi Đánh giá
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-300 border border-sky-100 dark:border-sky-900/50 hidden sm:inline-block">
+                  Cốt lõi 4 tiêu chí
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate sm:whitespace-normal mt-0.5">
+                Tạo kỳ khảo sát mới, quản lý câu hỏi mở rộng và duy trì bộ 4 tiêu chí chuẩn
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setShowCreateEventModal(true)}
-            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none"
-          >
-            <Plus className="w-4 h-4 text-white shrink-0" />
-            <span>Tạo sự kiện mới</span>
-          </button>
-
-          {onSwitchToSurvey && (
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <button
               type="button"
-              onClick={onSwitchToSurvey}
-              className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+              onClick={() => setShowCreateEventModal(true)}
+              className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none"
             >
-              <Eye className="w-4 h-4 text-[#0284C7] dark:text-sky-400 shrink-0" />
-              <span>Xem trang điền phiếu</span>
+              <Plus className="w-4 h-4 text-white shrink-0" />
+              <span>Tạo sự kiện mới</span>
             </button>
-          )}
+
+            {onSwitchToSurvey && (
+              <button
+                type="button"
+                onClick={onSwitchToSurvey}
+                className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+              >
+                <Eye className="w-4 h-4 text-[#0284C7] dark:text-sky-400 shrink-0" />
+                <span>Xem trang điền phiếu</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
 
 
-      {/* SECTION 2: DANH SÁCH SỰ KIỆN ĐÁNH GIÁ (Events List & Management) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-7 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0284C7] dark:bg-blue-950/60 dark:text-blue-300 flex items-center justify-center font-bold">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
+      {/* SECTION 2: DANH SÁCH SỰ KIỆN ĐÁNH GIÁ (Events List & Management - Không Viền, Đổ Bóng Khối) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border-0 p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100/80 dark:border-slate-800/60 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#F0F9FF] dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-bold text-[#061651] dark:text-white tracking-tight">
                 Danh sách Sự kiện Khảo sát ({events.length})
               </h3>
+              <p className="text-xs text-[#64748B] dark:text-slate-400 font-normal mt-0.5">
+                Quản lý các đợt mở phiếu đánh giá. Sự kiện đang mở sẽ xuất hiện trong dropdown để toàn thể thành viên chọn điền phiếu.
+              </p>
             </div>
-            <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400">
-              Quản lý các đợt mở phiếu đánh giá. Sự kiện đang mở sẽ xuất hiện trong dropdown để toàn thể thành viên chọn điền phiếu.
-            </p>
           </div>
 
           <button
             type="button"
             onClick={() => setShowCreateEventModal(true)}
-            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none self-start sm:self-auto"
+            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_8px_rgba(2,132,199,0.3)] hover:shadow-[0_4px_12px_rgba(2,132,199,0.4)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border-0 select-none self-start sm:self-auto"
           >
             <Plus className="w-4 h-4 text-white shrink-0" />
             <span>Thêm sự kiện</span>
           </button>
         </div>
 
-        {/* Events Table / Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {events.map((evt) => {
-            const isCurrentSelected = selectedEvent === evt.name
-            const reviewCount = feedbackCountsByEvent[evt.name] || 0
-
-            return (
-              <div
-                key={evt.id}
-                className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                  isCurrentSelected
-                    ? 'border-[#0284C7] bg-sky-50/40 dark:bg-sky-950/30 shadow-xs'
-                    : 'border-slate-200/80 dark:border-slate-800 bg-[#F8FAFC]/60 dark:bg-slate-800/40 hover:border-slate-300'
-                }`}
+        {/* Events Table / Grid or Empty State */}
+        {events.length === 0 ? (
+          <div className="p-8 sm:p-12 text-center rounded-2xl border-0 bg-slate-50/70 dark:bg-slate-850/30 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center mx-auto mb-1 shadow-2xs">
+              <Calendar className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-[#061651] dark:text-white text-sm sm:text-base mb-1">
+                Hiện tại chưa có sự kiện khảo sát
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                Hiện tại chưa có sự kiện khảo sát, hãy khởi tạo ngay để nắm bắt tình hình hoạt động của Core Team.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateEventModal(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition active:scale-95 cursor-pointer border-0"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-extrabold text-[#061651] dark:text-white text-sm sm:text-base truncate">
-                        {evt.name}
-                      </h4>
-                      {isCurrentSelected && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0284C7] text-white shadow-2xs">
-                          Đang xem
-                        </span>
-                      )}
-                      {isSurveyEventExpired(evt) ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200/80">
-                          Hết hạn khảo sát
-                        </span>
-                      ) : evt.status === 'active' ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/80">
-                          ● Đang mở khảo sát
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                          ○ Đã đóng
-                        </span>
-                      )}
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Khởi tạo sự kiện mới</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {events.map((evt) => {
+              const isCurrentSelected = selectedEvent === evt.name
+              const reviewCount = feedbackCountsByEvent[evt.name] || 0
+
+              return (
+                <div
+                  key={evt.id}
+                  className={`p-4 sm:p-5 rounded-2xl border-0 transition-all ${
+                    isCurrentSelected
+                      ? 'bg-[#E0F2FE]/85 dark:bg-sky-950/60 shadow-[0_2px_10px_rgba(2,132,199,0.15)] ring-2 ring-[#0284C7]'
+                      : 'bg-[#F1F5F9] dark:bg-slate-800/60 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-extrabold text-[#061651] dark:text-white text-sm sm:text-base truncate">
+                          {evt.name}
+                        </h4>
+                        {isCurrentSelected && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#0284C7] text-white shadow-2xs">
+                            Đang xem
+                          </span>
+                        )}
+                        {isSurveyEventExpired(evt) ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border-0 shadow-2xs">
+                            Hết hạn khảo sát
+                          </span>
+                        ) : evt.status === 'active' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border-0 shadow-2xs">
+                            ● Đang mở khảo sát
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/70 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border-0 shadow-2xs">
+                            ○ Đã đóng
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                        {evt.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 pt-3 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{evt.date}</span>
+                        {evt.endDate && (
+                          <span className="text-slate-400">→ <strong className="text-slate-700 dark:text-slate-300">{evt.endDate}</strong></span>
+                        )}
+                      </span>
+                      <span className="flex items-center gap-1 font-bold text-[#061651] dark:text-slate-200">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#0284C7]" />
+                        {reviewCount} lượt nhận xét
+                      </span>
                     </div>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                      {evt.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3.5 pt-3 border-t border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{evt.date}</span>
-                      {evt.endDate && (
-                        <span className="text-slate-400">→ <strong className="text-slate-700 dark:text-slate-300">{evt.endDate}</strong></span>
+                    <div className="flex items-center gap-1.5">
+                      {onSelectEvent && !isCurrentSelected && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onSelectEvent(evt.name)
+                            showToast(`Đã chọn xem sự kiện "${evt.name}"!`)
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)] text-[#0284C7] font-bold text-xs transition cursor-pointer"
+                        >
+                          Chọn sự kiện
+                        </button>
                       )}
-                    </span>
-                    <span className="flex items-center gap-1 font-bold text-[#061651] dark:text-slate-200">
-                      <MessageSquare className="w-3.5 h-3.5 text-[#0284C7]" />
-                      {reviewCount} lượt nhận xét
-                    </span>
-                  </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {onSelectEvent && !isCurrentSelected && (
                       <button
                         type="button"
-                        onClick={() => {
-                          onSelectEvent(evt.name)
-                          showToast(`Đã chọn xem sự kiện "${evt.name}"!`)
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-[#0284C7] font-bold text-xs transition cursor-pointer"
+                        onClick={() => handleToggleStatus(evt.id, evt.status)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition border-0 shadow-2xs cursor-pointer ${
+                          evt.status === 'active'
+                            ? 'bg-amber-50 text-amber-700 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:text-amber-300'
+                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        }`}
                       >
-                        Chọn sự kiện
+                        {evt.status === 'active' ? 'Đóng khảo sát' : 'Mở lại'}
                       </button>
-                    )}
 
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(evt.id, evt.status)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer ${
-                        evt.status === 'active'
-                          ? 'border-amber-200 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40'
-                          : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                      }`}
-                    >
-                      {evt.status === 'active' ? 'Đóng khảo sát' : 'Mở lại'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEvent(evt.id, evt.name)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
-                      title="Xóa sự kiện"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEvent(evt.id, evt.name)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                        title="Xóa sự kiện"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {/* SECTION 3: CẤU HÌNH CÂU HỎI ĐÁNH GIÁ MỞ RỘNG (Custom Questions for current event) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-7 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-950/60 dark:text-purple-300 flex items-center justify-center font-bold">
-                <FileText className="w-4 h-4" />
-              </div>
-              <h3 className="text-base sm:text-lg font-black text-[#061651] dark:text-white">
-                Câu hỏi Đánh giá cho: <span className="text-[#0284C7]">{selectedEvent}</span>
-              </h3>
+      {/* SECTION 3: CẤU HÌNH CÂU HỎI ĐÁNH GIÁ MỞ RỘNG (Style Chuẩn Không Viền, Đổ Bóng Nổi Khối) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border-0 p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100/80 dark:border-slate-800/60 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#F0F9FF] dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 border-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
-            <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400">
-              Bên cạnh 4 tiêu chí cốt lõi, BCN có thể bổ sung thêm các câu hỏi tự luận hoặc thang điểm riêng cho sự kiện này.
-            </p>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-bold text-[#061651] dark:text-white tracking-tight">
+                Câu hỏi Đánh giá cho:{' '}
+                <span className="text-[#0284C7]">{selectedEvent || '(Chưa chọn sự kiện)'}</span>
+              </h3>
+              <p className="text-xs text-[#64748B] dark:text-slate-400 font-normal mt-0.5">
+                Bên cạnh 4 tiêu chí cốt lõi, BCN có thể bổ sung thêm các câu hỏi tự luận hoặc thang điểm riêng cho sự kiện này.
+              </p>
+            </div>
           </div>
 
           <button
             type="button"
+            disabled={!selectedEvent}
             onClick={() => setShowAddQuestionModal(true)}
-            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_6px_rgba(2,132,199,0.22)] hover:shadow-[0_4px_10px_rgba(2,132,199,0.3)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border border-transparent select-none self-start sm:self-auto"
+            className="h-10 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-[0_2px_8px_rgba(2,132,199,0.3)] hover:shadow-[0_4px_12px_rgba(2,132,199,0.4)] flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border-0 select-none self-start sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4 text-white shrink-0" />
             <span>Thêm câu hỏi mới</span>
@@ -443,48 +488,48 @@ export function BcnSurveyConfigManager({
 
         {/* List of questions for this event */}
         <div className="space-y-3">
-          {/* 1. Core criteria row overview */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/60 space-y-3">
+          {/* 1. Core criteria row overview (Nền Pastel Sky Đậm Hơn 1 Chút, Đổ Bóng Nổi Rõ Khối Box & Tương Phản Thẻ Con) */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#E0F2FE]/85 dark:bg-sky-950/60 border-0 shadow-[0_2px_8px_rgba(2,132,199,0.08),0_1px_2px_rgba(0,0,0,0.04)] space-y-3.5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3">
-                <div className="min-w-7 h-7 px-1.5 rounded-lg bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs shrink-0">
+                <div className="min-w-8 h-7 px-2 rounded-lg bg-white/95 text-[#0284C7] dark:bg-sky-900/80 dark:text-sky-300 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs border-0">
                   1 - 4
                 </div>
                 <div>
                   <h5 className="font-extrabold text-[#061651] dark:text-white text-xs sm:text-sm">
                     Bộ 4 Tiêu chí Cốt lõi (bắt buộc)
                   </h5>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 font-medium">
                     Cố định chuẩn CLB trong mọi phiếu khảo sát đánh giá Core Team
                   </p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-100 text-[#0284C7] dark:bg-blue-900/50 border border-blue-200/80 shrink-0">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white dark:bg-slate-800 text-[#0284C7] dark:text-sky-300 border-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)] shrink-0">
                 Cố định chuẩn CLB
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
               {CORE_EVALUATION_CRITERIA.map((crit) => (
                 <div
                   key={crit.key}
-                  className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-center space-y-0.5"
+                  className="p-3 rounded-xl bg-white dark:bg-slate-800/90 border-0 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] text-center space-y-1 transition-all"
                 >
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block truncate">
                     {crit.shortLabel}
                   </span>
-                  <span className="text-[11px] text-amber-500 dark:text-amber-400 font-bold block">
-                    1.0 – 5.0 ★
+                  <span className="text-[11px] text-[#0284C7] dark:text-sky-400 font-bold block">
+                    Thang điểm 1 - 10
                   </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* 2. Default General Feedback Questions */}
-          <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-3">
+          {/* 2. Default General Feedback Questions (Không Viền, Nền Sắc Nét Đậm Hơn Rõ Khối Box) */}
+          <div className="p-4 sm:p-4.5 rounded-2xl bg-[#F1F5F9] dark:bg-slate-800/70 border-0 shadow-[0_2px_8px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3 transition-all">
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">
+              <div className="w-7 h-7 rounded-lg bg-slate-200/90 text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs border-0 shadow-2xs">
                 5
               </div>
               <div>
@@ -496,14 +541,14 @@ export function BcnSurveyConfigManager({
                 </p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200/70 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-white dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 border-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               Mặc định
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-3">
+          <div className="p-4 sm:p-4.5 rounded-2xl bg-[#F1F5F9] dark:bg-slate-800/70 border-0 shadow-[0_2px_8px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3 transition-all">
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">
+              <div className="w-7 h-7 rounded-lg bg-slate-200/90 text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs border-0 shadow-2xs">
                 6
               </div>
               <div>
@@ -515,7 +560,7 @@ export function BcnSurveyConfigManager({
                 </p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200/70 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-white dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 border-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               Mặc định
             </span>
           </div>
@@ -524,10 +569,10 @@ export function BcnSurveyConfigManager({
           {customQuestions.map((q, qIdx) => (
             <div
               key={q.id}
-              className="p-4 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-200/90 dark:border-slate-700 flex items-center justify-between gap-3 transition hover:border-sky-300"
+              className="p-4 sm:p-4.5 rounded-2xl bg-[#F1F5F9] dark:bg-slate-800/80 border-0 shadow-[0_2px_8px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3 transition-all"
             >
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center justify-center font-bold text-xs border-0 shadow-2xs">
                   {7 + qIdx}
                 </div>
                 <div>
@@ -551,13 +596,13 @@ export function BcnSurveyConfigManager({
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-0 shadow-2xs">
                   Câu hỏi mở rộng
                 </span>
                 <button
                   type="button"
                   onClick={() => handleDeleteQuestion(q.id)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer border-0"
                   title="Xóa câu hỏi"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -826,7 +871,7 @@ export function BcnSurveyConfigManager({
                       className="w-full h-[42px] appearance-none bg-white dark:bg-slate-800 hover:border-[#7026ED]/60 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3.5 pr-10 text-xs sm:text-[13px] font-semibold text-[#061651] dark:text-white focus:outline-none focus:border-[#7026ED] focus:ring-2 focus:ring-[#7026ED]/15 transition shadow-2xs cursor-pointer"
                     >
                       <option value="textarea">Đoạn văn tự luận (Nhiều dòng góp ý)</option>
-                      <option value="rating_stars">Đánh giá sao (Thang điểm 1 - 5 sao)</option>
+                      <option value="rating_stars">Đánh giá thang điểm (Thang điểm 1 - 10)</option>
                       <option value="text">Câu trả lời ngắn (1 dòng)</option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2" />

@@ -14,17 +14,19 @@ import { CheckinView } from '@/components/views/CheckinView'
 import { MemberProfileView } from '@/components/views/MemberProfileView'
 import { AccountsView } from '@/components/views/AccountsView'
 import { SurveyView } from '@/components/views/SurveyView'
+import { ScheduleView } from '@/components/views/ScheduleView'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
-import { canUserManageAccounts } from '@/lib/auth/permissions'
+import { canUserManageAccounts, isUserCoreTeam } from '@/lib/auth/permissions'
 import type { RosterMember } from '@/lib/clubData'
 
 export default function AppHome() {
   const router = useRouter()
   const { currentUser, isAuthChecked, isBCN, isHR } = useAuth()
-  const { proposals, disputes, activeEvent } = useClub()
+  const { proposals, disputes, activeEvent, members } = useClub()
 
   const isAccountManager = isBCN || canUserManageAccounts(currentUser)
+  const isCoreUser = isUserCoreTeam(currentUser, members)
 
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('dashboard')
   const [selectedMember, setSelectedMember] = useState<RosterMember | null>(null)
@@ -46,6 +48,13 @@ export default function AppHome() {
     }
   }, [activeTab, isAccountManager])
 
+  // Quyền hạn: Chỉ Thành viên Core Team mới được vào tab core-survey. Nếu là thành viên thường -> tự động đưa về dashboard
+  useEffect(() => {
+    if (activeTab === 'core-survey' && !isCoreUser) {
+      setActiveTab('dashboard')
+    }
+  }, [activeTab, isCoreUser])
+
   // Đọc tab từ URL param hoặc khởi tạo
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -57,6 +66,7 @@ export default function AppHome() {
           'dashboard',
           'members',
           'core-survey',
+          'schedule',
           'checkin',
           'history',
           'rules',
@@ -65,10 +75,16 @@ export default function AppHome() {
           'settings',
         ].includes(tabParam)
       ) {
-        setActiveTab(tabParam)
+        if (tabParam === 'accounts' && !isAccountManager) {
+          setActiveTab('dashboard')
+        } else if (tabParam === 'core-survey' && !isCoreUser) {
+          setActiveTab('dashboard')
+        } else {
+          setActiveTab(tabParam)
+        }
       }
     }
-  }, [])
+  }, [isAccountManager, isCoreUser])
 
 
   if (!isAuthChecked) {
@@ -177,7 +193,17 @@ export default function AppHome() {
           ) : activeTab === 'members' ? (
             <MembersView onSelectMember={handleSelectMember} searchQuery={globalSearch} />
           ) : activeTab === 'core-survey' ? (
-            <SurveyView />
+            isCoreUser ? (
+              <SurveyView />
+            ) : (
+              <DashboardView
+                onViewAllMembers={() => setActiveTab('members')}
+                onNavigateToCheckin={() => setActiveTab('checkin')}
+                onNavigateToLeaderboard={() => setActiveTab('stats')}
+              />
+            )
+          ) : activeTab === 'schedule' ? (
+            <ScheduleView />
           ) : activeTab === 'checkin' ? (
             <CheckinView />
           ) : activeTab === 'history' ? (
