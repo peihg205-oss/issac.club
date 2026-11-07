@@ -166,7 +166,6 @@ export function DashboardView({
             <div
               onClick={handleMascotClick}
               className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
-              title="Bấm vào tớ để nghe lời động viên nhé!"
             >
               <img
                 src="/issac-mascot.png"
