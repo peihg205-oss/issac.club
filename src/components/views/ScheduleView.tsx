@@ -182,6 +182,36 @@ export function getSessionFromTime(
   return defaultSession
 }
 
+// Phân tách khung giờ (VD: '18:30 - 21:30') thành giờ bắt đầu và giờ kết thúc
+export function parseTimeRange(
+  timeStr?: string,
+  defaultSession: 'morning' | 'afternoon' | 'evening' = 'morning'
+): { startTime: string; endTime: string } {
+  const fallback =
+    defaultSession === 'morning'
+      ? { startTime: '08:00', endTime: '12:00' }
+      : defaultSession === 'afternoon'
+      ? { startTime: '13:30', endTime: '17:30' }
+      : { startTime: '18:30', endTime: '21:30' }
+
+  if (!timeStr) return fallback
+
+  const matches = timeStr.match(/(\d{1,2}:\d{2})/g)
+  if (matches && matches.length >= 2) {
+    return {
+      startTime: matches[0].padStart(5, '0'),
+      endTime: matches[1].padStart(5, '0'),
+    }
+  }
+  if (matches && matches.length === 1) {
+    return {
+      startTime: matches[0].padStart(5, '0'),
+      endTime: fallback.endTime,
+    }
+  }
+  return fallback
+}
+
 export const CATEGORY_STYLES: Record<
   ActivityCategoryKey,
   {
@@ -643,6 +673,8 @@ export function ScheduleView() {
   const [editDate, setEditDate] = useState('')
   const [editEndDate, setEditEndDate] = useState('')
   const [editSession, setEditSession] = useState<'morning' | 'afternoon' | 'evening'>('morning')
+  const [editStartTime, setEditStartTime] = useState('08:00')
+  const [editEndTime, setEditEndTime] = useState('12:00')
   const [editTime, setEditTime] = useState('')
   const [editPeriod, setEditPeriod] = useState('')
   const [editLead, setEditLead] = useState('')
@@ -650,6 +682,20 @@ export function ScheduleView() {
   const [editDepartment, setEditDepartment] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editDone, setEditDone] = useState(false)
+
+  const handleEditStartTimeChange = (newStart: string) => {
+    setEditStartTime(newStart)
+    const combined = `${newStart} - ${editEndTime}`
+    setEditTime(combined)
+    setEditSession(getSessionFromTime(combined, editSession))
+  }
+
+  const handleEditEndTimeChange = (newEnd: string) => {
+    setEditEndTime(newEnd)
+    const combined = `${editStartTime} - ${newEnd}`
+    setEditTime(combined)
+    setEditSession(getSessionFromTime(combined, editSession))
+  }
 
   // Open activity in view or edit mode
   const handleOpenActivity = (act: ActivityItem, editDirectly = false) => {
@@ -661,6 +707,9 @@ export function ScheduleView() {
     setEditEndDate(normalized.endDate || '')
     setEditSession(normalized.session)
     setEditTime(normalized.time)
+    const parsedRange = parseTimeRange(normalized.time, normalized.session)
+    setEditStartTime(parsedRange.startTime)
+    setEditEndTime(parsedRange.endTime)
     setEditPeriod(normalized.period || '')
     setEditLead(normalized.lead)
     setEditRoom(normalized.room)
@@ -701,6 +750,9 @@ export function ScheduleView() {
     setEditEndDate(normalized.endDate || '')
     setEditSession(normalized.session)
     setEditTime(normalized.time)
+    const parsedRange = parseTimeRange(normalized.time, normalized.session)
+    setEditStartTime(parsedRange.startTime)
+    setEditEndTime(parsedRange.endTime)
     setEditPeriod(normalized.period || '')
     setEditLead(normalized.lead)
     setEditRoom(normalized.room)
@@ -747,6 +799,8 @@ export function ScheduleView() {
     const timeFormatted = `${dayStr}/${monthStrPadded}`
     const monthStr = `Tháng ${monthNum}/${year}`
     const quarterStr = getClubQuarter(editDate, monthStr)
+    const finalEditTime = (editTime || `${editStartTime} - ${editEndTime}`).trim()
+    const finalEditSession = getSessionFromTime(finalEditTime, editSession)
 
     const updated: ActivityItem = {
       ...selectedActivity,
@@ -760,8 +814,8 @@ export function ScheduleView() {
       dayOfWeek,
       month: monthStr,
       quarter: quarterStr,
-      session: getSessionFromTime(editTime, selectedActivity.session),
-      time: editTime.trim(),
+      session: finalEditSession,
+      time: finalEditTime,
       period: editPeriod.trim(),
       lead: editLead.trim(),
       room: editRoom.trim(),
@@ -864,6 +918,8 @@ export function ScheduleView() {
   const [newCategory, setNewCategory] = useState<ActivityCategoryKey>('training')
   const [newDate, setNewDate] = useState('2026-11-07')
   const [newSession, setNewSession] = useState<'morning' | 'afternoon' | 'evening'>('morning')
+  const [newStartTime, setNewStartTime] = useState('08:00')
+  const [newEndTime, setNewEndTime] = useState('12:00')
   const [newPeriod, setNewPeriod] = useState('Tiết: 1 - 3')
   const [newTime, setNewTime] = useState('08:00 - 12:00')
   const [newLead, setNewLead] = useState(currentUser?.name || 'Giang Lê Hiệp')
@@ -871,6 +927,20 @@ export function ScheduleView() {
   const [newDone, setNewDone] = useState(false)
   const [newDepartment, setNewDepartment] = useState('Ban Truyền thông')
   const [newNotes, setNewNotes] = useState('')
+
+  const handleNewStartTimeChange = (newStart: string) => {
+    setNewStartTime(newStart)
+    const combined = `${newStart} - ${newEndTime}`
+    setNewTime(combined)
+    setNewSession(getSessionFromTime(combined, newSession))
+  }
+
+  const handleNewEndTimeChange = (newEnd: string) => {
+    setNewEndTime(newEnd)
+    const combined = `${newStartTime} - ${newEnd}`
+    setNewTime(combined)
+    setNewSession(getSessionFromTime(combined, newSession))
+  }
 
   // Tự động gợi ý mã kế tiếp và cập nhật Quý CLB chuẩn khi đổi ngày / danh mục
   useEffect(() => {
@@ -990,6 +1060,8 @@ export function ScheduleView() {
     const timeFormatted = `${dayStr}/${monthStrPadded}`
     const monthStr = `Tháng ${monthNum}/${year}`
     const quarterStr = getClubQuarter(newDate, monthStr)
+    const finalNewTime = (newTime || `${newStartTime} - ${newEndTime}`).trim()
+    const finalNewSession = getSessionFromTime(finalNewTime, newSession)
 
     const newItem: ActivityItem = {
       id: `act-${Date.now()}`,
@@ -1002,9 +1074,9 @@ export function ScheduleView() {
       date: newDate,
       endDate: undefined,
       dayOfWeek,
-      session: newSession || getSessionFromTime(newTime),
+      session: finalNewSession,
       period: newPeriod,
-      time: newTime,
+      time: finalNewTime,
       lead: newLead.trim(),
       room: newRoom.trim(),
       category: newCategory,
@@ -2298,23 +2370,137 @@ export function ScheduleView() {
                         Ca hoạt động: <span className="text-rose-500">*</span>
                       </label>
                       <select
-                        value={editSession}
+                        value={
+                          (editSession === 'morning' && editTime === '08:00 - 12:00') ||
+                          (editSession === 'afternoon' && editTime === '13:30 - 17:30') ||
+                          (editSession === 'evening' && editTime === '18:30 - 21:30')
+                            ? editSession
+                            : 'custom'
+                        }
                         onChange={(e) => {
-                          const s = e.target.value as 'morning' | 'afternoon' | 'evening'
-                          setEditSession(s)
-                          if (s === 'morning') setEditTime('08:00 - 12:00')
-                          else if (s === 'afternoon') setEditTime('13:30 - 17:30')
-                          else if (s === 'evening') setEditTime('18:30 - 21:30')
+                          const val = e.target.value
+                          if (val === 'morning') {
+                            setEditSession('morning')
+                            setEditStartTime('08:00')
+                            setEditEndTime('12:00')
+                            setEditTime('08:00 - 12:00')
+                          } else if (val === 'afternoon') {
+                            setEditSession('afternoon')
+                            setEditStartTime('13:30')
+                            setEditEndTime('17:30')
+                            setEditTime('13:30 - 17:30')
+                          } else if (val === 'evening') {
+                            setEditSession('evening')
+                            setEditStartTime('18:30')
+                            setEditEndTime('21:30')
+                            setEditTime('18:30 - 21:30')
+                          }
                         }}
                         className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
                       >
                         <option value="morning">Ca Sáng (08:00 - 12:00)</option>
                         <option value="afternoon">Ca Chiều (13:30 - 17:30)</option>
                         <option value="evening">Ca Tối (18:30 - 21:30)</option>
+                        {!(
+                          (editSession === 'morning' && editTime === '08:00 - 12:00') ||
+                          (editSession === 'afternoon' && editTime === '13:30 - 17:30') ||
+                          (editSession === 'evening' && editTime === '18:30 - 21:30')
+                        ) && (
+                          <option value="custom">
+                            {editSession === 'morning'
+                              ? 'Ca Sáng'
+                              : editSession === 'afternoon'
+                              ? 'Ca Chiều'
+                              : 'Ca Tối'}{' '}
+                            (Tùy chỉnh: {editTime || `${editStartTime} - ${editEndTime}`})
+                          </option>
+                        )}
                       </select>
                       <p className="text-[11px] text-slate-400 mt-1 font-normal">
                         Khung ca sinh hoạt chính thức của CLB
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Khung giờ chi tiết (Chọn ca kèm chỉnh giờ bắt đầu - kết thúc chuẩn xác nhất) */}
+                  <div className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#061651] dark:text-sky-200 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#0284C7]" />
+                        <span>Khung giờ diễn ra chuẩn xác: <span className="text-rose-500">*</span></span>
+                      </label>
+                      <span className="text-[11px] font-mono font-bold text-[#0284C7] dark:text-sky-300 bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-sky-200 dark:border-sky-800 shadow-2xs">
+                        {editTime || `${editStartTime} - ${editEndTime}`}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block mb-1">
+                          Giờ bắt đầu:
+                        </span>
+                        <input
+                          type="time"
+                          required
+                          value={editStartTime}
+                          onChange={(e) => handleEditStartTimeChange(e.target.value)}
+                          className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block mb-1">
+                          Giờ kết thúc:
+                        </span>
+                        <input
+                          type="time"
+                          required
+                          value={editEndTime}
+                          onChange={(e) => handleEditEndTimeChange(e.target.value)}
+                          className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span>Chọn nhanh theo ca chuẩn:</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditSession('morning')
+                            setEditStartTime('08:00')
+                            setEditEndTime('12:00')
+                            setEditTime('08:00 - 12:00')
+                          }}
+                          className="px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-400 font-medium text-[10px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                        >
+                          Sáng (08:00 - 12:00)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditSession('afternoon')
+                            setEditStartTime('13:30')
+                            setEditEndTime('17:30')
+                            setEditTime('13:30 - 17:30')
+                          }}
+                          className="px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-400 font-medium text-[10px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                        >
+                          Chiều (13:30 - 17:30)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditSession('evening')
+                            setEditStartTime('18:30')
+                            setEditEndTime('21:30')
+                            setEditTime('18:30 - 21:30')
+                          }}
+                          className="px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-400 font-medium text-[10px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                        >
+                          Tối (18:30 - 21:30)
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -2573,23 +2759,137 @@ export function ScheduleView() {
                       Ca hoạt động: <span className="text-rose-500">*</span>
                     </label>
                     <select
-                      value={newSession}
+                      value={
+                        (newSession === 'morning' && newTime === '08:00 - 12:00') ||
+                        (newSession === 'afternoon' && newTime === '13:30 - 17:30') ||
+                        (newSession === 'evening' && newTime === '18:30 - 21:30')
+                          ? newSession
+                          : 'custom'
+                      }
                       onChange={(e) => {
-                        const s = e.target.value as 'morning' | 'afternoon' | 'evening'
-                        setNewSession(s)
-                        if (s === 'morning') setNewTime('08:00 - 12:00')
-                        else if (s === 'afternoon') setNewTime('13:30 - 17:30')
-                        else if (s === 'evening') setNewTime('18:30 - 21:30')
+                        const val = e.target.value
+                        if (val === 'morning') {
+                          setNewSession('morning')
+                          setNewStartTime('08:00')
+                          setNewEndTime('12:00')
+                          setNewTime('08:00 - 12:00')
+                        } else if (val === 'afternoon') {
+                          setNewSession('afternoon')
+                          setNewStartTime('13:30')
+                          setNewEndTime('17:30')
+                          setNewTime('13:30 - 17:30')
+                        } else if (val === 'evening') {
+                          setNewSession('evening')
+                          setNewStartTime('18:30')
+                          setNewEndTime('21:30')
+                          setNewTime('18:30 - 21:30')
+                        }
                       }}
                       className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
                     >
                       <option value="morning">Ca Sáng (08:00 - 12:00)</option>
                       <option value="afternoon">Ca Chiều (13:30 - 17:30)</option>
                       <option value="evening">Ca Tối (18:30 - 21:30)</option>
+                      {!(
+                        (newSession === 'morning' && newTime === '08:00 - 12:00') ||
+                        (newSession === 'afternoon' && newTime === '13:30 - 17:30') ||
+                        (newSession === 'evening' && newTime === '18:30 - 21:30')
+                      ) && (
+                        <option value="custom">
+                          {newSession === 'morning'
+                            ? 'Ca Sáng'
+                            : newSession === 'afternoon'
+                            ? 'Ca Chiều'
+                            : 'Ca Tối'}{' '}
+                          (Tùy chỉnh: {newTime || `${newStartTime} - ${newEndTime}`})
+                        </option>
+                      )}
                     </select>
                     <p className="text-[11px] text-slate-400 mt-1 font-normal">
                       Khung ca sinh hoạt chính thức của CLB
                     </p>
+                  </div>
+                </div>
+
+                {/* Khung giờ chi tiết (Chọn ca kèm chỉnh giờ bắt đầu - kết thúc chuẩn xác nhất) */}
+                <div className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#061651] dark:text-sky-200 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#0284C7]" />
+                      <span>Khung giờ diễn ra chuẩn xác: <span className="text-rose-500">*</span></span>
+                    </label>
+                    <span className="text-[11px] font-mono font-bold text-[#0284C7] dark:text-sky-300 bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-sky-200 dark:border-sky-800 shadow-2xs">
+                      {newTime || `${newStartTime} - ${newEndTime}`}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block mb-1">
+                        Giờ bắt đầu:
+                      </span>
+                      <input
+                        type="time"
+                        required
+                        value={newStartTime}
+                        onChange={(e) => handleNewStartTimeChange(e.target.value)}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold block mb-1">
+                        Giờ kết thúc:
+                      </span>
+                      <input
+                        type="time"
+                        required
+                        value={newEndTime}
+                        onChange={(e) => handleNewEndTimeChange(e.target.value)}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span>Chọn nhanh theo ca chuẩn:</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewSession('morning')
+                          setNewStartTime('08:00')
+                          setNewEndTime('12:00')
+                          setNewTime('08:00 - 12:00')
+                        }}
+                        className="px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-400 font-medium text-[10px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                      >
+                        Sáng (08:00 - 12:00)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewSession('afternoon')
+                          setNewStartTime('13:30')
+                          setNewEndTime('17:30')
+                          setNewTime('13:30 - 17:30')
+                        }}
+                        className="px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-400 font-medium text-[10px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                      >
+                        Chiều (13:30 - 17:30)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewSession('evening')
+                          setNewStartTime('18:30')
+                          setNewEndTime('21:30')
+                          setNewTime('18:30 - 21:30')
+                        }}
+                        className="px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-sky-400 font-medium text-[10px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                      >
+                        Tối (18:30 - 21:30)
+                      </button>
+                    </div>
                   </div>
                 </div>
 
