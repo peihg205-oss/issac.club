@@ -2,7 +2,13 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import type { UserRole, DepartmentCode } from '@/types/database'
-import { canUserManageAccounts, canUserScoreMember, getAllowedScoringMembers, isUserCoreTeam } from './permissions'
+import {
+  canUserManageAccounts,
+  canUserScoreMember,
+  getAllowedScoringMembers,
+  isUserCoreTeam,
+  canUserAddOrProposeScore,
+} from './permissions'
 import type { RosterMember } from '@/lib/clubData'
 
 export interface AuthUser {
@@ -310,6 +316,7 @@ export interface AuthContextType {
   isMember: boolean
   isCoreTeam: boolean
   canManageAccounts: boolean
+  canAddOrProposeScore: boolean
   canScoreMember: (targetMember: { department_code?: string; department_slug?: string; full_name?: string } | null) => { allowed: boolean; reason?: string }
   getAllowedMembers: (members: RosterMember[]) => RosterMember[]
 }
@@ -821,6 +828,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isMember = currentUser?.role === 'member' || currentUser?.roleTitle?.includes('Thành viên') || false
   const isCoreTeam = isUserCoreTeam(currentUser)
   const canManageAccounts = canUserManageAccounts(currentUser)
+  const canAddOrProposeScore = Boolean(canUserAddOrProposeScore(currentUser))
 
   const canScoreMember = useCallback(
     (targetMember: { department_code?: string; department_slug?: string; full_name?: string } | null) => {
@@ -857,6 +865,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isMember,
         isCoreTeam,
         canManageAccounts,
+        canAddOrProposeScore,
         canScoreMember,
         getAllowedMembers,
       }}

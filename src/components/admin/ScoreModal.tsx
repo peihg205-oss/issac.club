@@ -322,11 +322,11 @@ export function ScoreModal({
               </h3>
               <p className="text-[10.5px] text-[#64748B] font-medium">
                 {currentUser?.departmentCode === 'B01'
-                  ? 'Ban Truyền thông có quyền cho điểm các thành viên thuộc Ban Truyền thông'
+                  ? 'Ban Truyền thông có quyền đề xuất cho điểm các thành viên thuộc Ban Truyền thông (BCN duyệt cuối)'
                   : currentUser?.departmentCode === 'B02'
-                  ? 'Ban Tư vấn có quyền cho điểm các thành viên thuộc Ban Tư vấn'
-                  : isHR || currentUser?.departmentCode === 'B03'
-                  ? 'Ban Nhân sự có quyền cho điểm mọi người ở tất cả các ban'
+                  ? 'Ban Tư vấn có quyền đề xuất cho điểm các thành viên thuộc Ban Tư vấn (BCN duyệt cuối)'
+                  : isHR || currentUser?.departmentCode === 'B03' || (currentUser?.roleTitle && currentUser.roleTitle.includes('Nhân sự'))
+                  ? 'Ban Nhân sự có quyền đề xuất cho điểm tất cả thành viên mọi ban trong CLB (BCN duyệt cuối)'
                   : 'Chọn thành viên, xem lịch sử đã cho điểm trong tháng và phê duyệt trực tiếp'}
               </p>
             </div>
@@ -1171,10 +1171,10 @@ export function ScoreModal({
                     </label>
                   )}
 
-                  {isHR && !isLocked && (
+                  {!isBCN && !isLocked && (
                     <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[10.5px] text-amber-900 flex items-start gap-1.5">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <span>Đề xuất sẽ được gửi vào hàng đợi chờ Ban Chủ nhiệm phê duyệt.</span>
+                      <span>Đề xuất điểm sẽ được chuyển vào hàng đợi để Ban Chủ nhiệm phê duyệt cuối cùng.</span>
                     </div>
                   )}
 
@@ -1205,7 +1205,7 @@ export function ScoreModal({
                           ? directApply
                             ? 'Áp Dụng Trực Tiếp (BCN)'
                             : 'Đưa Vào Hàng Đợi Duyệt'
-                          : 'Gửi BCN Phê Duyệt'}
+                          : 'Gửi Ban Chủ Nhiệm Phê Duyệt'}
                       </button>
                     )}
                   </div>

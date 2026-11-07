@@ -53,7 +53,7 @@ const INITIAL_HISTORY: Array<{
 
 export function HistoryView() {
   const { language, t } = useLanguage()
-  const { isBCN, isHR, currentUser } = useAuth()
+  const { isBCN, isHR, currentUser, canAddOrProposeScore } = useAuth()
   const {
     members,
     proposals,
@@ -404,7 +404,7 @@ export function HistoryView() {
           </button>
 
           {/* Score proposal action button */}
-          {(isBCN || isHR) && (
+          {canAddOrProposeScore && (
             <button
               type="button"
               onClick={() => setScoreModalOpen(true)}
@@ -526,7 +526,7 @@ export function HistoryView() {
       </div>
 
       {/* 2. Hàng đợi chờ Ban Chủ nhiệm phê duyệt (Khớp phong cách thiết kế dự án iSSAC) */}
-      {isBCN && pendingList.length > 0 && (
+      {(isBCN || canAddOrProposeScore) && pendingList.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-100 gap-3">
             <div className="flex items-center gap-3">
@@ -536,14 +536,14 @@ export function HistoryView() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm sm:text-base font-black text-[#0B1E48]">
-                    Hàng đợi chờ Ban Chủ nhiệm phê duyệt
+                    {isBCN ? 'Hàng đợi chờ Ban Chủ nhiệm phê duyệt' : 'Đề xuất chấm điểm đang chờ Ban Chủ nhiệm phê duyệt'}
                   </h3>
                   <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-500 text-white shadow-2xs">
                     {pendingList.length}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Đề xuất chấm điểm chính thức từ Ban Nhân sự &amp; Trưởng ban
+                  Đề xuất chấm điểm từ Ban Nhân sự &amp; Cán bộ quản lý các ban (Ban Chủ nhiệm duyệt cuối)
                 </p>
               </div>
             </div>
@@ -552,7 +552,7 @@ export function HistoryView() {
             <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
               <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200/80 flex items-center gap-1.5 shadow-2xs">
                 <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>Quyền phê duyệt: Ban Chủ nhiệm</span>
+                <span>Quyền phê duyệt cuối cùng: Ban Chủ nhiệm</span>
               </span>
             </div>
           </div>
@@ -615,24 +615,33 @@ export function HistoryView() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Action Buttons: CHỈ BAN CHỦ NHIỆM MỚI CÓ QUYỀN DUYỆT VÀ TỪ CHỐI */}
                 <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-slate-200/60">
-                  <button
-                    type="button"
-                    onClick={() => rejectProposal(item.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200/80 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                    <span>Từ chối</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => approveProposal(item.id)}
-                    className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-2xs shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Duyệt điểm</span>
-                  </button>
+                  {isBCN ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => rejectProposal(item.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200/80 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Từ chối</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => approveProposal(item.id)}
+                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-2xs shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Duyệt điểm</span>
+                      </button>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200/80 shadow-2xs">
+                      <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>Đang chờ Ban Chủ nhiệm phê duyệt</span>
+                    </span>
+                  )}
                 </div>
               </div>
             ))}

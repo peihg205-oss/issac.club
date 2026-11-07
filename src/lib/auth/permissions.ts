@@ -91,19 +91,56 @@ export function canUserManageAccounts(user: AuthUser | null): boolean {
 
 /**
  * Kiểm tra quyền cho điểm thành viên:
- * 1. Ban Chủ nhiệm (BCN): Có quyền cho điểm TẤT CẢ thành viên mọi ban.
- * 2. Ban Nhân sự (HR): Có quyền cho điểm MỌI NGƯỜI TẤT CẢ CÁC BAN.
- * 3. Ban Truyền thông: CÓ QUYỀN CHO ĐIỂM THÀNH VIÊN CỦA BAN TRUYỀN THÔNG.
- * 4. Ban Tư vấn: CÓ QUYỀN CHO ĐIỂM THÀNH VIÊN CỦA BAN TƯ VẤN.
+ * 1. Ban Chủ nhiệm (BCN): Có toàn quyền cho điểm trực tiếp hoặc đề xuất cho TẤT CẢ thành viên mọi ban.
+ * 2. Ban Nhân sự (HR): Toàn bộ tài khoản Ban Nhân sự (Trưởng ban, Phó ban và THÀNH VIÊN BAN NHÂN SỰ)
+ *    đều có quyền gửi đề xuất cho điểm cho TẤT CẢ thành viên ở MỌI BAN trong CLB (Ban Chủ nhiệm duyệt cuối).
+ * 3. Trưởng ban / Phó ban Ban Truyền thông: Có quyền gửi đề xuất cho điểm THÀNH VIÊN CỦA BAN TRUYỀN THÔNG (BCN duyệt cuối).
+ * 4. Trưởng ban / Phó ban Ban Tư vấn: Có quyền gửi đề xuất cho điểm THÀNH VIÊN CỦA BAN TƯ VẤN (BCN duyệt cuối).
+ * 5. Thành viên thường các ban khác: Không có quyền cho điểm.
  */
+export function canUserAddOrProposeScore(user: AuthUser | null | undefined): boolean {
+  if (!user) return false
+
+  // 1. Ban Chủ nhiệm (BCN) có toàn quyền cho điểm trực tiếp hoặc đề xuất
+  if (
+    user.role === 'bcn' ||
+    user.role === 'admin' ||
+    user.departmentCode === 'B04' ||
+    (user.roleTitle && user.roleTitle.toLowerCase().includes('chủ nhiệm'))
+  ) {
+    return true
+  }
+
+  // 2. Ban Nhân sự: Cả cán bộ (Trưởng/Phó) VÀ THÀNH VIÊN BAN NHÂN SỰ
+  // Ban Nhân sự chịu trách nhiệm quản lý, giám sát nề nếp thi đua điểm rèn luyện của toàn bộ thành viên CLB
+  if (
+    user.role === 'hr' ||
+    user.departmentCode === 'B03' ||
+    (user.roleTitle && user.roleTitle.toLowerCase().includes('nhân sự')) ||
+    (user.departmentName && user.departmentName.toLowerCase().includes('nhân sự'))
+  ) {
+    return true
+  }
+
+  // 3. Trưởng ban, Phó ban của các ban khác (Ban Truyền thông B01, Ban Tư vấn B02)
+  if (
+    user.role === 'dept_head' ||
+    (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó')))
+  ) {
+    return true
+  }
+
+  return false
+}
+
 export function canUserScoreMember(
-  user: AuthUser | null,
+  user: AuthUser | null | undefined,
   targetMember: { department_code?: string; department_slug?: string; full_name?: string } | null
 ): { allowed: boolean; reason?: string } {
   if (!user) {
     return {
       allowed: false,
-      reason: 'Bạn cần đăng nhập tài khoản Cán bộ để thực hiện cho điểm!',
+      reason: 'Bạn cần đăng nhập tài khoản để thực hiện đề xuất cho điểm!',
     }
   }
 
@@ -115,45 +152,67 @@ export function canUserScoreMember(
   }
 
   // 1. Ban Chủ nhiệm (BCN) có toàn quyền cho điểm tất cả thành viên mọi ban
-  if (user.role === 'bcn' || user.departmentCode === 'B04') {
+  if (
+    user.role === 'bcn' ||
+    user.role === 'admin' ||
+    user.departmentCode === 'B04' ||
+    (user.roleTitle && user.roleTitle.toLowerCase().includes('chủ nhiệm'))
+  ) {
     return { allowed: true }
   }
 
-  // 2. Ban Nhân sự (HR): Cán bộ/Trưởng ban Nhân sự có quyền cho điểm mọi người tất cả các ban
-  if (user.role === 'hr' || (user.departmentCode === 'B03' && user.role !== 'member')) {
+  // 2. Ban Nhân sự (HR): Toàn bộ tài khoản Ban Nhân sự (Trưởng ban, Phó ban và THÀNH VIÊN BAN NHÂN SỰ)
+  // đều có quyền đề xuất cho điểm tất cả thành viên của mọi ban trong CLB (Ban Chủ nhiệm phê duyệt cuối)
+  if (
+    user.role === 'hr' ||
+    user.departmentCode === 'B03' ||
+    (user.roleTitle && user.roleTitle.toLowerCase().includes('nhân sự')) ||
+    (user.departmentName && user.departmentName.toLowerCase().includes('nhân sự'))
+  ) {
     return { allowed: true }
   }
 
-  // 3. Ban Truyền thông (B01) có quyền cho điểm thành viên của Ban Truyền thông
-  if (user.departmentCode === 'B01') {
+  // 3. Trưởng ban / Phó ban Ban Truyền thông (B01): Có quyền đề xuất cho điểm thành viên của Ban Truyền thông
+  const isCommLeader =
+    (user.departmentCode === 'B01' || user.departmentName?.toLowerCase().includes('truyền thông')) &&
+    (user.role === 'dept_head' ||
+      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
+  if (isCommLeader) {
     if (targetMember.department_code === 'B01' || targetMember.department_slug === 'truyen-thong') {
       return { allowed: true }
     }
     return {
       allowed: false,
-      reason: 'Cán bộ Ban Truyền thông chỉ có quyền cho điểm thành viên thuộc Ban Truyền thông!',
+      reason: 'Trưởng/Phó ban Ban Truyền thông chỉ có quyền đề xuất cho điểm thành viên thuộc Ban Truyền thông!',
     }
   }
 
-  // 4. Ban Tư vấn (B02) có quyền cho điểm thành viên của Ban Tư vấn
-  if (user.departmentCode === 'B02') {
+  // 4. Trưởng ban / Phó ban Ban Tư vấn (B02): Có quyền đề xuất cho điểm thành viên của Ban Tư vấn
+  const isAdvLeader =
+    (user.departmentCode === 'B02' || user.departmentName?.toLowerCase().includes('tư vấn')) &&
+    (user.role === 'dept_head' ||
+      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
+  if (isAdvLeader) {
     if (targetMember.department_code === 'B02' || targetMember.department_slug === 'tu-van') {
       return { allowed: true }
     }
     return {
       allowed: false,
-      reason: 'Cán bộ Ban Tư vấn chỉ có quyền cho điểm thành viên thuộc Ban Tư vấn!',
+      reason: 'Trưởng/Phó ban Ban Tư vấn chỉ có quyền đề xuất cho điểm thành viên thuộc Ban Tư vấn!',
     }
   }
 
-  // 5. Cán bộ thuộc ban khác chỉ chấm được thành viên ban mình
-  if (user.departmentCode && targetMember.department_code === user.departmentCode) {
+  // 5. Cán bộ quản lý ban khác
+  const isOtherLeader =
+    user.role === 'dept_head' ||
+    (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó')))
+  if (isOtherLeader && user.departmentCode && targetMember.department_code === user.departmentCode) {
     return { allowed: true }
   }
 
   return {
     allowed: false,
-    reason: 'Bạn không có quyền cho điểm thành viên thuộc ban khác!',
+    reason: 'Tài khoản của bạn không có quyền đề xuất cho điểm thành viên này!',
   }
 }
 
@@ -161,33 +220,48 @@ export function canUserScoreMember(
  * Trả về danh sách thành viên mà người dùng hiện tại được phép cho điểm
  */
 export function getAllowedScoringMembers(
-  user: AuthUser | null,
+  user: AuthUser | null | undefined,
   members: RosterMember[]
 ): RosterMember[] {
   if (!user) return []
 
-  // BCN và Cán bộ Ban Nhân sự: Cho điểm tất cả mọi người ở tất cả các ban
+  // 1. BCN và Ban Nhân sự (kể cả Thành viên thường Ban Nhân sự): Cho điểm tất cả mọi người ở tất cả các ban
   if (
     user.role === 'bcn' ||
+    user.role === 'admin' ||
     user.departmentCode === 'B04' ||
+    (user.roleTitle && user.roleTitle.toLowerCase().includes('chủ nhiệm')) ||
     user.role === 'hr' ||
-    (user.departmentCode === 'B03' && user.role !== 'member')
+    user.departmentCode === 'B03' ||
+    (user.roleTitle && user.roleTitle.toLowerCase().includes('nhân sự')) ||
+    (user.departmentName && user.departmentName.toLowerCase().includes('nhân sự'))
   ) {
     return members
   }
 
-  // Ban Truyền thông: Chỉ cho điểm thành viên Ban Truyền thông
-  if (user.departmentCode === 'B01') {
+  // 2. Trưởng ban / Phó ban Ban Truyền thông: Cho điểm thành viên Ban Truyền thông
+  const isCommLeader =
+    (user.departmentCode === 'B01' || user.departmentName?.toLowerCase().includes('truyền thông')) &&
+    (user.role === 'dept_head' ||
+      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
+  if (isCommLeader) {
     return members.filter((m) => m.department_code === 'B01' || m.department_slug === 'truyen-thong')
   }
 
-  // Ban Tư vấn: Chỉ cho điểm thành viên Ban Tư vấn
-  if (user.departmentCode === 'B02') {
+  // 3. Trưởng ban / Phó ban Ban Tư vấn: Cho điểm thành viên Ban Tư vấn
+  const isAdvLeader =
+    (user.departmentCode === 'B02' || user.departmentName?.toLowerCase().includes('tư vấn')) &&
+    (user.role === 'dept_head' ||
+      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
+  if (isAdvLeader) {
     return members.filter((m) => m.department_code === 'B02' || m.department_slug === 'tu-van')
   }
 
-  // Các trường hợp khác: Chỉ cho điểm trong ban
-  if (user.departmentCode) {
+  // 4. Cán bộ quản lý ban khác
+  const isOtherLeader =
+    user.role === 'dept_head' ||
+    (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó')))
+  if (isOtherLeader && user.departmentCode) {
     return members.filter((m) => m.department_code === user.departmentCode)
   }
 

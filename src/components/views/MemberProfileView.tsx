@@ -11,6 +11,7 @@ import {
   STANDARD_MONTHLY_BASELINE,
 } from '@/lib/periodData'
 import { EditMemberModal } from '@/components/admin/EditMemberModal'
+import { ScoreModal } from '@/components/admin/ScoreModal'
 import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
 import {
   ArrowLeft,
@@ -53,6 +54,7 @@ import {
   Filter,
   ArrowUpRight,
   ArrowDownRight,
+  PlusCircle,
 } from 'lucide-react'
 
 interface MemberProfileViewProps {
@@ -62,11 +64,12 @@ interface MemberProfileViewProps {
 
 export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   const { members, proposals, events } = useClub()
-  const { isBCN } = useAuth()
+  const { isBCN, canScoreMember } = useAuth()
   // Mặc định hiển thị tab 'profile' (Giao diện y hệt Figma Prototype)
   const [activeTab, setActiveTab] = useState<'profile' | 'overview' | 'history'>('profile')
   const [historyFilter, setHistoryFilter] = useState<'all' | 'add' | 'deduct'>('all')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false)
 
   // Lấy dữ liệu mới nhất của thành viên từ context
   const currentMember = useMemo(() => {
@@ -327,15 +330,30 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
               </div>
             </div>
 
-            {/* Nút Chỉnh sửa màu xanh dương #0284C7 chuẩn ảnh 1 */}
-            <button
-              type="button"
-              onClick={() => setIsEditModalOpen(true)}
-              className="px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer relative z-10 self-start sm:self-auto shrink-0"
-            >
-              <Pencil className="w-4 h-4 text-white" />
-              <span>Chỉnh sửa</span>
-            </button>
+            {/* Khối nút thao tác */}
+            <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0 relative z-10 flex-wrap">
+              {canScoreMember(currentMember).allowed && (
+                <button
+                  type="button"
+                  onClick={() => setIsScoreModalOpen(true)}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                  title={isBCN ? 'Chấm và duyệt điểm trực tiếp' : 'Đề xuất cho điểm thành viên (Ban Chủ nhiệm phê duyệt cuối)'}
+                >
+                  <PlusCircle className="w-4 h-4 text-white" />
+                  <span>{isBCN ? 'Chấm / Duyệt Điểm' : 'Đề Xuất Cho Điểm'}</span>
+                </button>
+              )}
+
+              {/* Nút Chỉnh sửa màu xanh dương #0284C7 chuẩn ảnh 1 */}
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+              >
+                <Pencil className="w-4 h-4 text-white" />
+                <span>Chỉnh sửa</span>
+              </button>
+            </div>
           </div>
 
           {/* CARD 2: Detailed Information & Verified Email Card */}
@@ -1010,6 +1028,13 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         member={currentMember}
+      />
+
+      {/* Modal Đề Xuất / Chấm Điểm */}
+      <ScoreModal
+        isOpen={isScoreModalOpen}
+        onClose={() => setIsScoreModalOpen(false)}
+        initialMemberCode={currentMember.member_code}
       />
     </div>
   )
