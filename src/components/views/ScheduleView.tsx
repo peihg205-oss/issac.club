@@ -39,6 +39,8 @@ import {
   INITIAL_ACTIVITIES,
   getWeekDays,
   WeekDayColumn,
+  getVietnamTodayIso,
+  getVietnamCurrentDate,
 } from '@/lib/scheduleData'
 import { useAuth } from '@/lib/auth/AuthContext'
 
@@ -648,8 +650,31 @@ export function ScheduleView() {
     }
   }, [activities])
 
-  // Current selected date for week navigation (defaults to 07/11/2026 matching Image 1)
-  const [currentDate, setCurrentDate] = useState<Date>(new Date('2026-11-07T00:00:00'))
+  // Ngày hôm nay theo chuẩn giờ Việt Nam (GMT+7)
+  const [todayIso, setTodayIso] = useState<string>(() => getVietnamTodayIso())
+
+  // Current selected date for week navigation (chuẩn theo múi giờ Việt Nam)
+  const [currentDate, setCurrentDate] = useState<Date>(() => getVietnamCurrentDate())
+
+  // Tự động kiểm tra và chuyển ngày mới theo chuẩn giờ Việt Nam (GMT+7)
+  useEffect(() => {
+    const syncVietnamDate = () => {
+      const nowIso = getVietnamTodayIso()
+      setTodayIso((prev) => {
+        if (prev !== nowIso) {
+          setCurrentDate(getVietnamCurrentDate())
+          return nowIso
+        }
+        return prev
+      })
+    }
+    const timer = setInterval(syncVietnamDate, 30000)
+    window.addEventListener('focus', syncVietnamDate)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', syncVietnamDate)
+    }
+  }, [])
 
   // Filter in Week view: 'all' | 'training' | 'meeting' | 'recruitment'
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
@@ -916,7 +941,7 @@ export function ScheduleView() {
   const [newQuarter, setNewQuarter] = useState('Quý 1')
   const [newMonth, setNewMonth] = useState('Tháng 11/2026')
   const [newCategory, setNewCategory] = useState<ActivityCategoryKey>('training')
-  const [newDate, setNewDate] = useState('2026-11-07')
+  const [newDate, setNewDate] = useState(() => getVietnamTodayIso())
   const [newSession, setNewSession] = useState<'morning' | 'afternoon' | 'evening'>('morning')
   const [newStartTime, setNewStartTime] = useState('08:00')
   const [newEndTime, setNewEndTime] = useState('12:00')
@@ -976,8 +1001,8 @@ export function ScheduleView() {
     }
   }, [newDate])
 
-  // Calculate 7 days of the current week
-  const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate])
+  // Calculate 7 days of the current week (luôn đồng bộ chuẩn theo múi giờ Việt Nam)
+  const weekDays = useMemo(() => getWeekDays(currentDate, todayIso), [currentDate, todayIso])
 
   // Navigate week
   const handlePrevWeek = () => {
@@ -997,7 +1022,7 @@ export function ScheduleView() {
   }
 
   const handleResetToCurrent = () => {
-    setCurrentDate(new Date('2026-11-07T00:00:00'))
+    setCurrentDate(getVietnamCurrentDate())
   }
 
   // Toggle Done state of an activity - Phân quyền DUY NHẤT Ban Chủ nhiệm (BCN)

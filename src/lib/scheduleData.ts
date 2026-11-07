@@ -287,8 +287,37 @@ export interface WeekDayColumn {
   isToday: boolean
 }
 
+// Lấy ngày hiện tại chuẩn múi giờ Việt Nam (Asia/Ho_Chi_Minh - GMT+7) dạng YYYY-MM-DD
+export function getVietnamTodayIso(): string {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    return formatter.format(new Date())
+  } catch {
+    const now = new Date()
+    const offset = 7 * 60
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000
+    const vnDate = new Date(utc + offset * 60000)
+    const yyyy = vnDate.getFullYear()
+    const mm = String(vnDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(vnDate.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+}
+
+// Lấy đối tượng Date tương ứng ngày hôm nay tại Việt Nam
+export function getVietnamCurrentDate(): Date {
+  const iso = getVietnamTodayIso()
+  const [yyyy, mm, dd] = iso.split('-').map(Number)
+  return new Date(yyyy, mm - 1, dd)
+}
+
 // Generate the 7 days of the week containing the base date
-export function getWeekDays(currentDate: Date): WeekDayColumn[] {
+export function getWeekDays(currentDate: Date, overrideTodayStr?: string): WeekDayColumn[] {
   // Find Monday of this week
   const day = currentDate.getDay()
   const diffToMonday = day === 0 ? -6 : 1 - day // if Sunday (0), go back 6 days
@@ -298,7 +327,7 @@ export function getWeekDays(currentDate: Date): WeekDayColumn[] {
   const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
   const result: WeekDayColumn[] = []
 
-  const todayStr = '2026-11-07' // Fixed reference date from image 1
+  const todayStr = overrideTodayStr || getVietnamTodayIso()
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday)
