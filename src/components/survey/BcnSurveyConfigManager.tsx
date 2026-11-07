@@ -590,7 +590,7 @@ export function BcnSurveyConfigManager({
                     </p>
                   )}
                   <span className="inline-block mt-1 text-[10px] font-semibold text-slate-400">
-                    Loại: {q.type === 'rating_stars' ? 'Đánh giá 1 - 5 sao' : q.type === 'textarea' ? 'Đoạn văn tự luận' : 'Câu ngắn'}
+                    Loại: {q.type === 'rating_stars' ? 'Đánh giá thang điểm (1 - 10)' : q.type === 'textarea' ? 'Đoạn văn tự luận' : 'Câu ngắn'}
                   </span>
                 </div>
               </div>

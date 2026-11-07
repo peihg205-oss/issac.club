@@ -117,7 +117,7 @@ export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
     targetMemberRole: 'Trưởng ban Tư vấn',
     avatarUrl: '/thuy-nguyen-avatar.png',
     initials: 'N',
-    rating: 5,
+    rating: 9.5,
     feedback:
       'Hỗ trợ sự kiện rất nhiệt tình, giải đáp thắc mắc của tân sinh viên nhanh chóng và chu đáo.',
     improvement: 'Tiếp tục phát huy tinh thần năng động và truyền lửa cho team.',
@@ -131,7 +131,7 @@ export const INITIAL_CORE_EVALUATIONS: Record<string, SurveyEvaluation> = {
     targetMemberRole: 'Phó ban Truyền thông',
     avatarUrl: '/vu-dinh-hai-avatar.png',
     initials: 'H',
-    rating: 4,
+    rating: 9.2,
     feedback: 'Nhiệt tình phụ trách kỹ thuật và hình ảnh trong suốt sự kiện.',
     improvement: 'Cần phân công việc chi tiết hơn cho các thành viên trong ban.',
     status: 'completed',
@@ -338,10 +338,10 @@ export function SurveyView() {
     collaboration: number
     initiative: number
   }>({
-    responsibility: 5,
-    taskDelivery: 5,
-    collaboration: 5,
-    initiative: 5,
+    responsibility: 10,
+    taskDelivery: 10,
+    collaboration: 10,
+    initiative: 10,
   })
 
   // Calculated overall average score from 4 core criteria
@@ -354,7 +354,7 @@ export function SurveyView() {
     return Number((sum / 4).toFixed(1))
   }, [criteriaScores])
 
-  const [currentRating, setCurrentRating] = useState<number>(5)
+  const [currentRating, setCurrentRating] = useState<number>(10)
   const [currentFeedback, setCurrentFeedback] = useState<string>('')
   const [currentImprovement, setCurrentImprovement] = useState<string>('')
 
@@ -379,8 +379,8 @@ export function SurveyView() {
       if (savedEvaluations) {
         setEvaluations(JSON.parse(savedEvaluations))
       } else {
-        // Chỉ gán mock evaluations cho sự kiện mẫu ban đầu '1st Meeting'
-        if (selectedEvent === '1st Meeting') {
+        // Gán mock evaluations cho sự kiện '1st Meeting' hoặc 'Đánh giá hoạt động Core Team T10'
+        if (selectedEvent === '1st Meeting' || selectedEvent === 'Đánh giá hoạt động Core Team T10') {
           setEvaluations(INITIAL_CORE_EVALUATIONS)
           localStorage.setItem(
             currentEventStorageKey,
@@ -434,12 +434,12 @@ export function SurveyView() {
         setCurrentFeedback(existing.feedback || '')
         setCurrentImprovement(existing.improvement || '')
       } else {
-        setCurrentRating(5)
+        setCurrentRating(10)
         setCriteriaScores({
-          responsibility: 5,
-          taskDelivery: 5,
-          collaboration: 5,
-          initiative: 5,
+          responsibility: 10,
+          taskDelivery: 10,
+          collaboration: 10,
+          initiative: 10,
         })
         setCurrentFeedback('')
         setCurrentImprovement('')
@@ -483,7 +483,7 @@ export function SurveyView() {
     }
 
     if (!currentRating || currentRating === 0) {
-      setToastMessage('Vui lòng chọn mức đánh giá từ 1 đến 5!')
+      setToastMessage('Vui lòng chọn mức đánh giá từ 1 đến 10!')
       setTimeout(() => setToastMessage(null), 3000)
       return
     }
@@ -1204,8 +1204,8 @@ export function SurveyView() {
                 <div>
                   <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
                     {selectedMember.averageScore != null && (selectedMember.reviewsCount ?? 0) > 0
-                      ? `${selectedMember.averageScore.toFixed(1)}/5`
-                      : '— / 5'}
+                      ? `${selectedMember.averageScore.toFixed(1)}/10`
+                      : '— / 10'}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
                     {(selectedMember.reviewsCount ?? 0) > 0 ? 'điểm TB' : 'chưa có đánh giá'}
@@ -1319,7 +1319,7 @@ export function SurveyView() {
                   Phiếu khảo sát sau sự kiện
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 border border-sky-200/80">
-                  Điểm TB: {calculatedAvgScore} / 5.0
+                  Điểm TB: {calculatedAvgScore} / 10.0
                 </span>
               </div>
 
@@ -1351,7 +1351,7 @@ export function SurveyView() {
                     <span>Chấm điểm 4 Tiêu chí Cốt lõi của {memberFirstName}:</span>
                   </label>
                   <p className="text-[11px] text-slate-400">
-                    Bấm chọn thang điểm 1 đến 5 sao cho từng tiêu chí cốt lõi của CLB iSSAC
+                    Bấm chọn thang điểm 1 đến 10 cho từng tiêu chí cốt lõi của CLB iSSAC
                   </p>
                 </div>
 
@@ -1374,8 +1374,8 @@ export function SurveyView() {
                         <p className="text-[10px] text-slate-400 line-clamp-1">
                           {crit.description}
                         </p>
-                        <div className="grid grid-cols-5 gap-1.5 pt-0.5">
-                          {[1, 2, 3, 4, 5].map((star) => (
+                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1 sm:gap-1.5 pt-0.5">
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                             <button
                               key={star}
                               type="button"
@@ -1387,7 +1387,7 @@ export function SurveyView() {
                               }
                               className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                                 score === star
-                                  ? 'bg-[#0284C7] text-white shadow-2xs'
+                                  ? 'bg-[#0284C7] text-white shadow-2xs font-black ring-2 ring-[#0284C7]/30'
                                   : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-600 border border-slate-200/80 dark:border-slate-600'
                               }`}
                             >
@@ -1460,8 +1460,8 @@ export function SurveyView() {
                           className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
                         />
                       ) : q.type === 'rating_stars' ? (
-                        <div className="flex items-center gap-1.5 pt-0.5">
-                          {[1, 2, 3, 4, 5].map((star) => (
+                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1 sm:gap-1.5 pt-0.5">
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                             <button
                               key={star}
                               type="button"
@@ -1471,10 +1471,10 @@ export function SurveyView() {
                                   [q.id]: star,
                                 }))
                               }
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                                (customAnswers[q.id] || 5) === star
-                                  ? 'bg-[#0284C7] text-white'
-                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                              className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+                                (customAnswers[q.id] || 10) === star
+                                  ? 'bg-[#0284C7] text-white shadow-2xs font-black ring-2 ring-[#0284C7]/30'
+                                  : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-600 border border-slate-200/80 dark:border-slate-600'
                               }`}
                             >
                               <span>{star}</span>

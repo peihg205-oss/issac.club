@@ -167,7 +167,15 @@ export function BcnSurveyReportView({
 
   // Feedbacks for current event
   const eventFeedbacks = useMemo(() => {
-    return feedbacks.filter((f) => f.event === selectedEvent)
+    const direct = feedbacks.filter((f) => f.event === selectedEvent)
+    if (direct.length > 0) return direct
+    if (selectedEvent === 'Đánh giá hoạt động Core Team T10' || selectedEvent === '1st Meeting') {
+      const fallback = feedbacks.filter(
+        (f) => f.event === 'Đánh giá hoạt động Core Team T10' || f.event === '1st Meeting'
+      )
+      if (fallback.length > 0) return fallback
+    }
+    return direct
   }, [feedbacks, selectedEvent])
 
   // Member Analytics Map
