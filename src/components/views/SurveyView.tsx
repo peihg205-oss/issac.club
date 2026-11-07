@@ -650,50 +650,51 @@ export function SurveyView() {
     <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto pb-12">
       {/* 1. HEADER SECTION & MODE SWITCHER TABS (Góc bên phải) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/90 dark:border-slate-800 pb-3">
-        <div>
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+          {/* Cụm Tiêu đề & Lời dẫn mô tả chuẩn style Dashboard (Ảnh 1) */}
+          <div className="min-w-0 flex-1 sm:flex-initial">
             <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
               Khảo sát Core Team sự kiện iSSAC
             </h1>
+            <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
+              Nơi ghi nhận góp ý để cải thiện chất lượng tổ chức và phối hợp trong các sự kiện của CLB
+            </p>
+          </div>
 
-            {/* Mascot Chibi với hiệu ứng động tương tác & note thoại như các trang khác */}
+          {/* Mascot Chibi với hiệu ứng động tương tác & note thoại như các trang khác */}
+          <div
+            onClick={handleMascotClick}
+            className="relative group cursor-pointer inline-flex items-center shrink-0 select-none"
+            title="Bấm vào tớ để nghe lời nhắn nhé!"
+          >
+            {/* Ảnh Mascot với hiệu ứng bay bổng tự nhiên & nhào lộn vui nhộn khi click */}
+            <img
+              src="/survey-mascot.png"
+              alt="iSSAC Core Team Mascot"
+              className={`w-11 h-14 sm:w-13 sm:h-16 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
+                isMascotCheering
+                  ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
+                  : 'animate-mascot-fly hover:scale-120 hover:rotate-6'
+              }`}
+            />
+
+            {/* Note / Bubble tooltip động đặt bên cạnh mascot */}
             <div
-              onClick={handleMascotClick}
-              className="relative group cursor-pointer inline-flex items-center shrink-0 select-none -mt-1.5"
-              title="Bấm vào tớ để nghe lời nhắn nhé!"
+              className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
+                showMascotBubble || isMascotCheering
+                  ? 'opacity-100 scale-105 translate-x-1'
+                  : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
+              }`}
             >
-              {/* Ảnh Mascot với hiệu ứng bay bổng tự nhiên & nhào lộn vui nhộn khi click */}
-              <img
-                src="/survey-mascot.png"
-                alt="iSSAC Core Team Mascot"
-                className={`w-11 h-14 sm:w-13 sm:h-16 object-contain drop-shadow-[0_4px_12px_rgba(2,132,199,0.22)] transition-all duration-300 ${
-                  isMascotCheering
-                    ? 'animate-mascot-pop drop-shadow-[0_8px_20px_rgba(2,132,199,0.45)]'
-                    : 'animate-mascot-fly hover:scale-120 hover:rotate-6'
-                }`}
-              />
-
-              {/* Note / Bubble tooltip động đặt bên cạnh mascot */}
-              <div
-                className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-[11px] font-bold shadow-lg pointer-events-none whitespace-nowrap z-40 transition-all duration-200 hidden sm:flex items-center border border-white/25 ${
-                  showMascotBubble || isMascotCheering
-                    ? 'opacity-100 scale-105 translate-x-1'
-                    : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5'
-                }`}
-              >
-                {/* Mũi tên chỉ về phía mascot */}
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0284C7] rotate-45 border-l border-b border-white/25" />
-                <span className="relative z-10 select-none tracking-tight">
-                  {language === 'vi'
-                    ? SURVEY_MASCOT_QUOTES_VI[mascotMessageIdx]
-                    : SURVEY_MASCOT_QUOTES_EN[mascotMessageIdx]}
-                </span>
-              </div>
+              {/* Mũi tên chỉ về phía mascot */}
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#0284C7] rotate-45 border-l border-b border-white/25" />
+              <span className="relative z-10 select-none tracking-tight">
+                {language === 'vi'
+                  ? SURVEY_MASCOT_QUOTES_VI[mascotMessageIdx]
+                  : SURVEY_MASCOT_QUOTES_EN[mascotMessageIdx]}
+              </span>
             </div>
           </div>
-          <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
-            Nơi ghi nhận góp ý để cải thiện chất lượng tổ chức và phối hợp trong các sự kiện của CLB
-          </p>
         </div>
 
         {/* Mode Switcher Tabs đặt ở góc bên phải */}
