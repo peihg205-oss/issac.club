@@ -189,7 +189,11 @@ export function SurveyView() {
   }, [])
 
   // Selected event & dynamic events list from BCN management
-  const [selectedEvent, setSelectedEvent] = useState<string>('1st Meeting')
+  const [selectedEvent, setSelectedEvent] = useState<string>(() => {
+    const events = getStoredSurveyEvents()
+    const active = events.find((e) => e.status === 'active') || events[0]
+    return active?.name || 'Đánh giá hoạt động Core Team T10'
+  })
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState<boolean>(false)
   const eventDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -202,12 +206,25 @@ export function SurveyView() {
 
   useEffect(() => {
     const handleStorage = () => {
-      setSurveyEvents(getStoredSurveyEvents())
+      const latestEvents = getStoredSurveyEvents()
+      setSurveyEvents(latestEvents)
       setStoredFeedbacks(getStoredSurveyFeedbacks())
+      if (latestEvents.length > 0 && !latestEvents.some((e) => e.name === selectedEvent)) {
+        const active = latestEvents.find((e) => e.status === 'active') || latestEvents[0]
+        if (active) setSelectedEvent(active.name)
+      }
     }
     window.addEventListener('storage', handleStorage)
     return () => window.removeEventListener('storage', handleStorage)
-  }, [])
+  }, [selectedEvent])
+
+  // Tự động đồng bộ sự kiện đang chọn nếu sự kiện hiện tại không còn trong danh sách
+  useEffect(() => {
+    if (surveyEvents.length > 0 && !surveyEvents.some((e) => e.name === selectedEvent)) {
+      const active = surveyEvents.find((e) => e.status === 'active') || surveyEvents[0]
+      if (active) setSelectedEvent(active.name)
+    }
+  }, [surveyEvents, selectedEvent])
 
   // Read event param from URL if provided
   useEffect(() => {
@@ -222,7 +239,7 @@ export function SurveyView() {
 
   const eventOptions = useMemo(() => {
     const names = surveyEvents.map((e) => e.name)
-    return names.length > 0 ? names : ['1st Meeting']
+    return names.length > 0 ? names : ['Đánh giá hoạt động Core Team T10']
   }, [surveyEvents])
 
   // Close event dropdown on outside click

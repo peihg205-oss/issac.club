@@ -535,7 +535,7 @@ export function isSurveyEventExpired(event: SurveyEventItem): boolean {
   return false
 }
 
-export const SURVEY_EVENTS_STORAGE_KEY = 'issac_survey_events_v2'
+export const SURVEY_EVENTS_STORAGE_KEY = 'issac_survey_events_v3'
 export const SURVEY_QUESTIONS_STORAGE_KEY = 'issac_survey_custom_questions_v2'
 export const SURVEY_DELETED_EVENTS_STORAGE_KEY = 'issac_deleted_survey_event_ids'
 
@@ -575,44 +575,14 @@ export function removeDeletedSurveyEventId(id: string): void {
 
 export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
   {
-    id: 'evt-01',
-    name: '1st Meeting',
-    date: '2026-10-15',
-    endDate: '2026-11-30',
+    id: 'evt-core-t10',
+    name: 'Đánh giá hoạt động Core Team T10',
+    date: '2026-11-07',
+    endDate: '2026-11-08',
     status: 'active',
-    description: 'Phiếu khảo sát và đánh giá chéo thành viên Core Team trong sự kiện First Meeting mở màn năm học',
+    description: 'Đánh giá khách quan quá trình đồng hành làm việc với nhau, đánh giá đúng và chuẩn, nếu đánh giá qua qua BCN sẽ note thái độ làm việc của chính thành viên đánh giá.',
     targetGroup: 'Toàn bộ Core Team (trừ BCN)',
-    createdAt: '2026-10-15T08:00:00.000Z',
-  },
-  {
-    id: 'evt-02',
-    name: 'First Meeting - T10/2026',
-    date: '2026-10-22',
-    endDate: '2026-10-31',
-    status: 'closed',
-    description: 'Đánh giá sau buổi họp toàn thể ban chuyên môn tháng 10',
-    targetGroup: 'Core Team các ban',
-    createdAt: '2026-10-22T08:00:00.000Z',
-  },
-  {
-    id: 'evt-03',
-    name: 'Gen 3 Recruitment',
-    date: '2026-10-28',
-    endDate: '2026-11-04',
-    status: 'closed',
-    description: 'Khảo sát hiệu quả công tác tuyển quân và phỏng vấn thế hệ Gen 3',
-    targetGroup: 'Core Team tham gia phỏng vấn',
-    createdAt: '2026-10-28T08:00:00.000Z',
-  },
-  {
-    id: 'evt-04',
-    name: 'Workshop Sharing',
-    date: '2026-11-02',
-    endDate: '2026-11-05',
-    status: 'closed',
-    description: 'Đánh giá phối hợp tổ chức buổi chia sẻ kỹ năng và chuyên môn',
-    targetGroup: 'Ban tổ chức Workshop',
-    createdAt: '2026-11-02T08:00:00.000Z',
+    createdAt: '2026-11-07T08:00:00.000Z',
   },
 ]
 
@@ -715,17 +685,32 @@ export function getStoredSurveyEvents(): SurveyEventItem[] {
     const deletedIds = getDeletedSurveyEventIds()
     const raw = localStorage.getItem(SURVEY_EVENTS_STORAGE_KEY)
     if (raw === null) {
+      // Nếu có sự kiện T10 trong v2 cũ thì lấy, nếu không khởi tạo INITIAL_SURVEY_EVENTS
+      const legacyRaw = localStorage.getItem('issac_survey_events_v2')
+      if (legacyRaw) {
+        try {
+          const parsedLegacy = JSON.parse(legacyRaw)
+          if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+            const hasT10 = parsedLegacy.some((e) => e.name.includes('Core Team T10'))
+            if (hasT10) {
+              const filtered = parsedLegacy.filter((e) => !deletedIds.has(e.id))
+              localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(filtered))
+              return filtered
+            }
+          }
+        } catch {}
+      }
       const initial = INITIAL_SURVEY_EVENTS.filter((e) => !deletedIds.has(e.id))
       localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(initial))
       return initial
     }
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed.filter((e) => !deletedIds.has(e.id))
     }
-    return []
+    return INITIAL_SURVEY_EVENTS.filter((e) => !deletedIds.has(e.id))
   } catch {
-    return []
+    return INITIAL_SURVEY_EVENTS
   }
 }
 
