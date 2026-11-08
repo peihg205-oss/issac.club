@@ -26,6 +26,9 @@ import {
   ShieldAlert,
   ClipboardEdit,
   Eye,
+  Flag,
+  Target,
+  TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { isUserCoreTeam } from '@/lib/auth/permissions'
@@ -1106,46 +1109,88 @@ export function SurveyView() {
               </div>
             </div>
 
-            {/* 2 Mini Stat Boxes at bottom */}
+            {/* 2 Stat Boxes: Chuẩn 100% Style Box Thẻ Chỉ số Ảnh 2 */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {/* Stat 1: Lượt đánh giá */}
-              <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#0B63E5] flex items-center justify-center shrink-0">
-                  <Users className="w-5 h-5" />
+              {/* Stat 1: Lượt đánh giá (Style Mức chuẩn CLB / Xanh Pastel của Ảnh 2) */}
+              <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F0F9FF] dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-900/50 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                <div className="space-y-0.5 min-w-0">
+                  <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
+                    Lượt đánh giá
+                  </span>
+                  <div className="flex items-baseline gap-1 py-0.5">
+                    <span className="text-lg sm:text-[22px] font-black text-[#0284C7] dark:text-sky-400 tracking-tight leading-none">
+                      {selectedMember.reviewsCount ?? 0}
+                    </span>
+                    <span className="text-[11.5px] font-bold text-[#0284C7]/80 dark:text-sky-300">
+                      lượt
+                    </span>
+                  </div>
+                  <span className="text-[11.5px] font-semibold text-[#0284C7] dark:text-sky-400 block truncate">
+                    {(selectedMember.reviewsCount ?? 0) > 0 ? 'Đã có nhận xét' : 'Chưa có lượt nào'}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
-                    {selectedMember.reviewsCount ?? 0}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-                    lượt đánh giá
-                  </span>
+                <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
+                  <Users className="w-4.5 h-4.5 stroke-[1.75]" />
                 </div>
               </div>
 
-              {/* Stat 2: Điểm TB */}
-              <div className={`${(selectedMember.reviewsCount ?? 0) > 0 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/40' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60'} border rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5`}>
-                <div className={`w-10 h-10 rounded-xl ${(selectedMember.reviewsCount ?? 0) > 0 ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'} flex items-center justify-center shrink-0`}>
-                  <Star className={`w-5 h-5 ${(selectedMember.reviewsCount ?? 0) > 0 ? 'fill-emerald-600' : 'text-slate-400'}`} />
+              {/* Stat 2: Điểm TB (Style Mục tiêu Tốt / Xanh lá hoặc Thang điểm / Slate chuẩn Ảnh 2) */}
+              {(selectedMember.reviewsCount ?? 0) > 0 && selectedMember.averageScore != null ? (
+                <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F0FDF4] dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/50 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
+                      Điểm đánh giá TB
+                    </span>
+                    <div className="flex items-baseline gap-1 py-0.5">
+                      <span className="text-lg sm:text-[22px] font-black text-[#16A34A] dark:text-emerald-400 tracking-tight leading-none">
+                        {selectedMember.averageScore.toFixed(1)}
+                      </span>
+                      <span className="text-[11.5px] font-bold text-[#16A34A]/80 dark:text-emerald-300">
+                        / 10
+                      </span>
+                    </div>
+                    <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block truncate">
+                      {selectedMember.averageScore >= 8.5
+                        ? 'Xuất sắc'
+                        : selectedMember.averageScore >= 7.0
+                        ? 'Đạt yêu cầu'
+                        : 'Cần cố gắng'}
+                    </span>
+                  </div>
+                  <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#16A34A] shrink-0 shadow-2xs">
+                    <Star className="w-4.5 h-4.5 fill-[#16A34A] stroke-[1.75]" />
+                  </div>
                 </div>
-                <div>
-                  <span className="text-2xl font-black text-[#061651] dark:text-white block leading-none py-0.5">
-                    {selectedMember.averageScore != null && (selectedMember.reviewsCount ?? 0) > 0
-                      ? `${selectedMember.averageScore.toFixed(1)}/10`
-                      : '— / 10'}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
-                    {(selectedMember.reviewsCount ?? 0) > 0 ? 'điểm TB' : 'chưa có đánh giá'}
-                  </span>
+              ) : (
+                <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
+                      Điểm đánh giá TB
+                    </span>
+                    <div className="flex items-baseline gap-1 py-0.5">
+                      <span className="text-lg sm:text-[22px] font-black text-slate-400 dark:text-slate-500 tracking-tight leading-none">
+                        —
+                      </span>
+                      <span className="text-[11.5px] font-bold text-slate-400 dark:text-slate-500">
+                        / 10
+                      </span>
+                    </div>
+                    <span className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-500 block truncate">
+                      Chưa có đánh giá
+                    </span>
+                  </div>
+                  <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs">
+                    <Star className="w-4.5 h-4.5 stroke-[1.75]" />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Lưu ý khảo sát: Lấp đầy góc dưới cột thông tin giúp giao diện cân đối và hài hòa */}
-            <div className="bg-blue-50/50 dark:bg-slate-800/60 rounded-2xl p-3 sm:p-3.5 border border-blue-100/80 dark:border-slate-700/80 space-y-1.5">
+            {/* Lưu ý khảo sát: Chuẩn style bo tròn và shadow đồng bộ */}
+            <div className="bg-[#F8FAFC] dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
-                  <Info className="w-3.5 h-3.5" />
+                <div className="w-7 h-7 rounded-full border border-sky-300/70 bg-white dark:bg-slate-800 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Info className="w-4 h-4" />
                 </div>
                 <span className="text-xs sm:text-sm font-bold text-[#061651] dark:text-white">
                   Lưu ý khảo sát
@@ -1282,26 +1327,73 @@ export function SurveyView() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
                   {CORE_EVALUATION_CRITERIA.map((crit) => {
                     const score = criteriaScores[crit.key]
+                    const cStyle =
+                      crit.key === 'responsibility'
+                        ? {
+                            cardBg: 'bg-[#F0FDF4] dark:bg-emerald-950/20',
+                            border: 'border-emerald-200/80 dark:border-emerald-900/50',
+                            circleBorder: 'border-emerald-300/80 dark:border-emerald-700',
+                            accent: 'text-[#16A34A] dark:text-emerald-400',
+                            btnActive: 'bg-[#16A34A] text-white ring-2 ring-[#16A34A]/30',
+                            Icon: Flag,
+                          }
+                        : crit.key === 'taskDelivery'
+                        ? {
+                            cardBg: 'bg-[#F0F9FF] dark:bg-sky-950/20',
+                            border: 'border-sky-200/80 dark:border-sky-900/50',
+                            circleBorder: 'border-sky-300/80 dark:border-sky-700',
+                            accent: 'text-[#0284C7] dark:text-sky-400',
+                            btnActive: 'bg-[#0284C7] text-white ring-2 ring-[#0284C7]/30',
+                            Icon: Target,
+                          }
+                        : crit.key === 'collaboration'
+                        ? {
+                            cardBg: 'bg-[#FFFBEB] dark:bg-amber-950/20',
+                            border: 'border-amber-200/80 dark:border-amber-900/50',
+                            circleBorder: 'border-amber-300/80 dark:border-amber-700',
+                            accent: 'text-[#D97706] dark:text-amber-400',
+                            btnActive: 'bg-[#D97706] text-white ring-2 ring-[#D97706]/30',
+                            Icon: Users,
+                          }
+                        : {
+                            cardBg: 'bg-[#F8FAFC] dark:bg-slate-800/35',
+                            border: 'border-slate-200/80 dark:border-slate-700/60',
+                            circleBorder: 'border-slate-300/80 dark:border-slate-600',
+                            accent: 'text-[#061651] dark:text-sky-300',
+                            btnActive: 'bg-[#061651] dark:bg-sky-600 text-white ring-2 ring-[#061651]/30',
+                            Icon: TrendingUp,
+                          }
+                    const Icon = cStyle.Icon
                     return (
                       <div
                         key={crit.key}
-                        className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/60 space-y-1.5"
+                        className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl ${cStyle.cardBg} ${cStyle.border} border space-y-2 transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                            {crit.shortLabel}
-                          </span>
-                          <span className="text-xs font-black text-[#0284C7]">
-                            {score}.0
-                          </span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full border ${cStyle.circleBorder} bg-white/70 dark:bg-slate-800/80 flex items-center justify-center ${cStyle.accent} shrink-0 shadow-2xs`}>
+                              <Icon className="w-4 h-4 stroke-[1.75]" />
+                            </div>
+                            <span className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block leading-tight truncate">
+                              {crit.shortLabel}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1 bg-white/80 dark:bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-200/70 dark:border-slate-700 shadow-2xs shrink-0">
+                            <span className={`text-xs sm:text-sm font-black ${cStyle.accent} leading-none`}>
+                              {score}.0
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400">
+                              / 10
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-slate-400 line-clamp-1">
+                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 line-clamp-1 pl-0.5">
                           {crit.description}
                         </p>
-                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1 sm:gap-1.5 pt-0.5">
+                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1 sm:gap-1.5 pt-1">
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
                             <button
                               key={star}
@@ -1314,8 +1406,8 @@ export function SurveyView() {
                               }
                               className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                                 score === star
-                                  ? 'bg-[#0284C7] text-white shadow-2xs font-black ring-2 ring-[#0284C7]/30'
-                                  : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-600 border border-slate-200/80 dark:border-slate-600'
+                                  ? `${cStyle.btnActive} shadow-2xs font-black scale-105`
+                                  : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white/90 dark:hover:bg-slate-600 border border-slate-200/80 dark:border-slate-600'
                               }`}
                             >
                               <span>{star}</span>
