@@ -221,63 +221,6 @@ function LoginContent() {
                   </>
                 )}
               </button>
-
-              {/* Quick Role Fill for Testing / Demo */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                  Tài khoản kiểm tra phân quyền & bảo mật:
-                </p>
-                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAccount('23070691')
-                      setPassword('issac2026')
-                      setFeedback(null)
-                    }}
-                    className="p-2 rounded-xl bg-blue-50/70 hover:bg-blue-100/80 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-700 dark:text-blue-300 font-bold border border-blue-200/60 dark:border-slate-700 text-left transition flex items-center justify-between cursor-pointer"
-                  >
-                    <span>👑 BCN (Phó CN)</span>
-                    <span className="text-[9px] px-1 bg-blue-200/60 dark:bg-blue-900/60 rounded">B04</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAccount('23070764')
-                      setPassword('issac2026')
-                      setFeedback(null)
-                    }}
-                    className="p-2 rounded-xl bg-purple-50/70 hover:bg-purple-100/80 dark:bg-slate-800 dark:hover:bg-slate-750 text-purple-700 dark:text-purple-300 font-bold border border-purple-200/60 dark:border-slate-700 text-left transition flex items-center justify-between cursor-pointer"
-                  >
-                    <span>📋 Ban Nhân sự</span>
-                    <span className="text-[9px] px-1 bg-purple-200/60 dark:bg-purple-900/60 rounded">HR</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAccount('24310088')
-                      setPassword('issac2026')
-                      setFeedback(null)
-                    }}
-                    className="p-2 rounded-xl bg-amber-50/70 hover:bg-amber-100/80 dark:bg-slate-800 dark:hover:bg-slate-750 text-amber-700 dark:text-amber-300 font-bold border border-amber-200/60 dark:border-slate-700 text-left transition flex items-center justify-between cursor-pointer"
-                  >
-                    <span>📢 Trưởng ban TT</span>
-                    <span className="text-[9px] px-1 bg-amber-200/60 dark:bg-amber-900/60 rounded">Head</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAccount('24070753')
-                      setPassword('issac2026')
-                      setFeedback(null)
-                    }}
-                    className="p-2 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-slate-800 dark:hover:bg-slate-750 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200/60 dark:border-slate-700 text-left transition flex items-center justify-between cursor-pointer"
-                  >
-                    <span>👤 Thành viên</span>
-                    <span className="text-[9px] px-1 bg-emerald-200/60 dark:bg-emerald-900/60 rounded">Member</span>
-                  </button>
-                </div>
-              </div>
             </form>
           </div>
         </div>

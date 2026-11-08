@@ -87,6 +87,54 @@ export const PRESET_USERS: AuthUser[] = [
 import { INITIAL_MEMBERS } from '@/lib/clubData'
 import type { DepartmentSlug } from '@/types/database'
 
+/**
+ * Hàm phân định quyền và vai trò chuẩn hóa cho từng thành viên CLB iSSAC
+ * Đảm bảo đồng bộ tuyệt đối trên mọi thiết bị (Mobile, Tablet, Desktop)
+ */
+export function getRoleForMember(m: RosterMember): { role: UserRole; isCore: boolean; roleTitle: string } {
+  // 1. Ban Chủ nhiệm
+  if (m.department_slug === 'bcn' || m.position.includes('Chủ nhiệm')) {
+    return {
+      role: 'bcn',
+      isCore: true,
+      roleTitle: `${m.position} - ${m.department_name}`,
+    }
+  }
+
+  // 2. Ban Nhân sự: Cán bộ (Trưởng ban & Phó ban) -> 'hr'
+  if (m.department_slug === 'nhan-su') {
+    if (m.position.includes('Trưởng') || m.position.includes('Phó')) {
+      return {
+        role: 'hr',
+        isCore: true,
+        roleTitle: `${m.position} - ${m.department_name} (HR)`,
+      }
+    }
+    // Thành viên Ban Nhân sự: role 'member' nhưng thuộc Ban Nhân sự (có quyền đề xuất điểm theo quy chế)
+    return {
+      role: 'member',
+      isCore: Boolean(m.is_core),
+      roleTitle: `${m.position} - ${m.department_name}`,
+    }
+  }
+
+  // 3. Trưởng ban, Phó ban, Cố vấn của các ban chuyên môn (Truyền thông B01, Tư vấn B02) -> 'dept_head'
+  if (m.position.includes('Trưởng') || m.position.includes('Phó') || m.position.includes('Cố vấn')) {
+    return {
+      role: 'dept_head',
+      isCore: true,
+      roleTitle: `${m.position} - ${m.department_name}`,
+    }
+  }
+
+  // 4. Thành viên thường
+  return {
+    role: 'member',
+    isCore: Boolean(m.is_core),
+    roleTitle: `${m.position} - ${m.department_name}`,
+  }
+}
+
 export interface IssuedAccount {
   id: string
   fullName: string
@@ -118,39 +166,39 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     passwordPlain: 'ISSAC2026@tuyenquan',
     status: 'active',
     isFixed: true,
-    createdAt: '15/10/2025',
+    createdAt: '15/10/2026',
   },
   {
-    id: 'acc-2',
-    fullName: 'Nguyễn Ngọc Anh',
-    email: '24070622@vnu.edu.vn',
-    studentId: '24070622',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'dept_head',
-    roleTitle: 'Phó ban Tư vấn',
-    passwordPlain: 'ISSAC2026@tuvan',
-    status: 'active',
-    avatarUrl: '/nguyen-ngoc-anh-avatar.png',
-    createdAt: '15/10/2025',
-  },
-  {
-    id: 'acc-3',
+    id: 'acc-hiep',
     fullName: 'Giang Lê Hiệp',
-    email: '23070691@vnu.edu.vn',
+    email: 'glhiep@vnuis.edu.vn',
     studentId: '23070691',
     departmentCode: 'B04',
     departmentName: 'Ban Chủ nhiệm',
     departmentSlug: 'bcn',
     role: 'bcn',
-    roleTitle: 'Phó Chủ nhiệm CLB',
-    passwordPlain: 'issac2025',
+    roleTitle: 'Phó chủ nhiệm - Ban Chủ nhiệm',
+    passwordPlain: 'ISSAC2026@23070691',
     status: 'active',
-    createdAt: '15/10/2025',
+    avatarUrl: '/giang-le-hiep-avatar.png',
+    createdAt: '15/10/2026',
   },
   {
-    id: 'acc-4',
+    id: 'acc-trang',
+    fullName: 'Nguyễn Trịnh Minh Trang',
+    email: 'ngtminhtrang3204@gmail.com',
+    studentId: '22073125',
+    departmentCode: 'B04',
+    departmentName: 'Ban Chủ nhiệm',
+    departmentSlug: 'bcn',
+    role: 'bcn',
+    roleTitle: 'Phó chủ nhiệm - Ban Chủ nhiệm',
+    passwordPlain: 'ISSAC2026@22073125',
+    status: 'active',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-hoa',
     fullName: 'Ngô Phương Hoa',
     email: '23070448@vnu.edu.vn',
     studentId: '23070448',
@@ -158,72 +206,14 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     departmentName: 'Ban Nhân sự',
     departmentSlug: 'nhan-su',
     role: 'hr',
-    roleTitle: 'Trưởng Ban Nhân sự',
-    passwordPlain: 'ISSAC2026@nhansu',
+    roleTitle: 'Trưởng Ban Nhân sự (HR)',
+    passwordPlain: 'ISSAC2026@23070448',
     status: 'active',
     avatarUrl: '/ngo-phuong-hoa-avatar.png',
-    createdAt: '15/10/2025',
+    createdAt: '15/10/2026',
   },
   {
-    id: 'acc-5',
-    fullName: 'Phương Gia Huy',
-    email: '24070680@vnu.edu.vn',
-    studentId: '24070680',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    departmentSlug: 'truyen-thong',
-    role: 'dept_head',
-    roleTitle: 'Trưởng ban Truyền thông',
-    passwordPlain: 'ISSAC2026@truyenthong',
-    status: 'active',
-    avatarUrl: '/phuong-gia-huy-avatar.png',
-    createdAt: '15/10/2025',
-  },
-  {
-    id: 'acc-6',
-    fullName: 'Phùng Thị Thu Hiền',
-    email: '24070752@vnu.edu.vn',
-    studentId: '24070752',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'dept_head',
-    roleTitle: 'Trưởng ban Tư vấn',
-    passwordPlain: 'ISSAC2026@tuvan2',
-    status: 'active',
-    avatarUrl: '/phung-thi-thu-hien-avatar.png',
-    createdAt: '15/10/2025',
-  },
-  {
-    id: 'acc-7',
-    fullName: 'Trần Đức Thắng',
-    email: '24310088@vnu.edu.vn',
-    studentId: '24310088',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    departmentSlug: 'truyen-thong',
-    role: 'dept_head',
-    roleTitle: 'Trưởng Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@thang',
-    status: 'active',
-    createdAt: '15/10/2025',
-  },
-  {
-    id: 'acc-8',
-    fullName: 'Vũ Thị Minh Ngọc',
-    email: '23070764@vnu.edu.vn',
-    studentId: '23070764',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'hr',
-    roleTitle: 'Trưởng Ban Nhân sự (HR)',
-    passwordPlain: 'ISSAC2026@ngoc',
-    status: 'active',
-    createdAt: '15/10/2025',
-  },
-  {
-    id: 'acc-9',
+    id: 'acc-hien',
     fullName: 'Trần Thanh Hiền',
     email: 'hien.danity.k@gmail.com',
     studentId: '24310150',
@@ -232,43 +222,43 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     departmentSlug: 'nhan-su',
     role: 'hr',
     roleTitle: 'Phó Ban Nhân sự (HR)',
-    passwordPlain: 'ISSAC2026@hien',
+    passwordPlain: 'ISSAC2026@24310150',
     status: 'active',
     avatarUrl: '/tran-thanh-hien-avatar.png',
-    createdAt: '15/10/2025',
+    createdAt: '15/10/2026',
   },
   {
-    id: 'acc-10',
-    fullName: 'Nguyễn Thu Thảo',
-    email: 'nthuthao2011@gmail.com',
-    studentId: '23071234',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'member',
-    roleTitle: 'Cố vấn Ban Tư vấn',
-    passwordPlain: 'ISSAC2026@thao',
-    status: 'active',
-    avatarUrl: '/nguyen-thu-thao-avatar.png',
-    createdAt: '15/10/2025',
-  },
-  {
-    id: 'acc-11',
-    fullName: 'Lâm Thị Bình Dương',
-    email: 'lamduong200907@gmail.com',
-    studentId: '25070345',
+    id: 'acc-thang',
+    fullName: 'Trần Đức Thắng',
+    email: 'tdthang@vnuis.edu.vn',
+    studentId: '24310088',
     departmentCode: 'B01',
     departmentName: 'Ban Truyền thông',
     departmentSlug: 'truyen-thong',
     role: 'dept_head',
-    roleTitle: 'Phó Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@duong',
+    roleTitle: 'Trưởng Ban Truyền thông',
+    passwordPlain: 'ISSAC2026@24310088',
     status: 'active',
-    avatarUrl: '/lam-thi-binh-duong-avatar.png',
-    createdAt: '15/10/2025',
+    avatarUrl: '/duc-thang-avatar.png',
+    createdAt: '15/10/2026',
   },
   {
-    id: 'acc-12',
+    id: 'acc-nguyen',
+    fullName: 'Lê Trần Thuỷ Nguyên',
+    email: 'tnguyenletran@gmail.com',
+    studentId: '24310069',
+    departmentCode: 'B02',
+    departmentName: 'Ban Tư vấn',
+    departmentSlug: 'tu-van',
+    role: 'dept_head',
+    roleTitle: 'Trưởng Ban Tư vấn',
+    passwordPlain: 'ISSAC2026@24310069',
+    status: 'active',
+    avatarUrl: '/thuy-nguyen-avatar.png',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-hai',
     fullName: 'Vũ Đình Hải',
     email: 'vudinhhai542007@gmail.com',
     studentId: '25070407',
@@ -277,25 +267,155 @@ export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
     departmentSlug: 'truyen-thong',
     role: 'dept_head',
     roleTitle: 'Phó Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@hai',
+    passwordPlain: 'ISSAC2026@25070407',
     status: 'active',
     avatarUrl: '/vu-dinh-hai-avatar.png',
-    createdAt: '15/10/2025',
+    createdAt: '15/10/2026',
   },
   {
-    id: 'acc-13',
-    fullName: 'Vũ Hồng Hải Yến',
-    email: 'vhhyen24@gmail.com',
-    studentId: '25073060',
+    id: 'acc-duong',
+    fullName: 'Lâm Thị Bình Dương',
+    email: 'lamduong200907@gmail.com',
+    studentId: '25070345',
+    departmentCode: 'B01',
+    departmentName: 'Ban Truyền thông',
+    departmentSlug: 'truyen-thong',
+    role: 'dept_head',
+    roleTitle: 'Phó Ban Truyền thông',
+    passwordPlain: 'ISSAC2026@25070345',
+    status: 'active',
+    avatarUrl: '/lam-thi-binh-duong-avatar.png',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-huy',
+    fullName: 'Phương Gia Huy',
+    email: '24070680@vnu.edu.vn',
+    studentId: '24070680',
+    departmentCode: 'B01',
+    departmentName: 'Ban Truyền thông',
+    departmentSlug: 'truyen-thong',
+    role: 'dept_head',
+    roleTitle: 'Cán bộ Ban Truyền thông',
+    passwordPlain: 'ISSAC2026@truyenthong',
+    status: 'active',
+    avatarUrl: '/phuong-gia-huy-avatar.png',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-ngocanh',
+    fullName: 'Nguyễn Ngọc Anh',
+    email: '24070622@vnu.edu.vn',
+    studentId: '24070622',
     departmentCode: 'B02',
     departmentName: 'Ban Tư vấn',
     departmentSlug: 'tu-van',
-    role: 'member',
-    roleTitle: 'Thành viên Ban Tư vấn',
-    passwordPlain: 'ISSAC2026@yen',
+    role: 'dept_head',
+    roleTitle: 'Phó Ban Tư vấn',
+    passwordPlain: 'ISSAC2026@tuvan',
     status: 'active',
-    avatarUrl: '/vu-hong-hai-yen-avatar.png',
-    createdAt: '15/10/2025',
+    avatarUrl: '/nguyen-ngoc-anh-avatar.png',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-thuhien',
+    fullName: 'Phùng Thị Thu Hiền',
+    email: '24070752@vnu.edu.vn',
+    studentId: '24070752',
+    departmentCode: 'B02',
+    departmentName: 'Ban Tư vấn',
+    departmentSlug: 'tu-van',
+    role: 'dept_head',
+    roleTitle: 'Phó Ban Tư vấn',
+    passwordPlain: 'ISSAC2026@tuvan2',
+    status: 'active',
+    avatarUrl: '/phung-thi-thu-hien-avatar.png',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-thao',
+    fullName: 'Nguyễn Thu Thảo',
+    email: 'nthuthao2011@gmail.com',
+    studentId: '23071234',
+    departmentCode: 'B02',
+    departmentName: 'Ban Tư vấn',
+    departmentSlug: 'tu-van',
+    role: 'dept_head',
+    roleTitle: 'Cố vấn Ban Tư vấn',
+    passwordPlain: 'ISSAC2026@thao',
+    status: 'active',
+    avatarUrl: '/nguyen-thu-thao-avatar.png',
+    createdAt: '15/10/2026',
+  },
+  {
+    id: 'acc-26070180',
+    fullName: 'Ngô Bảo Anh',
+    email: 'daothingan19899@gmail.com',
+    studentId: '26070180',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    departmentSlug: 'nhan-su',
+    role: 'member',
+    roleTitle: 'Thành viên - Ban Nhân sự',
+    passwordPlain: 'ISSAC2026@26070180',
+    status: 'active',
+    createdAt: '18/10/2026',
+  },
+  {
+    id: 'acc-26070316',
+    fullName: 'Nguyễn Mai Thanh Hương',
+    email: 'huongth484@gmail.com',
+    studentId: '26070316',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    departmentSlug: 'nhan-su',
+    role: 'member',
+    roleTitle: 'Thành viên - Ban Nhân sự',
+    passwordPlain: 'ISSAC2026@26070316',
+    status: 'active',
+    createdAt: '18/10/2026',
+  },
+  {
+    id: 'acc-25073039',
+    fullName: 'Trần Phương Linh',
+    email: 'tranplinh2517@gmail.com',
+    studentId: '25073039',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    departmentSlug: 'nhan-su',
+    role: 'member',
+    roleTitle: 'Thành viên - Ban Nhân sự',
+    passwordPlain: 'ISSAC2026@25073039',
+    status: 'active',
+    createdAt: '18/10/2026',
+  },
+  {
+    id: 'acc-26070324',
+    fullName: 'Hoàng Công Minh',
+    email: 'hoangcongminh.cm@gmail.com',
+    studentId: '26070324',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    departmentSlug: 'nhan-su',
+    role: 'member',
+    roleTitle: 'Thành viên - Ban Nhân sự',
+    passwordPlain: 'ISSAC2026@26070324',
+    status: 'active',
+    createdAt: '18/10/2026',
+  },
+  {
+    id: 'acc-25073044',
+    fullName: 'Đỗ Ngọc Ly',
+    email: 'dongocly150106@gmail.com',
+    studentId: '25073044',
+    departmentCode: 'B03',
+    departmentName: 'Ban Nhân sự',
+    departmentSlug: 'nhan-su',
+    role: 'member',
+    roleTitle: 'Thành viên - Ban Nhân sự',
+    passwordPlain: 'ISSAC2026@25073044',
+    status: 'active',
+    createdAt: '18/10/2026',
   },
 ]
 
@@ -454,15 +574,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 2. Check full roster (48 official members)
         const foundMember = INITIAL_MEMBERS.find((m) => m.member_code === saved || m.student_id === saved)
         if (foundMember) {
+          const roleInfo = getRoleForMember(foundMember)
           setCurrentUser({
             id: foundMember.member_code,
             name: foundMember.full_name,
-            role: foundMember.department_slug === 'bcn' ? 'bcn' : foundMember.department_slug === 'nhan-su' && foundMember.position.includes('Trưởng') ? 'hr' : foundMember.position.includes('Trưởng') ? 'dept_head' : 'member',
-            roleTitle: `${foundMember.position} - ${foundMember.department_name}`,
+            role: roleInfo.role,
+            roleTitle: roleInfo.roleTitle,
             departmentCode: foundMember.department_code,
             departmentName: foundMember.department_name,
             memberCode: foundMember.member_code,
-            isCore: foundMember.is_core,
+            isCore: roleInfo.isCore,
             avatarBg: 'bg-blue-600',
             avatarUrl: foundMember.avatar_url,
           })
@@ -553,15 +674,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const foundMember = INITIAL_MEMBERS.find((m) => m.member_code === userId || m.student_id === userId)
     if (foundMember) {
+      const roleInfo = getRoleForMember(foundMember)
       const mappedUser: AuthUser = {
         id: foundMember.member_code,
         name: foundMember.full_name,
-        role: foundMember.department_slug === 'bcn' ? 'bcn' : foundMember.department_slug === 'nhan-su' && foundMember.position.includes('Trưởng') ? 'hr' : foundMember.position.includes('Trưởng') ? 'dept_head' : 'member',
-        roleTitle: `${foundMember.position} - ${foundMember.department_name}`,
+        role: roleInfo.role,
+        roleTitle: roleInfo.roleTitle,
         departmentCode: foundMember.department_code,
         departmentName: foundMember.department_name,
         memberCode: foundMember.member_code,
-        isCore: foundMember.is_core,
+        isCore: roleInfo.isCore,
         avatarBg: 'bg-blue-600',
         avatarUrl: foundMember.avatar_url,
       }
@@ -676,135 +798,140 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const cleanPass = passwordInput.trim()
 
-    // 1. Search in BCN-issued accounts first (matches user screenshot)
-    const issued = issuedAccounts.find(
-      (a) =>
-        !deletedAccountIdsRef.current.has(a.id) &&
-        (a.email.toLowerCase() === clean ||
-        (a.studentId && a.studentId.toLowerCase() === clean) ||
-        a.fullName.toLowerCase().includes(clean))
-    )
-
-    if (issued) {
-      if (deletedAccountIdsRef.current.has(issued.id)) {
-        return {
-          success: false,
-          message: 'Tài khoản này đã bị xóa khỏi hệ thống bởi Ban Chủ nhiệm.',
-        }
-      }
-
-      if (issued.status === 'suspended') {
-        return {
-          success: false,
-          message: 'Tài khoản của bạn hiện đang bị tạm khóa bởi Ban Chủ nhiệm. Vui lòng liên hệ BCN.',
-        }
-      }
-
-      const isCorrectPassword =
-        cleanPass === issued.passwordPlain ||
-        cleanPass === '123456' ||
-        cleanPass === 'issac2025' ||
-        cleanPass === 'issac2026' ||
-        (issued.studentId && cleanPass === issued.studentId)
-
-      if (!isCorrectPassword) {
-        return {
-          success: false,
-          message: 'Mật khẩu không chính xác. Mật khẩu được cấp có thể là mật khẩu BCN giao hoặc mặc định issac2025 / issac2026.',
-        }
-      }
-
-      const authUser: AuthUser = {
-        id: issued.id,
-        name: issued.fullName,
-        role: issued.role,
-        roleTitle: issued.roleTitle,
-        departmentCode: issued.departmentCode,
-        departmentName: issued.departmentName,
-        memberCode: issued.studentId || issued.id,
-        isCore: issued.role === 'bcn' || issued.role === 'hr' || issued.role === 'dept_head',
-        avatarBg: 'bg-blue-600',
-      }
-      setCurrentUser(authUser)
-      localStorage.setItem('issac_active_user', authUser.id)
-      return {
-        success: true,
-        user: authUser,
-        message: `Đăng nhập thành công! Chào mừng ${issued.fullName} (${issued.roleTitle}).`,
-      }
-    }
-
-    // 2. Search in preset users
-    const preset = PRESET_USERS.find(
-      (u) =>
-        u.id.toLowerCase() === clean ||
-        u.memberCode?.toLowerCase() === clean ||
-        u.name.toLowerCase().includes(clean)
-    )
-    if (preset) {
-      const isCorrect =
-        cleanPass === 'issac2025' ||
-        cleanPass === 'issac2026' ||
-        cleanPass === '123456' ||
-        (preset.memberCode && cleanPass === preset.memberCode)
-
-      if (!isCorrect) {
-        return {
-          success: false,
-          message: 'Mật khẩu không chính xác. Vui lòng kiểm tra lại mật khẩu Ban Chủ nhiệm.',
-        }
-      }
-
-      setCurrentUser(preset)
-      localStorage.setItem('issac_active_user', preset.id)
-      return { success: true, user: preset, message: `Đăng nhập thành công! Chào mừng ${preset.name}.` }
-    }
-
-    // 3. Search in official club members roster (48 members)
+    // 1. Tìm kiếm trong danh sách thành viên chính thức CLB (48 thành viên)
     const member = INITIAL_MEMBERS.find(
       (m) =>
         m.member_code.toLowerCase() === clean ||
         (m.student_id && m.student_id.toLowerCase() === clean) ||
         m.email.toLowerCase() === clean ||
+        m.full_name.toLowerCase() === clean ||
         m.full_name.toLowerCase().includes(clean)
     )
 
-    if (member) {
-      const isCorrect =
-        cleanPass === member.phone ||
-        cleanPass === member.student_id ||
-        cleanPass === member.member_code ||
-        cleanPass === 'issac2026' ||
-        cleanPass === 'issac2025' ||
-        cleanPass === '123456'
+    // 2. Tìm kiếm trong danh sách tài khoản được cấp (issuedAccounts)
+    const issued = issuedAccounts.find(
+      (a) =>
+        !deletedAccountIdsRef.current.has(a.id) &&
+        (a.email.toLowerCase() === clean ||
+        (a.studentId && a.studentId.toLowerCase() === clean) ||
+        (member && a.studentId && (a.studentId.toLowerCase() === member.student_id?.toLowerCase() || a.studentId.toLowerCase() === member.member_code.toLowerCase())) ||
+        (member && a.email && a.email.toLowerCase() === member.email.toLowerCase()) ||
+        a.fullName.toLowerCase() === clean ||
+        a.fullName.toLowerCase().includes(clean))
+    )
 
-      if (!isCorrect) {
-        return {
-          success: false,
-          message: 'Mật khẩu không chính xác. Mật khẩu mặc định là Số điện thoại hoặc Mã sinh viên đăng ký CLB của bạn.',
-        }
+    if (issued && deletedAccountIdsRef.current.has(issued.id)) {
+      return {
+        success: false,
+        message: 'Tài khoản này đã bị xóa khỏi hệ thống bởi Ban Chủ nhiệm.',
       }
-
-      const mappedUser: AuthUser = {
-        id: member.member_code,
-        name: member.full_name,
-        role: member.department_slug === 'bcn' ? 'bcn' : member.department_slug === 'nhan-su' && member.position.includes('Trưởng') ? 'hr' : member.position.includes('Trưởng') ? 'dept_head' : 'member',
-        roleTitle: `${member.position} - ${member.department_name}`,
-        departmentCode: member.department_code,
-        departmentName: member.department_name,
-        memberCode: member.member_code,
-        isCore: member.is_core,
-        avatarBg: 'bg-blue-600',
-        avatarUrl: member.avatar_url,
-      }
-      setCurrentUser(mappedUser)
-      localStorage.setItem('issac_active_user', mappedUser.id)
-      return { success: true, user: mappedUser, message: `Đăng nhập thành công! Chào mừng ${mappedUser.name}.` }
     }
 
+    if (issued && issued.status === 'suspended') {
+      return {
+        success: false,
+        message: 'Tài khoản của bạn hiện đang bị tạm khóa bởi Ban Chủ nhiệm. Vui lòng liên hệ BCN.',
+      }
+    }
+
+    // 3. Tìm kiếm trong tài khoản cài sẵn (preset)
+    const preset = PRESET_USERS.find(
+      (u) =>
+        u.id.toLowerCase() === clean ||
+        u.memberCode?.toLowerCase() === clean ||
+        (member && u.memberCode?.toLowerCase() === member.member_code.toLowerCase()) ||
+        u.name.toLowerCase() === clean ||
+        u.name.toLowerCase().includes(clean)
+    )
+
+    if (!issued && !preset && !member) {
+      return {
+        success: false,
+        message: 'Không tìm thấy tài khoản trong hệ thống. Vui lòng kiểm tra lại Email sinh viên hoặc MSSV của bạn.',
+      }
+    }
+
+    // Kiểm tra mật khẩu hợp lệ trên mọi thiết bị
+    const validPasswords = new Set<string>()
+    validPasswords.add('issac2026')
+    validPasswords.add('issac2025')
+    validPasswords.add('123456')
+    validPasswords.add('ISSAC2026@clb')
+
+    if (issued?.passwordPlain) {
+      validPasswords.add(issued.passwordPlain)
+    }
+    if (issued?.studentId) {
+      validPasswords.add(issued.studentId)
+      validPasswords.add(`ISSAC2026@${issued.studentId}`)
+    }
+    if (member?.student_id) {
+      validPasswords.add(member.student_id)
+      validPasswords.add(`ISSAC2026@${member.student_id}`)
+    }
+    if (member?.member_code) {
+      validPasswords.add(member.member_code)
+      validPasswords.add(`ISSAC2026@${member.member_code}`)
+    }
+    if (member?.phone) {
+      validPasswords.add(member.phone)
+    }
+
+    const isCorrectPassword = validPasswords.has(cleanPass)
+
+    if (!isCorrectPassword) {
+      return {
+        success: false,
+        message: 'Mật khẩu không chính xác. Mật khẩu mặc định là issac2026 hoặc mật khẩu được Ban Chủ nhiệm cấp.',
+      }
+    }
+
+    // Chuẩn hóa phân quyền tuyệt đối chính xác
+    let finalRole: UserRole = 'member'
+    let finalRoleTitle = ''
+    let isCore = false
+
+    if (member) {
+      const derived = getRoleForMember(member)
+      finalRole = derived.role
+      isCore = derived.isCore
+      finalRoleTitle = derived.roleTitle
+    } else if (issued) {
+      finalRole = issued.role
+      finalRoleTitle = issued.roleTitle
+      isCore = issued.role === 'bcn' || issued.role === 'hr' || issued.role === 'dept_head'
+      if (issued.departmentSlug === 'nhan-su' && (issued.roleTitle.includes('Trưởng') || issued.roleTitle.includes('Phó'))) {
+        finalRole = 'hr'
+        isCore = true
+      }
+    } else if (preset) {
+      finalRole = preset.role
+      finalRoleTitle = preset.roleTitle
+      isCore = preset.isCore
+    }
+
+    const authUser: AuthUser = {
+      id: issued?.id || member?.member_code || preset?.id || `user-${Date.now()}`,
+      name: member?.full_name || issued?.fullName || preset?.name || 'Thành viên iSSAC',
+      role: finalRole,
+      roleTitle: finalRoleTitle || (issued?.roleTitle ?? `${member?.position || 'Thành viên'} - ${member?.department_name || 'CLB iSSAC'}`),
+      departmentCode: member?.department_code || issued?.departmentCode || preset?.departmentCode,
+      departmentName: member?.department_name || issued?.departmentName || preset?.departmentName,
+      memberCode: member?.member_code || issued?.studentId || preset?.memberCode,
+      isCore,
+      avatarBg: 'bg-blue-600',
+      avatarUrl: member?.avatar_url || issued?.avatarUrl || preset?.avatarUrl,
+    }
+
+    setCurrentUser(authUser)
+    try {
+      localStorage.setItem('issac_active_user', authUser.id)
+    } catch (e) {}
+
     return {
-      success: false,
-      message: 'Không tìm thấy tài khoản trong danh sách thành viên CLB được cấp phép. Vui lòng kiểm tra lại MSSV hoặc liên hệ Ban Chủ nhiệm.',
+      success: true,
+      user: authUser,
+      message: `Đăng nhập thành công! Chào mừng ${authUser.name} (${authUser.roleTitle}).`,
     }
   }
 
