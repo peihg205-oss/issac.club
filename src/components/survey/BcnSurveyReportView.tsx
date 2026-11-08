@@ -40,6 +40,7 @@ import { useClub } from '@/lib/context/ClubContext'
 import {
   getStoredSurveyFeedbacks,
   getStoredSurveyEvents,
+  updateSurveyEventStatus,
   SurveyFeedbackItem,
   SurveyEventItem,
 } from '@/lib/surveyData'
@@ -404,6 +405,24 @@ export function BcnSurveyReportView({
     }
   }
 
+  const currentEventObj = useMemo(() => {
+    return surveyEvents.find((e) => e.name === selectedEvent) || null
+  }, [surveyEvents, selectedEvent])
+
+  const isSelectedEventLocked = Boolean(currentEventObj && currentEventObj.status === 'closed')
+
+  const handleToggleLockCurrentEvent = () => {
+    if (!currentEventObj || !isBCN) return
+    const nextStatus = currentEventObj.status === 'active' ? 'closed' : 'active'
+    const updated = updateSurveyEventStatus(currentEventObj.id, nextStatus)
+    setSurveyEvents(updated)
+    alert(
+      nextStatus === 'closed'
+        ? `Đã khóa sổ điểm khảo sát sự kiện "${currentEventObj.name}"! Dữ liệu điểm đã được chốt và bảo lưu an toàn.`
+        : `Đã mở lại khảo sát sự kiện "${currentEventObj.name}"!`
+    )
+  }
+
   // Export JSON Report
   const handleExportReport = () => {
     const reportData = {
@@ -531,6 +550,26 @@ export function BcnSurveyReportView({
                   <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
                   <span>Xuất dữ liệu</span>
                 </button>
+
+                {currentEventObj && (
+                  <button
+                    type="button"
+                    onClick={handleToggleLockCurrentEvent}
+                    className={`h-10 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border select-none ${
+                      isSelectedEventLocked
+                        ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100'
+                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100'
+                    }`}
+                    title={isSelectedEventLocked ? 'Mở lại kỳ khảo sát' : 'Chốt và khóa sổ điểm khảo sát'}
+                  >
+                    <Lock className="w-4 h-4 shrink-0" />
+                    <span>
+                      {isSelectedEventLocked
+                        ? 'Đã khóa sổ (Mở lại)'
+                        : 'Khóa sổ điểm khảo sát'}
+                    </span>
+                  </button>
+                )}
 
                 {onSwitchToSurvey && (
                   <button

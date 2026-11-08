@@ -36,6 +36,7 @@ import {
   saveNewSurveyFeedback,
   getStoredSurveyFeedbacks,
   getStoredSurveyEvents,
+  updateSurveyEventStatus,
   SurveyEventItem,
   SurveyFeedbackItem,
   CORE_EVALUATION_CRITERIA,
@@ -327,6 +328,22 @@ export function SurveyView() {
   // Toast / Feedback message
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false)
+
+  // Khóa sổ điểm khảo sát bởi Ban Chủ nhiệm
+  const isSurveyLocked = Boolean(currentEventItem && currentEventItem.status === 'closed')
+
+  const handleToggleLockSurvey = () => {
+    if (!currentEventItem || !isBCN) return
+    const nextStatus = currentEventItem.status === 'active' ? 'closed' : 'active'
+    const updated = updateSurveyEventStatus(currentEventItem.id, nextStatus)
+    setSurveyEvents(updated)
+    setToastMessage(
+      nextStatus === 'closed'
+        ? `Đã khóa sổ điểm khảo sát "${currentEventItem.name}"! Điểm số đã được chốt và bảo lưu an toàn.`
+        : `Đã mở lại khảo sát sự kiện "${currentEventItem.name}"!`
+    )
+    setTimeout(() => setToastMessage(null), 3500)
+  }
 
   // Load from localStorage specifically for the selectedEvent
   useEffect(() => {
@@ -756,31 +773,55 @@ export function SurveyView() {
           {/* Divider between Event and Live Status */}
           <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-700" />
 
-          {/* Live indicator / Expiration status badge */}
-          {isEventClosedOrExpired ? (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-50/90 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-              <span>{currentEventItem?.status === 'closed' ? 'Đã đóng khảo sát' : 'Đã hết hạn'}</span>
-              {currentEventItem?.endDate && (
-                <span className="text-[11px] font-normal opacity-80">
-                  (Hạn: {currentEventItem.endDate})
-                </span>
-              )}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          {/* Live indicator / Expiration status badge & BCN Lock Action */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {isSurveyLocked ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-purple-50/90 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800 shadow-2xs">
+                <Lock className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Đã khóa sổ điểm bởi BCN</span>
               </span>
-              <span>Đang mở khảo sát</span>
-              {currentEventItem?.endDate && (
-                <span className="text-[11px] font-normal opacity-90 hidden sm:inline">
-                  (Hạn chót: {currentEventItem.endDate})
+            ) : isEventClosedOrExpired ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-50/90 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>Hết hạn khảo sát</span>
+                {currentEventItem?.endDate && (
+                  <span className="text-[11px] font-normal opacity-80">
+                    (Hạn: {currentEventItem.endDate})
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-              )}
-            </span>
-          )}
+                <span>Đang mở khảo sát (Điểm bảo mật)</span>
+                {currentEventItem?.endDate && (
+                  <span className="text-[11px] font-normal opacity-90 hidden sm:inline">
+                    (Hạn chót: {currentEventItem.endDate})
+                  </span>
+                )}
+              </span>
+            )}
+
+            {/* Quick BCN Lock/Unlock Toggle directly on survey view */}
+            {isBCN && currentEventItem && (
+              <button
+                type="button"
+                onClick={handleToggleLockSurvey}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95 ${
+                  isSurveyLocked
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/90 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200/90 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
+                }`}
+                title={isSurveyLocked ? 'Mở lại để tiếp tục nhận phiếu khảo sát' : 'Chốt và khóa sổ điểm khảo sát sự kiện'}
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>{isSurveyLocked ? 'Mở lại khảo sát' : 'Khóa sổ điểm khảo sát'}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Right: Evaluated count & progress badge */}
@@ -1116,14 +1157,18 @@ export function SurveyView() {
                   </span>
                   <div className="flex items-baseline gap-1 py-0.5">
                     <span className="text-lg sm:text-[22px] font-black text-[#0284C7] dark:text-sky-400 tracking-tight leading-none">
-                      {selectedMember.reviewsCount ?? 0}
+                      {isSurveyLocked || isBCN ? (selectedMember.reviewsCount ?? 0) : '—'}
                     </span>
                     <span className="text-[11.5px] font-bold text-[#0284C7]/80 dark:text-sky-300">
                       lượt
                     </span>
                   </div>
                   <span className="text-[11.5px] font-semibold text-[#0284C7] dark:text-sky-400 block truncate">
-                    {(selectedMember.reviewsCount ?? 0) > 0 ? 'Đã có nhận xét' : 'Chưa có lượt nào'}
+                    {isSurveyLocked || isBCN
+                      ? (selectedMember.reviewsCount ?? 0) > 0
+                        ? 'Đã có nhận xét'
+                        : 'Chưa có lượt nào'
+                      : 'Đang mở khảo sát'}
                   </span>
                 </div>
                 <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-sky-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
@@ -1131,53 +1176,75 @@ export function SurveyView() {
                 </div>
               </div>
 
-              {/* Stat 2: Điểm TB (Style Mục tiêu Tốt / Xanh lá hoặc Thang điểm / Slate chuẩn Ảnh 2) */}
-              {(selectedMember.reviewsCount ?? 0) > 0 && selectedMember.averageScore != null ? (
-                <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F0FDF4] dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/50 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
-                  <div className="space-y-0.5 min-w-0">
-                    <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
-                      Điểm đánh giá TB
-                    </span>
-                    <div className="flex items-baseline gap-1 py-0.5">
-                      <span className="text-lg sm:text-[22px] font-black text-[#16A34A] dark:text-emerald-400 tracking-tight leading-none">
-                        {selectedMember.averageScore.toFixed(1)}
+              {/* Stat 2: Điểm TB (Chỉ hiển thị khi Ban Chủ nhiệm khóa sổ điểm khảo sát, đảm bảo tính bảo mật tuyệt đối) */}
+              {isSurveyLocked ? (
+                (selectedMember.reviewsCount ?? 0) > 0 && selectedMember.averageScore != null ? (
+                  <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F0FDF4] dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/50 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
+                        Điểm đánh giá TB
                       </span>
-                      <span className="text-[11.5px] font-bold text-[#16A34A]/80 dark:text-emerald-300">
-                        / 10
+                      <div className="flex items-baseline gap-1 py-0.5">
+                        <span className="text-lg sm:text-[22px] font-black text-[#16A34A] dark:text-emerald-400 tracking-tight leading-none">
+                          {selectedMember.averageScore.toFixed(1)}
+                        </span>
+                        <span className="text-[11.5px] font-bold text-[#16A34A]/80 dark:text-emerald-300">
+                          / 10
+                        </span>
+                      </div>
+                      <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block truncate">
+                        Đã khóa sổ bởi BCN
                       </span>
                     </div>
-                    <span className="text-[11.5px] font-semibold text-[#16A34A] dark:text-emerald-400 block truncate">
-                      {selectedMember.averageScore >= 8.5
-                        ? 'Xuất sắc'
-                        : selectedMember.averageScore >= 7.0
-                        ? 'Đạt yêu cầu'
-                        : 'Cần cố gắng'}
-                    </span>
+                    <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#16A34A] shrink-0 shadow-2xs">
+                      <Star className="w-4.5 h-4.5 fill-[#16A34A] stroke-[1.75]" />
+                    </div>
                   </div>
-                  <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-emerald-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-[#16A34A] shrink-0 shadow-2xs">
-                    <Star className="w-4.5 h-4.5 fill-[#16A34A] stroke-[1.75]" />
+                ) : (
+                  <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
+                        Điểm đánh giá TB
+                      </span>
+                      <div className="flex items-baseline gap-1 py-0.5">
+                        <span className="text-lg sm:text-[22px] font-black text-slate-400 dark:text-slate-500 tracking-tight leading-none">
+                          —
+                        </span>
+                        <span className="text-[11.5px] font-bold text-slate-400 dark:text-slate-500">
+                          / 10
+                        </span>
+                      </div>
+                      <span className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-500 block truncate">
+                        Chưa có đánh giá
+                      </span>
+                    </div>
+                    <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs">
+                      <Star className="w-4.5 h-4.5 stroke-[1.75]" />
+                    </div>
                   </div>
-                </div>
+                )
               ) : (
+                /* KHI CHƯA KHÓA SỔ: Điểm không public, bảo mật tuyệt đối */
                 <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#F8FAFC] dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
                   <div className="space-y-0.5 min-w-0">
                     <span className="text-xs sm:text-[13px] font-medium text-slate-600 dark:text-slate-300 block truncate">
                       Điểm đánh giá TB
                     </span>
                     <div className="flex items-baseline gap-1 py-0.5">
-                      <span className="text-lg sm:text-[22px] font-black text-slate-400 dark:text-slate-500 tracking-tight leading-none">
-                        —
+                      <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 tracking-tight leading-none flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5 text-amber-500 stroke-[2.5]" />
+                        Bảo mật
                       </span>
                       <span className="text-[11.5px] font-bold text-slate-400 dark:text-slate-500">
                         / 10
                       </span>
                     </div>
-                    <span className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-500 block truncate">
-                      Chưa có đánh giá
+                    <span className="text-[11px] sm:text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 block truncate">
+                      Chỉ mở khi BCN khóa sổ
                     </span>
                   </div>
-                  <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-slate-300/70 bg-white/60 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs">
-                    <Star className="w-4.5 h-4.5 stroke-[1.75]" />
+                  <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-amber-300/70 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-2xs">
+                    <Lock className="w-4.5 h-4.5 stroke-[1.75]" />
                   </div>
                 </div>
               )}

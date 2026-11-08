@@ -181,7 +181,11 @@ export function BcnSurveyConfigManager({
     const nextStatus = currentStatus === 'active' ? 'closed' : 'active'
     const updated = updateSurveyEventStatus(id, nextStatus)
     setEvents(updated)
-    showToast(nextStatus === 'active' ? 'Đã mở khảo sát sự kiện!' : 'Đã đóng khảo sát sự kiện!')
+    showToast(
+      nextStatus === 'active'
+        ? 'Đã mở lại khảo sát sự kiện!'
+        : 'Đã khóa sổ điểm khảo sát sự kiện! Dữ liệu điểm đã được chốt và bảo lưu an toàn.'
+    )
   }
 
   // Handle Delete Event
@@ -384,11 +388,11 @@ export function BcnSurveyConfigManager({
                           </span>
                         ) : evt.status === 'active' ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border-0 shadow-2xs">
-                            ● Đang mở khảo sát
+                            ● Đang mở khảo sát (Điểm bảo mật)
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/70 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border-0 shadow-2xs">
-                            ○ Đã đóng
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border-0 shadow-2xs">
+                            🔒 Đã khóa sổ điểm bởi BCN
                           </span>
                         )}
                       </div>
@@ -433,11 +437,11 @@ export function BcnSurveyConfigManager({
                         onClick={() => handleToggleStatus(evt.id, evt.status)}
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition border-0 shadow-2xs cursor-pointer ${
                           evt.status === 'active'
-                            ? 'bg-amber-50 text-amber-700 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:text-amber-300'
+                            ? 'bg-purple-50 text-purple-700 hover:bg-purple-100/80 dark:bg-purple-950/40 dark:text-purple-300'
                             : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:text-emerald-300'
                         }`}
                       >
-                        {evt.status === 'active' ? 'Đóng khảo sát' : 'Mở lại'}
+                        {evt.status === 'active' ? '🔒 Khóa sổ điểm khảo sát' : '🔓 Mở lại khảo sát'}
                       </button>
 
                       <button
