@@ -26,9 +26,6 @@ import {
   ShieldAlert,
   ClipboardEdit,
   Eye,
-  Flag,
-  Target,
-  TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { isUserCoreTeam } from '@/lib/auth/permissions'
@@ -1335,52 +1332,38 @@ export function SurveyView() {
                         ? {
                             cardBg: 'bg-[#F0FDF4] dark:bg-emerald-950/20',
                             border: 'border-emerald-200/80 dark:border-emerald-900/50',
-                            circleBorder: 'border-emerald-300/80 dark:border-emerald-700',
                             accent: 'text-[#16A34A] dark:text-emerald-400',
                             btnActive: 'bg-[#16A34A] text-white ring-2 ring-[#16A34A]/30',
-                            Icon: Flag,
                           }
                         : crit.key === 'taskDelivery'
                         ? {
                             cardBg: 'bg-[#F0F9FF] dark:bg-sky-950/20',
                             border: 'border-sky-200/80 dark:border-sky-900/50',
-                            circleBorder: 'border-sky-300/80 dark:border-sky-700',
                             accent: 'text-[#0284C7] dark:text-sky-400',
                             btnActive: 'bg-[#0284C7] text-white ring-2 ring-[#0284C7]/30',
-                            Icon: Target,
                           }
                         : crit.key === 'collaboration'
                         ? {
                             cardBg: 'bg-[#FFFBEB] dark:bg-amber-950/20',
                             border: 'border-amber-200/80 dark:border-amber-900/50',
-                            circleBorder: 'border-amber-300/80 dark:border-amber-700',
                             accent: 'text-[#D97706] dark:text-amber-400',
                             btnActive: 'bg-[#D97706] text-white ring-2 ring-[#D97706]/30',
-                            Icon: Users,
                           }
                         : {
                             cardBg: 'bg-[#F8FAFC] dark:bg-slate-800/35',
                             border: 'border-slate-200/80 dark:border-slate-700/60',
-                            circleBorder: 'border-slate-300/80 dark:border-slate-600',
                             accent: 'text-[#061651] dark:text-sky-300',
                             btnActive: 'bg-[#061651] dark:bg-sky-600 text-white ring-2 ring-[#061651]/30',
-                            Icon: TrendingUp,
                           }
-                    const Icon = cStyle.Icon
                     return (
                       <div
                         key={crit.key}
                         className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl ${cStyle.cardBg} ${cStyle.border} border space-y-2 transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full border ${cStyle.circleBorder} bg-white/70 dark:bg-slate-800/80 flex items-center justify-center ${cStyle.accent} shrink-0 shadow-2xs`}>
-                              <Icon className="w-4 h-4 stroke-[1.75]" />
-                            </div>
-                            <span className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block leading-tight truncate">
-                              {crit.shortLabel}
-                            </span>
-                          </div>
+                          <span className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-white block leading-tight truncate">
+                            {crit.shortLabel}
+                          </span>
                           <div className="flex items-baseline gap-1 bg-white/80 dark:bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-200/70 dark:border-slate-700 shadow-2xs shrink-0">
                             <span className={`text-xs sm:text-sm font-black ${cStyle.accent} leading-none`}>
                               {score}.0
