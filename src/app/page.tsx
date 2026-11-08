@@ -175,7 +175,7 @@ export default function AppHome() {
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
           pendingCount={pendingCount}
-          hasActiveEvent={!activeEvent?.isFinalized}
+          hasActiveEvent={Boolean(activeEvent && !activeEvent.isFinalized)}
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         />

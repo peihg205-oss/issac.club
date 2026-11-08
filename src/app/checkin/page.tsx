@@ -68,7 +68,7 @@ function CheckinContent() {
 
   // Sự kiện đang chọn để check-in hoặc đăng ký
   const [selectedEventId, setSelectedEventId] = useState<string>(
-    urlEventId || activeEventId || events[0]?.id || ''
+    urlEventId || activeEventId || activeEvent?.id || ''
   )
 
   // Phương thức điểm danh tại hội trường:
@@ -246,7 +246,7 @@ function CheckinContent() {
     }
   }, [])
 
-  const currentEvent = events.find((e) => e.id === selectedEventId) || activeEvent || events[0]
+  const currentEvent = events.find((e) => e.id === selectedEventId) || activeEvent || null
   const currentCheckinMember = members.find((m) => m.member_code === checkinMemberCode)
   const currentLookupMember =
     (selectedLookupMember ? members.find((m) => m.member_code === selectedLookupMember) : null) ||

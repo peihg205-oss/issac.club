@@ -35,6 +35,7 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { useLanguage } from '@/lib/context/LanguageContext'
 import type { DepartmentCode } from '@/types/database'
 import { getMemberAvatarUrl } from '@/lib/clubData'
+import { getEventPeriodId } from '@/lib/periodData'
 import { AdminQrScannerModal } from '@/components/checkin/AdminQrScannerModal'
 
 export function CheckinView() {
@@ -49,6 +50,8 @@ export function CheckinView() {
     memberSelfCheckin,
     finalizeEvent,
     createUpcomingEvent,
+    currentActiveMonth,
+    currentActivePeriodId,
   } = useClub()
 
   const { isBCN, isHR, currentUser } = useAuth()
@@ -159,7 +162,11 @@ export function CheckinView() {
     }, 2800)
   }
 
-  const currentEvt = activeEvent || events[0] || null
+  const [viewingEventId, setViewingEventId] = useState<string | null>(null)
+  const currentEvt =
+    (viewingEventId ? events.find((e) => e.id === viewingEventId) : null) ||
+    activeEvent ||
+    null
 
   // Tính toán thống kê nhanh
   const records = currentEvt?.records || {}
@@ -250,6 +257,7 @@ export function CheckinView() {
 
     if (res.success && res.event) {
       setActiveEventId(res.event.id)
+      setViewingEventId(null)
       setIsCreateModalOpen(false)
       setNewTitle('')
       setNewDescription('')
@@ -521,10 +529,12 @@ export function CheckinView() {
             </div>
             <div className="max-w-md mx-auto space-y-2">
               <h3 className="text-lg font-black text-slate-900">
-                Chưa Có Phiên Điểm Danh Nào
+                {language === 'vi' ? `Chưa Có Phiên Điểm Danh Nào (${currentActiveMonth || 'Tháng 11/2026'})` : `No Active Meeting Session (${currentActiveMonth || 'November 2026'})`}
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
-                Toàn bộ dữ liệu điểm danh đã được làm sạch và sẵn sàng chạy thật. Ban Chủ nhiệm hoặc Ban Nhân sự hãy bấm nút bên dưới để tạo phiên điểm danh cho buổi sinh hoạt CLB.
+                {language === 'vi'
+                  ? `Toàn bộ dữ liệu điểm danh ${currentActiveMonth || 'Tháng 11/2026'} sẵn sàng chạy thật. Ban Chủ nhiệm hoặc Ban Nhân sự hãy bấm nút bên dưới để tạo phiên điểm danh cho buổi sinh hoạt CLB.`
+                  : `Check-in system for ${currentActiveMonth || 'November 2026'} is ready. Executive Board or HR can click below to create a new session.`}
               </p>
             </div>
             {(isBCN || isHR) ? (
@@ -534,12 +544,34 @@ export function CheckinView() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Tạo sự kiện mới ngay</span>
+                <span>{language === 'vi' ? 'Tạo sự kiện mới ngay' : 'Create New Event Now'}</span>
               </button>
             ) : (
               <p className="text-xs text-slate-400 italic">
-                (Phiên điểm danh sẽ hiển thị tại đây khi Ban Tổ chức khởi tạo)
+                {language === 'vi' ? '(Phiên điểm danh sẽ hiển thị tại đây khi Ban Tổ chức khởi tạo)' : '(Session will appear here once initiated by organizers)'}
               </p>
+            )}
+
+            {events.length > 0 && (
+              <div className="pt-5 border-t border-slate-100 max-w-lg mx-auto space-y-2.5">
+                <span className="text-xs font-bold text-slate-500 block">
+                  {language === 'vi' ? 'Hoặc xem lại phiên sinh hoạt đã chốt sổ kỳ trước:' : 'Or review closed sessions from previous period:'}
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {events.map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => setViewingEventId(e.id)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200/90 hover:border-[#0284C7] bg-slate-50 hover:bg-sky-50 text-slate-700 hover:text-[#0284C7] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
+                      <span>{e.title} ({e.date})</span>
+                      {e.isFinalized && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         ) : (
@@ -582,6 +614,12 @@ export function CheckinView() {
                       <span>{t('checkin.registered_badge', 'Đã đăng ký trước')}: {currentEvt.registeredMemberCodes?.length || 0} / {currentEvt.maxAttendees || 50}</span>
                     </span>
                   )}
+                  {getEventPeriodId(currentEvt) !== currentActivePeriodId && (
+                    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-700" />
+                      <span>{language === 'vi' ? 'Đang xem lại sự kiện kỳ trước' : 'Viewing previous period session'}</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Dropdown chuyển phiên tích hợp tinh tế & nút tạo sự kiện mới */}
@@ -593,7 +631,16 @@ export function CheckinView() {
                     <select
                       suppressHydrationWarning
                       value={currentEvt.id}
-                      onChange={(e) => setActiveEventId(e.target.value)}
+                      onChange={(e) => {
+                        const selectedId = e.target.value
+                        const ev = events.find((item) => item.id === selectedId)
+                        if (ev && getEventPeriodId(ev) === currentActivePeriodId) {
+                          setActiveEventId(ev.id)
+                          setViewingEventId(null)
+                        } else {
+                          setViewingEventId(selectedId)
+                        }
+                      }}
                       className="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer max-w-[240px] sm:max-w-xs truncate"
                     >
                       {events.map((e) => (
@@ -604,6 +651,21 @@ export function CheckinView() {
                     </select>
                     <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
+
+                  {(viewingEventId || getEventPeriodId(currentEvt) !== currentActivePeriodId) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewingEventId(null)
+                        setActiveEventId('')
+                      }}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      title={language === 'vi' ? 'Quay lại chu kỳ hiện tại' : 'Return to current period'}
+                    >
+                      <ArrowRight className="w-3 h-3 rotate-180" />
+                      <span>{language === 'vi' ? `Về ${currentActiveMonth || 'T11'}` : 'Back'}</span>
+                    </button>
+                  )}
 
                   {(isBCN || isHR) && (
                     <button
@@ -1578,7 +1640,7 @@ export function CheckinView() {
                       {language === 'vi' ? 'Điểm Danh Sinh Hoạt CLB' : 'Club Meeting Check-in'}
                     </h3>
                     <p className="text-xs text-[#64748B] mt-0.5 truncate">
-                      {currentEvt?.title || 'iSSAC FIRST MEETING GEN 3.0'}
+                      {currentEvt ? currentEvt.title : (language === 'vi' ? `Chưa có phiên điểm danh (${currentActiveMonth || 'Tháng 11/2026'})` : 'No active session')}
                     </p>
                   </div>
                 </div>
@@ -1700,10 +1762,21 @@ export function CheckinView() {
 
                   <button
                     type="submit"
-                    className="w-full py-3 bg-[#0084c8] hover:bg-[#0074b0] text-white font-bold text-xs sm:text-[13px] rounded-xl shadow-xs hover:shadow transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                    disabled={!currentEvt || currentEvt.isFinalized}
+                    className={`w-full py-3 text-white font-bold text-xs sm:text-[13px] rounded-xl shadow-xs transition active:scale-95 flex items-center justify-center gap-2 ${
+                      !currentEvt || currentEvt.isFinalized
+                        ? 'bg-slate-400 cursor-not-allowed opacity-80'
+                        : 'bg-[#0084c8] hover:bg-[#0074b0] cursor-pointer hover:shadow'
+                    }`}
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{language === 'vi' ? 'Xác nhận Điểm danh Ngay' : 'Confirm Check-in Now'}</span>
+                    <span>
+                      {!currentEvt
+                        ? (language === 'vi' ? 'Chưa mở phiên điểm danh' : 'No active session')
+                        : currentEvt.isFinalized
+                        ? (language === 'vi' ? 'Phiên điểm danh đã chốt sổ' : 'Session finalized')
+                        : (language === 'vi' ? 'Xác nhận Điểm danh Ngay' : 'Confirm Check-in Now')}
+                    </span>
                   </button>
                 </form>
               )}

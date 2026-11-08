@@ -212,6 +212,29 @@ export function isPeriodLocked(periodId: string, periods: PeriodItem[] = AVAILAB
   return found?.status === 'locked'
 }
 
+/**
+ * Trích xuất periodId (ví dụ 'month-2026-11') từ sự kiện dựa trên periodId hoặc date
+ */
+export function getEventPeriodId(event?: { periodId?: string; date?: string } | null): string {
+  if (!event) return 'month-2026-11'
+  if (event.periodId) return event.periodId
+  if (event.date) {
+    const slashParts = event.date.trim().split('/')
+    if (slashParts.length === 3) {
+      const year = slashParts[2]
+      const month = slashParts[1].padStart(2, '0')
+      return `month-${year}-${month}`
+    }
+    const dashParts = event.date.trim().split('-')
+    if (dashParts.length === 3) {
+      const year = dashParts[0]
+      const month = dashParts[1].padStart(2, '0')
+      return `month-${year}-${month}`
+    }
+  }
+  return 'month-2026-10'
+}
+
 // Delta điểm lịch sử Tháng 10/2026 (Đã tổng kết và khóa sổ theo sổ cái 613 bản ghi điểm phê duyệt)
 export const OCTOBER_2026_DELTAS: Record<string, number> = {
   '24310069': 40,  // Lê Trần Thuỷ Nguyên: 100đ (#1 Top 1 CLB)

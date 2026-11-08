@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { ComparisonChart } from '@/components/dashboard/ComparisonChart'
 import { HanoiWeatherCard } from '@/components/dashboard/HanoiWeatherCard'
+import { getEventPeriodId } from '@/lib/periodData'
 
 interface DashboardViewProps {
   onViewAllMembers: () => void
@@ -63,17 +64,20 @@ export function DashboardView({
       (p.periodId === activePeriodId || (!p.periodId && activePeriodId === 'month-2026-10'))
   ).length
 
-  const records = activeEvent?.records || {}
+  // Lọc các sự kiện sinh hoạt thuộc chu kỳ hiện tại (Tháng 11/2026)
+  const currentPeriodEvents = events.filter((e) => getEventPeriodId(e) === activePeriodId)
+
+  // Tổng hợp chuyên cần ĐÚNG theo các sự kiện diễn ra trong chu kỳ hiện tại
   let countOnTime = 0
   let countLate = 0
   let countExcused = 0
-  if (activeEvent) {
-    Object.values(records).forEach((r) => {
+  currentPeriodEvents.forEach((evt) => {
+    Object.values(evt.records || {}).forEach((r) => {
       if (r.status === 'present_on_time') countOnTime++
       else if (r.status === 'late') countLate++
       else if (r.status === 'excused') countExcused++
     })
-  }
+  })
 
   // Thống kê thành viên theo Ban
   const ttMembers = members.filter((m) => m.department_code === 'B01').length
@@ -222,11 +226,11 @@ export function DashboardView({
           >
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
-                activeEvent && !activeEvent.isFinalized ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
+                activeEvent && !activeEvent.isFinalized && getEventPeriodId(activeEvent) === activePeriodId ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'
               }`}
             />
             <span className="whitespace-nowrap truncate">
-              {activeEvent && !activeEvent.isFinalized
+              {activeEvent && !activeEvent.isFinalized && getEventPeriodId(activeEvent) === activePeriodId
                 ? (language === 'vi' ? 'Đang mở cổng điểm danh' : 'Check-in Portal Open')
                 : (language === 'vi' ? 'Cổng điểm danh CLB' : 'Club Check-in Portal')}
             </span>
@@ -234,8 +238,8 @@ export function DashboardView({
         </div>
       </div>
 
-      {/* Banner Phiên Điểm Danh Trực Tiếp (nếu đang có sự kiện mở) */}
-      {activeEvent && !activeEvent.isFinalized && (
+      {/* Banner Phiên Điểm Danh Trực Tiếp (nếu đang có sự kiện mở trong chu kỳ hiện tại) */}
+      {activeEvent && !activeEvent.isFinalized && getEventPeriodId(activeEvent) === activePeriodId && (
         <div className="bg-gradient-to-br from-[#0B1E48] via-[#0F3282] to-[#1351D8] rounded-2xl p-5 text-white border border-blue-900/40 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xs flex items-center justify-center flex-shrink-0 border border-white/20 text-[#FFCD38] shadow-inner">
@@ -351,10 +355,10 @@ export function DashboardView({
               {language === 'vi' ? 'Kỳ sinh hoạt CLB' : 'Club Meeting Period'}
             </span>
             <span className="text-2xl sm:text-[28px] font-black text-[#9333EA] block tracking-tight leading-none py-0.5">
-              {events.length || 1}
+              {currentPeriodEvents.length}
             </span>
             <span className="text-[11.5px] font-semibold text-[#9333EA] block hover:underline">
-              {currentActiveMonth || (language === 'vi' ? 'Tháng 10/2026' : 'October 2026')}
+              {currentActiveMonth || (language === 'vi' ? 'Tháng 11/2026' : 'November 2026')}
             </span>
           </div>
           <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border border-purple-300/70 bg-white/60 flex items-center justify-center text-[#9333EA] shrink-0">

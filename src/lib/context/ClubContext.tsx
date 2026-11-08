@@ -5,7 +5,7 @@ import { INITIAL_MEMBERS, type RosterMember, getRankedMembers, getActiveRosterMe
 import type { DepartmentCode, DepartmentSlug, RuleCode } from '@/types/database'
 import { CRITERIA_RULES } from '@/lib/scoring/constants'
 import { calculateScoreDelta } from '@/lib/scoring/engine'
-import { AVAILABLE_PERIODS, type PeriodItem, createMonthlyPeriodItem } from '@/lib/periodData'
+import { AVAILABLE_PERIODS, type PeriodItem, createMonthlyPeriodItem, getEventPeriodId } from '@/lib/periodData'
 import {
   getVietnamNowFormatted,
   getVietnamNowDateFormatted,
@@ -231,6 +231,8 @@ interface ClubContextType {
     maxAttendees?: number
     pointBonus?: number
     category?: 'meeting' | 'workshop' | 'teambuilding' | 'external'
+    periodId?: string
+    periodName?: string
   }) => { success: boolean; message: string; event?: MeetingEvent }
   updateEvent: (eventId: string, updates: Partial<MeetingEvent>) => { success: boolean; message: string }
   updateEventAttendees: (eventId: string, memberCodes: string[]) => { success: boolean; message: string }
@@ -411,11 +413,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
     syncToCloud({ activeEventId: id })
   }
+  const initialCurrentPeriod = AVAILABLE_PERIODS.find((p) => p.isCurrent) || AVAILABLE_PERIODS[0]
   const [disputes, setDisputes] = useState<DisputeItem[]>(INITIAL_DISPUTES)
-  const [currentActiveMonth, setCurrentActiveMonth] = useState<string>('Tháng 10/2026')
+  const [currentActiveMonth, setCurrentActiveMonth] = useState<string>(initialCurrentPeriod?.name || 'Tháng 11/2026')
   const [periods, setPeriods] = useState<PeriodItem[]>(AVAILABLE_PERIODS)
   const [customPeriodScores, setCustomPeriodScores] = useState<Record<string, Record<string, number>>>({})
-  const [currentActivePeriodId, _setCurrentActivePeriodId] = useState<string>('month-2026-10')
+  const [currentActivePeriodId, _setCurrentActivePeriodId] = useState<string>(initialCurrentPeriod?.id || 'month-2026-11')
   const [customRules, setCustomRules] = useState<CustomRuleItem[]>(INITIAL_CUSTOM_RULES)
 
   const isHydratedRef = useRef(false)
@@ -737,11 +740,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
 
         // 1.2 Đồng bộ activeEventId từ cloud để máy tính và điện thoại chọn cùng 1 sự kiện
-        if (data.activeEventId !== undefined && data.activeEventId !== '') {
+        if (data.activeEventId !== undefined) {
           _setActiveEventId((prev) => {
             if (prev !== data.activeEventId) {
               try {
-                localStorage.setItem('issac_active_event_id', data.activeEventId)
+                if (data.activeEventId) {
+                  localStorage.setItem('issac_active_event_id', data.activeEventId)
+                } else {
+                  localStorage.removeItem('issac_active_event_id')
+                }
               } catch (e) {}
               return data.activeEventId
             }
@@ -1125,10 +1132,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Lọc các sự kiện sinh hoạt thuộc chu kỳ thi đua hiện tại (currentActivePeriodId)
+  const currentPeriodEvents = events.filter(
+    (e) => getEventPeriodId(e) === currentActivePeriodId
+  )
+
   const activeEvent =
-    events.find((e) => e.id === activeEventId) ||
-    events.find((e) => !e.isFinalized) ||
-    events[0] ||
+    currentPeriodEvents.find((e) => e.id === activeEventId) ||
+    currentPeriodEvents.find((e) => !e.isFinalized) ||
+    currentPeriodEvents[0] ||
     null
 
   // Ban Chủ nhiệm thêm thành viên mới
@@ -2616,9 +2628,13 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     maxAttendees?: number
     pointBonus?: number
     category?: 'meeting' | 'workshop' | 'teambuilding' | 'external'
+    periodId?: string
+    periodName?: string
   }) => {
     const id = `evt-${Date.now()}`
     const generatedPin = data.pinCode?.trim() || String(Math.floor(1000 + Math.random() * 9000))
+    const targetPeriodId = data.periodId || getEventPeriodId({ date: data.date }) || currentActivePeriodId || 'month-2026-11'
+    const targetPeriod = periods.find((p) => p.id === targetPeriodId)
 
     const newEvt: MeetingEvent = {
       id,
@@ -2637,6 +2653,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       category: data.category || 'meeting',
       registeredMemberCodes: [],
       records: {},
+      periodId: targetPeriodId,
+      periodName: targetPeriod?.name || currentActiveMonth || 'Tháng 11/2026',
     }
 
     const updated = [newEvt, ...events]

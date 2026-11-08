@@ -96,9 +96,11 @@ export async function GET(request: Request) {
         }
       }
 
-      if (activeEventRow?.value) {
-        activeEventIdFromDb = activeEventRow.value
-        cachedActiveEventId = activeEventIdFromDb
+      if (activeEventRow) {
+        activeEventIdFromDb = activeEventRow.value !== undefined ? (activeEventRow.value || '') : null
+        if (activeEventIdFromDb !== null) {
+          cachedActiveEventId = activeEventIdFromDb
+        }
       }
 
       if (customRulesRow?.value) {
@@ -280,12 +282,12 @@ export async function GET(request: Request) {
         {
           success: true,
           events: finalEvents,
-          activeEventId: activeEventIdFromDb || cachedActiveEventId || '',
+          activeEventId: activeEventIdFromDb !== null ? activeEventIdFromDb : (cachedActiveEventId || ''),
           proposals: proposalsFromDb || cachedProposals,
           members: finalMembers,
           disputes: disputesFromDb || cachedDisputes,
           periods: safePeriods,
-          activePeriodId: activePeriodFromDb || cachedActivePeriodId || (safePeriods[0]?.id || 'month-2026-10'),
+          activePeriodId: activePeriodFromDb || cachedActivePeriodId || (safePeriods[0]?.id || 'month-2026-11'),
           customPeriodScores: scoresFromDb || cachedPeriodScores,
           customRules: customRulesFromDb || cachedCustomRules || [],
           deletedProposalIds: deletedIdsFromDb || cachedDeletedProposalIds || [],
@@ -346,7 +348,7 @@ export async function GET(request: Request) {
         members: cachedMembers,
         disputes: cachedDisputes,
         periods: safeFallbackPeriods,
-        activePeriodId: cachedActivePeriodId || (safeFallbackPeriods[0]?.id || 'month-2026-10'),
+        activePeriodId: cachedActivePeriodId || (safeFallbackPeriods[0]?.id || 'month-2026-11'),
         customPeriodScores: cachedPeriodScores,
         customRules: cachedCustomRules || [],
         deletedProposalIds: cachedDeletedProposalIds || [],
@@ -931,14 +933,14 @@ export async function POST(request: Request) {
     }
 
     if (activeEventId !== undefined) {
-      cachedActiveEventId = String(activeEventId)
+      cachedActiveEventId = String(activeEventId || '')
       try {
         await supabase
           .from('settings')
           .upsert(
             {
               key: 'issac_active_event_id',
-              value: String(activeEventId),
+              value: String(activeEventId || ''),
               description: 'Cloud synchronized active event ID for iSSAC Web',
               updated_at: new Date().toISOString(),
             },
@@ -1056,7 +1058,7 @@ export async function POST(request: Request) {
       members: cachedMembers,
       disputes: cachedDisputes,
       periods: cachedPeriods,
-      activePeriodId: cachedActivePeriodId || 'month-2026-10',
+      activePeriodId: cachedActivePeriodId || 'month-2026-11',
       customPeriodScores: cachedPeriodScores,
       customRules: cachedCustomRules || [],
       deletedProposalIds: cachedDeletedProposalIds || [],
