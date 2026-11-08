@@ -44,6 +44,7 @@ interface StatsViewProps {
 export function StatsView({ onSelectMember }: StatsViewProps) {
   const {
     members,
+    proposals,
     periods,
     currentActivePeriodId,
     setCurrentActivePeriodId,
@@ -119,8 +120,8 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
 
   // Tính toán bảng xếp hạng của 48 thành viên theo chu kỳ được chọn
   const periodRankings = useMemo(() => {
-    return calculatePeriodLeaderboard(selectedPeriodId, members, periods, customPeriodScores)
-  }, [selectedPeriodId, members, periods, customPeriodScores])
+    return calculatePeriodLeaderboard(selectedPeriodId, members, periods, customPeriodScores, proposals)
+  }, [selectedPeriodId, members, periods, customPeriodScores, proposals])
 
   // Top 3 thành viên dẫn đầu của chu kỳ đang chọn
   const top1 = periodRankings[0]

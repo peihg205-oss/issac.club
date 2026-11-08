@@ -101,7 +101,7 @@ export function ComparisonChart({
   periodId: propPeriodId,
   periodName: propPeriodName,
 }: ComparisonChartProps = {}) {
-  const { members, periods, customPeriodScores, currentActivePeriodId, setCurrentActivePeriodId } = useClub()
+  const { members, proposals, periods, customPeriodScores, currentActivePeriodId, setCurrentActivePeriodId } = useClub()
   const { language, t } = useLanguage()
   const [mode, setMode] = useState<ComparisonMode>('dept_score')
   const [sortBy, setSortBy] = useState<SortOption>('default')
@@ -147,8 +147,8 @@ export function ComparisonChart({
 
   // Tính toán bảng xếp hạng của 48 thành viên theo đúng chu kỳ được chọn
   const periodRankings = useMemo(() => {
-    return calculatePeriodLeaderboard(activePeriodId, members, periods, customPeriodScores)
-  }, [activePeriodId, members, periods, customPeriodScores])
+    return calculatePeriodLeaderboard(activePeriodId, members, periods, customPeriodScores, proposals)
+  }, [activePeriodId, members, periods, customPeriodScores, proposals])
 
   // 4 ban của CLB VNU-IS Ambassadors - Tự động tính toán điểm trung bình & biến động thực tế
   const rawDeptComparisons: DeptComparisonItem[] = useMemo(() => {
@@ -351,7 +351,8 @@ export function ComparisonChart({
         p.id,
         members,
         periods,
-        customPeriodScores
+        customPeriodScores,
+        proposals
       )
       const avg = Number(
         (

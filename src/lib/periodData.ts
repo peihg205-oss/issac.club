@@ -35,15 +35,29 @@ export interface PeriodItem {
 export const AVAILABLE_PERIODS: PeriodItem[] = [
   // Theo Tháng
   {
+    id: 'month-2026-11',
+    scope: 'month',
+    name: 'Tháng 11/2026',
+    shortLabel: 'T11/2026',
+    description: 'Chu kỳ thi đua Tháng 11/2026 - Chuỗi hoạt động Chào mừng Ngày Nhà giáo Việt Nam 20/11 & Tiếp sức Đại sứ',
+    timeRange: '01/11/2026 - 30/11/2026',
+    status: 'active', // Đang mở cổng chấm điểm
+    isCurrent: true,
+    isFinalized: false,
+    createdAt: '01/11/2026 00:00',
+  },
+  {
     id: 'month-2026-10',
     scope: 'month',
     name: 'Tháng 10/2026',
     shortLabel: 'T10/2026',
-    description: 'Chu kỳ thi đua cao điểm Chào tân sinh viên QH-2026 & Phát động phong trào Đại sứ',
+    description: 'Chu kỳ thi đua cao điểm Chào tân sinh viên QH-2026 & Phát động phong trào Đại sứ (Đã tổng kết và khóa sổ)',
     timeRange: '01/10/2026 - 31/10/2026',
-    status: 'active', // Đang mở cổng chấm điểm
-    isCurrent: true,
-    isFinalized: false,
+    status: 'locked', // Đã được BCN khóa sổ
+    isCurrent: false,
+    isFinalized: true,
+    lockedAt: '31/10/2026 23:59',
+    lockedBy: 'Nguyễn Thị Hồng Hân (Chủ nhiệm)',
     createdAt: '01/10/2026 00:00',
   },
   {
@@ -198,6 +212,59 @@ export function isPeriodLocked(periodId: string, periods: PeriodItem[] = AVAILAB
   return found?.status === 'locked'
 }
 
+// Delta điểm lịch sử Tháng 10/2026 (Đã tổng kết và khóa sổ theo sổ cái 613 bản ghi điểm phê duyệt)
+export const OCTOBER_2026_DELTAS: Record<string, number> = {
+  '24310069': 40,  // Lê Trần Thuỷ Nguyên: 100đ (#1 Top 1 CLB)
+  '23071317': 30,  // Trần Thanh Hiền: 90đ (#2 Top 2 CLB)
+  '23070764': 29,  // Ngô Phương Hoa: 89đ (#3 Top 3 CLB)
+  '24310108': 27,  // Hoàng Triều Xuân: 87đ (#4)
+  '25070407': 27,  // Vũ Đình Hải: 87đ (#5)
+  '26070772': 26,  // Hoàng Công Minh: 86đ (#6)
+  '24070845': 25,  // Hoàng Thị Lan Nhi: 85đ (#7)
+  '25070014': 23,  // Nguyễn Mai Thanh Hương: 83đ (#8)
+  '25070863': 23,  // Đặng Thị Lê Na: 83đ (#9)
+  '23070691': 22,  // Giang Lê Hiệp: 82đ (#10)
+  '24070680': 22,  // Phương Gia Huy: 82đ (#11)
+  '24070608': 21,  // Nguyễn Phú Cường: 81đ (#12)
+  '25070868': 21,  // Phạm Thanh Hải: 81đ (#13)
+  '24070778': 20,  // Đỗ Trần Ái Linh: 80đ (#14)
+  '25070088': 20,  // Trần Phương Linh: 80đ (#15)
+  '25071191': 20,  // Nguyễn Ngọc Anh Thư: 80đ
+  '26070773': 20,  // Nguyễn Thanh Tùng: 80đ
+  '24310088': 19,  // Trần Đức Thắng: 79đ
+  '26070775': 19,  // Trần Bùi Thanh Thuỷ: 79đ
+  '24070622': 18,  // Nguyễn Ngọc Anh: 78đ
+  '24071358': 18,  // Vũ Gia Linh: 78đ
+  '24310078': 18,  // Nguyễn Tố Như: 78đ
+  '24070752': 16,  // Phùng Thị Thu Hiền: 76đ
+  '26070437': 16,  // Lê Mai Anh: 76đ
+  '25070345': 15,  // Lâm Thị Bình Dương: 75đ
+  '25070857': 15,  // Trần Mỹ Ngọc: 75đ
+  '24070676': 12,  // Phan Thành Đạt: 72đ
+  '25070860': 11,  // Hoàng Thị Thuỳ Linh: 71đ
+  '26070774': 11,  // Tô Mai Trang: 71đ
+  '25070267': 10,  // Nguyễn Thị Hải Yến: 70đ
+  '25071139': 10,  // Hoàng Mẫn Quỳnh Chi: 70đ
+  '25071203': 10,  // Lục Xuân Huy: 70đ
+  '26070440': 10,  // Nguyễn Khánh Linh: 70đ
+  '23071234': 9,   // Nguyễn Thu Thảo: 69đ
+  '24070753': 9,   // Hoàng Thị Khánh Linh: 69đ
+  '25070098': 9,   // Nguyễn Thị Thuỳ Dương: 69đ
+  '25070203': 7,   // Hoàng Thị Tú An: 67đ
+  '24070732': 6,   // Nguyễn Thành Trung: 66đ
+  '24310099': 6,   // Lê Duy Tuấn: 66đ
+  '24310072': 5,   // Nguyễn Thị Nguyệt: 65đ
+  '25071210': 4,   // Nguyễn Vũ Hồng Hạnh: 64đ
+  'STAFF-001': 4,  // Nguyễn Thị Hồng Hân: 64đ
+  '25070097': 2,   // Phạm Thị Hải Chi: 62đ
+  '25070193': 2,   // Phạm Thị Phương Thảo: 62đ
+  '25070278': -2,  // Đinh Tấn Tài: 58đ
+  '26070162': -2,  // Ngô Ánh Dương: 58đ
+  '22073125': -4,  // Nguyễn Trịnh Minh Trang: 56đ
+  '23070355': -9,  // Vũ Bá Quốc Hưng: 51đ
+  '24070659': -14, // Nguyễn Thị Thuỳ Dương: 46đ
+}
+
 // Delta điểm lịch sử Tháng 09/2025 (Đã khóa sổ)
 export const SEPTEMBER_2025_DELTAS: Record<string, number> = {
   'STAFF-001': 35, // Nguyễn Thị Hồng Hân: 95đ (#1)
@@ -326,29 +393,58 @@ export function calculatePeriodLeaderboard(
   periodId: string,
   activeMembers: RosterMember[],
   periods: PeriodItem[] = AVAILABLE_PERIODS,
-  customPeriodDeltas: Record<string, Record<string, number>> = {}
+  customPeriodDeltas: Record<string, Record<string, number>> = {},
+  proposalsList: any[] = []
 ): MemberPeriodRanking[] {
   const currentPeriod = periods.find((p) => p.id === periodId) || periods[0]
   const isLocked = currentPeriod?.status === 'locked'
 
-  // 1. Nếu chu kỳ có lưu delta tùy chỉnh trong sổ cái customPeriodDeltas
-  const periodCustomDeltas = customPeriodDeltas[periodId]
-  const hasCustomDeltas = periodCustomDeltas && Object.keys(periodCustomDeltas).length > 0
-
-  if (hasCustomDeltas) {
-    const list = activeMembers.map((m) => {
-      const delta = periodCustomDeltas[m.member_code] ?? (m.current_score - STANDARD_MONTHLY_BASELINE)
-      const finalScore = STANDARD_MONTHLY_BASELINE + delta
-      return {
-        member: m,
-        baseScore: STANDARD_MONTHLY_BASELINE,
-        earnedDelta: delta,
-        finalScore,
+  // Map tổng điểm từ sổ cái các bản ghi đã duyệt (Single Source of Truth)
+  const proposalDeltasByPeriod = new Map<string, Map<string, number>>()
+  if (Array.isArray(proposalsList) && proposalsList.length > 0) {
+    for (const p of proposalsList) {
+      if (p.status === 'approved' && p.memberCode && p.memberCode !== 'ALL-CLUB') {
+        const pPeriod = p.periodId || 'month-2026-10'
+        if (!proposalDeltasByPeriod.has(pPeriod)) {
+          proposalDeltasByPeriod.set(pPeriod, new Map<string, number>())
+        }
+        const m = proposalDeltasByPeriod.get(pPeriod)!
+        m.set(p.memberCode, (m.get(p.memberCode) || 0) + Number(p.points || 0))
       }
-    })
+    }
+  }
 
-    list.sort((a, b) => b.finalScore - a.finalScore || a.member.source_stt - b.member.source_stt)
+  const getMemberDeltaForPeriod = (mCode: string, pId: string): number => {
+    // 1. Ưu tiên điểm tùy chỉnh trong customPeriodDeltas nếu có
+    if (customPeriodDeltas[pId] && customPeriodDeltas[pId][mCode] !== undefined) {
+      return customPeriodDeltas[pId][mCode]
+    }
+    // 2. Điểm tính động trực tiếp từ proposalsList
+    const periodProps = proposalDeltasByPeriod.get(pId)
+    if (periodProps && periodProps.has(mCode)) {
+      return periodProps.get(mCode)!
+    }
+    // 3. Fallback vào các hằng số chuẩn
+    if (pId === 'month-2026-10') {
+      return OCTOBER_2026_DELTAS[mCode] ?? 0
+    }
+    if (pId === 'month-2025-09') {
+      return SEPTEMBER_2025_DELTAS[mCode] ?? 10
+    }
+    if (pId === 'month-2025-08') {
+      return AUGUST_2025_DELTAS[mCode] ?? 8
+    }
+    return 0
+  }
 
+  // Helper chuẩn hóa gán rank và xếp loại
+  const buildRankedResult = (
+    list: { member: RosterMember; baseScore: number; earnedDelta: number; finalScore: number }[],
+    periodName: string,
+    locked: boolean,
+    customNote?: string
+  ): MemberPeriodRanking[] => {
+    list.sort((a, b) => b.finalScore - a.finalScore || b.earnedDelta - a.earnedDelta || a.member.source_stt - b.member.source_stt)
     const deptMap: Record<string, number> = {}
     return list.map((item, idx) => {
       deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
@@ -357,44 +453,113 @@ export function calculatePeriodLeaderboard(
         ...item,
         rankInPeriod: idx + 1,
         rankInDepartment: deptMap[item.member.department_slug],
-        deltaRank: item.member.delta_rank || 0,
+        deltaRank: item.member.delta_rank || (idx === 0 ? 1 : idx === 1 ? -1 : 0),
         ratingLevel: rating,
         periodId,
-        periodName: currentPeriod?.name || 'Tháng 10/2026',
-        isLocked,
-        note: isLocked ? 'Đã khóa sổ bởi BCN' : 'Đang mở chấm điểm',
+        periodName,
+        isLocked: locked,
+        note: customNote || (locked ? 'Đã khóa sổ bởi BCN' : 'Đang mở chấm điểm'),
       }
     })
   }
 
-  // 2. Chu kỳ đang mở (active/current): phản ánh trực tiếp điểm số thực tế của activeMembers
-  if (!isLocked && (currentPeriod?.isCurrent || periodId.startsWith('month-2026') || periodId.startsWith('quarter-2026') || periodId === 'month-2026-10')) {
-    const sorted = [...activeMembers].sort((a, b) => b.current_score - a.current_score || a.source_stt - b.source_stt)
-    const deptMap: Record<string, number> = {}
+  // 1. Nếu chu kỳ có lưu delta tùy chỉnh trong sổ cái customPeriodDeltas
+  const periodCustomDeltas = customPeriodDeltas[periodId]
+  const hasCustomDeltas = periodCustomDeltas && Object.keys(periodCustomDeltas).length > 0
+  if (hasCustomDeltas) {
+    const list = activeMembers.map((m) => {
+      const delta = periodCustomDeltas[m.member_code] ?? getMemberDeltaForPeriod(m.member_code, periodId)
+      const finalScore = Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
+      return {
+        member: m,
+        baseScore: STANDARD_MONTHLY_BASELINE,
+        earnedDelta: delta,
+        finalScore,
+      }
+    })
+    return buildRankedResult(list, currentPeriod?.name || periodId, isLocked)
+  }
 
-    return sorted.map((m, idx) => {
-      deptMap[m.department_slug] = (deptMap[m.department_slug] || 0) + 1
-      const delta = m.current_score - STANDARD_MONTHLY_BASELINE
-      const rating = getRatingLevel(m.current_score).level_name as RatingLevelName
+  // 2. Chu kỳ Tháng 10/2026 (Khóa sổ theo sổ cái 613 bản ghi điểm phê duyệt)
+  if (periodId === 'month-2026-10') {
+    const list = activeMembers.map((m) => {
+      const delta = getMemberDeltaForPeriod(m.member_code, 'month-2026-10')
+      const finalScore = Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
+      return {
+        member: m,
+        baseScore: STANDARD_MONTHLY_BASELINE,
+        earnedDelta: delta,
+        finalScore,
+      }
+    })
+    return buildRankedResult(list, currentPeriod?.name || 'Tháng 10/2026', true)
+  }
+
+  // 3. Chu kỳ Quý 4/2026 (Tháng 10 - 12)
+  if (periodId === 'quarter-2026-q4') {
+    const list = activeMembers.map((m) => {
+      const deltaOct = getMemberDeltaForPeriod(m.member_code, 'month-2026-10')
+      const deltaNov = getMemberDeltaForPeriod(m.member_code, 'month-2026-11')
+      const totalQuarterEarned = deltaOct + deltaNov
+      const avgScore = Math.max(0, Math.min(100, Math.round(STANDARD_MONTHLY_BASELINE + totalQuarterEarned / 2)))
+      return {
+        member: m,
+        baseScore: STANDARD_MONTHLY_BASELINE,
+        earnedDelta: totalQuarterEarned,
+        finalScore: avgScore,
+      }
+    })
+    return buildRankedResult(
+      list,
+      currentPeriod?.name || 'Quý 4/2026 (Tháng 10 - 12)',
+      isLocked
+    ).map((item) => ({
+      ...item,
+      note: `Tổng tích lũy Quý 4: +${item.earnedDelta}đ`,
+    }))
+  }
+
+  // 4. Chu kỳ Cả Năm / Nhiệm kỳ 2026-2027 (Tích lũy thực tế T10 + T11)
+  if (periodId === 'year-2026-2027') {
+    const list = activeMembers.map((m) => {
+      const deltaOct = getMemberDeltaForPeriod(m.member_code, 'month-2026-10')
+      const deltaNov = getMemberDeltaForPeriod(m.member_code, 'month-2026-11')
+      const totalYearNet = deltaOct + deltaNov
+      const avgYearScore = Math.max(0, Math.min(100, Math.round(STANDARD_MONTHLY_BASELINE + totalYearNet / 2)))
+      return {
+        member: m,
+        baseScore: STANDARD_MONTHLY_BASELINE,
+        earnedDelta: totalYearNet,
+        finalScore: avgYearScore,
+      }
+    })
+    return buildRankedResult(list, 'Nhiệm kỳ 2026 - 2027 (Cả năm)', isLocked).map((item) => ({
+      ...item,
+      note: `Tổng điểm cống hiến: +${item.earnedDelta}đ`,
+    }))
+  }
+
+  // 5. Chu kỳ đang mở (active/current): phản ánh trực tiếp điểm số thực tế
+  if (!isLocked && (currentPeriod?.isCurrent || periodId.startsWith('month-2026') || periodId.startsWith('quarter-2026'))) {
+    const list = activeMembers.map((m) => {
+      const delta = currentPeriod?.isCurrent
+        ? (m.current_score - STANDARD_MONTHLY_BASELINE)
+        : getMemberDeltaForPeriod(m.member_code, periodId)
+      const finalScore = currentPeriod?.isCurrent
+        ? m.current_score
+        : Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
 
       return {
         member: m,
         baseScore: STANDARD_MONTHLY_BASELINE,
         earnedDelta: delta,
-        finalScore: m.current_score,
-        rankInPeriod: idx + 1,
-        rankInDepartment: deptMap[m.department_slug],
-        deltaRank: m.delta_rank || 0,
-        ratingLevel: rating,
-        periodId,
-        periodName: currentPeriod?.name || 'Tháng 10/2026',
-        isLocked: false,
-        note: 'Đang mở chấm điểm',
+        finalScore,
       }
     })
+    return buildRankedResult(list, currentPeriod?.name || periodId, false, 'Đang mở chấm điểm')
   }
 
-  // 2. Chu kỳ Tháng 09/2025 (Đã khóa sổ)
+  // 6. Chu kỳ Tháng 09/2025 (Đã khóa sổ)
   if (periodId === 'month-2025-09') {
     const list = activeMembers.map((m) => {
       const delta = SEPTEMBER_2025_DELTAS[m.member_code] ?? 10
@@ -406,28 +571,10 @@ export function calculatePeriodLeaderboard(
         finalScore,
       }
     })
-
-    list.sort((a, b) => b.finalScore - a.finalScore)
-
-    const deptMap: Record<string, number> = {}
-    return list.map((item, idx) => {
-      deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
-      const rating = getRatingLevel(item.finalScore).level_name as RatingLevelName
-      return {
-        ...item,
-        rankInPeriod: idx + 1,
-        rankInDepartment: deptMap[item.member.department_slug],
-        deltaRank: idx === 0 ? 1 : idx === 1 ? -1 : 0,
-        ratingLevel: rating,
-        periodId,
-        periodName: 'Tháng 09/2025',
-        isLocked: true,
-        note: 'Đã khóa sổ bởi BCN',
-      }
-    })
+    return buildRankedResult(list, 'Tháng 09/2025', true)
   }
 
-  // 3. Chu kỳ Tháng 08/2025 (Đã khóa sổ)
+  // 7. Chu kỳ Tháng 08/2025 (Đã khóa sổ)
   if (periodId === 'month-2025-08') {
     const list = activeMembers.map((m) => {
       const delta = AUGUST_2025_DELTAS[m.member_code] ?? 8
@@ -439,28 +586,10 @@ export function calculatePeriodLeaderboard(
         finalScore,
       }
     })
-
-    list.sort((a, b) => b.finalScore - a.finalScore)
-
-    const deptMap: Record<string, number> = {}
-    return list.map((item, idx) => {
-      deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
-      const rating = getRatingLevel(item.finalScore).level_name as RatingLevelName
-      return {
-        ...item,
-        rankInPeriod: idx + 1,
-        rankInDepartment: deptMap[item.member.department_slug],
-        deltaRank: 0,
-        ratingLevel: rating,
-        periodId,
-        periodName: 'Tháng 08/2025',
-        isLocked: true,
-        note: 'Đã khóa sổ bởi BCN',
-      }
-    })
+    return buildRankedResult(list, 'Tháng 08/2025', true)
   }
 
-  // 4. Chu kỳ Quý 3/2025 (T7, T8, T9)
+  // 8. Chu kỳ Quý 3/2025 (T7, T8, T9)
   if (periodId === 'quarter-2025-q3') {
     const list = activeMembers.map((m) => {
       const deltaAug = AUGUST_2025_DELTAS[m.member_code] ?? 8
@@ -468,7 +597,6 @@ export function calculatePeriodLeaderboard(
       const deltaJul = Math.round((deltaAug + deltaSep) / 2)
       const totalQuarterEarned = deltaAug + deltaSep + deltaJul
       const avgScore = Math.round(STANDARD_MONTHLY_BASELINE + totalQuarterEarned / 3)
-
       return {
         member: m,
         baseScore: STANDARD_MONTHLY_BASELINE,
@@ -476,37 +604,20 @@ export function calculatePeriodLeaderboard(
         finalScore: avgScore,
       }
     })
-
-    list.sort((a, b) => b.finalScore - a.finalScore || b.earnedDelta - a.earnedDelta)
-
-    const deptMap: Record<string, number> = {}
-    return list.map((item, idx) => {
-      deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
-      const rating = getRatingLevel(item.finalScore).level_name as RatingLevelName
-      return {
-        ...item,
-        rankInPeriod: idx + 1,
-        rankInDepartment: deptMap[item.member.department_slug],
-        deltaRank: idx < 3 ? 1 : 0,
-        ratingLevel: rating,
-        periodId,
-        periodName: 'Quý 3/2025 (T7-T9)',
-        isLocked: true,
-        note: `Tổng tích lũy Quý: +${item.earnedDelta}đ`,
-      }
-    })
+    return buildRankedResult(list, 'Quý 3/2025 (T7-T9)', true).map((item) => ({
+      ...item,
+      note: `Tổng tích lũy Quý: +${item.earnedDelta}đ`,
+    }))
   }
 
-  // 5. Chu kỳ Cả Năm / Nhiệm kỳ 2026-2027 & 2025-2026 (Tích lũy toàn diện)
-  if (periodId === 'year-2026-2027' || periodId === 'year-2025-2026') {
-    const is2627 = periodId === 'year-2026-2027'
+  // 9. Nhiệm kỳ 2025-2026 (Cả năm)
+  if (periodId === 'year-2025-2026') {
     const list = activeMembers.map((m) => {
       const deltaAug = AUGUST_2025_DELTAS[m.member_code] ?? 8
       const deltaSep = SEPTEMBER_2025_DELTAS[m.member_code] ?? 10
       const deltaOct = m.current_score - STANDARD_MONTHLY_BASELINE
       const totalYearNet = deltaAug + deltaSep + deltaOct
       const avgYearScore = Math.round(STANDARD_MONTHLY_BASELINE + totalYearNet / 3)
-
       return {
         member: m,
         baseScore: STANDARD_MONTHLY_BASELINE,
@@ -514,32 +625,17 @@ export function calculatePeriodLeaderboard(
         finalScore: avgYearScore,
       }
     })
-
-    list.sort((a, b) => b.finalScore - a.finalScore || b.earnedDelta - a.earnedDelta)
-
-    const deptMap: Record<string, number> = {}
-    return list.map((item, idx) => {
-      deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
-      const rating = getRatingLevel(item.finalScore).level_name as RatingLevelName
-      return {
-        ...item,
-        rankInPeriod: idx + 1,
-        rankInDepartment: deptMap[item.member.department_slug],
-        deltaRank: 0,
-        ratingLevel: rating,
-        periodId,
-        periodName: is2627 ? 'Nhiệm kỳ 2026 - 2027 (Cả năm)' : 'Nhiệm kỳ 2025 - 2026 (Cả năm)',
-        isLocked: !is2627,
-        note: `Tổng điểm cống hiến: +${item.earnedDelta}đ`,
-      }
-    })
+    return buildRankedResult(list, 'Nhiệm kỳ 2025 - 2026 (Cả năm)', true).map((item) => ({
+      ...item,
+      note: `Tổng điểm cống hiến: +${item.earnedDelta}đ`,
+    }))
   }
 
-  // 6. Chu kỳ Tháng Mới Tự Do Được Tạo Trong Cài Đặt (ví dụ: Tháng 10/2026)
+  // 10. Fallback các chu kỳ khác
   const monthCustomScores = customPeriodDeltas[periodId] || {}
   const list = activeMembers.map((m) => {
-    const delta = monthCustomScores[m.member_code] ?? 0
-    const finalScore = STANDARD_MONTHLY_BASELINE + delta
+    const delta = monthCustomScores[m.member_code] ?? getMemberDeltaForPeriod(m.member_code, periodId)
+    const finalScore = Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
     return {
       member: m,
       baseScore: STANDARD_MONTHLY_BASELINE,
@@ -547,23 +643,5 @@ export function calculatePeriodLeaderboard(
       finalScore,
     }
   })
-
-  list.sort((a, b) => b.finalScore - a.finalScore || a.member.source_stt - b.member.source_stt)
-
-  const deptMap: Record<string, number> = {}
-  return list.map((item, idx) => {
-    deptMap[item.member.department_slug] = (deptMap[item.member.department_slug] || 0) + 1
-    const rating = getRatingLevel(item.finalScore).level_name as RatingLevelName
-    return {
-      ...item,
-      rankInPeriod: idx + 1,
-      rankInDepartment: deptMap[item.member.department_slug],
-      deltaRank: 0,
-      ratingLevel: rating,
-      periodId,
-      periodName: currentPeriod?.name || periodId,
-      isLocked,
-      note: isLocked ? 'Đã khóa sổ bởi BCN' : 'Đang mở chấm điểm',
-    }
-  })
+  return buildRankedResult(list, currentPeriod?.name || periodId, isLocked)
 }
