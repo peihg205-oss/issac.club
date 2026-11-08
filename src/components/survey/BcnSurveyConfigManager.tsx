@@ -38,6 +38,7 @@ import {
   saveCustomQuestions,
   getStoredSurveyFeedbacks,
   isSurveyEventExpired,
+  restoreDefaultSurveyEvents,
 } from '@/lib/surveyData'
 
 interface BcnSurveyConfigManagerProps {
@@ -48,6 +49,8 @@ interface BcnSurveyConfigManagerProps {
   isCreateModalOpen?: boolean
   onCloseCreateModal?: () => void
   onOpenCreateModal?: () => void
+  events?: SurveyEventItem[]
+  onEventsChange?: (events: SurveyEventItem[]) => void
 }
 
 export function BcnSurveyConfigManager({
@@ -58,10 +61,26 @@ export function BcnSurveyConfigManager({
   isCreateModalOpen,
   onCloseCreateModal,
   onOpenCreateModal,
+  events: parentEvents,
+  onEventsChange,
 }: BcnSurveyConfigManagerProps) {
   // 1. Events State
-  const [events, setEvents] = useState<SurveyEventItem[]>(() => getStoredSurveyEvents())
+  const [events, setEvents] = useState<SurveyEventItem[]>(() => {
+    if (parentEvents && parentEvents.length > 0) return parentEvents
+    return getStoredSurveyEvents()
+  })
   const [feedbacks, setFeedbacks] = useState(() => getStoredSurveyFeedbacks())
+
+  // Sync with parent events whenever parentEvents updates
+  useEffect(() => {
+    if (parentEvents && parentEvents.length > 0) {
+      setEvents(parentEvents)
+    } else {
+      const latest = getStoredSurveyEvents()
+      setEvents(latest)
+      onEventsChange?.(latest)
+    }
+  }, [parentEvents])
 
   // Create Event Form State: Hỗ trợ cả kích hoạt nội bộ lẫn từ props cha
   const [internalShowCreateEventModal, setInternalShowCreateEventModal] = useState<boolean>(false)
@@ -165,6 +184,7 @@ export function BcnSurveyConfigManager({
     }
 
     setEvents(updated)
+    onEventsChange?.(updated)
     setNewEventName('')
     setNewEventDesc('')
     setEventErrorMessage('')
@@ -181,6 +201,7 @@ export function BcnSurveyConfigManager({
     const nextStatus = currentStatus === 'active' ? 'closed' : 'active'
     const updated = updateSurveyEventStatus(id, nextStatus)
     setEvents(updated)
+    onEventsChange?.(updated)
     showToast(
       nextStatus === 'active'
         ? 'Đã mở lại khảo sát sự kiện!'
@@ -193,6 +214,7 @@ export function BcnSurveyConfigManager({
     if (confirm(`Bạn có chắc muốn xóa sự kiện "${name}"?`)) {
       const updated = deleteSurveyEvent(id)
       setEvents(updated)
+      onEventsChange?.(updated)
       setFeedbacks(getStoredSurveyFeedbacks())
       showToast(`Đã xóa sự kiện "${name}"!`)
       if (onSelectEvent) {
@@ -345,7 +367,24 @@ export function BcnSurveyConfigManager({
                 Hiện tại chưa có sự kiện khảo sát, hãy khởi tạo ngay để nắm bắt tình hình hoạt động của Core Team.
               </p>
             </div>
-            <div className="pt-2">
+            <div className="pt-2 flex items-center justify-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  const restored = restoreDefaultSurveyEvents()
+                  setEvents(restored)
+                  onEventsChange?.(restored)
+                  if (onSelectEvent && restored[0]) {
+                    onSelectEvent(restored[0].name)
+                  }
+                  showToast('Đã khôi phục thành công sự kiện Đánh giá Core Team T10!')
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition active:scale-95 cursor-pointer border-0"
+              >
+                <Sparkles className="w-4 h-4 stroke-[2]" />
+                <span>Khôi phục sự kiện T10</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShowCreateEventModal(true)}

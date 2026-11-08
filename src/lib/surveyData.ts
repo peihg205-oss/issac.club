@@ -151,7 +151,7 @@ export const INITIAL_SURVEY_EVENTS: SurveyEventItem[] = [
     id: 'evt-core-t10',
     name: 'Đánh giá hoạt động Core Team T10',
     date: '2026-11-07',
-    endDate: '2026-11-08',
+    endDate: '2026-11-30',
     status: 'active',
     description: 'Đánh giá khách quan quá trình đồng hành làm việc với nhau, đánh giá đúng và chuẩn, nếu đánh giá qua qua BCN sẽ note thái độ làm việc của chính thành viên đánh giá.',
     targetGroup: 'Toàn bộ Core Team (trừ BCN)',
@@ -277,34 +277,60 @@ export function saveNewSurveyFeedback(item: SurveyFeedbackItem): SurveyFeedbackI
 export function getStoredSurveyEvents(): SurveyEventItem[] {
   if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
   try {
+    // 1. Tuyệt đối không bao giờ cho phép sự kiện T10 chính thức bị chặn bởi deletedIds
+    removeDeletedSurveyEventId('evt-core-t10')
     const deletedIds = getDeletedSurveyEventIds()
+
+    let events: SurveyEventItem[] = []
     const raw = localStorage.getItem(SURVEY_EVENTS_STORAGE_KEY)
-    if (raw === null) {
-      // Nếu có sự kiện T10 trong v2 cũ thì lấy, nếu không khởi tạo INITIAL_SURVEY_EVENTS
-      const legacyRaw = localStorage.getItem('issac_survey_events_v2')
-      if (legacyRaw) {
-        try {
-          const parsedLegacy = JSON.parse(legacyRaw)
-          if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
-            const hasT10 = parsedLegacy.some((e) => e.name.includes('Core Team T10'))
-            if (hasT10) {
-              const filtered = parsedLegacy.filter((e) => !deletedIds.has(e.id))
-              localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(filtered))
-              return filtered
-            }
-          }
-        } catch {}
+
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          events = parsed.filter((e) => e && e.id && !deletedIds.has(e.id))
+        }
+      } catch (err) {
+        console.error('Error parsing stored survey events:', err)
       }
-      const initial = INITIAL_SURVEY_EVENTS.filter((e) => !deletedIds.has(e.id))
-      localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(initial))
-      return initial
     }
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.filter((e) => !deletedIds.has(e.id))
+
+    // 2. Tự động kiểm tra: Nếu trong kho phản hồi (feedbacks) đã có nhận xét thuộc sự kiện nào thì sự kiện đó PHẢI TỒN TẠI
+    try {
+      const feedbacks = getStoredSurveyFeedbacks()
+      feedbacks.forEach((f) => {
+        if (f.event && !events.some((e) => e.name.toLowerCase() === f.event.toLowerCase())) {
+          events.push({
+            id: f.event.includes('Core Team T10') ? 'evt-core-t10' : `evt-${encodeURIComponent(f.event).slice(0, 20)}`,
+            name: f.event,
+            date: '2026-11-07',
+            endDate: '2026-11-30',
+            status: 'active',
+            description: 'Đánh giá hoạt động Core Team CLB iSSAC',
+            targetGroup: 'Toàn bộ Core Team (trừ BCN)',
+            createdAt: '2026-11-07T08:00:00.000Z',
+          })
+        }
+      })
+    } catch {}
+
+    // 3. Đảm bảo sự kiện T10 cốt lõi luôn luôn có mặt trong danh sách
+    const hasT10 = events.some(
+      (e) => e.name.toLowerCase().includes('core team t10') || e.id === 'evt-core-t10'
+    )
+    if (!hasT10) {
+      events = [INITIAL_SURVEY_EVENTS[0], ...events]
     }
-    return INITIAL_SURVEY_EVENTS.filter((e) => !deletedIds.has(e.id))
-  } catch {
+
+    if (events.length === 0) {
+      events = [...INITIAL_SURVEY_EVENTS]
+    }
+
+    // Đồng bộ ngược lại vào localStorage để toàn bộ các view đọc chuẩn xác
+    localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(events))
+    return events
+  } catch (err) {
+    console.error('Failed to get survey events:', err)
     return INITIAL_SURVEY_EVENTS
   }
 }

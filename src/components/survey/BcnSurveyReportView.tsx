@@ -746,6 +746,8 @@ export function BcnSurveyReportView({
           isCreateModalOpen={isCreateModalOpen}
           onOpenCreateModal={() => setIsCreateModalOpen(true)}
           onCloseCreateModal={() => setIsCreateModalOpen(false)}
+          events={surveyEvents}
+          onEventsChange={setSurveyEvents}
         />
       ) : (
         <>
@@ -1545,7 +1547,7 @@ export function BcnSurveyReportView({
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                             Nhận xét sau sự kiện:
                           </span>
-                          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed font-normal">
+                          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed font-normal whitespace-pre-wrap break-words">
                             {item.feedback || 'Không có nhận xét chi tiết'}
                           </p>
                         </div>
@@ -1556,7 +1558,7 @@ export function BcnSurveyReportView({
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Góp ý / Mong muốn cải thiện:
                           </span>
-                          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-amber-50/30 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100/70 dark:border-amber-900/30 leading-relaxed font-normal">
+                          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-amber-50/30 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-100/70 dark:border-amber-900/30 leading-relaxed font-normal whitespace-pre-wrap break-words">
                             {item.improvement || 'Thành viên hoàn thành tốt, không có yêu cầu cải thiện'}
                           </p>
                         </div>

@@ -1470,32 +1470,40 @@ export function SurveyView() {
                 </div>
               </div>
 
-              {/* 2 & 3. Nhận xét tự luận & Mong muốn cải thiện (Bố cục 2 cột cân đối, hài hòa với cột thông tin) */}
+              {/* 2 & 3. Nhận xét tự luận & Mong muốn cải thiện (Tự do không giới hạn chữ / Free word) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-0.5">
                 <div className="space-y-1.5">
-                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
-                    <span className="text-red-500 font-bold">*</span>
-                    <span>Vài lời nhận xét về {memberFirstName}</span>
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <span className="text-red-500 font-bold">*</span>
+                      <span>Vài lời nhận xét về {memberFirstName}</span>
+                    </span>
+                    <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
+                      Free word
+                    </span>
                   </label>
                   <textarea
                     value={currentFeedback}
                     onChange={(e) => setCurrentFeedback(e.target.value)}
-                    rows={2}
-                    placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện...`}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
+                    rows={3}
+                    placeholder={`Nhập nhận xét của bạn về ${memberFirstName} sau sự kiện... (Tự do không giới hạn độ dài ký tự)`}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[82px] resize-y leading-relaxed"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 flex items-center gap-1">
+                  <label className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 flex items-center justify-between">
                     <span>Mong muốn cải thiện gì?</span>
+                    <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
+                      Free word
+                    </span>
                   </label>
                   <textarea
                     value={currentImprovement}
                     onChange={(e) => setCurrentImprovement(e.target.value)}
-                    rows={2}
-                    placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?...`}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[58px] resize-y"
+                    rows={3}
+                    placeholder={`Bạn mong muốn ${memberFirstName} có thể cải thiện thêm điều gì trong các sự kiện tới?... (Tự do không giới hạn độ dài ký tự)`}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[#061651] dark:text-slate-100 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-slate-400 min-h-[82px] resize-y leading-relaxed"
                   />
                 </div>
               </div>
@@ -1508,9 +1516,16 @@ export function SurveyView() {
                   </span>
                   {customQuestions.map((q) => (
                     <div key={q.id} className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
-                        {q.required && <span className="text-red-500">*</span>}
-                        <span>{q.title}</span>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          {q.required && <span className="text-red-500">*</span>}
+                          <span>{q.title}</span>
+                        </span>
+                        {q.type === 'textarea' && (
+                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.2 rounded">
+                            Free word
+                          </span>
+                        )}
                       </label>
                       {q.description && (
                         <p className="text-[11px] text-slate-400">{q.description}</p>
@@ -1524,9 +1539,9 @@ export function SurveyView() {
                               [q.id]: e.target.value,
                             }))
                           }
-                          rows={2}
-                          placeholder="Nhập câu trả lời..."
-                          className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                          rows={3}
+                          placeholder="Nhập câu trả lời... (Tự do không giới hạn độ dài ký tự)"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[75px] resize-y leading-relaxed"
                         />
                       ) : q.type === 'rating_stars' ? (
                         <div className="grid grid-cols-5 sm:grid-cols-10 gap-1 sm:gap-1.5 pt-0.5">
