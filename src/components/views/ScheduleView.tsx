@@ -1610,7 +1610,7 @@ export function ScheduleView() {
                 Tuần hoạt động:
               </span>
               <span className="text-xs font-semibold text-[#0284C7] bg-sky-50 dark:bg-sky-950/60 border border-sky-200/80 px-2.5 py-0.5 rounded-lg">
-                {weekDays[0]?.dateString} - {weekDays[6]?.dateString}
+                {`${weekDays[0]?.dateString || ''} - ${weekDays[6]?.dateString || ''}`}
               </span>
             </div>
 
