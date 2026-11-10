@@ -92,6 +92,7 @@ export interface DisputeItem {
   createdAt: string
   status: 'pending_hr_review' | 'pending_bcn' | 'approved_resolved' | 'rejected'
   hrNote?: string
+  hrReviewedAt?: string
   bcnVerdict?: string
   resolvedAt?: string
 }
@@ -239,6 +240,7 @@ interface ClubContextType {
   registerForEvent: (eventId: string, memberCode: string) => { success: boolean; message: string }
   unregisterFromEvent: (eventId: string, memberCode: string) => { success: boolean; message: string }
   deleteEvent: (eventId: string) => { success: boolean; message: string }
+  refreshCloudSync: () => Promise<void>
 }
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined)
@@ -902,12 +904,67 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data.disputes && Array.isArray(data.disputes)) {
-          if (JSON.stringify(data.disputes) !== JSON.stringify(disputesRef.current)) {
-            disputesRef.current = data.disputes
-            setDisputes(data.disputes)
+          const cloudDisputes = data.disputes
+          const localDisputes = disputesRef.current
+          const dispMap = new Map<string, DisputeItem>()
+
+          // 1. Đưa các khiếu nại hiện có ở local vào map
+          localDisputes.forEach((d) => {
+            if (d?.id) dispMap.set(d.id, d)
+          })
+
+          let hasNewerLocal = false
+
+          // Trọng số trạng thái để không bị downgrade khi sync đa thiết bị
+          const getStatusWeight = (s?: string) => {
+            if (s === 'approved_resolved' || s === 'rejected') return 3
+            if (s === 'pending_bcn') return 2
+            return 1 // pending_hr_review
+          }
+
+          // 2. Hợp nhất dữ liệu khiếu nại từ Supabase Cloud
+          cloudDisputes.forEach((cloudD: DisputeItem) => {
+            if (!cloudD?.id) return
+            const localD = dispMap.get(cloudD.id)
+            if (!localD) {
+              dispMap.set(cloudD.id, cloudD)
+            } else {
+              const localWeight = getStatusWeight(localD.status)
+              const cloudWeight = getStatusWeight(cloudD.status)
+
+              if (cloudWeight >= localWeight) {
+                dispMap.set(cloudD.id, {
+                  ...localD,
+                  ...cloudD,
+                  hrReviewedAt: cloudD.hrReviewedAt || localD.hrReviewedAt,
+                  resolvedAt: cloudD.resolvedAt || localD.resolvedAt,
+                  hrNote: cloudD.hrNote || localD.hrNote,
+                  bcnVerdict: cloudD.bcnVerdict || localD.bcnVerdict,
+                })
+              } else {
+                hasNewerLocal = true
+              }
+            }
+          })
+
+          // 3. Kiểm tra nếu local có đơn khiếu nại mới hơn mà cloud chưa kịp nhận
+          const cloudIdSet = new Set(cloudDisputes.map((d: any) => d?.id))
+          const localOnly = localDisputes.filter((d) => !cloudIdSet.has(d.id))
+          if (localOnly.length > 0) {
+            hasNewerLocal = true
+          }
+
+          const mergedDisputes = Array.from(dispMap.values())
+          if (JSON.stringify(mergedDisputes) !== JSON.stringify(localDisputes)) {
+            disputesRef.current = mergedDisputes
+            setDisputes(mergedDisputes)
             try {
-              localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(data.disputes))
+              localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(mergedDisputes))
             } catch (e) {}
+          }
+
+          if (hasNewerLocal) {
+            syncToCloud({ disputes: mergedDisputes })
           }
         }
 
@@ -964,6 +1021,17 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Helper phát tín hiệu đồng bộ tức thời 0ms giữa các tabs qua BroadcastChannel
+  const broadcastSync = (type: string, data?: Record<string, any>) => {
+    if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+      try {
+        const bc = new BroadcastChannel('issac_realtime_bus')
+        bc.postMessage({ type, ...data })
+        bc.close()
+      } catch (e) {}
+    }
+  }
+
   // Polling định kỳ mượt mà, chống lag và tự động tạm dừng khi tab ẩn
   useEffect(() => {
     let isFetching = false
@@ -977,7 +1045,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    const timer = setInterval(pollSync, 12000)
+    // Tần suất polling định kỳ 3.5 giây khi tab đang mở giúp nhận khiếu nại tức thì
+    const timer = setInterval(pollSync, 3500)
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -993,6 +1062,26 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Lắng nghe tín hiệu đồng bộ tức thời từ các tab khác (BroadcastChannel 0ms)
+    let broadcastChannel: BroadcastChannel | null = null
+    if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+      try {
+        broadcastChannel = new BroadcastChannel('issac_realtime_bus')
+        broadcastChannel.onmessage = (event) => {
+          if (event.data?.type === 'SYNC_DISPUTES' && Array.isArray(event.data.disputes)) {
+            disputesRef.current = event.data.disputes
+            setDisputes(event.data.disputes)
+            try {
+              localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(event.data.disputes))
+            } catch (e) {}
+          }
+          if (event.data?.type === 'SYNC_TRIGGER') {
+            pollSync()
+          }
+        }
+      } catch (e) {}
+    }
+
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', handleVisibilityChange)
     }
@@ -1003,6 +1092,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       clearInterval(timer)
+      if (broadcastChannel) {
+        try {
+          broadcastChannel.close()
+        } catch (e) {}
+      }
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
@@ -1022,6 +1116,15 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       console.error('Error saving members:', e)
     }
   }, [members])
+
+  useEffect(() => {
+    if (!isHydratedRef.current || typeof window === 'undefined') return
+    try {
+      localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(disputes))
+    } catch (e) {
+      console.error('Error saving disputes:', e)
+    }
+  }, [disputes])
 
   useEffect(() => {
     if (!isHydratedRef.current || typeof window === 'undefined') return
@@ -2028,6 +2131,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     const member = members.find((m) => m.member_code === data.memberCode)
     if (!member) return { success: false, message: 'Thành viên không tồn tại' }
 
+    const receptionTime = getVietnamNowFormatted()
     const newDisp: DisputeItem = {
       id: `disp-${Date.now()}`,
       memberCode: data.memberCode,
@@ -2037,32 +2141,44 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       pointsContested: data.pointsContested,
       reason: data.reason,
       evidenceUrl: data.evidenceUrl || '',
-      createdAt: getVietnamNowFormatted(),
+      createdAt: receptionTime,
       status: 'pending_hr_review',
     }
 
-    const updatedDisputes = [newDisp, ...disputes]
+    const currentDisputesList = disputesRef.current.length > 0 ? disputesRef.current : disputes
+    const updatedDisputes = [newDisp, ...currentDisputesList.filter((d) => d.id !== newDisp.id)]
     disputesRef.current = updatedDisputes
     setDisputes(updatedDisputes)
     try {
       localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(updatedDisputes))
     } catch (e) {}
-    syncToCloud({ disputes: updatedDisputes })
+
+    // Phát tín hiệu tức thì 0ms tới tất cả các tab khác
+    broadcastSync('SYNC_DISPUTES', { disputes: updatedDisputes })
+
+    // Đồng bộ lập tức lên Supabase Cloud
+    syncToCloud({
+      disputes: updatedDisputes,
+      action: 'create_dispute',
+      dispute: newDisp,
+    })
 
     return {
       success: true,
-      message: 'Đã gửi khiếu nại thành công! Ban Nhân sự sẽ tiến hành xác minh trong vòng 48h.',
+      message: `Đã gửi khiếu nại thành công! Thời gian tiếp nhận: ${receptionTime}. Ban Nhân sự sẽ tiến hành xác minh sơ bộ.`,
     }
   }
 
   // Ban Nhân sự thẩm định khiếu nại và chuyển BCN
   const reviewDisputeByHR = (disputeId: string, hrNote: string) => {
     const currentDisputesList = disputesRef.current.length > 0 ? disputesRef.current : disputes
+    const hrReviewTime = getVietnamNowFormatted()
     const updatedDisputes = currentDisputesList.map((d) =>
       d.id === disputeId
         ? {
             ...d,
             hrNote,
+            hrReviewedAt: hrReviewTime,
             status: 'pending_bcn' as const,
           }
         : d
@@ -2072,7 +2188,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(updatedDisputes))
     } catch (e) {}
-    syncToCloud({ disputes: updatedDisputes })
+
+    broadcastSync('SYNC_DISPUTES', { disputes: updatedDisputes })
+    syncToCloud({
+      disputes: updatedDisputes,
+      action: 'review_dispute',
+    })
   }
 
   // Ban Chủ nhiệm ra quyết định khiếu nại cuối cùng
@@ -2087,17 +2208,20 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     let updatedMembers = membersRef.current.length > 0 ? membersRef.current : members
     let updatedProposals = proposalsRef.current.length > 0 ? proposalsRef.current : proposals
+    const verdictTime = getVietnamNowFormatted()
 
     if (approved) {
       // Hoàn lại điểm cho thành viên (cộng bù lại số điểm đã bị trừ)
       const refundPoints = Math.abs(disp.pointsContested)
-      const targetPeriodId = currentActivePeriodIdRef.current || currentActivePeriodId || 'month-2026-10'
+      const targetPeriodId = currentActivePeriodIdRef.current || currentActivePeriodId || 'month-2026-11'
+      const targetPeriodObj = periodsRef.current.find((p) => p.id === targetPeriodId)
+      const periodLabel = targetPeriodObj?.name || currentActiveMonth || 'Tháng 11/2026'
 
       // Ghi nhận vào sổ cái lịch sử hoàn điểm chuẩn quy chế
       const refundRecord: ProposalItem = {
         id: `refund-${Date.now()}`,
         periodId: targetPeriodId,
-        periodName: currentActiveMonth || 'Tháng 10/2026',
+        periodName: periodLabel,
         memberCode: disp.memberCode,
         memberName: disp.memberName,
         memberDept: disp.memberDept,
@@ -2109,7 +2233,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         proposedBy: 'Ban Chủ nhiệm CLB',
         proposedByRole: 'bcn',
         status: 'approved',
-        createdAt: getVietnamNowFormatted(),
+        createdAt: verdictTime,
       }
       updatedProposals = [refundRecord, ...updatedProposals]
       proposalsRef.current = updatedProposals
@@ -2134,7 +2258,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             ...d,
             status: finalStatus,
             bcnVerdict: verdict,
-            resolvedAt: getVietnamNowFormatted(),
+            resolvedAt: verdictTime,
           }
         : d
     )
@@ -2144,16 +2268,22 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(updatedDisputes))
     } catch (e) {}
 
+    broadcastSync('SYNC_DISPUTES', {
+      disputes: updatedDisputes,
+      ...(approved ? { members: updatedMembers, proposals: updatedProposals } : {}),
+    })
+
     syncToCloud({
       disputes: updatedDisputes,
+      action: 'resolve_dispute',
       ...(approved ? { members: updatedMembers, proposals: updatedProposals } : {}),
     })
 
     return {
       success: true,
       message: approved
-        ? `Đã chấp thuận khiếu nại và hoàn trả ${Math.abs(disp.pointsContested)} điểm cho ${disp.memberName}!`
-        : `Đã bác khiếu nại của ${disp.memberName}.`,
+        ? `Đã chấp thuận khiếu nại và tự động hoàn trả +${Math.abs(disp.pointsContested)} điểm cho ${disp.memberName}! (Thời gian: ${verdictTime})`
+        : `Đã bác khiếu nại của ${disp.memberName}. (Thời gian: ${verdictTime})`,
     }
   }
 
@@ -2900,6 +3030,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         registerForEvent,
         unregisterFromEvent,
         deleteEvent,
+        refreshCloudSync: fetchCloudSync,
       }}
     >
       {children}

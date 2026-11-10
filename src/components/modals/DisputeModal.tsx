@@ -11,7 +11,9 @@ import {
   ShieldCheck,
   Minus,
   Plus,
+  Clock,
 } from 'lucide-react'
+import { getVietnamNowFormatted } from '@/lib/vietnamTime'
 import { useClub } from '@/lib/context/ClubContext'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { type RosterMember, getMemberAvatarUrl } from '@/lib/clubData'
@@ -758,13 +760,21 @@ export function DisputeModal({
           {/* ============================================================== */}
           {/* THẺ TÓM TẮT XÁC NHẬN (TRÁNH GỬI NHẦM 100%)                    */}
           {/* ============================================================== */}
-          <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/70 text-xs text-purple-950 leading-relaxed">
-            <span>Đang tạo đơn khiếu nại cho: </span>
-            <strong className="text-[#061651] font-bold">{selectedMember.full_name || '...'}</strong>
-            <span className="text-slate-500"> ({selectedMember.department_name || ''})</span>
-            <span> - Tiêu chí: </span>
-            <strong className="text-purple-900 font-bold">[{selectedCriterionObj.code}] {selectedCriterionObj.name}</strong>
-            <span className="text-rose-600 font-black"> ({points} điểm)</span>.
+          <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/70 text-xs text-purple-950 leading-relaxed space-y-1">
+            <div>
+              <span>Đang tạo đơn khiếu nại cho: </span>
+              <strong className="text-[#061651] font-bold">{selectedMember.full_name || '...'}</strong>
+              <span className="text-slate-500"> ({selectedMember.department_name || ''})</span>
+              <span> - Tiêu chí: </span>
+              <strong className="text-purple-900 font-bold">[{selectedCriterionObj.code}] {selectedCriterionObj.name}</strong>
+              <span className="text-rose-600 font-black"> ({points} điểm)</span>.
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-purple-800/80 pt-0.5 border-t border-purple-200/60">
+              <Clock className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+              <span>Thời gian tiếp nhận dự kiến: </span>
+              <strong className="font-bold text-purple-950">{getVietnamNowFormatted()}</strong>
+              <span className="text-slate-500">(Giờ Việt Nam)</span>
+            </div>
           </div>
 
           {/* ============================================================== */}

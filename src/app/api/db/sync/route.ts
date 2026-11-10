@@ -871,15 +871,44 @@ export async function POST(request: Request) {
       }
     }
 
-    if (disputes !== undefined) {
-      cachedDisputes = disputes
+    if (disputes !== undefined || action === 'create_dispute' || action === 'review_dispute' || action === 'resolve_dispute') {
+      const dispMap = new Map<string, any>()
+      const currentServerDisputes = cachedDisputes || []
+      if (Array.isArray(currentServerDisputes)) {
+        for (const d of currentServerDisputes) {
+          if (d?.id) dispMap.set(d.id, d)
+        }
+      }
+
+      const incomingList = Array.isArray(disputes) ? disputes : (body.dispute ? [body.dispute] : [])
+      for (const d of incomingList) {
+        if (d?.id) {
+          const existing = dispMap.get(d.id)
+          if (!existing) {
+            dispMap.set(d.id, d)
+          } else {
+            dispMap.set(d.id, {
+              ...existing,
+              ...d,
+              hrNote: d.hrNote !== undefined ? d.hrNote : existing.hrNote,
+              hrReviewedAt: d.hrReviewedAt !== undefined ? d.hrReviewedAt : existing.hrReviewedAt,
+              bcnVerdict: d.bcnVerdict !== undefined ? d.bcnVerdict : existing.bcnVerdict,
+              resolvedAt: d.resolvedAt !== undefined ? d.resolvedAt : existing.resolvedAt,
+              status: d.status || existing.status,
+            })
+          }
+        }
+      }
+
+      const mergedDisputes = Array.from(dispMap.values())
+      cachedDisputes = mergedDisputes
       try {
         await supabase
           .from('settings')
           .upsert(
             {
               key: 'issac_disputes_cloud',
-              value: JSON.stringify(disputes),
+              value: JSON.stringify(mergedDisputes),
               description: 'Cloud synchronized disputes for iSSAC Web',
               updated_at: new Date().toISOString(),
             },

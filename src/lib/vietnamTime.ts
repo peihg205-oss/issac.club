@@ -23,21 +23,45 @@ export function getVietnamTimeParts(inputDate?: Date | string | number): Vietnam
 
   if (!inputDate) {
     d = new Date()
+  } else if (inputDate instanceof Date) {
+    d = inputDate
+  } else if (typeof inputDate === 'number') {
+    d = new Date(inputDate)
   } else if (typeof inputDate === 'string') {
     const trimmed = inputDate.trim()
     if (trimmed === 'Vừa xong' || !trimmed) {
       d = new Date()
-    } else if (trimmed.includes('T') || trimmed.includes('-')) {
-      const parsed = new Date(trimmed)
-      d = isNaN(parsed.getTime()) ? new Date() : parsed
+    } else if (/^\d{10,13}$/.test(trimmed)) {
+      d = new Date(Number(trimmed))
     } else {
-      // Chuỗi khác không parse được thành Date ISO
-      d = new Date()
+      // 1. Phân tích chuỗi có cấu trúc "HH:mm DD/MM/YYYY" hoặc "HH:mm:ss DD/MM/YYYY"
+      const hmMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+      if (hmMatch) {
+        const [, hour, minute, second, day, month, year] = hmMatch
+        const sec = second ? Number(second) : 0
+        const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:${String(sec).padStart(2, '0')}+07:00`
+        const parsed = new Date(iso)
+        d = isNaN(parsed.getTime()) ? new Date() : parsed
+      } else {
+        // 2. Phân tích chuỗi có cấu trúc "DD/MM/YYYY HH:mm" hoặc "DD/MM/YYYY"
+        const dmMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/)
+        if (dmMatch) {
+          const [, day, month, year, hour, minute, second] = dmMatch
+          const h = hour ? hour.padStart(2, '0') : '00'
+          const m = minute ? minute.padStart(2, '0') : '00'
+          const s = second ? second.padStart(2, '0') : '00'
+          const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${h}:${m}:${s}+07:00`
+          const parsed = new Date(iso)
+          d = isNaN(parsed.getTime()) ? new Date() : parsed
+        } else {
+          // 3. Fallback cho ISO datetime hoặc dạng khác
+          const parsed = new Date(trimmed)
+          d = isNaN(parsed.getTime()) ? new Date() : parsed
+        }
+      }
     }
-  } else if (typeof inputDate === 'number') {
-    d = new Date(inputDate)
   } else {
-    d = inputDate
+    d = new Date()
   }
 
   const formatter = new Intl.DateTimeFormat('en-GB', {
@@ -142,21 +166,27 @@ export function normalizeHistoryTimestamp(timeStr?: string): string {
   if (!timeStr || timeStr === 'Vừa xong' || timeStr.trim() === '') {
     return getVietnamNowFormatted()
   }
-  const trimmed = timeStr.trim()
-  // Nếu là dạng ISO datetime
-  if (trimmed.includes('T') && (trimmed.includes('Z') || trimmed.includes('+'))) {
-    return formatVietnamDateTime(trimmed)
+  // Loại bỏ dấu ngoặc đơn bọc ngoài nếu có: "(17:37 09/11/2026)" -> "17:37 09/11/2026"
+  const trimmed = timeStr.trim().replace(/^\(|\)$/g, '').trim()
+  if (!trimmed) {
+    return getVietnamNowFormatted()
   }
-  // Nếu đã là "HH:mm DD/MM/YYYY" hoặc "DD/MM/YYYY HH:mm"
+  // Nếu đã là "HH:mm DD/MM/YYYY"
   if (/^\d{2}:\d{2}\s+\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
     return trimmed
   }
+  // Nếu là "DD/MM/YYYY HH:mm" -> đảo thành "HH:mm DD/MM/YYYY"
   if (/^\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}$/.test(trimmed)) {
-    return trimmed
+    const parts = trimmed.split(/\s+/)
+    return `${parts[1]} ${parts[0]}`
+  }
+  // Nếu là dạng ISO datetime
+  if (trimmed.includes('T') && (trimmed.includes('Z') || trimmed.includes('+') || trimmed.includes('-'))) {
+    return formatVietnamDateTime(trimmed)
   }
   // Nếu chỉ có ngày "DD/MM/YYYY", thêm giờ hiện tại của Việt Nam để lịch sử hiển thị đầy đủ
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
     return `${getVietnamNowTimeFormatted()} ${trimmed}`
   }
-  return trimmed
+  return formatVietnamDateTime(trimmed)
 }
