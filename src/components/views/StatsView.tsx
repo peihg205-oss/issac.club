@@ -388,11 +388,11 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
         </div>
       </div>
 
-      {/* 2. THANH CÔNG CỤ TRA CỨU & THAO TÁC CHU KỲ (NỀN VÀNG PASTEL #FFFBEC KHÔNG VIỀN MỀM MẠI) */}
-      <div className="bg-[#FFFBEC] rounded-2xl p-3.5 sm:p-4 shadow-[0_2px_12px_rgba(217,119,6,0.06)]">
+      {/* 2. THANH CÔNG CỤ TRA CỨU & THAO TÁC CHU KỲ (NỀN XANH PASTEL #F0F9FF KHÔNG VIỀN MỀM MẠI ĐỒNG BỘ DASHBOARD) */}
+      <div className="bg-[#F0F9FF] rounded-2xl p-3.5 sm:p-4 shadow-[0_2px_12px_rgba(2,132,199,0.06)]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Vế trái: 3 Tab chọn phạm vi (Theo Tháng, Theo Quý, Cả Năm) dạng Segmented Control tông ấm */}
-          <div className="inline-flex items-center p-1 bg-amber-100/60 rounded-xl border border-amber-200/60 self-start md:self-auto shadow-2xs">
+          {/* Vế trái: 3 Tab chọn phạm vi (Theo Tháng, Theo Quý, Cả Năm) dạng Segmented Control tông xanh pastel */}
+          <div className="inline-flex items-center p-1 bg-sky-100/60 rounded-xl border border-sky-200/60 self-start md:self-auto shadow-2xs">
             {/* Nút: Theo Tháng */}
             <button
               type="button"
@@ -401,13 +401,13 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
                 setSelectedPeriodId(currentActivePeriodId || periods.find((p) => p.scope === 'month' && p.isCurrent)?.id || 'month-2026-10')
                 setCurrentPage(1)
               }}
-              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 ${
                 selectedScope === 'month'
-                  ? 'bg-white text-amber-950 font-bold shadow-xs border border-amber-200/70'
-                  : 'text-amber-900/70 hover:text-amber-950 hover:bg-white/40'
+                  ? 'bg-white text-slate-900 font-bold shadow-xs border border-sky-200/80'
+                  : 'text-sky-900/70 hover:text-sky-950 hover:bg-white/40'
               }`}
             >
-              <Calendar className={`w-3.5 h-3.5 ${selectedScope === 'month' ? 'text-amber-600' : 'text-amber-700/60'}`} />
+              <Calendar className={`w-3.5 h-3.5 ${selectedScope === 'month' ? 'text-[#0284C7]' : 'text-sky-600/70'}`} />
               <span>{language === 'vi' ? 'Theo Tháng' : 'Monthly'}</span>
             </button>
 
@@ -419,13 +419,13 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
                 setSelectedPeriodId(periods.find((p) => p.scope === 'quarter' && p.isCurrent)?.id || 'quarter-2026-q4')
                 setCurrentPage(1)
               }}
-              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 ${
                 selectedScope === 'quarter'
-                  ? 'bg-white text-amber-950 font-bold shadow-xs border border-amber-200/70'
-                  : 'text-amber-900/70 hover:text-amber-950 hover:bg-white/40'
+                  ? 'bg-white text-slate-900 font-bold shadow-xs border border-sky-200/80'
+                  : 'text-sky-900/70 hover:text-sky-950 hover:bg-white/40'
               }`}
             >
-              <Layers className={`w-3.5 h-3.5 ${selectedScope === 'quarter' ? 'text-amber-600' : 'text-amber-700/60'}`} />
+              <Layers className={`w-3.5 h-3.5 ${selectedScope === 'quarter' ? 'text-[#0284C7]' : 'text-sky-600/70'}`} />
               <span>{language === 'vi' ? 'Theo Quý' : 'Quarterly'}</span>
             </button>
 
@@ -437,13 +437,13 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
                 setSelectedPeriodId(periods.find((p) => p.scope === 'year' && p.isCurrent)?.id || 'year-2026-2027')
                 setCurrentPage(1)
               }}
-              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 ${
                 selectedScope === 'year'
-                  ? 'bg-white text-amber-950 font-bold shadow-xs border border-amber-200/70'
-                  : 'text-amber-900/70 hover:text-amber-950 hover:bg-white/40'
+                  ? 'bg-white text-slate-900 font-bold shadow-xs border border-sky-200/80'
+                  : 'text-sky-900/70 hover:text-sky-950 hover:bg-white/40'
               }`}
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
+              <Trophy className={`w-3.5 h-3.5 ${selectedScope === 'year' ? 'text-amber-500' : 'text-amber-500/70'}`} />
               <span>{language === 'vi' ? 'Cả Năm' : 'Annually'}</span>
             </button>
           </div>
@@ -462,7 +462,7 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
                   }
                   setCurrentPage(1)
                 }}
-                className="w-full pl-3.5 pr-8 py-2 bg-white/95 hover:bg-white border border-amber-200/90 focus:border-amber-400 focus:ring-2 focus:ring-amber-300/30 rounded-xl text-xs font-bold text-amber-950 focus:outline-none transition shadow-2xs cursor-pointer appearance-none"
+                className="w-full pl-3.5 pr-8 py-2 bg-white/95 hover:bg-white border border-sky-200/90 focus:border-sky-400 focus:ring-2 focus:ring-sky-300/30 rounded-xl text-xs font-bold text-[#061651] focus:outline-none transition shadow-2xs cursor-pointer appearance-none"
               >
                 {availablePeriodsInScope.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -470,7 +470,7 @@ export function StatsView({ onSelectMember }: StatsViewProps) {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-amber-700/70">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-sky-600/70">
                 <ChevronRight className="w-4 h-4 rotate-90" />
               </div>
             </div>
