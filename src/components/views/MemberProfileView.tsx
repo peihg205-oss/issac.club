@@ -9,10 +9,11 @@ import {
   SEPTEMBER_2025_DELTAS,
   AUGUST_2025_DELTAS,
   STANDARD_MONTHLY_BASELINE,
+  AVAILABLE_PERIODS,
 } from '@/lib/periodData'
 import { EditMemberModal } from '@/components/admin/EditMemberModal'
 import { ScoreModal } from '@/components/admin/ScoreModal'
-import { normalizeHistoryTimestamp } from '@/lib/vietnamTime'
+import { normalizeHistoryTimestamp, getVietnamTimeParts } from '@/lib/vietnamTime'
 import {
   ArrowLeft,
   Award,
@@ -55,7 +56,55 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   PlusCircle,
+  Lock,
 } from 'lucide-react'
+
+// Trích xuất metadata chu kỳ (tháng, năm, trạng thái khóa sổ) cho từng bản ghi lịch sử
+function getMonthMeta(timeStr: string, periodId?: string) {
+  if (periodId && periodId.startsWith('month-')) {
+    const periodObj = AVAILABLE_PERIODS.find((p) => p.id === periodId)
+    const match = periodId.match(/^month-(\d{4})-(\d{2})$/)
+    if (match) {
+      const year = match[1]
+      const month = match[2]
+      return {
+        monthKey: `${year}-${month}`,
+        monthLabel: `Tháng ${parseInt(month, 10)}/${year}`,
+        periodId,
+        isCurrent: periodObj?.isCurrent ?? (periodId === 'month-2026-11'),
+        isFinalized: periodObj?.isFinalized ?? (periodId !== 'month-2026-11'),
+      }
+    }
+  }
+
+  const p = getVietnamTimeParts(timeStr)
+  const monthKey = `${p.year}-${p.month.padStart(2, '0')}`
+  const periodObj = AVAILABLE_PERIODS.find((item) => item.id === `month-${monthKey}`)
+  return {
+    monthKey,
+    monthLabel: `Tháng ${parseInt(p.month, 10)}/${p.year}`,
+    periodId: `month-${monthKey}`,
+    isCurrent: periodObj?.isCurrent ?? (monthKey === '2026-11'),
+    isFinalized: periodObj?.isFinalized ?? (monthKey !== '2026-11'),
+  }
+}
+
+// Chuyển chuỗi thời gian sang timestamp số phục vụ sắp xếp mới nhất lên đầu
+function parseTimestampForSort(timeStr: string, rawDate?: string): number {
+  if (rawDate) {
+    const d = new Date(rawDate)
+    if (!isNaN(d.getTime())) return d.getTime()
+  }
+  try {
+    const parts = getVietnamTimeParts(timeStr)
+    const d = new Date(
+      `${parts.year}-${parts.month.padStart(2, '0')}-${parts.day.padStart(2, '0')}T${parts.hour.padStart(2, '0')}:${parts.minute.padStart(2, '0')}:${parts.second.padStart(2, '0')}+07:00`
+    )
+    return isNaN(d.getTime()) ? 0 : d.getTime()
+  } catch {
+    return 0
+  }
+}
 
 interface MemberProfileViewProps {
   member: RosterMember
@@ -68,6 +117,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   // Mặc định hiển thị tab 'profile' (Giao diện y hệt Figma Prototype)
   const [activeTab, setActiveTab] = useState<'profile' | 'overview' | 'history'>('profile')
   const [historyFilter, setHistoryFilter] = useState<'all' | 'add' | 'deduct'>('all')
+  const [monthFilter, setMonthFilter] = useState<string>('all')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false)
 
@@ -98,7 +148,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
     return { clubRank: cRank, deptRank: dRank, deptAvg: dAvg, clubAvg: cAvg }
   }, [members, currentMember])
 
-  // Danh sách lịch sử điểm thực tế từ đề xuất & sự kiện
+  // Danh sách lịch sử điểm thực tế từ đề xuất & sự kiện (kèm phân loại tháng chính xác)
   const fullHistory = useMemo(() => {
     const list: Array<{
       id: string
@@ -111,15 +161,25 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
       rawPoints: number
       actor: string
       status: string
+      monthKey: string
+      monthLabel: string
+      periodId: string
+      isCurrent: boolean
+      isFinalized: boolean
+      timestamp: number
     }> = []
 
     // 1. Lịch sử điểm từ các đề xuất đã được phê duyệt
     proposals
       .filter((p) => p.memberCode === currentMember.member_code && p.status === 'approved')
       .forEach((p) => {
+        const timeStr = normalizeHistoryTimestamp(p.createdAt)
+        const monthMeta = getMonthMeta(timeStr, p.periodId)
+        const timestamp = parseTimestampForSort(timeStr, p.createdAt)
+
         list.push({
           id: p.id,
-          time: normalizeHistoryTimestamp(p.createdAt),
+          time: timeStr,
           code: p.criterionCode,
           title: `${p.criterionName} - ${p.reason}`,
           category: p.points >= 0 ? 'Khen thưởng & Cống hiến' : 'Kỷ luật & Vi phạm',
@@ -128,6 +188,12 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
           rawPoints: p.points,
           actor: p.proposedBy,
           status: 'Đã phê duyệt',
+          monthKey: monthMeta.monthKey,
+          monthLabel: monthMeta.monthLabel,
+          periodId: monthMeta.periodId,
+          isCurrent: monthMeta.isCurrent,
+          isFinalized: monthMeta.isFinalized,
+          timestamp,
         })
       })
 
@@ -141,10 +207,15 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
 
       const rec = evt.records?.[currentMember.member_code]
       if (rec) {
+        const rawTime = `${evt.date} ${rec.checkinTime || evt.startTime}`
+        const timeStr = normalizeHistoryTimestamp(rawTime)
+        const monthMeta = getMonthMeta(timeStr, evt.periodId)
+        const timestamp = parseTimestampForSort(timeStr, rawTime)
+
         if (rec.status === 'present_on_time') {
           list.push({
             id: `evt-rec-${evt.id}`,
-            time: `${evt.date} ${rec.checkinTime || evt.startTime}`,
+            time: timeStr,
             code: 'C07',
             title: `Tham gia đúng giờ: ${evt.title}`,
             category: 'Chuyên cần',
@@ -153,11 +224,17 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
             rawPoints: 1,
             actor: 'Hệ thống điểm danh',
             status: evt.isFinalized ? 'Đã chốt sổ' : 'Ghi nhận',
+            monthKey: monthMeta.monthKey,
+            monthLabel: monthMeta.monthLabel,
+            periodId: monthMeta.periodId,
+            isCurrent: monthMeta.isCurrent,
+            isFinalized: monthMeta.isFinalized,
+            timestamp,
           })
         } else if (rec.status === 'late') {
           list.push({
             id: `evt-rec-${evt.id}`,
-            time: `${evt.date} ${rec.checkinTime || evt.startTime}`,
+            time: timeStr,
             code: 'T04',
             title: `Đi muộn: ${evt.title}`,
             category: 'Kỷ luật & Chuyên cần',
@@ -166,11 +243,17 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
             rawPoints: -1,
             actor: 'Hệ thống điểm danh',
             status: evt.isFinalized ? 'Đã chốt sổ' : 'Ghi nhận',
+            monthKey: monthMeta.monthKey,
+            monthLabel: monthMeta.monthLabel,
+            periodId: monthMeta.periodId,
+            isCurrent: monthMeta.isCurrent,
+            isFinalized: monthMeta.isFinalized,
+            timestamp,
           })
         } else if (rec.status === 'excused') {
           list.push({
             id: `evt-rec-${evt.id}`,
-            time: `${evt.date} ${evt.startTime}`,
+            time: timeStr,
             code: 'T01',
             title: `Vắng có phép: ${evt.title}`,
             category: 'Kỷ luật & Chuyên cần',
@@ -179,16 +262,72 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
             rawPoints: -2,
             actor: 'Hệ thống điểm danh',
             status: evt.isFinalized ? 'Đã chốt sổ' : 'Ghi nhận',
+            monthKey: monthMeta.monthKey,
+            monthLabel: monthMeta.monthLabel,
+            periodId: monthMeta.periodId,
+            isCurrent: monthMeta.isCurrent,
+            isFinalized: monthMeta.isFinalized,
+            timestamp,
           })
         }
       }
     })
 
+    // Sắp xếp các bản ghi theo thời gian mới nhất lên đầu
+    list.sort((a, b) => b.timestamp - a.timestamp)
+
     return list
   }, [proposals, events, currentMember.member_code])
 
-  const bonusTotal = fullHistory.filter((h) => h.type === 'add').reduce((sum, h) => sum + h.points, 0)
-  const deductTotal = Math.abs(fullHistory.filter((h) => h.type === 'deduct').reduce((sum, h) => sum + h.points, 0))
+  // Danh sách các tháng có dữ liệu hoặc chu kỳ hiện tại
+  const availableMonths = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        monthKey: string
+        monthLabel: string
+        isCurrent: boolean
+        isFinalized: boolean
+        count: number
+      }
+    >()
+
+    // Luôn đưa Tháng 11/2026 (chu kỳ hiện tại) lên danh sách
+    const curKey = '2026-11'
+    map.set(curKey, {
+      monthKey: curKey,
+      monthLabel: 'Tháng 11/2026',
+      isCurrent: true,
+      isFinalized: false,
+      count: 0,
+    })
+
+    fullHistory.forEach((h) => {
+      const existing = map.get(h.monthKey)
+      if (existing) {
+        existing.count += 1
+      } else {
+        map.set(h.monthKey, {
+          monthKey: h.monthKey,
+          monthLabel: h.monthLabel,
+          isCurrent: h.isCurrent,
+          isFinalized: h.isFinalized,
+          count: 1,
+        })
+      }
+    })
+
+    return Array.from(map.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey))
+  }, [fullHistory])
+
+  // Dữ liệu thống kê phù hợp với kỳ thi đua đang lọc
+  const activeStatsHistory = useMemo(() => {
+    if (monthFilter === 'all') return fullHistory
+    return fullHistory.filter((h) => h.monthKey === monthFilter)
+  }, [fullHistory, monthFilter])
+
+  const bonusTotal = activeStatsHistory.filter((h) => h.type === 'add').reduce((sum, h) => sum + h.points, 0)
+  const deductTotal = Math.abs(activeStatsHistory.filter((h) => h.type === 'deduct').reduce((sum, h) => sum + h.points, 0))
   const netPoints = bonusTotal - deductTotal
 
   const totalMovement = bonusTotal + deductTotal
@@ -202,9 +341,67 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   const rating = getRatingLevel(displayScore)
 
   const filteredHistory = useMemo(() => {
-    if (historyFilter === 'all') return fullHistory
-    return fullHistory.filter((item) => item.type === historyFilter)
-  }, [fullHistory, historyFilter])
+    return fullHistory.filter((item) => {
+      const matchesType = historyFilter === 'all' || item.type === historyFilter
+      const matchesMonth = monthFilter === 'all' || item.monthKey === monthFilter
+      return matchesType && matchesMonth
+    })
+  }, [fullHistory, historyFilter, monthFilter])
+
+  // Nhóm các bản ghi theo tháng cho giao diện phân chia rõ ràng
+  const groupedHistory = useMemo(() => {
+    const targetMonths =
+      monthFilter === 'all'
+        ? availableMonths
+        : availableMonths.filter((m) => m.monthKey === monthFilter)
+
+    const groups: Array<{
+      monthKey: string
+      monthLabel: string
+      isCurrent: boolean
+      isFinalized: boolean
+      bonusTotal: number
+      deductTotal: number
+      netPoints: number
+      items: typeof fullHistory
+    }> = []
+
+    targetMonths.forEach((m) => {
+      const itemsInMonth = fullHistory.filter((item) => {
+        const matchesMonth = item.monthKey === m.monthKey
+        const matchesType = historyFilter === 'all' || item.type === historyFilter
+        return matchesMonth && matchesType
+      })
+
+      if (
+        itemsInMonth.length > 0 ||
+        (m.isCurrent && historyFilter === 'all' && monthFilter === 'all') ||
+        monthFilter === m.monthKey
+      ) {
+        const bonus = itemsInMonth
+          .filter((item) => item.type === 'add')
+          .reduce((sum, item) => sum + item.points, 0)
+        const deduct = Math.abs(
+          itemsInMonth
+            .filter((item) => item.type === 'deduct')
+            .reduce((sum, item) => sum + item.points, 0)
+        )
+
+        groups.push({
+          monthKey: m.monthKey,
+          monthLabel: m.monthLabel,
+          isCurrent: m.isCurrent,
+          isFinalized: m.isFinalized,
+          bonusTotal: bonus,
+          deductTotal: deduct,
+          netPoints: bonus - deduct,
+          items: itemsInMonth,
+        })
+      }
+    })
+
+    return groups
+  }, [availableMonths, fullHistory, historyFilter, monthFilter])
 
   return (
     <div className="space-y-4 sm:space-y-5 max-w-5xl mx-auto animate-fadeIn">
@@ -830,9 +1027,13 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
               <div className="space-y-0.5">
                 <span className="text-xs font-semibold text-slate-500 block">Tổng bản ghi ghi nhận</span>
                 <span className="text-2xl font-black text-[#0284C7] block leading-none py-0.5">
-                  {fullHistory.length}
+                  {activeStatsHistory.length}
                 </span>
-                <span className="text-[11px] font-medium text-slate-500">Biến động điểm tháng</span>
+                <span className="text-[11px] font-medium text-slate-500">
+                  {monthFilter === 'all'
+                    ? 'Toàn bộ thời gian'
+                    : availableMonths.find((m) => m.monthKey === monthFilter)?.monthLabel || monthFilter}
+                </span>
               </div>
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-sky-300 bg-white flex items-center justify-center text-[#0284C7] shrink-0 shadow-2xs">
                 <Layers className="w-4.5 h-4.5 stroke-[1.8]" />
@@ -847,7 +1048,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   +{bonusTotal}đ
                 </span>
                 <span className="text-[11px] font-semibold text-emerald-700">
-                  {fullHistory.filter((h) => h.type === 'add').length} lần ghi nhận
+                  {activeStatsHistory.filter((h) => h.type === 'add').length} lần ghi nhận
                 </span>
               </div>
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-emerald-300 bg-white flex items-center justify-center text-[#16A34A] shrink-0 shadow-2xs">
@@ -863,7 +1064,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   -{deductTotal}đ
                 </span>
                 <span className="text-[11px] font-semibold text-rose-700">
-                  {fullHistory.filter((h) => h.type === 'deduct').length} lần vi phạm
+                  {activeStatsHistory.filter((h) => h.type === 'deduct').length} lần vi phạm
                 </span>
               </div>
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-rose-300 bg-white flex items-center justify-center text-[#E11D48] shrink-0 shadow-2xs">
@@ -902,7 +1103,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Tất cả ({fullHistory.length})</span>
+                  <span>Tất cả ({activeStatsHistory.length})</span>
                 </button>
                 <button
                   type="button"
@@ -914,7 +1115,7 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   }`}
                 >
                   <Plus className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Điểm cộng ({fullHistory.filter((h) => h.type === 'add').length})</span>
+                  <span>Điểm cộng ({activeStatsHistory.filter((h) => h.type === 'add').length})</span>
                 </button>
                 <button
                   type="button"
@@ -926,14 +1127,80 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   }`}
                 >
                   <Minus className="w-3.5 h-3.5 text-rose-600" />
-                  <span>Điểm trừ ({fullHistory.filter((h) => h.type === 'deduct').length})</span>
+                  <span>Điểm trừ ({activeStatsHistory.filter((h) => h.type === 'deduct').length})</span>
                 </button>
               </div>
             </div>
 
-            {/* Items list with rich styling matching project */}
-            <div className="space-y-2.5">
-              {filteredHistory.length === 0 ? (
+            {/* Month Filter Selector Toolbar */}
+            {availableMonths.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 text-xs no-scrollbar flex-wrap sm:flex-nowrap">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
+                  <span>Kỳ thi đua:</span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setMonthFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                    monthFilter === 'all'
+                      ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-2xs font-black'
+                      : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200/80'
+                  }`}
+                >
+                  <span>Tất cả các tháng</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                      monthFilter === 'all'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {fullHistory.length}
+                  </span>
+                </button>
+
+                {availableMonths.map((m) => {
+                  const isSelected = monthFilter === m.monthKey
+                  return (
+                    <button
+                      key={m.monthKey}
+                      type="button"
+                      onClick={() => setMonthFilter(m.monthKey)}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-2xs font-black'
+                          : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200/80'
+                      }`}
+                    >
+                      {m.isCurrent && (
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isSelected ? 'bg-white animate-pulse' : 'bg-emerald-500'
+                          }`}
+                        />
+                      )}
+                      <span>{m.monthLabel}</span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {m.count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Grouped Month Content */}
+            <div className="space-y-6 pt-1">
+              {groupedHistory.length === 0 ||
+              (groupedHistory.every((g) => g.items.length === 0) && historyFilter !== 'all') ? (
                 <div className="py-16 text-center space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-[#F0F9FF] border border-sky-200/80 text-[#0284C7] flex items-center justify-center mx-auto shadow-2xs">
                     <Clock className="w-6 h-6 stroke-[1.8]" />
@@ -946,86 +1213,154 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                   </p>
                 </div>
               ) : (
-                filteredHistory.map((item) => {
-                  const isAdd = item.type === 'add'
-                  return (
-                    <div
-                      key={item.id}
-                      className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] group ${
-                        isAdd
-                          ? 'bg-white hover:bg-[#F0FDF4]/30 border-slate-200/80 hover:border-emerald-300'
-                          : 'bg-white hover:bg-[#FFF1F2]/30 border-slate-200/80 hover:border-rose-300'
-                      }`}
-                    >
-                      {/* Left Side: Avatar Icon & Info */}
-                      <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-                        {/* Circular Icon with white bg & border */}
-                        <div
-                          className={`w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs border ${
-                            isAdd
-                              ? 'border-emerald-300 text-emerald-600'
-                              : 'border-rose-300 text-rose-600'
-                          }`}
-                        >
-                          {isAdd ? (
-                            <ArrowUpRight className="w-5 h-5 stroke-[2.2]" />
-                          ) : (
-                            <ArrowDownRight className="w-5 h-5 stroke-[2.2]" />
-                          )}
+                groupedHistory.map((group) => (
+                  <div key={group.monthKey} className="space-y-3">
+                    {/* Month Section Header Bar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-4 py-3 bg-gradient-to-r from-slate-50 via-sky-50/30 to-slate-50/50 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-2xs">
+                      {/* Left: Month title + Status badge */}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-sky-200/80 text-[#0284C7] flex items-center justify-center shrink-0 shadow-2xs">
+                          <Calendar className="w-4 h-4" />
                         </div>
-
-                        {/* Text details */}
-                        <div className="space-y-1 min-w-0">
+                        <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span
-                              className={`font-mono font-black text-[11px] px-2 py-0.5 rounded-md border shadow-2xs ${
-                                isAdd
-                                  ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200/80'
-                                  : 'bg-[#FFF1F2] text-rose-700 border-rose-200/80'
-                              }`}
-                            >
-                              {item.code}
+                            <span className="text-sm sm:text-base font-black text-[#061651] tracking-tight">
+                              {group.monthLabel}
                             </span>
-                            <span className="font-bold text-xs sm:text-[13.5px] text-[#061651] group-hover:text-[#0284C7] transition-colors">
-                              {item.title}
-                            </span>
+                            {group.isCurrent ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                Chu kỳ hiện tại
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs">
+                                <Lock className="w-2.5 h-2.5 text-slate-500" />
+                                Đã khóa sổ
+                              </span>
+                            )}
                           </div>
-
-                          <div className="flex items-center gap-2.5 text-[11px] flex-wrap font-medium">
-                            <span className="flex items-center gap-1 text-slate-500">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>{item.time}</span>
-                            </span>
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100/90 text-slate-600 text-[10.5px] font-medium border border-slate-200/60">
-                              {item.category}
-                            </span>
-                            <span className="flex items-center gap-1 text-slate-500">
-                              <UserCheck className="w-3 h-3 text-slate-400" />
-                              <span>{item.actor}</span>
-                            </span>
-                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                            {group.items.length} bản ghi hoạt động trong tháng
+                          </p>
                         </div>
                       </div>
 
-                      {/* Right Side: Points & Status Tag */}
-                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                      {/* Right: Monthly Net Score summary */}
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap text-xs font-bold">
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                          +{group.bonusTotal}đ
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/80">
+                          -{group.deductTotal}đ
+                        </span>
                         <span
-                          className={`text-sm sm:text-base font-black px-3.5 py-1 rounded-full border shadow-2xs whitespace-nowrap flex items-center gap-1 ${
-                            isAdd
-                              ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200'
-                              : 'bg-[#FFF1F2] text-rose-700 border-rose-200'
+                          className={`px-2.5 py-1 rounded-lg border font-black ${
+                            group.netPoints >= 0
+                              ? 'bg-sky-50 text-[#0284C7] border-sky-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
                           }`}
                         >
-                          {item.points > 0 ? `+${item.points}đ` : `${item.points}đ`}
-                        </span>
-                        <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1 mt-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-                          <span>{item.status}</span>
+                          Chốt tháng: {group.netPoints >= 0 ? `+${group.netPoints}đ` : `${group.netPoints}đ`}
                         </span>
                       </div>
                     </div>
-                  )
-                })
+
+                    {/* Items list for this month */}
+                    {group.items.length === 0 ? (
+                      <div className="py-6 px-4 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 space-y-1">
+                        <p className="text-xs font-semibold text-slate-500">
+                          Chưa có biến động điểm nào trong {group.monthLabel}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Điểm tháng này đang giữ nguyên ở mức khởi điểm hoặc chưa phát sinh đề xuất mới.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {group.items.map((item) => {
+                          const isAdd = item.type === 'add'
+                          return (
+                            <div
+                              key={item.id}
+                              className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] group ${
+                                isAdd
+                                  ? 'bg-white hover:bg-[#F0FDF4]/30 border-slate-200/80 hover:border-emerald-300'
+                                  : 'bg-white hover:bg-[#FFF1F2]/30 border-slate-200/80 hover:border-rose-300'
+                              }`}
+                            >
+                              {/* Left Side: Avatar Icon & Info */}
+                              <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                                {/* Circular Icon with white bg & border */}
+                                <div
+                                  className={`w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-2xs border ${
+                                    isAdd
+                                      ? 'border-emerald-300 text-emerald-600'
+                                      : 'border-rose-300 text-rose-600'
+                                  }`}
+                                >
+                                  {isAdd ? (
+                                    <ArrowUpRight className="w-5 h-5 stroke-[2.2]" />
+                                  ) : (
+                                    <ArrowDownRight className="w-5 h-5 stroke-[2.2]" />
+                                  )}
+                                </div>
+
+                                {/* Text details */}
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span
+                                      className={`font-mono font-black text-[11px] px-2 py-0.5 rounded-md border shadow-2xs ${
+                                        isAdd
+                                          ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200/80'
+                                          : 'bg-[#FFF1F2] text-rose-700 border-rose-200/80'
+                                      }`}
+                                    >
+                                      {item.code}
+                                    </span>
+                                    <span className="font-bold text-xs sm:text-[13.5px] text-[#061651] group-hover:text-[#0284C7] transition-colors">
+                                      {item.title}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2.5 text-[11px] flex-wrap font-medium">
+                                    <span className="flex items-center gap-1 text-slate-500">
+                                      <Calendar className="w-3 h-3 text-slate-400" />
+                                      <span>{item.time}</span>
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100/90 text-slate-600 text-[10.5px] font-medium border border-slate-200/60">
+                                      {item.category}
+                                    </span>
+                                    <span className="flex items-center gap-1 text-slate-500">
+                                      <UserCheck className="w-3 h-3 text-slate-400" />
+                                      <span>{item.actor}</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Right Side: Points & Status Tag */}
+                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                <span
+                                  className={`text-sm sm:text-base font-black px-3.5 py-1 rounded-full border shadow-2xs whitespace-nowrap flex items-center gap-1 ${
+                                    isAdd
+                                      ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200'
+                                      : 'bg-[#FFF1F2] text-rose-700 border-rose-200'
+                                  }`}
+                                >
+                                  {item.points > 0 ? `+${item.points}đ` : `${item.points}đ`}
+                                </span>
+                                <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1 mt-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                                  <span>{item.status}</span>
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
             </div>
           </div>
