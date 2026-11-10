@@ -2396,27 +2396,19 @@ export function ScheduleView() {
                         Ca hoạt động: <span className="text-rose-500">*</span>
                       </label>
                       <select
-                        value={
-                          (editSession === 'morning' && editTime === '08:00 - 12:00') ||
-                          (editSession === 'afternoon' && editTime === '13:30 - 17:30') ||
-                          (editSession === 'evening' && editTime === '18:30 - 21:30')
-                            ? editSession
-                            : 'custom'
-                        }
+                        value={editSession}
                         onChange={(e) => {
-                          const val = e.target.value
+                          const val = e.target.value as 'morning' | 'afternoon' | 'evening'
+                          setEditSession(val)
                           if (val === 'morning') {
-                            setEditSession('morning')
                             setEditStartTime('08:00')
                             setEditEndTime('12:00')
                             setEditTime('08:00 - 12:00')
                           } else if (val === 'afternoon') {
-                            setEditSession('afternoon')
                             setEditStartTime('13:30')
                             setEditEndTime('17:30')
                             setEditTime('13:30 - 17:30')
                           } else if (val === 'evening') {
-                            setEditSession('evening')
                             setEditStartTime('18:30')
                             setEditEndTime('21:30')
                             setEditTime('18:30 - 21:30')
@@ -2424,23 +2416,9 @@ export function ScheduleView() {
                         }}
                         className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
                       >
-                        <option value="morning">Ca Sáng (08:00 - 12:00)</option>
-                        <option value="afternoon">Ca Chiều (13:30 - 17:30)</option>
-                        <option value="evening">Ca Tối (18:30 - 21:30)</option>
-                        {!(
-                          (editSession === 'morning' && editTime === '08:00 - 12:00') ||
-                          (editSession === 'afternoon' && editTime === '13:30 - 17:30') ||
-                          (editSession === 'evening' && editTime === '18:30 - 21:30')
-                        ) && (
-                          <option value="custom">
-                            {editSession === 'morning'
-                              ? 'Ca Sáng'
-                              : editSession === 'afternoon'
-                              ? 'Ca Chiều'
-                              : 'Ca Tối'}{' '}
-                            (Tùy chỉnh: {editTime || `${editStartTime} - ${editEndTime}`})
-                          </option>
-                        )}
+                        <option value="morning">Ca Sáng</option>
+                        <option value="afternoon">Ca Chiều</option>
+                        <option value="evening">Ca Tối</option>
                       </select>
                       <p className="text-[11px] text-slate-400 mt-1 font-normal">
                         Khung ca sinh hoạt chính thức của CLB
@@ -2785,27 +2763,19 @@ export function ScheduleView() {
                       Ca hoạt động: <span className="text-rose-500">*</span>
                     </label>
                     <select
-                      value={
-                        (newSession === 'morning' && newTime === '08:00 - 12:00') ||
-                        (newSession === 'afternoon' && newTime === '13:30 - 17:30') ||
-                        (newSession === 'evening' && newTime === '18:30 - 21:30')
-                          ? newSession
-                          : 'custom'
-                      }
+                      value={newSession}
                       onChange={(e) => {
-                        const val = e.target.value
+                        const val = e.target.value as 'morning' | 'afternoon' | 'evening'
+                        setNewSession(val)
                         if (val === 'morning') {
-                          setNewSession('morning')
                           setNewStartTime('08:00')
                           setNewEndTime('12:00')
                           setNewTime('08:00 - 12:00')
                         } else if (val === 'afternoon') {
-                          setNewSession('afternoon')
                           setNewStartTime('13:30')
                           setNewEndTime('17:30')
                           setNewTime('13:30 - 17:30')
                         } else if (val === 'evening') {
-                          setNewSession('evening')
                           setNewStartTime('18:30')
                           setNewEndTime('21:30')
                           setNewTime('18:30 - 21:30')
@@ -2813,23 +2783,9 @@ export function ScheduleView() {
                       }}
                       className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
                     >
-                      <option value="morning">Ca Sáng (08:00 - 12:00)</option>
-                      <option value="afternoon">Ca Chiều (13:30 - 17:30)</option>
-                      <option value="evening">Ca Tối (18:30 - 21:30)</option>
-                      {!(
-                        (newSession === 'morning' && newTime === '08:00 - 12:00') ||
-                        (newSession === 'afternoon' && newTime === '13:30 - 17:30') ||
-                        (newSession === 'evening' && newTime === '18:30 - 21:30')
-                      ) && (
-                        <option value="custom">
-                          {newSession === 'morning'
-                            ? 'Ca Sáng'
-                            : newSession === 'afternoon'
-                            ? 'Ca Chiều'
-                            : 'Ca Tối'}{' '}
-                          (Tùy chỉnh: {newTime || `${newStartTime} - ${newEndTime}`})
-                        </option>
-                      )}
+                      <option value="morning">Ca Sáng</option>
+                      <option value="afternoon">Ca Chiều</option>
+                      <option value="evening">Ca Tối</option>
                     </select>
                     <p className="text-[11px] text-slate-400 mt-1 font-normal">
                       Khung ca sinh hoạt chính thức của CLB
