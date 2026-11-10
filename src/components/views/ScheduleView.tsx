@@ -1245,60 +1245,61 @@ export function ScheduleView() {
       {/* 1. HEADER TRANG CHUẨN NHẬN DIỆN DỰ ÁN CLB (Khớp 100% Ảnh 1) */}
       {/* ======================================================== */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        {/* Tiêu đề & Sticker Welcome */}
-        <div>
-          <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap sm:flex-nowrap">
+        {/* Tiêu đề & Sticker Welcome: To vừa, cân giữa 2 dòng như Dashboard */}
+        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+          {/* Cụm Tiêu đề & Mô tả */}
+          <div className="min-w-0 flex-1 sm:flex-initial">
             <h1 className="text-2xl sm:text-[28px] font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
               Lịch hoạt động & Kế hoạch iSSAC
             </h1>
-
-            {/* Sticker Welcome to iSSAC to rõ, căn cân chuẩn dòng tiêu đề, nhấp nháy êm ái nhẹ nhàng */}
-            <div className="relative group cursor-pointer inline-flex items-center shrink-0 select-none">
-              <style>{`
-                @keyframes issac-gentle-blink-shake {
-                  0%, 100% {
-                    transform: rotate(0deg) scale(1);
-                    opacity: 1;
-                    filter: drop-shadow(0 4px 12px rgba(2, 132, 199, 0.25));
-                  }
-                  20% {
-                    transform: rotate(-2.5deg) scale(1.03);
-                    opacity: 0.88;
-                    filter: drop-shadow(0 4px 14px rgba(2, 132, 199, 0.35));
-                  }
-                  40% {
-                    transform: rotate(2.5deg) scale(1.04);
-                    opacity: 1;
-                    filter: drop-shadow(0 4px 16px rgba(2, 132, 199, 0.4));
-                  }
-                  60% {
-                    transform: rotate(-1.5deg) scale(1.02);
-                    opacity: 0.86;
-                    filter: drop-shadow(0 4px 14px rgba(2, 132, 199, 0.35));
-                  }
-                  80% {
-                    transform: rotate(1.5deg) scale(1.01);
-                    opacity: 1;
-                    filter: drop-shadow(0 4px 12px rgba(2, 132, 199, 0.3));
-                  }
-                }
-                .issac-sticker-anim {
-                  animation: issac-gentle-blink-shake 2.4s ease-in-out infinite !important;
-                  display: inline-block !important;
-                  transform-origin: center center;
-                  will-change: transform, opacity, filter;
-                }
-              `}</style>
-              <img
-                src="/welcome-to-issac.png"
-                alt="Welcome to iSSAC"
-                className="h-7 sm:h-8 md:h-[34px] w-auto object-contain issac-sticker-anim hover:scale-110 transition-transform duration-300"
-              />
-            </div>
+            <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
+              Quản lý thời khóa biểu tuần và kế hoạch hoạt động chính thức của CLB.
+            </p>
           </div>
-          <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 mt-1 font-normal">
-            Quản lý thời khóa biểu tuần và kế hoạch hoạt động chính thức của CLB.
-          </p>
+
+          {/* Sticker Welcome to iSSAC: To vừa, cân đối chính giữa cả 2 dòng */}
+          <div className="relative group cursor-pointer inline-flex items-center shrink-0 select-none">
+            <style>{`
+              @keyframes issac-gentle-blink-shake {
+                0%, 100% {
+                  transform: rotate(0deg) scale(1);
+                  opacity: 1;
+                  filter: drop-shadow(0 4px 12px rgba(2, 132, 199, 0.25));
+                }
+                20% {
+                  transform: rotate(-2.5deg) scale(1.03);
+                  opacity: 0.88;
+                  filter: drop-shadow(0 4px 14px rgba(2, 132, 199, 0.35));
+                }
+                40% {
+                  transform: rotate(2.5deg) scale(1.04);
+                  opacity: 1;
+                  filter: drop-shadow(0 4px 16px rgba(2, 132, 199, 0.4));
+                }
+                60% {
+                  transform: rotate(-1.5deg) scale(1.02);
+                  opacity: 0.86;
+                  filter: drop-shadow(0 4px 14px rgba(2, 132, 199, 0.35));
+                }
+                80% {
+                  transform: rotate(1.5deg) scale(1.01);
+                  opacity: 1;
+                  filter: drop-shadow(0 4px 12px rgba(2, 132, 199, 0.3));
+                }
+              }
+              .issac-sticker-anim {
+                animation: issac-gentle-blink-shake 2.4s ease-in-out infinite !important;
+                display: inline-block !important;
+                transform-origin: center center;
+                will-change: transform, opacity, filter;
+              }
+            `}</style>
+            <img
+              src="/welcome-to-issac.png"
+              alt="Welcome to iSSAC"
+              className="h-10 sm:h-12 md:h-[50px] w-auto object-contain issac-sticker-anim hover:scale-110 transition-transform duration-300"
+            />
+          </div>
         </div>
 
         {/* Thanh công cụ hành động phía trên (Khớp 100% Ảnh 1 & Phân quyền BCN / Core Team / Member) */}
