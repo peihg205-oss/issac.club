@@ -388,8 +388,12 @@ export function reconcileMemberScores(
     const delta = deltaMap.get(m.member_code) || 0
     // Mốc bắt đầu chuẩn là 60 điểm cho tất cả thành viên trong chu kỳ thi đua mới (Quy chế P01)
     const baseScore = 60
-    const calculatedScore = Math.max(0, Math.min(100, baseScore + delta))
-    const t02Count = t02CountMap.get(m.member_code) || 0
+    const calculatedScore = deltaMap.has(m.member_code)
+      ? Math.max(0, Math.min(100, baseScore + delta))
+      : (m.current_score !== undefined ? m.current_score : 60)
+    const t02Count = t02CountMap.has(m.member_code)
+      ? t02CountMap.get(m.member_code)!
+      : (m.absent_count_t02 ?? 0)
     return {
       ...m,
       avatar_url: m.avatar_url || getMemberAvatarUrl(m) || undefined,
@@ -1328,12 +1332,55 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
 
     const currentList = membersRef.current.length > 0 ? membersRef.current : members
-    let found = false
+    const targetMember = currentList.find((m) => m.member_code === memberCode)
+    if (!targetMember) {
+      return { success: false, message: `Không tìm thấy thành viên: ${memberCode}` }
+    }
+
     const nowIso = new Date().toISOString()
+    const targetPeriodId = currentActivePeriodIdRef.current || 'month-2026-11'
+    let updatedProps = [...proposalsRef.current]
+    let proposalsChanged = false
+
+    // Xử lý điều chỉnh điểm thi đua trực tiếp từ hồ sơ thành viên (Quyền Ban Chủ nhiệm)
+    if (updates.current_score !== undefined) {
+      const oldScore = targetMember.current_score ?? 60
+      const targetScore = Math.min(100, Math.max(0, Number(updates.current_score) || 60))
+      const diff = targetScore - oldScore
+
+      if (diff !== 0) {
+        const adjustProp: ProposalItem = {
+          id: `adjust-${memberCode}-${Date.now()}`,
+          memberCode: memberCode,
+          memberName: updates.full_name || targetMember.full_name,
+          memberDept: targetMember.department_name,
+          isCore: Boolean(updates.is_core !== undefined ? updates.is_core : targetMember.is_core),
+          criterionCode: diff > 0 ? 'K01' : 'P01',
+          criterionName: diff > 0 ? 'BCN điều chỉnh điểm hồ sơ (+)' : 'BCN điều chỉnh điểm hồ sơ (-)',
+          points: diff,
+          reason: `Ban Chủ nhiệm điều chỉnh trực tiếp điểm thi đua trong hồ sơ thành viên (${oldScore}đ -> ${targetScore}đ)`,
+          proposedBy: 'Ban Chủ nhiệm',
+          proposedByRole: 'bcn',
+          status: 'approved',
+          createdAt: nowIso,
+          reviewedAt: nowIso,
+          periodId: targetPeriodId,
+        }
+        updatedProps = [adjustProp, ...updatedProps]
+        proposalsChanged = true
+      }
+    }
+
+    if (proposalsChanged) {
+      proposalsRef.current = updatedProps
+      setProposals(updatedProps)
+      try {
+        localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(updatedProps))
+      } catch (e) {}
+    }
 
     const updatedList = currentList.map((m) => {
       if (m.member_code === memberCode) {
-        found = true
         let deptName = m.department_name
         let deptSlug = m.department_slug
 
@@ -1356,11 +1403,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       return m
     })
 
-    if (!found) {
-      return { success: false, message: `Không tìm thấy thành viên: ${memberCode}` }
-    }
-
-    const reRanked = getRankedMembers(updatedList)
+    const reconciled = reconcileMemberScores(updatedList, updatedProps, targetPeriodId)
+    const reRanked = getRankedMembers(reconciled)
     membersRef.current = reRanked
     setMembers(reRanked)
     try {
@@ -1370,6 +1414,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
     syncToCloud({
       members: reRanked,
+      proposals: proposalsChanged ? updatedProps : undefined,
       deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
     })
 

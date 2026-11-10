@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useClub } from '@/lib/context/ClubContext'
+import { useAuth } from '@/lib/auth/AuthContext'
 import type { RosterMember } from '@/lib/clubData'
 import type { DepartmentCode } from '@/types/database'
 import {
@@ -67,6 +68,7 @@ interface EditMemberModalProps {
 }
 
 export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProps) {
+  const { isBCN } = useAuth()
   const { updateMember } = useClub()
 
   const [fullName, setFullName] = useState('')
@@ -153,6 +155,15 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
   // Xử lý submit toàn bộ thông tin
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isBCN) {
+      setFeedback({
+        type: 'error',
+        message: 'Chỉ Ban Chủ nhiệm mới có toàn quyền chỉnh sửa hồ sơ và điều chỉnh điểm của thành viên!',
+      })
+      return
+    }
+
     if (!fullName.trim() || !email.trim()) {
       setFeedback({ type: 'error', message: 'Vui lòng điền đầy đủ Họ tên và Email!' })
       return
@@ -215,6 +226,14 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
           </button>
         </div>
 
+        {/* Cảnh báo phân quyền nếu không phải Ban Chủ nhiệm */}
+        {!isBCN && (
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-2.5 shrink-0 shadow-2xs">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Chế độ chỉ xem: Chỉ Ban Chủ nhiệm mới có quyền sửa đổi thông tin và điều chỉnh điểm hồ sơ thành viên theo Quy chế CLB.</span>
+          </div>
+        )}
+
         {/* Feedback Alert */}
         {feedback && (
           <div
@@ -246,7 +265,7 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   Ảnh Đại Diện Thành Viên (Avatar)
                 </h4>
               </div>
-              {avatarUrl && (
+              {avatarUrl && isBCN && (
                 <button
                   type="button"
                   onClick={handleRemoveAvatar}
@@ -280,125 +299,131 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
               </div>
 
               {/* Tùy chọn nguồn Avatar */}
-              <div className="flex-1 w-full space-y-2.5">
-                <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-[11px] font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTab('upload')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                      avatarTab === 'upload'
-                        ? 'bg-white text-[#0284C7] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Tải từ máy tính</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTab('presets')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                      avatarTab === 'presets'
-                        ? 'bg-white text-[#0284C7] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Avatar gợi ý</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAvatarTab('url')}
-                    className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                      avatarTab === 'url'
-                        ? 'bg-white text-[#0284C7] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <LinkIcon className="w-3.5 h-3.5" />
-                    <span>Dán link ảnh</span>
-                  </button>
-                </div>
-
-                {/* Tab 1: Upload từ máy tính */}
-                {avatarTab === 'upload' && (
-                  <div className="space-y-1.5">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/gif"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="member-avatar-upload"
-                    />
-                    <label
-                      htmlFor="member-avatar-upload"
-                      className="w-full py-2.5 px-4 rounded-xl border border-dashed border-[#0284C7]/60 bg-[#F0F9FF] hover:bg-sky-50 text-[#0284C7] font-bold text-center cursor-pointer transition flex items-center justify-center gap-2 shadow-2xs"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>Chọn file ảnh từ thiết bị của bạn (JPG, PNG, WebP)</span>
-                    </label>
-                    <span className="block text-[10px] text-slate-400 text-center">
-                      Ảnh sẽ được nén và hiển thị ngay tức thì trên toàn bộ hệ thống
-                    </span>
-                  </div>
-                )}
-
-                {/* Tab 2: Thư viện Avatar gợi ý */}
-                {avatarTab === 'presets' && (
-                  <div className="space-y-1.5">
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                      {PRESET_AVATARS.map((p) => {
-                        const isSelected = avatarUrl === p.url
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                              setAvatarUrl(p.url)
-                              setFeedback({ type: 'success', message: `Đã chọn mẫu: ${p.name}` })
-                            }}
-                            className={`p-1 rounded-xl border transition flex flex-col items-center gap-1 cursor-pointer ${
-                              isSelected
-                                ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/30'
-                                : 'bg-white border-slate-200 hover:border-slate-300'
-                            }`}
-                          >
-                            <img
-                              src={p.url}
-                              alt={p.name}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                            <span className="text-[9px] font-semibold text-slate-700 truncate w-full text-center">
-                              {p.name.split(' ')[0]}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab 3: Dán link ảnh */}
-                {avatarTab === 'url' && (
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      placeholder="Dán đường dẫn ảnh https://... hoặc /avatars/..."
-                      value={customUrlInput}
-                      onChange={(e) => setCustomUrlInput(e.target.value)}
-                      className="flex-1 bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
-                    />
+              {isBCN ? (
+                <div className="flex-1 w-full space-y-2.5">
+                  <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl text-[11px] font-bold">
                     <button
                       type="button"
-                      onClick={handleApplyUrl}
-                      className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs transition cursor-pointer"
+                      onClick={() => setAvatarTab('upload')}
+                      className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        avatarTab === 'upload'
+                          ? 'bg-white text-[#0284C7] shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
                     >
-                      Áp dụng
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Tải từ máy tính</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarTab('presets')}
+                      className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        avatarTab === 'presets'
+                          ? 'bg-white text-[#0284C7] shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Avatar gợi ý</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarTab('url')}
+                      className={`flex-1 py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        avatarTab === 'url'
+                          ? 'bg-white text-[#0284C7] shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" />
+                      <span>Dán link ảnh</span>
                     </button>
                   </div>
-                )}
-              </div>
+
+                  {/* Tab 1: Upload từ máy tính */}
+                  {avatarTab === 'upload' && (
+                    <div className="space-y-1.5">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="member-avatar-upload"
+                      />
+                      <label
+                        htmlFor="member-avatar-upload"
+                        className="w-full py-2.5 px-4 rounded-xl border border-dashed border-[#0284C7]/60 bg-[#F0F9FF] hover:bg-sky-50 text-[#0284C7] font-bold text-center cursor-pointer transition flex items-center justify-center gap-2 shadow-2xs"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>Chọn file ảnh từ thiết bị của bạn (JPG, PNG, WebP)</span>
+                      </label>
+                      <span className="block text-[10px] text-slate-400 text-center">
+                        Ảnh sẽ được nén và hiển thị ngay tức thì trên toàn bộ hệ thống
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Tab 2: Thư viện Avatar gợi ý */}
+                  {avatarTab === 'presets' && (
+                    <div className="space-y-1.5">
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {PRESET_AVATARS.map((p) => {
+                          const isSelected = avatarUrl === p.url
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                setAvatarUrl(p.url)
+                                setFeedback({ type: 'success', message: `Đã chọn mẫu: ${p.name}` })
+                              }}
+                              className={`p-1 rounded-xl border transition flex flex-col items-center gap-1 cursor-pointer ${
+                                isSelected
+                                  ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/30'
+                                  : 'bg-white border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              <img
+                                src={p.url}
+                                alt={p.name}
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                              <span className="text-[9px] font-semibold text-slate-700 truncate w-full text-center">
+                                {p.name.split(' ')[0]}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 3: Dán link ảnh */}
+                  {avatarTab === 'url' && (
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="Dán đường dẫn ảnh https://... hoặc /avatars/..."
+                        value={customUrlInput}
+                        onChange={(e) => setCustomUrlInput(e.target.value)}
+                        className="flex-1 bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyUrl}
+                        className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs transition cursor-pointer"
+                      >
+                        Áp dụng
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 w-full p-3 rounded-xl bg-slate-100/80 border border-slate-200 text-slate-500 text-xs font-medium">
+                  Ảnh đại diện chính thức của thành viên CLB (Chỉ Ban Chủ nhiệm có quyền thay đổi).
+                </div>
+              )}
             </div>
           </div>
 
@@ -419,10 +444,11 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 <input
                   type="text"
                   required
+                  disabled={!isBCN || isSubmitting}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nhập họ và tên đầy đủ"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -432,9 +458,10 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   Ban trực thuộc: <span className="text-rose-500">*</span>
                 </label>
                 <select
+                  disabled={!isBCN || isSubmitting}
                   value={departmentCode}
                   onChange={(e) => setDepartmentCode(e.target.value as DepartmentCode)}
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs cursor-pointer"
                 >
                   <option value="B04">Ban Chủ nhiệm (B04)</option>
                   <option value="B01">Ban Truyền thông (B01)</option>
@@ -451,10 +478,11 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 <input
                   type="text"
                   required
+                  disabled={!isBCN || isSubmitting}
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
                   placeholder="Chủ nhiệm, Phó ban, Thành viên..."
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -465,10 +493,11 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 </label>
                 <input
                   type="text"
+                  disabled={!isBCN || isSubmitting}
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   placeholder="VD: 23070691"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -479,10 +508,11 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 </label>
                 <input
                   type="text"
+                  disabled={!isBCN || isSubmitting}
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                   placeholder="VD: MIS2023A, DC2024B..."
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
 
@@ -493,10 +523,11 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 </label>
                 <input
                   type="tel"
+                  disabled={!isBCN || isSubmitting}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="VD: 0374140705"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
                 <span className="block text-[10px] text-slate-400 mt-0.5">
                   (Dùng để xác thực 4 số cuối chống điểm danh hộ)
@@ -511,10 +542,11 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                 <input
                   type="email"
                   required
+                  disabled={!isBCN || isSubmitting}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="VD: email@vnuis.edu.vn"
-                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
+                  className="w-full bg-slate-50/80 hover:bg-white focus:bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15 transition shadow-2xs"
                 />
               </div>
             </div>
@@ -533,14 +565,15 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   Thành viên Cốt cán (BCN, Trưởng/Phó ban) chịu trách nhiệm cao hơn, áp dụng nhân đôi điểm phạt (×2) theo Quy tắc P03.
                 </span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+              <label className={`relative inline-flex items-center shrink-0 ml-3 ${isBCN ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
                 <input
                   type="checkbox"
+                  disabled={!isBCN || isSubmitting}
                   checked={isCore}
                   onChange={(e) => setIsCore(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-disabled:opacity-60" />
               </label>
             </div>
 
@@ -554,9 +587,10 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   type="number"
                   min={0}
                   max={100}
+                  disabled={!isBCN || isSubmitting}
                   value={currentScore}
                   onChange={(e) => setCurrentScore(Number(e.target.value))}
-                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-slate-900 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
+                  className="w-full bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-slate-900 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
                 />
               </div>
 
@@ -569,9 +603,10 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
                   type="number"
                   min={0}
                   max={3}
+                  disabled={!isBCN || isSubmitting}
                   value={absentT02}
                   onChange={(e) => setAbsentT02(Number(e.target.value))}
-                  className="w-full bg-white border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-rose-700 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
+                  className="w-full bg-white disabled:bg-slate-100 disabled:cursor-not-allowed border border-slate-200/90 rounded-xl px-3 py-2 text-xs font-black text-rose-700 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/15"
                 />
               </div>
             </div>
@@ -585,25 +620,27 @@ export function EditMemberModal({ isOpen, onClose, member }: EditMemberModalProp
               disabled={isSubmitting}
               className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
             >
-              Hủy bỏ
+              {isBCN ? 'Hủy bỏ' : 'Đóng'}
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl text-xs font-black text-white bg-[#0284C7] hover:bg-[#0369A1] shadow-md shadow-[#0284C7]/20 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang lưu...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>Lưu Thay Đổi Hồ Sơ</span>
-                </>
-              )}
-            </button>
+            {isBCN && (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-xl text-xs font-black text-white bg-[#0284C7] hover:bg-[#0369A1] shadow-md shadow-[#0284C7]/20 transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang lưu...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span>Lưu Thay Đổi Hồ Sơ</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>

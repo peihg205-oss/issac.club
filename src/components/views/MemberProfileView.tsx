@@ -195,10 +195,8 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
   const bonusPercent = totalMovement > 0 ? Math.round((bonusTotal / totalMovement) * 100) : (bonusTotal > 0 ? 100 : 0)
   const deductPercent = totalMovement > 0 ? Math.round((deductTotal / totalMovement) * 100) : 0
 
-  // Chuẩn hóa điểm thi đua: Lấy điểm hiện tại của thành viên hoặc từ biến động đề xuất
-  const displayScore = currentMember.current_score !== undefined && currentMember.current_score !== 60
-    ? currentMember.current_score
-    : (netPoints !== 0 ? Math.max(0, Math.min(100, 60 + netPoints)) : currentMember.current_score || 60)
+  // Chuẩn hóa điểm thi đua: Lấy điểm chuẩn xác từ hồ sơ thành viên (Single Source of Truth)
+  const displayScore = currentMember.current_score ?? 60
   const octScore = displayScore
   const changeValue = displayScore - 60
   const rating = getRatingLevel(displayScore)
@@ -284,28 +282,32 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
               {/* Circular Avatar with Logo Badge & Camera indicator */}
               <div
-                className="relative group cursor-pointer shrink-0"
-                onClick={() => setIsEditModalOpen(true)}
-                title="Bấm để thay đổi ảnh đại diện"
+                className={`relative group shrink-0 ${isBCN ? 'cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (isBCN) setIsEditModalOpen(true)
+                }}
+                title={isBCN ? 'Bấm để thay đổi ảnh đại diện' : undefined}
               >
                 <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-md bg-white flex items-center justify-center overflow-hidden">
                   <img
                     src={getMemberAvatarUrl(currentMember) || '/logo-badge.png'}
                     alt={currentMember.full_name}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    className={`w-full h-full object-cover transition-transform ${isBCN ? 'group-hover:scale-105' : ''}`}
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsEditModalOpen(true)
-                  }}
-                  className="absolute bottom-0 right-0 w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white border-2 border-white shadow-xs flex items-center justify-center cursor-pointer active:scale-90 transition"
-                  title="Thay đổi ảnh đại diện"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                </button>
+                {isBCN && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditModalOpen(true)
+                    }}
+                    className="absolute bottom-0 right-0 w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-[#0284C7] hover:bg-[#0369A1] text-white border-2 border-white shadow-xs flex items-center justify-center cursor-pointer active:scale-90 transition"
+                    title="Thay đổi ảnh đại diện"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Identity info */}
@@ -344,15 +346,18 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                 </button>
               )}
 
-              {/* Nút Chỉnh sửa màu xanh dương #0284C7 chuẩn nhận diện dự án */}
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-[13px] font-bold shadow-2xs shadow-[#0284C7]/20 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-              >
-                <Pencil className="w-3.5 h-3.5 text-white stroke-[2]" />
-                <span>Chỉnh sửa</span>
-              </button>
+              {/* Nút Chỉnh sửa: Chỉ hiển thị cho Ban Chủ nhiệm theo Quy chế CLB */}
+              {isBCN && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-[13px] font-bold shadow-2xs shadow-[#0284C7]/20 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  title="Chỉnh sửa hồ sơ thành viên (Quyền Ban Chủ nhiệm)"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-white stroke-[2]" />
+                  <span>Chỉnh sửa</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -392,18 +397,20 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
 
               {/* Field 3: Ban trực thuộc */}
               <div
-                onClick={() => setIsEditModalOpen(true)}
-                className="flex items-center gap-4 cursor-pointer group"
-                title="Bấm để thay đổi ban trực thuộc"
+                onClick={() => {
+                  if (isBCN) setIsEditModalOpen(true)
+                }}
+                className={`flex items-center gap-4 ${isBCN ? 'cursor-pointer group' : ''}`}
+                title={isBCN ? 'Bấm để thay đổi ban trực thuộc' : undefined}
               >
-                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs group-hover:bg-sky-100/80 group-hover:border-sky-300 transition-colors">
+                <div className={`w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs ${isBCN ? 'group-hover:bg-sky-100/80 group-hover:border-sky-300' : ''} transition-colors`}>
                   <Users className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-xs text-slate-400 font-medium block">
                     Ban trực thuộc
                   </span>
-                  <span className="text-base font-extrabold text-[#061651] group-hover:text-[#0284C7] transition-colors truncate block mt-0.5">
+                  <span className={`text-base font-extrabold text-[#061651] ${isBCN ? 'group-hover:text-[#0284C7]' : ''} transition-colors truncate block mt-0.5`}>
                     {currentMember.department_name}
                   </span>
                 </div>
@@ -411,18 +418,20 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
 
               {/* Field 4: Vị trí chức vụ */}
               <div
-                onClick={() => setIsEditModalOpen(true)}
-                className="flex items-center gap-4 cursor-pointer group"
-                title="Bấm để thay đổi vị trí chức vụ"
+                onClick={() => {
+                  if (isBCN) setIsEditModalOpen(true)
+                }}
+                className={`flex items-center gap-4 ${isBCN ? 'cursor-pointer group' : ''}`}
+                title={isBCN ? 'Bấm để thay đổi vị trí chức vụ' : undefined}
               >
-                <div className="w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs group-hover:bg-sky-100/80 group-hover:border-sky-300 transition-colors">
+                <div className={`w-11 h-11 rounded-full bg-[#F0F9FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-sky-200/80 shadow-2xs ${isBCN ? 'group-hover:bg-sky-100/80 group-hover:border-sky-300' : ''} transition-colors`}>
                   <Award className="w-5 h-5 text-[#0284C7]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-xs text-slate-400 font-medium block">
                     Vị trí chức vụ
                   </span>
-                  <span className="text-base font-extrabold text-[#061651] group-hover:text-[#0284C7] transition-colors truncate block mt-0.5">
+                  <span className={`text-base font-extrabold text-[#061651] ${isBCN ? 'group-hover:text-[#0284C7]' : ''} transition-colors truncate block mt-0.5`}>
                     {currentMember.position}
                   </span>
                 </div>

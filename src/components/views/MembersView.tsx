@@ -317,22 +317,18 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
             <span>{language === 'vi' ? 'Xuất file (.CSV)' : 'Export (.CSV)'}</span>
           </button>
 
-          {/* Nút Thêm thành viên mới */}
-          <button
-            type="button"
-            onClick={() => {
-              if (isBCN) {
-                setAddModalOpen(true)
-              } else {
-                alert('Chỉ Ban Chủ nhiệm mới có quyền thêm thành viên mới theo quy chế CLB.')
-              }
-            }}
-            className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95 cursor-pointer"
-            title={isBCN ? 'Thêm thành viên mới vào danh sách' : 'Chỉ Ban Chủ nhiệm có quyền'}
-          >
-            <UserPlus className="w-4 h-4 stroke-[2.2] flex-shrink-0" />
-            <span>{language === 'vi' ? 'Thêm Thành Viên' : 'Add Member'}</span>
-          </button>
+          {/* Nút Thêm thành viên mới (Chỉ Ban Chủ nhiệm có quyền) */}
+          {isBCN && (
+            <button
+              type="button"
+              onClick={() => setAddModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] transition shadow-xs hover:shadow flex items-center gap-1.5 active:scale-95 cursor-pointer"
+              title="Thêm thành viên mới vào danh sách (Quyền Ban Chủ nhiệm)"
+            >
+              <UserPlus className="w-4 h-4 stroke-[2.2] flex-shrink-0" />
+              <span>{language === 'vi' ? 'Thêm Thành Viên' : 'Add Member'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -740,34 +736,40 @@ export function MembersView({ onSelectMember, searchQuery: initialSearch = '' }:
                           </span>
                         </td>
 
-                        {/* 8. Thao tác Sửa & Xóa */}
+                        {/* 8. Thao tác Sửa & Xóa (Chỉ Ban Chủ nhiệm có quyền) */}
                         <td className="py-3 px-3 text-center align-middle whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setEditingMember(member)
-                              }}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-amber-800 bg-amber-50/70 hover:bg-amber-100 border border-amber-300/90 transition shadow-2xs inline-flex items-center gap-1 cursor-pointer active:scale-95"
-                              title={language === 'vi' ? 'Sửa thông tin' : 'Edit info'}
-                            >
-                              <Pencil className="w-3 h-3 flex-shrink-0 text-amber-700" />
-                              <span>{language === 'vi' ? 'Sửa' : 'Edit'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteMember(member)
-                              }}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50/70 hover:bg-rose-100 border border-rose-300/90 transition shadow-2xs inline-flex items-center gap-1 cursor-pointer active:scale-95"
-                              title={language === 'vi' ? 'Xóa thành viên' : 'Delete member'}
-                            >
-                              <Trash2 className="w-3 h-3 flex-shrink-0 text-rose-600" />
-                              <span>{language === 'vi' ? 'Xóa' : 'Delete'}</span>
-                            </button>
-                          </div>
+                          {isBCN ? (
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingMember(member)
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-xs font-bold text-amber-800 bg-amber-50/70 hover:bg-amber-100 border border-amber-300/90 transition shadow-2xs inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                                title={language === 'vi' ? 'Sửa thông tin hồ sơ' : 'Edit info'}
+                              >
+                                <Pencil className="w-3 h-3 flex-shrink-0 text-amber-700" />
+                                <span>{language === 'vi' ? 'Sửa' : 'Edit'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteMember(member)
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50/70 hover:bg-rose-100 border border-rose-300/90 transition shadow-2xs inline-flex items-center gap-1 cursor-pointer active:scale-95"
+                                title={language === 'vi' ? 'Xóa thành viên' : 'Delete member'}
+                              >
+                                <Trash2 className="w-3 h-3 flex-shrink-0 text-rose-600" />
+                                <span>{language === 'vi' ? 'Xóa' : 'Delete'}</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic select-none">
+                              Chỉ xem
+                            </span>
+                          )}
                         </td>
                       </tr>
                     )
