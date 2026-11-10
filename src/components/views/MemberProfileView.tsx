@@ -330,27 +330,27 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
               </div>
             </div>
 
-            {/* Khối nút thao tác */}
-            <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0 relative z-10 flex-wrap">
+            {/* Khối nút thao tác (Thu nhỏ gọn gàng, đồng bộ chuẩn design system của dự án) */}
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 relative z-10 flex-wrap">
               {canScoreMember(currentMember).allowed && (
                 <button
                   type="button"
                   onClick={() => setIsScoreModalOpen(true)}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-[13px] font-bold shadow-2xs shadow-emerald-600/20 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                   title={isBCN ? 'Chấm và duyệt điểm trực tiếp' : 'Đề xuất cho điểm thành viên (Ban Chủ nhiệm phê duyệt cuối)'}
                 >
-                  <PlusCircle className="w-4 h-4 text-white" />
+                  <PlusCircle className="w-3.5 h-3.5 text-white stroke-[2.2]" />
                   <span>{isBCN ? 'Chấm / Duyệt Điểm' : 'Đề Xuất Cho Điểm'}</span>
                 </button>
               )}
 
-              {/* Nút Chỉnh sửa màu xanh dương #0284C7 chuẩn ảnh 1 */}
+              {/* Nút Chỉnh sửa màu xanh dương #0284C7 chuẩn nhận diện dự án */}
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-sm font-bold shadow-xs flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs sm:text-[13px] font-bold shadow-2xs shadow-[#0284C7]/20 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
-                <Pencil className="w-4 h-4 text-white" />
+                <Pencil className="w-3.5 h-3.5 text-white stroke-[2]" />
                 <span>Chỉnh sửa</span>
               </button>
             </div>
