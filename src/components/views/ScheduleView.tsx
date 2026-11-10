@@ -10,6 +10,7 @@ import {
   Circle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Printer,
   Plus,
   Search,
@@ -2395,31 +2396,34 @@ export function ScheduleView() {
                       <label className="block text-xs font-bold text-[#061651] dark:text-slate-200 mb-1.5">
                         Ca hoạt động: <span className="text-rose-500">*</span>
                       </label>
-                      <select
-                        value={editSession}
-                        onChange={(e) => {
-                          const val = e.target.value as 'morning' | 'afternoon' | 'evening'
-                          setEditSession(val)
-                          if (val === 'morning') {
-                            setEditStartTime('08:00')
-                            setEditEndTime('12:00')
-                            setEditTime('08:00 - 12:00')
-                          } else if (val === 'afternoon') {
-                            setEditStartTime('13:30')
-                            setEditEndTime('17:30')
-                            setEditTime('13:30 - 17:30')
-                          } else if (val === 'evening') {
-                            setEditStartTime('18:30')
-                            setEditEndTime('21:30')
-                            setEditTime('18:30 - 21:30')
-                          }
-                        }}
-                        className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
-                      >
-                        <option value="morning">Ca Sáng</option>
-                        <option value="afternoon">Ca Chiều</option>
-                        <option value="evening">Ca Tối</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={editSession}
+                          onChange={(e) => {
+                            const val = e.target.value as 'morning' | 'afternoon' | 'evening'
+                            setEditSession(val)
+                            if (val === 'morning') {
+                              setEditStartTime('08:00')
+                              setEditEndTime('12:00')
+                              setEditTime('08:00 - 12:00')
+                            } else if (val === 'afternoon') {
+                              setEditStartTime('13:30')
+                              setEditEndTime('17:30')
+                              setEditTime('13:30 - 17:30')
+                            } else if (val === 'evening') {
+                              setEditStartTime('18:30')
+                              setEditEndTime('21:30')
+                              setEditTime('18:30 - 21:30')
+                            }
+                          }}
+                          className="w-full h-11 pl-4 pr-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer appearance-none shadow-2xs"
+                        >
+                          <option value="morning">Ca Sáng</option>
+                          <option value="afternoon">Ca Chiều</option>
+                          <option value="evening">Ca Tối</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                       <p className="text-[11px] text-slate-400 mt-1 font-normal">
                         Khung ca sinh hoạt chính thức của CLB
                       </p>
@@ -2543,17 +2547,20 @@ export function ScheduleView() {
                       <label className="block text-xs font-bold text-[#061651] dark:text-slate-200 mb-1.5">
                         Đơn vị phụ trách:
                       </label>
-                      <select
-                        value={editDepartment}
-                        onChange={(e) => setEditDepartment(e.target.value)}
-                        className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
-                      >
-                        <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
-                        <option value="Ban Truyền thông">Ban Truyền thông</option>
-                        <option value="Ban Tư vấn">Ban Tư vấn</option>
-                        <option value="Ban Nhân sự">Ban Nhân sự</option>
-                        <option value="Toàn CLB">Toàn CLB</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={editDepartment}
+                          onChange={(e) => setEditDepartment(e.target.value)}
+                          className="w-full h-11 pl-4 pr-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer appearance-none shadow-2xs"
+                        >
+                          <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
+                          <option value="Ban Truyền thông">Ban Truyền thông</option>
+                          <option value="Ban Tư vấn">Ban Tư vấn</option>
+                          <option value="Ban Nhân sự">Ban Nhân sự</option>
+                          <option value="Toàn CLB">Toàn CLB</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
 
@@ -2762,31 +2769,34 @@ export function ScheduleView() {
                     <label className="block text-xs font-bold text-[#061651] dark:text-slate-200 mb-1.5">
                       Ca hoạt động: <span className="text-rose-500">*</span>
                     </label>
-                    <select
-                      value={newSession}
-                      onChange={(e) => {
-                        const val = e.target.value as 'morning' | 'afternoon' | 'evening'
-                        setNewSession(val)
-                        if (val === 'morning') {
-                          setNewStartTime('08:00')
-                          setNewEndTime('12:00')
-                          setNewTime('08:00 - 12:00')
-                        } else if (val === 'afternoon') {
-                          setNewStartTime('13:30')
-                          setNewEndTime('17:30')
-                          setNewTime('13:30 - 17:30')
-                        } else if (val === 'evening') {
-                          setNewStartTime('18:30')
-                          setNewEndTime('21:30')
-                          setNewTime('18:30 - 21:30')
-                        }
-                      }}
-                      className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
-                    >
-                      <option value="morning">Ca Sáng</option>
-                      <option value="afternoon">Ca Chiều</option>
-                      <option value="evening">Ca Tối</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={newSession}
+                        onChange={(e) => {
+                          const val = e.target.value as 'morning' | 'afternoon' | 'evening'
+                          setNewSession(val)
+                          if (val === 'morning') {
+                            setNewStartTime('08:00')
+                            setNewEndTime('12:00')
+                            setNewTime('08:00 - 12:00')
+                          } else if (val === 'afternoon') {
+                            setNewStartTime('13:30')
+                            setNewEndTime('17:30')
+                            setNewTime('13:30 - 17:30')
+                          } else if (val === 'evening') {
+                            setNewStartTime('18:30')
+                            setNewEndTime('21:30')
+                            setNewTime('18:30 - 21:30')
+                          }
+                        }}
+                        className="w-full h-11 pl-4 pr-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer appearance-none shadow-2xs"
+                      >
+                        <option value="morning">Ca Sáng</option>
+                        <option value="afternoon">Ca Chiều</option>
+                        <option value="evening">Ca Tối</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                     <p className="text-[11px] text-slate-400 mt-1 font-normal">
                       Khung ca sinh hoạt chính thức của CLB
                     </p>
@@ -2910,17 +2920,20 @@ export function ScheduleView() {
                     <label className="block text-xs font-bold text-[#061651] dark:text-slate-200 mb-1.5">
                       Đơn vị phụ trách:
                     </label>
-                    <select
-                      value={newDepartment}
-                      onChange={(e) => setNewDepartment(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer"
-                    >
-                      <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
-                      <option value="Ban Truyền thông">Ban Truyền thông</option>
-                      <option value="Ban Tư vấn">Ban Tư vấn</option>
-                      <option value="Ban Nhân sự">Ban Nhân sự</option>
-                      <option value="Toàn CLB">Toàn CLB</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={newDepartment}
+                        onChange={(e) => setNewDepartment(e.target.value)}
+                        className="w-full h-11 pl-4 pr-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:ring-2 focus:ring-[#0284C7] focus:border-transparent outline-none transition cursor-pointer appearance-none shadow-2xs"
+                      >
+                        <option value="Ban Chủ nhiệm">Ban Chủ nhiệm</option>
+                        <option value="Ban Truyền thông">Ban Truyền thông</option>
+                        <option value="Ban Tư vấn">Ban Tư vấn</option>
+                        <option value="Ban Nhân sự">Ban Nhân sự</option>
+                        <option value="Toàn CLB">Toàn CLB</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
