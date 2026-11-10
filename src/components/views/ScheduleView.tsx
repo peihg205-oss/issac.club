@@ -1253,7 +1253,7 @@ export function ScheduleView() {
             </h1>
 
             {/* Sticker Welcome to iSSAC to rõ, căn cân chuẩn dòng tiêu đề, nhấp nháy êm ái nhẹ nhàng */}
-            <div className="relative group cursor-pointer inline-flex items-center shrink-0 select-none translate-y-1 sm:translate-y-1.5">
+            <div className="relative group cursor-pointer inline-flex items-center shrink-0 select-none">
               <style>{`
                 @keyframes issac-gentle-blink-shake {
                   0%, 100% {
@@ -1292,7 +1292,7 @@ export function ScheduleView() {
               <img
                 src="/welcome-to-issac.png"
                 alt="Welcome to iSSAC"
-                className="h-13 sm:h-16 md:h-[68px] w-auto object-contain issac-sticker-anim hover:scale-110 transition-transform duration-300"
+                className="h-7 sm:h-8 md:h-[34px] w-auto object-contain issac-sticker-anim hover:scale-110 transition-transform duration-300"
               />
             </div>
           </div>
