@@ -123,9 +123,9 @@ const translations: Record<Language, Record<string, string>> = {
     'chart.attendance_short': 'Chuyên cần',
     'chart.total_bonus': 'Tổng điểm cộng',
     'chart.growth_summary': 'Đánh giá tổng kết: Toàn Câu Lạc bộ duy trì đà tăng trưởng chuyên cần và điểm rèn luyện liên tục qua 3 tháng (+6.2 điểm tích luỹ).',
-    'chart.term_tag': 'Nhiệm kỳ 2025 - 2026',
+    'chart.term_tag': 'Nhiệm kỳ 2026 - 2027',
     'chart.new_cycle_note': 'Chu kỳ mới khởi tạo - Mốc xuất phát 60đ (chưa phát sinh điểm cộng/trừ)',
-    'chart.term_period_note': 'Kỳ 1 (2025 - 2026)',
+    'chart.term_period_note': 'Kì 1 (2026 - 2027)',
 
     // Checkin View
     'checkin.title': 'Quản lý điểm danh sự kiện iSSAC',
@@ -352,9 +352,9 @@ const translations: Record<Language, Record<string, string>> = {
     'chart.attendance_short': 'Attendance',
     'chart.total_bonus': 'Total Bonus',
     'chart.growth_summary': 'Summary: The entire Club maintained continuous growth in attendance and activity scores over 3 months (+6.2 accumulated points).',
-    'chart.term_tag': 'Term 2025 - 2026',
+    'chart.term_tag': 'Term 2026 - 2027',
     'chart.new_cycle_note': 'New cycle initialized - 60pts starting line (no bonus/penalty recorded yet)',
-    'chart.term_period_note': 'Period 1 (2025 - 2026)',
+    'chart.term_period_note': 'Semester 1 (2026 - 2027)',
 
     // Checkin View
     'checkin.title': 'iSSAC Event Attendance Management',
