@@ -389,7 +389,7 @@ export function ComparisonChart({
         color: idx === 0 ? '#94A3B8' : idx === 1 ? '#3B82F6' : '#1351D8',
       }
     })
-  }, [periods, members, customPeriodScores])
+  }, [periods, members, customPeriodScores, proposals])
 
   const sortOptions: Array<{ value: SortOption; label: string }> = useMemo(
     () => [

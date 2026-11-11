@@ -388,12 +388,8 @@ export function reconcileMemberScores(
     const delta = deltaMap.get(m.member_code) || 0
     // Mốc bắt đầu chuẩn là 60 điểm cho tất cả thành viên trong chu kỳ thi đua mới (Quy chế P01)
     const baseScore = 60
-    const calculatedScore = deltaMap.has(m.member_code)
-      ? Math.max(0, Math.min(100, baseScore + delta))
-      : (m.current_score !== undefined ? m.current_score : 60)
-    const t02Count = t02CountMap.has(m.member_code)
-      ? t02CountMap.get(m.member_code)!
-      : (m.absent_count_t02 ?? 0)
+    const calculatedScore = Math.max(0, Math.min(100, baseScore + delta))
+    const t02Count = t02CountMap.get(m.member_code) || 0
     return {
       ...m,
       avatar_url: m.avatar_url || getMemberAvatarUrl(m) || undefined,
@@ -892,8 +888,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             } catch (e) {}
           }
 
-          // Đẩy ngay bản cập nhật mới nhất lên cloud nếu local có sửa đổi mới hơn
-          if (hasLocalNewer) {
+          // Đẩy ngay bản cập nhật mới nhất lên cloud nếu local có sửa đổi mới hơn HOẶC cloud đang chứa điểm số cũ chưa chuẩn hóa
+          const isDifferentFromCloudMembers = JSON.stringify(reconciled) !== JSON.stringify(safeCloudMembers)
+          if (hasLocalNewer || isDifferentFromCloudMembers) {
             syncToCloud({
               members: reconciled,
               deletedMemberCodes: Array.from(deletedCodes),
@@ -1344,9 +1341,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
     // Xử lý điều chỉnh điểm thi đua trực tiếp từ hồ sơ thành viên (Quyền Ban Chủ nhiệm)
     if (updates.current_score !== undefined) {
-      const oldScore = targetMember.current_score ?? 60
+      const currentPeriodDelta = updatedProps
+        .filter((p) => p.status === 'approved' && p.memberCode === memberCode && (p.periodId || 'month-2026-10') === targetPeriodId)
+        .reduce((sum, p) => sum + p.points, 0)
+      const currentScoreInPeriod = Math.min(100, Math.max(0, 60 + currentPeriodDelta))
       const targetScore = Math.min(100, Math.max(0, Number(updates.current_score) || 60))
-      const diff = targetScore - oldScore
+      const diff = targetScore - currentScoreInPeriod
 
       if (diff !== 0) {
         const adjustProp: ProposalItem = {
@@ -1358,7 +1358,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           criterionCode: diff > 0 ? 'K01' : 'P01',
           criterionName: diff > 0 ? 'BCN điều chỉnh điểm hồ sơ (+)' : 'BCN điều chỉnh điểm hồ sơ (-)',
           points: diff,
-          reason: `Ban Chủ nhiệm điều chỉnh trực tiếp điểm thi đua trong hồ sơ thành viên (${oldScore}đ -> ${targetScore}đ)`,
+          reason: `Ban Chủ nhiệm điều chỉnh trực tiếp điểm thi đua trong hồ sơ thành viên (${currentScoreInPeriod}đ -> ${targetScore}đ)`,
           proposedBy: 'Ban Chủ nhiệm',
           proposedByRole: 'bcn',
           status: 'approved',

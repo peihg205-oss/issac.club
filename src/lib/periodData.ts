@@ -562,18 +562,17 @@ export function calculatePeriodLeaderboard(
     }))
   }
 
-  // 5. Chu kỳ đang mở (active/current): phản ánh trực tiếp điểm số thực tế
+  // 5. Chu kỳ đang mở (active/current): phản ánh trực tiếp điểm số thực tế từ sổ cái
   if (!isLocked && (currentPeriod?.isCurrent || periodId.startsWith('month-2026') || periodId.startsWith('quarter-2026'))) {
     const list = activeMembers.map((m) => {
-      const delta = currentPeriod?.isCurrent
-        ? (m.current_score - STANDARD_MONTHLY_BASELINE)
-        : getMemberDeltaForPeriod(m.member_code, periodId)
-      const finalScore = currentPeriod?.isCurrent
-        ? m.current_score
-        : Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
+      const delta = getMemberDeltaForPeriod(m.member_code, periodId)
+      const finalScore = Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
 
       return {
-        member: m,
+        member: {
+          ...m,
+          current_score: currentPeriod?.isCurrent ? finalScore : m.current_score,
+        },
         baseScore: STANDARD_MONTHLY_BASELINE,
         earnedDelta: delta,
         finalScore,
@@ -638,7 +637,7 @@ export function calculatePeriodLeaderboard(
     const list = activeMembers.map((m) => {
       const deltaAug = AUGUST_2025_DELTAS[m.member_code] ?? 8
       const deltaSep = SEPTEMBER_2025_DELTAS[m.member_code] ?? 10
-      const deltaOct = m.current_score - STANDARD_MONTHLY_BASELINE
+      const deltaOct = getMemberDeltaForPeriod(m.member_code, 'month-2026-10')
       const totalYearNet = deltaAug + deltaSep + deltaOct
       const avgYearScore = Math.round(STANDARD_MONTHLY_BASELINE + totalYearNet / 3)
       return {
