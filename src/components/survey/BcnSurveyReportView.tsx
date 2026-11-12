@@ -8,6 +8,7 @@ import {
   Star,
   Award,
   Lock,
+  Unlock,
   MessageSquare,
   Filter,
   Search,
@@ -479,34 +480,25 @@ export function BcnSurveyReportView({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* 1. TOP HEADER & CONTROLS */}
+      {/* 1. TOP HEADER & CONTROLS (Bố cục khoa học, linh hoạt khi tiêu đề dài, chuẩn style dự án) */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#061651] dark:text-white tracking-tight">
-                Báo cáo Đánh giá Khảo sát Core Team
-              </h2>
-            </div>
-            <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400">
-              {reportTab === 'config' ? (
-                <span>Thiết lập các đợt mở phiếu khảo sát, quản lý câu hỏi mở rộng và duy trì bộ 4 tiêu chí chuẩn</span>
-              ) : reportTab === 'feedbacks' ? (
-                <span>
-                  Toàn bộ nhận xét chéo, đánh giá chi tiết 4 tiêu chí và ghi chú BCN trong sự kiện{' '}
-                  <strong className="text-[#061651] dark:text-slate-200">{selectedEvent || 'Chưa chọn sự kiện'}</strong>
-                </span>
-              ) : (
-                <span>
-                  Tổng hợp điểm số, biểu đồ phân tích và toàn bộ nhận xét chéo của các thành viên trong sự kiện{' '}
-                  <strong className="text-[#061651] dark:text-slate-200">{selectedEvent || 'Chưa chọn sự kiện'}</strong>
-                </span>
-              )}
+        {/* Hàng 1: Tiêu đề báo cáo & Cụm thao tác xuất/xem trang */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#061651] dark:text-white tracking-tight leading-tight">
+              Báo cáo Đánh giá Khảo sát Core Team
+            </h2>
+            <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 font-normal leading-relaxed">
+              {reportTab === 'config'
+                ? 'Thiết lập các đợt mở phiếu khảo sát, quản lý câu hỏi mở rộng và duy trì bộ 4 tiêu chí chuẩn của CLB.'
+                : reportTab === 'feedbacks'
+                ? 'Tổng hợp toàn bộ nhận xét chéo, đánh giá chi tiết 4 tiêu chí và ghi chú quản lý theo từng thành viên.'
+                : 'Tổng hợp điểm số trung bình, biểu đồ phân tích và tiến trình đánh giá của Core Team theo từng sự kiện.'}
             </p>
           </div>
 
-          {/* Action buttons (Style chuẩn theo từng tab) */}
-          <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          {/* Action buttons hàng đầu (Đồng hàng, không rớt dòng bậc thang) */}
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
             {reportTab === 'config' ? (
               <>
                 <button
@@ -522,17 +514,18 @@ export function BcnSurveyReportView({
                   <button
                     type="button"
                     onClick={onSwitchToSurvey}
-                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
                   >
                     <Eye className="w-4 h-4 text-[#0284C7] shrink-0" />
-                    <span>Xem trang điền phiếu</span>
+                    <span className="hidden sm:inline">Trang điền phiếu</span>
+                    <span className="sm:hidden">Điền phiếu</span>
                   </button>
                 )}
 
                 <button
                   type="button"
                   onClick={handleExportReport}
-                  className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+                  className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
                   title="Xuất báo cáo tổng hợp"
                 >
                   <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
@@ -541,6 +534,17 @@ export function BcnSurveyReportView({
               </>
             ) : (
               <>
+                {onSwitchToSurvey && (
+                  <button
+                    type="button"
+                    onClick={onSwitchToSurvey}
+                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-[#061651] dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
+                  >
+                    <Eye className="w-4 h-4 text-[#0284C7] shrink-0" />
+                    <span>Trang điền phiếu</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={handleExportReport}
@@ -550,49 +554,19 @@ export function BcnSurveyReportView({
                   <Download className="w-4 h-4 text-[#0284C7] shrink-0" />
                   <span>Xuất dữ liệu</span>
                 </button>
-
-                {currentEventObj && (
-                  <button
-                    type="button"
-                    onClick={handleToggleLockCurrentEvent}
-                    className={`h-10 px-3.5 sm:px-4 rounded-xl font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border select-none ${
-                      isSelectedEventLocked
-                        ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-100'
-                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100'
-                    }`}
-                    title={isSelectedEventLocked ? 'Mở lại kỳ khảo sát' : 'Chốt và khóa sổ điểm khảo sát'}
-                  >
-                    <Lock className="w-4 h-4 shrink-0" />
-                    <span>
-                      {isSelectedEventLocked
-                        ? 'Đã khóa sổ (Mở lại)'
-                        : 'Khóa sổ điểm khảo sát'}
-                    </span>
-                  </button>
-                )}
-
-                {onSwitchToSurvey && (
-                  <button
-                    type="button"
-                    onClick={onSwitchToSurvey}
-                    className="h-10 px-3.5 sm:px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer select-none"
-                  >
-                    <Eye className="w-4 h-4 text-[#0284C7] shrink-0" />
-                    <span>Trang điền phiếu</span>
-                  </button>
-                )}
               </>
             )}
           </div>
         </div>
 
-        {/* Sub-tab Switcher: Charts vs Feedbacks vs Config (Khớp chuẩn Ảnh 3) */}
-        <div className="flex items-center justify-between gap-3 pt-4 flex-wrap">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex-wrap">
+        {/* Hàng 2: Thanh điều hướng 3 Tab & Ngữ cảnh Sự kiện khảo sát (Gắn kết logic, co giãn linh hoạt khi tiêu đề dài) */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3.5 pt-4">
+          {/* Vế trái: 3 Tab Switcher */}
+          <div className="inline-flex items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 shrink-0 self-start xl:self-center overflow-x-auto max-w-full">
             <button
               type="button"
               onClick={() => setReportTab('charts')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none whitespace-nowrap focus:outline-none focus:ring-0 ${
                 reportTab === 'charts'
                   ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -605,14 +579,14 @@ export function BcnSurveyReportView({
             <button
               type="button"
               onClick={() => setReportTab('feedbacks')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none whitespace-nowrap focus:outline-none focus:ring-0 ${
                 reportTab === 'feedbacks'
                   ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <MessageSquare className="w-4 h-4 text-[#0284C7] shrink-0" />
-              <span>Đọc nhận xét chi tiết từng người</span>
+              <span>Đọc nhận xét chi tiết</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-100 text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300">
                 {eventFeedbacks.length}
               </span>
@@ -621,119 +595,174 @@ export function BcnSurveyReportView({
             <button
               type="button"
               onClick={() => setReportTab('config')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none focus:outline-none focus:ring-0 ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none whitespace-nowrap focus:outline-none focus:ring-0 ${
                 reportTab === 'config'
                   ? 'bg-white dark:bg-slate-900 text-[#061651] dark:text-white shadow-xs font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Sliders className="w-4 h-4 text-[#0284C7] shrink-0" />
-              <span>Tạo sự kiện & Câu hỏi đánh giá</span>
+              <span>Tạo sự kiện & Câu hỏi</span>
             </button>
           </div>
 
-          {/* Hộp chọn sự kiện khảo sát dành cho BCN (Chuẩn theo Ảnh 3) */}
-          <div ref={eventPickerRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setIsEventPickerOpen(!isEventPickerOpen)}
-              className="h-10 sm:h-11 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 hover:border-[#0284C7] dark:hover:border-sky-500 shadow-2xs hover:shadow-xs transition-all cursor-pointer group text-left flex items-center gap-2.5 focus:outline-none focus:ring-0 active:scale-95"
-            >
-              <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 pr-1">
-                <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block leading-tight">
-                  SỰ KIỆN KHẢO SÁT
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-[13px] font-black text-[#061651] dark:text-white truncate max-w-[140px] sm:max-w-[180px]">
-                    {selectedEvent || 'Chưa chọn sự kiện'}
-                  </span>
-                  {selectedEvent && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-sky-100 text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300">
-                      {eventFeedbacks.length} lượt
-                    </span>
-                  )}
-                </div>
-              </div>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform shrink-0 ${
-                  isEventPickerOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
-
-            {isEventPickerOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95 duration-150">
-                <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <span>Chọn đợt khảo sát</span>
-                  <span>{surveyEvents.length} sự kiện</span>
-                </div>
-
-                <div className="max-h-60 overflow-y-auto space-y-1 py-1">
-                  {surveyEvents.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-slate-400">
-                      Chưa có sự kiện khảo sát nào
+          {/* Vế phải: Cụm Chọn Sự kiện khảo sát & Trạng thái Khóa sổ (Gắn kết trực tiếp với sự kiện) */}
+          {reportTab !== 'config' ? (
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap min-w-0 self-start xl:self-auto w-full xl:w-auto">
+              {/* Dropdown chọn sự kiện khảo sát - Rộng rãi, co giãn linh hoạt theo tiêu đề dài */}
+              <div ref={eventPickerRef} className="relative flex-1 xl:flex-initial min-w-0 sm:min-w-[240px] max-w-full xl:max-w-[400px]">
+                <button
+                  type="button"
+                  onClick={() => setIsEventPickerOpen(!isEventPickerOpen)}
+                  className="w-full h-10 sm:h-11 px-3 sm:px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 hover:border-[#0284C7] dark:hover:border-sky-500 shadow-2xs hover:shadow-xs transition-all cursor-pointer group text-left flex items-center justify-between gap-2.5 focus:outline-none focus:ring-0 active:scale-[0.99]"
+                  title={selectedEvent || 'Chọn sự kiện khảo sát'}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4" />
                     </div>
-                  ) : (
-                    surveyEvents.map((evt) => {
-                      const count = feedbackCountsByEvent[evt.name] || 0
-                      const isSelected = selectedEvent === evt.name
-                      return (
-                        <button
-                          key={evt.id}
-                          type="button"
-                          onClick={() => {
-                            onSelectEvent?.(evt.name)
-                            setIsEventPickerOpen(false)
-                          }}
-                          className={`w-full text-left p-2.5 rounded-xl transition flex items-center justify-between gap-2 cursor-pointer ${
-                            isSelected
-                              ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0284C7]'
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs sm:text-sm font-bold truncate block">
-                                {evt.name}
-                              </span>
-                              {evt.status === 'active' ? (
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Đang mở" />
-                              ) : (
-                                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" title="Đã đóng" />
-                              )}
-                            </div>
-                            <span className="text-[11px] text-slate-400 block truncate">
-                              {evt.date}
-                            </span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
-                            {count} lượt
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block leading-tight">
+                        SỰ KIỆN KHẢO SÁT
+                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs sm:text-[13px] font-black text-[#061651] dark:text-white truncate block">
+                          {selectedEvent || 'Chưa chọn sự kiện'}
+                        </span>
+                        {selectedEvent && (
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-sky-100 text-[#0284C7] dark:bg-sky-950/60 dark:text-sky-300 shrink-0">
+                            {eventFeedbacks.length} lượt
                           </span>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform shrink-0 ${
+                      isEventPickerOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
 
-                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReportTab('config')
-                      setIsEventPickerOpen(false)
-                    }}
-                    className="w-full py-2 px-3 text-center text-xs font-bold text-[#0284C7] hover:bg-sky-50 dark:hover:bg-sky-950/50 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>Quản lý thiết lập tất cả sự kiện</span>
-                  </button>
-                </div>
+                {/* Dropdown menu sổ xuống */}
+                {isEventPickerOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95 duration-150">
+                    <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <span>Chọn đợt khảo sát</span>
+                      <span>{surveyEvents.length} sự kiện</span>
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto space-y-1 py-1">
+                      {surveyEvents.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-slate-400">
+                          Chưa có sự kiện khảo sát nào
+                        </div>
+                      ) : (
+                        surveyEvents.map((evt) => {
+                          const count = feedbackCountsByEvent[evt.name] || 0
+                          const isSelected = selectedEvent === evt.name
+                          return (
+                            <button
+                              key={evt.id}
+                              type="button"
+                              onClick={() => {
+                                onSelectEvent?.(evt.name)
+                                setIsEventPickerOpen(false)
+                              }}
+                              className={`w-full text-left p-2.5 rounded-xl transition flex items-center justify-between gap-2 cursor-pointer ${
+                                isSelected
+                                  ? 'bg-sky-50 dark:bg-sky-950/60 text-[#0284C7]'
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'
+                              }`}
+                              title={evt.name}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs sm:text-sm font-bold truncate block">
+                                    {evt.name}
+                                  </span>
+                                  {evt.status === 'active' ? (
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Đang mở" />
+                                  ) : (
+                                    <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" title="Đã đóng" />
+                                  )}
+                                </div>
+                                <span className="text-[11px] text-slate-400 block truncate">
+                                  {evt.date}
+                                </span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                                {count} lượt
+                              </span>
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+
+                    <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReportTab('config')
+                          setIsEventPickerOpen(false)
+                        }}
+                        className="w-full py-2 px-3 text-center text-xs font-bold text-[#0284C7] hover:bg-sky-50 dark:hover:bg-sky-950/50 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                        <span>Quản lý thiết lập tất cả sự kiện</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Trạng thái sự kiện (Đang mở / Đã khóa sổ) */}
+              {isSelectedEventLocked ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-2xs whitespace-nowrap shrink-0">
+                  <Lock className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Đã khóa sổ</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Đang mở</span>
+                </span>
+              )}
+
+              {/* Nút Khóa sổ / Mở lại ngay bên cạnh sự kiện! */}
+              {currentEventObj && (
+                <button
+                  type="button"
+                  onClick={handleToggleLockCurrentEvent}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition active:scale-95 whitespace-nowrap cursor-pointer shrink-0 focus:outline-none ${
+                    isSelectedEventLocked
+                      ? 'border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50'
+                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/20'
+                  }`}
+                  title={isSelectedEventLocked ? 'Mở lại kỳ khảo sát' : 'Chốt và khóa sổ điểm khảo sát'}
+                >
+                  {isSelectedEventLocked ? (
+                    <>
+                      <Unlock className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      <span>Mở lại</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5 text-white" />
+                      <span>Khóa sổ</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 shrink-0 self-start xl:self-center">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-50 dark:bg-sky-950/40 text-[#0284C7] dark:text-sky-300 border border-sky-200/80 dark:border-sky-800">
+                <span>Tổng số: {surveyEvents.length} đợt khảo sát</span>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
