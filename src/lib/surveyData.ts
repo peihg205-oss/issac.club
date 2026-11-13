@@ -243,7 +243,7 @@ export function deleteFeedbacksByEvent(eventName: string): SurveyFeedbackItem[] 
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(SURVEY_STORAGE_KEY)
-    const current: SurveyFeedbackItem[] = raw !== null ? (JSON.parse(raw) || []) : INITIAL_SURVEY_FEEDBACKS
+    const current: SurveyFeedbackItem[] = raw !== null ? (JSON.parse(raw) || []) : []
     if (Array.isArray(current)) {
       const updated = current.filter((f) => f.event !== eventName)
       localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(updated))
@@ -253,6 +253,20 @@ export function deleteFeedbacksByEvent(eventName: string): SurveyFeedbackItem[] 
   } catch (err) {
     console.error('Failed to delete feedbacks for event:', err)
     return []
+  }
+}
+
+// Đồng bộ dữ liệu khảo sát đa thiết bị qua Supabase Cloud API
+export function syncSurveyToCloud(payload: Record<string, any>): void {
+  if (typeof window === 'undefined') return
+  try {
+    fetch('/api/db/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch((e) => console.error('Survey cloud sync notice:', e))
+  } catch (err) {
+    console.error('Failed to trigger survey cloud sync:', err)
   }
 }
 
@@ -266,6 +280,12 @@ export function saveNewSurveyFeedback(item: SurveyFeedbackItem): SurveyFeedbackI
     )
     const updated = [item, ...filtered]
     localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(updated))
+
+    syncSurveyToCloud({
+      action: 'save_survey_feedback',
+      surveyFeedbacks: updated,
+    })
+
     window.dispatchEvent(new Event('storage'))
     return updated
   } catch (err) {
@@ -277,17 +297,20 @@ export function saveNewSurveyFeedback(item: SurveyFeedbackItem): SurveyFeedbackI
 export function getStoredSurveyEvents(): SurveyEventItem[] {
   if (typeof window === 'undefined') return INITIAL_SURVEY_EVENTS
   try {
-    // 1. Tuyệt đối không bao giờ cho phép sự kiện T10 chính thức bị chặn bởi deletedIds
-    removeDeletedSurveyEventId('evt-core-t10')
     const deletedIds = getDeletedSurveyEventIds()
-
-    let events: SurveyEventItem[] = []
     const raw = localStorage.getItem(SURVEY_EVENTS_STORAGE_KEY)
 
+    // Nếu chưa từng có dữ liệu lưu và chưa có ID nào bị xóa -> Khởi tạo mặc định lần đầu
+    if (raw === null && deletedIds.size === 0) {
+      localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(INITIAL_SURVEY_EVENTS))
+      return [...INITIAL_SURVEY_EVENTS]
+    }
+
+    let events: SurveyEventItem[] = []
     if (raw) {
       try {
         const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           events = parsed.filter((e) => e && e.id && !deletedIds.has(e.id))
         }
       } catch (err) {
@@ -295,43 +318,10 @@ export function getStoredSurveyEvents(): SurveyEventItem[] {
       }
     }
 
-    // 2. Tự động kiểm tra: Nếu trong kho phản hồi (feedbacks) đã có nhận xét thuộc sự kiện nào thì sự kiện đó PHẢI TỒN TẠI
-    try {
-      const feedbacks = getStoredSurveyFeedbacks()
-      feedbacks.forEach((f) => {
-        if (f.event && !events.some((e) => e.name.toLowerCase() === f.event.toLowerCase())) {
-          events.push({
-            id: f.event.includes('Core Team T10') ? 'evt-core-t10' : `evt-${encodeURIComponent(f.event).slice(0, 20)}`,
-            name: f.event,
-            date: '2026-11-07',
-            endDate: '2026-11-30',
-            status: 'active',
-            description: 'Đánh giá hoạt động Core Team CLB iSSAC',
-            targetGroup: 'Toàn bộ Core Team (trừ BCN)',
-            createdAt: '2026-11-07T08:00:00.000Z',
-          })
-        }
-      })
-    } catch {}
-
-    // 3. Đảm bảo sự kiện T10 cốt lõi luôn luôn có mặt trong danh sách
-    const hasT10 = events.some(
-      (e) => e.name.toLowerCase().includes('core team t10') || e.id === 'evt-core-t10'
-    )
-    if (!hasT10) {
-      events = [INITIAL_SURVEY_EVENTS[0], ...events]
-    }
-
-    if (events.length === 0) {
-      events = [...INITIAL_SURVEY_EVENTS]
-    }
-
-    // Đồng bộ ngược lại vào localStorage để toàn bộ các view đọc chuẩn xác
-    localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(events))
     return events
   } catch (err) {
     console.error('Failed to get survey events:', err)
-    return INITIAL_SURVEY_EVENTS
+    return []
   }
 }
 
@@ -343,6 +333,13 @@ export function saveNewSurveyEvent(item: SurveyEventItem): SurveyEventItem[] {
     const filtered = current.filter((e) => e.id !== item.id && e.name.toLowerCase() !== item.name.toLowerCase())
     const updated = [item, ...filtered]
     localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(updated))
+
+    syncSurveyToCloud({
+      action: 'save_survey_event',
+      surveyEvents: updated,
+      deletedSurveyEventIds: Array.from(getDeletedSurveyEventIds()),
+    })
+
     window.dispatchEvent(new Event('storage'))
     return updated
   } catch (err) {
@@ -357,6 +354,12 @@ export function updateSurveyEventStatus(id: string, status: 'active' | 'closed')
     const current = getStoredSurveyEvents()
     const updated = current.map((e) => (e.id === id ? { ...e, status } : e))
     localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(updated))
+
+    syncSurveyToCloud({
+      action: 'update_survey_event_status',
+      surveyEvents: updated,
+    })
+
     window.dispatchEvent(new Event('storage'))
     return updated
   } catch (err) {
@@ -378,6 +381,7 @@ export function deleteSurveyEvent(id: string): SurveyEventItem[] {
     if (targetEvent) {
       try {
         localStorage.removeItem(`issac_survey_evaluations_${encodeURIComponent(targetEvent.name)}`)
+        localStorage.removeItem(`issac_survey_evaluations_v5_${encodeURIComponent(targetEvent.name)}`)
         localStorage.removeItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${targetEvent.id}`)
         localStorage.removeItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${encodeURIComponent(targetEvent.name)}`)
         deleteFeedbacksByEvent(targetEvent.name)
@@ -385,6 +389,14 @@ export function deleteSurveyEvent(id: string): SurveyEventItem[] {
         console.error('Error cleaning event artifacts:', cleanErr)
       }
     }
+
+    // Đẩy cập nhật xóa sự kiện lên Cloud tức thì để điện thoại và các thiết bị khác nhận ngay
+    syncSurveyToCloud({
+      action: 'delete_survey_event',
+      surveyEventId: id,
+      surveyEvents: updated,
+      deletedSurveyEventIds: Array.from(getDeletedSurveyEventIds()),
+    })
 
     window.dispatchEvent(new Event('storage'))
     return updated
@@ -399,6 +411,13 @@ export function restoreDefaultSurveyEvents(): SurveyEventItem[] {
   try {
     localStorage.removeItem(SURVEY_DELETED_EVENTS_STORAGE_KEY)
     localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, JSON.stringify(INITIAL_SURVEY_EVENTS))
+
+    syncSurveyToCloud({
+      action: 'restore_survey_events',
+      surveyEvents: INITIAL_SURVEY_EVENTS,
+      deletedSurveyEventIds: [],
+    })
+
     window.dispatchEvent(new Event('storage'))
     return INITIAL_SURVEY_EVENTS
   } catch (err) {
@@ -430,9 +449,90 @@ export function saveCustomQuestions(eventId: string, questions: SurveyQuestionIt
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(`${SURVEY_QUESTIONS_STORAGE_KEY}_${eventId}`, JSON.stringify(questions))
+
+    syncSurveyToCloud({
+      action: 'save_survey_custom_questions',
+      surveyCustomQuestions: { [eventId]: questions },
+    })
+
     window.dispatchEvent(new Event('storage'))
   } catch (err) {
     console.error('Failed to save custom questions:', err)
+  }
+}
+
+// Hàm hợp nhất dữ liệu khảo sát từ Supabase Cloud vào LocalStorage khi chạy sync đa thiết bị
+export function applyCloudSurveyData(cloudData: {
+  surveyEvents?: SurveyEventItem[]
+  surveyFeedbacks?: SurveyFeedbackItem[]
+  deletedSurveyEventIds?: string[]
+  surveyCustomQuestions?: Record<string, SurveyQuestionItem[]>
+}): void {
+  if (typeof window === 'undefined' || !cloudData) return
+  let changed = false
+
+  try {
+    // 1. Cập nhật danh sách ID sự kiện đã xóa từ cloud (Tombstones)
+    if (Array.isArray(cloudData.deletedSurveyEventIds) && cloudData.deletedSurveyEventIds.length > 0) {
+      const currentDelSet = getDeletedSurveyEventIds()
+      let addedDel = false
+      cloudData.deletedSurveyEventIds.forEach((id) => {
+        if (!currentDelSet.has(id)) {
+          currentDelSet.add(id)
+          addedDel = true
+        }
+      })
+      if (addedDel) {
+        localStorage.setItem(SURVEY_DELETED_EVENTS_STORAGE_KEY, JSON.stringify(Array.from(currentDelSet)))
+        changed = true
+      }
+    }
+
+    const deletedIds = getDeletedSurveyEventIds()
+
+    // 2. Cập nhật danh sách sự kiện khảo sát từ cloud
+    if (Array.isArray(cloudData.surveyEvents)) {
+      const cleanEvents = cloudData.surveyEvents.filter((e) => e && e.id && !deletedIds.has(e.id))
+      const currentLocal = localStorage.getItem(SURVEY_EVENTS_STORAGE_KEY)
+      const currentStr = currentLocal || '[]'
+      const newStr = JSON.stringify(cleanEvents)
+      if (currentStr !== newStr) {
+        localStorage.setItem(SURVEY_EVENTS_STORAGE_KEY, newStr)
+        changed = true
+      }
+    }
+
+    // 3. Cập nhật danh sách nhận xét khảo sát từ cloud
+    if (Array.isArray(cloudData.surveyFeedbacks)) {
+      const currentFb = localStorage.getItem(SURVEY_STORAGE_KEY)
+      const currentFbStr = currentFb || '[]'
+      const newFbStr = JSON.stringify(cloudData.surveyFeedbacks)
+      if (currentFbStr !== newFbStr) {
+        localStorage.setItem(SURVEY_STORAGE_KEY, newFbStr)
+        changed = true
+      }
+    }
+
+    // 4. Cập nhật câu hỏi khảo sát từ cloud
+    if (cloudData.surveyCustomQuestions && typeof cloudData.surveyCustomQuestions === 'object') {
+      Object.entries(cloudData.surveyCustomQuestions).forEach(([eventId, questions]) => {
+        if (Array.isArray(questions)) {
+          const key = `${SURVEY_QUESTIONS_STORAGE_KEY}_${eventId}`
+          const cur = localStorage.getItem(key)
+          const newStr = JSON.stringify(questions)
+          if (cur !== newStr) {
+            localStorage.setItem(key, newStr)
+            changed = true
+          }
+        }
+      })
+    }
+
+    if (changed) {
+      window.dispatchEvent(new Event('storage'))
+    }
+  } catch (err) {
+    console.error('Error applying cloud survey data:', err)
   }
 }
 

@@ -20,6 +20,10 @@ let cachedDeletedAccountIds: string[] | null = null
 let cachedDeletedMemberCodes: string[] | null = null
 let cachedActivities: any[] | null = null
 let cachedSchedulePendingRequests: any[] | null = null
+let cachedSurveyEvents: any[] | null = null
+let cachedSurveyFeedbacks: any[] | null = null
+let cachedDeletedSurveyEventIds: string[] | null = null
+let cachedSurveyCustomQuestions: Record<string, any> | null = null
 
 // GET /api/db/sync — Lấy dữ liệu sự kiện & điểm danh mới nhất từ Supabase
 export async function GET(request: Request) {
@@ -48,6 +52,10 @@ export async function GET(request: Request) {
         'issac_deleted_member_codes',
         'issac_activities_cloud',
         'issac_schedule_pending_requests',
+        'issac_survey_events_cloud',
+        'issac_survey_feedbacks_cloud',
+        'issac_deleted_survey_event_ids',
+        'issac_survey_custom_questions_cloud',
       ])
 
     if (!error && data && data.length > 0) {
@@ -68,6 +76,10 @@ export async function GET(request: Request) {
       const deletedMemberCodesRow = data.find((r) => r.key === 'issac_deleted_member_codes')
       const activitiesRow = data.find((r) => r.key === 'issac_activities_cloud')
       const schedulePendingRequestsRow = data.find((r) => r.key === 'issac_schedule_pending_requests')
+      const surveyEventsRow = data.find((r) => r.key === 'issac_survey_events_cloud')
+      const surveyFeedbacksRow = data.find((r) => r.key === 'issac_survey_feedbacks_cloud')
+      const deletedSurveyEventIdsRow = data.find((r) => r.key === 'issac_deleted_survey_event_ids')
+      const surveyCustomQuestionsRow = data.find((r) => r.key === 'issac_survey_custom_questions_cloud')
 
       let eventsFromDb = null
       let proposalsFromDb = null
@@ -86,6 +98,10 @@ export async function GET(request: Request) {
       let deletedMemberCodesFromDb = null
       let activitiesFromDb = null
       let schedulePendingRequestsFromDb = null
+      let surveyEventsFromDb = null
+      let surveyFeedbacksFromDb = null
+      let deletedSurveyEventIdsFromDb = null
+      let surveyCustomQuestionsFromDb = null
 
       if (eventsRow?.value) {
         try {
@@ -234,6 +250,50 @@ export async function GET(request: Request) {
         }
       }
 
+      if (surveyEventsRow?.value) {
+        try {
+          surveyEventsFromDb = JSON.parse(surveyEventsRow.value)
+          cachedSurveyEvents = surveyEventsFromDb
+        } catch (e) {
+          console.error('Error parsing survey events JSON:', e)
+        }
+      }
+
+      if (surveyFeedbacksRow?.value) {
+        try {
+          surveyFeedbacksFromDb = JSON.parse(surveyFeedbacksRow.value)
+          cachedSurveyFeedbacks = surveyFeedbacksFromDb
+        } catch (e) {
+          console.error('Error parsing survey feedbacks JSON:', e)
+        }
+      }
+
+      if (deletedSurveyEventIdsRow?.value) {
+        try {
+          deletedSurveyEventIdsFromDb = JSON.parse(deletedSurveyEventIdsRow.value)
+          cachedDeletedSurveyEventIds = deletedSurveyEventIdsFromDb
+        } catch (e) {
+          console.error('Error parsing deleted survey event IDs JSON:', e)
+        }
+      }
+
+      if (surveyCustomQuestionsRow?.value) {
+        try {
+          surveyCustomQuestionsFromDb = JSON.parse(surveyCustomQuestionsRow.value)
+          cachedSurveyCustomQuestions = surveyCustomQuestionsFromDb
+        } catch (e) {
+          console.error('Error parsing survey custom questions JSON:', e)
+        }
+      }
+
+      const activeDeletedSurveyEventIds = new Set(deletedSurveyEventIdsFromDb || cachedDeletedSurveyEventIds || [])
+      let finalSurveyEvents = surveyEventsFromDb || cachedSurveyEvents
+      if (Array.isArray(finalSurveyEvents)) {
+        if (activeDeletedSurveyEventIds.size > 0) {
+          finalSurveyEvents = finalSurveyEvents.filter((e: any) => e?.id && !activeDeletedSurveyEventIds.has(e.id))
+        }
+      }
+
       const activeDeletedEventIds = new Set(deletedEventIdsFromDb || cachedDeletedEventIds || [])
       let finalEvents = eventsFromDb || cachedEvents || []
       if (activeDeletedEventIds.size > 0 && Array.isArray(finalEvents)) {
@@ -298,6 +358,10 @@ export async function GET(request: Request) {
           deletedMemberCodes: Array.from(activeDeletedMemberCodes),
           activities: activitiesFromDb !== null ? activitiesFromDb : cachedActivities,
           schedulePendingRequests: schedulePendingRequestsFromDb !== null ? schedulePendingRequestsFromDb : (cachedSchedulePendingRequests || []),
+          surveyEvents: finalSurveyEvents,
+          surveyFeedbacks: surveyFeedbacksFromDb || cachedSurveyFeedbacks || [],
+          deletedSurveyEventIds: Array.from(activeDeletedSurveyEventIds),
+          surveyCustomQuestions: surveyCustomQuestionsFromDb || cachedSurveyCustomQuestions || {},
           source: 'supabase_cloud',
         },
         {
@@ -308,6 +372,12 @@ export async function GET(request: Request) {
           },
         }
       )
+    }
+
+    const fallbackDeletedSurveyEventIds = new Set(cachedDeletedSurveyEventIds || [])
+    let fallbackSurveyEvents = cachedSurveyEvents
+    if (fallbackDeletedSurveyEventIds.size > 0 && Array.isArray(fallbackSurveyEvents)) {
+      fallbackSurveyEvents = fallbackSurveyEvents.filter((e: any) => !fallbackDeletedSurveyEventIds.has(e.id))
     }
 
     const fallbackDeletedEventIds = new Set(cachedDeletedEventIds || [])
@@ -358,6 +428,10 @@ export async function GET(request: Request) {
         deletedAccountIds: Array.from(fallbackDeletedAccountIds),
         activities: cachedActivities,
         schedulePendingRequests: cachedSchedulePendingRequests || [],
+        surveyEvents: fallbackSurveyEvents,
+        surveyFeedbacks: cachedSurveyFeedbacks || [],
+        deletedSurveyEventIds: Array.from(fallbackDeletedSurveyEventIds),
+        surveyCustomQuestions: cachedSurveyCustomQuestions || {},
         source: 'cache_memory',
       },
       {
@@ -387,6 +461,10 @@ export async function GET(request: Request) {
       customPeriodScores: cachedPeriodScores,
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
+      surveyEvents: cachedSurveyEvents,
+      surveyFeedbacks: cachedSurveyFeedbacks || [],
+      deletedSurveyEventIds: cachedDeletedSurveyEventIds || [],
+      surveyCustomQuestions: cachedSurveyCustomQuestions || {},
       error: msg,
       source: 'fallback',
     })
@@ -425,6 +503,11 @@ export async function POST(request: Request) {
       member,
       activities,
       schedulePendingRequests,
+      surveyEvents,
+      surveyFeedbacks,
+      deletedSurveyEventIds,
+      surveyEventId,
+      surveyCustomQuestions,
     } = body
     const supabase = createAdminClient()
 
@@ -1079,6 +1162,104 @@ export async function POST(request: Request) {
       }
     }
 
+    // Xử lý danh sách ID sự kiện khảo sát đã xóa (Tombstones để chống hồi sinh khi sync từ thiết bị khác)
+    if (deletedSurveyEventIds !== undefined || (action === 'delete_survey_event' && surveyEventId)) {
+      const incomingDelSurvey = Array.isArray(deletedSurveyEventIds) ? deletedSurveyEventIds : []
+      if (action === 'delete_survey_event' && surveyEventId && !incomingDelSurvey.includes(surveyEventId)) {
+        incomingDelSurvey.push(surveyEventId)
+      }
+      const combinedDelSurveySet = new Set([
+        ...(cachedDeletedSurveyEventIds || []),
+        ...incomingDelSurvey,
+      ])
+      cachedDeletedSurveyEventIds = Array.from(combinedDelSurveySet)
+
+      if (cachedSurveyEvents && Array.isArray(cachedSurveyEvents)) {
+        cachedSurveyEvents = cachedSurveyEvents.filter((e: any) => !combinedDelSurveySet.has(e.id))
+      }
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_survey_event_ids',
+              value: JSON.stringify(cachedDeletedSurveyEventIds),
+              description: 'Cloud synchronized deleted survey event IDs for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (delSurveyErr) {
+        console.warn('Supabase deleted survey events upsert notice:', delSurveyErr)
+      }
+    }
+
+    if (surveyEvents !== undefined) {
+      const activeDelSurveySet = new Set(cachedDeletedSurveyEventIds || [])
+      const cleanSurveyEvents = Array.isArray(surveyEvents)
+        ? surveyEvents.filter((e: any) => e?.id && !activeDelSurveySet.has(e.id))
+        : surveyEvents
+      cachedSurveyEvents = cleanSurveyEvents
+
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_survey_events_cloud',
+              value: JSON.stringify(cleanSurveyEvents),
+              description: 'Cloud synchronized survey events for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (surveyEvtErr) {
+        console.warn('Supabase survey events upsert notice:', surveyEvtErr)
+      }
+    }
+
+    if (surveyFeedbacks !== undefined) {
+      cachedSurveyFeedbacks = surveyFeedbacks
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_survey_feedbacks_cloud',
+              value: JSON.stringify(surveyFeedbacks),
+              description: 'Cloud synchronized survey feedbacks for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (surveyFbErr) {
+        console.warn('Supabase survey feedbacks upsert notice:', surveyFbErr)
+      }
+    }
+
+    if (surveyCustomQuestions !== undefined) {
+      cachedSurveyCustomQuestions = {
+        ...(cachedSurveyCustomQuestions || {}),
+        ...surveyCustomQuestions,
+      }
+      try {
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_survey_custom_questions_cloud',
+              value: JSON.stringify(cachedSurveyCustomQuestions),
+              description: 'Cloud synchronized survey custom questions for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+      } catch (surveyQuesErr) {
+        console.warn('Supabase survey custom questions upsert notice:', surveyQuesErr)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       events: cachedEvents,
@@ -1098,6 +1279,10 @@ export async function POST(request: Request) {
       deletedMemberCodes: cachedDeletedMemberCodes || [],
       activities: cachedActivities,
       schedulePendingRequests: cachedSchedulePendingRequests || [],
+      surveyEvents: cachedSurveyEvents,
+      surveyFeedbacks: cachedSurveyFeedbacks || [],
+      deletedSurveyEventIds: cachedDeletedSurveyEventIds || [],
+      surveyCustomQuestions: cachedSurveyCustomQuestions || {},
       cloudSynced: dbSuccess,
       cloudNote: dbSuccess
         ? 'Đã đồng bộ trực tiếp lên cơ sở dữ liệu Supabase Cloud'

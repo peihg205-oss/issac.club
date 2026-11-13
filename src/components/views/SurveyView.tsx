@@ -28,6 +28,7 @@ import {
   ShieldAlert,
   ClipboardEdit,
   Eye,
+  Plus,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { isUserCoreTeam } from '@/lib/auth/permissions'
@@ -151,7 +152,7 @@ export function SurveyView() {
   const [selectedEvent, setSelectedEvent] = useState<string>(() => {
     const events = getStoredSurveyEvents()
     const active = events.find((e) => e.status === 'active') || events[0]
-    return active?.name || 'Đánh giá hoạt động Core Team T10'
+    return active?.name || ''
   })
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState<boolean>(false)
   const eventDropdownRef = useRef<HTMLDivElement>(null)
@@ -197,8 +198,7 @@ export function SurveyView() {
   }, [])
 
   const eventOptions = useMemo(() => {
-    const names = surveyEvents.map((e) => e.name)
-    return names.length > 0 ? names : ['Đánh giá hoạt động Core Team T10']
+    return surveyEvents.map((e) => e.name)
   }, [surveyEvents])
 
   // Close event dropdown on outside click
@@ -727,6 +727,32 @@ export function SurveyView() {
           onSelectEvent={(evt) => setSelectedEvent(evt)}
           onSwitchToSurvey={() => setViewMode('survey')}
         />
+      ) : surveyEvents.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-8 sm:p-14 text-center shadow-xs space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-[#0284C7] dark:text-sky-400 flex items-center justify-center mx-auto shadow-2xs">
+            <Calendar className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-lg sm:text-xl font-extrabold text-[#061651] dark:text-white">
+              Hiện chưa có đợt khảo sát nào đang mở
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Toàn bộ các sự kiện khảo sát đã được hoàn tất hoặc chưa được khởi tạo.
+            </p>
+          </div>
+          {isBCN && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setViewMode('bcn_report')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Mở quản lý & Tạo sự kiện mới</span>
+              </button>
+            </div>
+          )}
+        </div>
       ) : (
         <>
           {/* 3. EVENT & STATUS BAR (Bố cục cân bằng, trực quan, không rớt dòng) */}

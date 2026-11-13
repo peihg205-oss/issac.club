@@ -13,6 +13,7 @@ import {
   normalizeHistoryTimestamp,
 } from '@/lib/vietnamTime'
 import { sanitizeMemberAvatar } from '@/lib/utils/imageCompress'
+import { applyCloudSurveyData } from '@/lib/surveyData'
 
 export interface CustomRuleItem {
   code: string
@@ -1015,6 +1016,21 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem('issac_custom_rules_v1', JSON.stringify(data.customRules))
             } catch (e) {}
           }
+        }
+
+        // 9. Đồng bộ khảo sát real-time từ Supabase Cloud xuống thiết bị
+        if (
+          data.surveyEvents !== undefined ||
+          data.surveyFeedbacks !== undefined ||
+          data.deletedSurveyEventIds !== undefined ||
+          data.surveyCustomQuestions !== undefined
+        ) {
+          applyCloudSurveyData({
+            surveyEvents: data.surveyEvents,
+            surveyFeedbacks: data.surveyFeedbacks,
+            deletedSurveyEventIds: data.deletedSurveyEventIds,
+            surveyCustomQuestions: data.surveyCustomQuestions,
+          })
         }
       }
     } catch (err) {

@@ -66,14 +66,14 @@ export function BcnSurveyConfigManager({
 }: BcnSurveyConfigManagerProps) {
   // 1. Events State
   const [events, setEvents] = useState<SurveyEventItem[]>(() => {
-    if (parentEvents && parentEvents.length > 0) return parentEvents
+    if (parentEvents !== undefined) return parentEvents
     return getStoredSurveyEvents()
   })
   const [feedbacks, setFeedbacks] = useState(() => getStoredSurveyFeedbacks())
 
   // Sync with parent events whenever parentEvents updates
   useEffect(() => {
-    if (parentEvents && parentEvents.length > 0) {
+    if (parentEvents !== undefined) {
       setEvents(parentEvents)
     } else {
       const latest = getStoredSurveyEvents()
