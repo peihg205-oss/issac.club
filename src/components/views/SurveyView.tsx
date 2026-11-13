@@ -1742,14 +1742,14 @@ export function SurveyView() {
               </p>
             </div>
 
-            {/* 4. Thẻ tài khoản đang đăng nhập (Thiết kế chip cân đối, không rớt dòng) */}
-            <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 max-w-full">
-              <span className="text-slate-400 dark:text-slate-400 font-normal shrink-0">Tài khoản:</span>
-              <strong className="text-[#061651] dark:text-white font-bold truncate">
+            {/* 4. Thẻ tài khoản đang đăng nhập (Hiển thị đầy đủ, không che chữ, tiết tấu nhỏ gọn) */}
+            <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 max-w-full flex-wrap leading-normal">
+              <span className="text-slate-400 dark:text-slate-500 font-normal">Tài khoản:</span>
+              <strong className="text-[#061651] dark:text-white font-bold whitespace-nowrap">
                 {currentUser?.name || 'Thành viên'}
               </strong>
               <span className="text-slate-300 dark:text-slate-600 select-none">•</span>
-              <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+              <span className="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                 {currentUser?.roleTitle || 'Thành viên'}
               </span>
             </div>
