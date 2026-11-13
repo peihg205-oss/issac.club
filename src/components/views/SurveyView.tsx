@@ -23,6 +23,8 @@ import {
   Clock,
   BarChart3,
   Lock,
+  Unlock,
+  ShieldCheck,
   ShieldAlert,
   ClipboardEdit,
   Eye,
@@ -727,136 +729,148 @@ export function SurveyView() {
         />
       ) : (
         <>
-          {/* 3. EVENT & STATUS BAR */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 px-5 py-3.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Left: Event selector & Live status grouped logically together */}
-            <div className="flex items-center gap-3 sm:gap-3.5 flex-wrap">
-              <span className="text-xs sm:text-sm font-bold text-[#061651] dark:text-slate-200 whitespace-nowrap">
-            Sự kiện khảo sát
-          </span>
-          <div className="relative" ref={eventDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
-              className="px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-100 font-bold text-xs sm:text-sm flex items-center gap-2.5 shadow-2xs transition-colors cursor-pointer"
-            >
-              <span>{selectedEvent}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-            </button>
-
-            {isEventDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-30 animate-in fade-in zoom-in-95 duration-100">
-                {eventOptions.map((event) => (
-                  <button
-                    key={event}
-                    type="button"
-                    onClick={() => {
-                      setSelectedEvent(event)
-                      setIsEventDropdownOpen(false)
-                    }}
-                    className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between hover:bg-sky-50 dark:hover:bg-slate-750 transition-colors ${
-                      selectedEvent === event
-                        ? 'text-[#0284C7] dark:text-sky-400 bg-sky-50/60 dark:bg-slate-700 font-bold'
-                        : 'text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <span>{event}</span>
-                    {selectedEvent === event && (
-                      <Check className="w-3.5 h-3.5 text-[#0284C7]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Divider between Event and Live Status */}
-          <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-700" />
-
-          {/* Live indicator / Expiration status badge & BCN Lock Action */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {isSurveyLocked ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-purple-50/90 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800 shadow-2xs">
-                <Lock className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>Đã khóa sổ điểm bởi BCN</span>
-              </span>
-            ) : isEventClosedOrExpired ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-50/90 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800 shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                <span>Hết hạn khảo sát</span>
-                {currentEventItem?.endDate && (
-                  <span className="text-[11px] font-normal opacity-80">
-                    (Hạn: {currentEventItem.endDate})
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          {/* 3. EVENT & STATUS BAR (Bố cục cân bằng, trực quan, không rớt dòng) */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-3.5 sm:px-5 sm:py-3.5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+            {/* Vế trái: Sự kiện khảo sát & Trạng thái & Thao tác BCN */}
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0">
+              {/* Nhóm chọn sự kiện */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs sm:text-[13px] font-bold text-[#061651] dark:text-slate-200 whitespace-nowrap">
+                  Sự kiện khảo sát:
                 </span>
-                <span>Đang mở khảo sát (Điểm bảo mật)</span>
-                {currentEventItem?.endDate && (
-                  <span className="text-[11px] font-normal opacity-90 hidden sm:inline">
-                    (Hạn chót: {currentEventItem.endDate})
+                <div className="relative" ref={eventDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
+                    className="h-9 px-3.5 rounded-full border border-slate-200/90 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-[#061651] dark:text-slate-100 font-bold text-xs sm:text-[13px] flex items-center gap-2 shadow-2xs hover:shadow-xs transition-colors cursor-pointer max-w-[260px] sm:max-w-[340px]"
+                    title={selectedEvent}
+                  >
+                    <span className="truncate">{selectedEvent}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  </button>
+
+                  {isEventDropdownOpen && (
+                    <div className="absolute left-0 mt-1.5 w-64 sm:w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+                      {eventOptions.map((event) => (
+                        <button
+                          key={event}
+                          type="button"
+                          onClick={() => {
+                            setSelectedEvent(event)
+                            setIsEventDropdownOpen(false)
+                          }}
+                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between hover:bg-sky-50 dark:hover:bg-slate-750 transition-colors ${
+                            selectedEvent === event
+                              ? 'text-[#0284C7] dark:text-sky-400 bg-sky-50/60 dark:bg-slate-700 font-bold'
+                              : 'text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          <span className="truncate pr-2">{event}</span>
+                          {selectedEvent === event && (
+                            <Check className="w-3.5 h-3.5 text-[#0284C7] shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Nhóm trạng thái chu kỳ sự kiện */}
+              {isSurveyLocked ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-purple-50/90 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800 shadow-2xs shrink-0">
+                  <Lock className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Đã khóa sổ</span>
+                </span>
+              ) : isEventClosedOrExpired ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-50/90 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800 shadow-2xs shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                  <span>Hết hạn</span>
+                  {currentEventItem?.endDate && (
+                    <span className="text-[11px] font-normal opacity-85">
+                      ({currentEventItem.endDate})
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Đang mở</span>
+                  {currentEventItem?.endDate && (
+                    <span className="text-[11px] font-normal text-emerald-800/85 dark:text-emerald-300/85">
+                      • Hạn: {currentEventItem.endDate}
+                    </span>
+                  )}
+                </span>
+              )}
+
+              {/* Nút Khóa sổ / Mở lại cho BCN (Gọn gàng, vừa vặn) */}
+              {isBCN && currentEventItem && (
+                <button
+                  type="button"
+                  onClick={handleToggleLockSurvey}
+                  className={`h-9 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95 shrink-0 ${
+                    isSurveyLocked
+                      ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200/90 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800'
+                      : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200/90 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
+                  }`}
+                  title={isSurveyLocked ? 'Mở lại để tiếp tục nhận phiếu khảo sát' : 'Chốt và khóa sổ điểm khảo sát sự kiện'}
+                >
+                  {isSurveyLocked ? (
+                    <>
+                      <Unlock className="w-3.5 h-3.5" />
+                      <span>Mở lại</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Khóa sổ</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Vế phải: Huy hiệu Bảo mật & Tiến độ đánh giá của thành viên */}
+            <div className="flex items-center gap-2.5 shrink-0 self-start lg:self-center">
+              {/* Huy hiệu Bảo mật thông tin */}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#0284C7] dark:text-sky-400" />
+                <span>Điểm bảo mật</span>
+              </span>
+
+              {/* Huy hiệu Tiến độ đánh giá */}
+              {completedCount === totalTargetCount ? (
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>
+                    Đã nộp toàn bộ:{' '}
+                    <strong className="font-black text-emerald-800 dark:text-emerald-200">
+                      {completedCount}/{totalTargetCount}
+                    </strong>{' '}
+                    Core Team
                   </span>
-                )}
-              </span>
-            )}
-
-            {/* Quick BCN Lock/Unlock Toggle directly on survey view */}
-            {isBCN && currentEventItem && (
-              <button
-                type="button"
-                onClick={handleToggleLockSurvey}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95 ${
-                  isSurveyLocked
-                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/90 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
-                    : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200/90 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
-                }`}
-                title={isSurveyLocked ? 'Mở lại để tiếp tục nhận phiếu khảo sát' : 'Chốt và khóa sổ điểm khảo sát sự kiện'}
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>{isSurveyLocked ? 'Mở lại khảo sát' : 'Khóa sổ điểm khảo sát'}</span>
-              </button>
-            )}
+                  <span className="ml-0.5 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-[10px] font-black text-emerald-700 dark:text-emerald-300 flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> 100%
+                  </span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs">
+                  <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400 shrink-0" />
+                  <span>
+                    Đã đánh giá:{' '}
+                    <strong className="font-black text-blue-900 dark:text-blue-100">
+                      {completedCount}/{totalTargetCount}
+                    </strong>{' '}
+                    Core Team
+                  </span>
+                  <span className="ml-0.5 px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[10px] font-black text-[#0B63E5] dark:text-blue-200">
+                    {Math.round((completedCount / Math.max(totalTargetCount, 1)) * 100)}%
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Right: Evaluated count & progress badge */}
-        <div className="flex items-center self-end md:self-auto">
-          {completedCount === totalTargetCount ? (
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>
-                Đã nộp toàn bộ:{' '}
-                <strong className="font-black text-emerald-800 dark:text-emerald-200">
-                  {completedCount}/{totalTargetCount}
-                </strong>{' '}
-                Core Team
-              </span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-[10px] font-black text-emerald-700 dark:text-emerald-300 flex items-center gap-0.5">
-                <Lock className="w-2.5 h-2.5" /> 100%
-              </span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-bold bg-blue-50/90 dark:bg-blue-950/40 text-[#0B63E5] dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs">
-              <Users className="w-4 h-4 text-[#0B63E5] dark:text-blue-400 shrink-0" />
-              <span>
-                Đã đánh giá:{' '}
-                <strong className="font-black text-blue-900 dark:text-blue-100">
-                  {completedCount}/{totalTargetCount}
-                </strong>{' '}
-                Core Team
-              </span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[10px] font-black text-[#0B63E5] dark:text-blue-200">
-                {Math.round((completedCount / Math.max(totalTargetCount, 1)) * 100)}%
-              </span>
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* 3. HORIZONTAL MEMBER BAR / CAROUSEL (Tự động cuộn / Auto-scroll) */}
       <div
