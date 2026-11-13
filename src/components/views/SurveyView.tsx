@@ -1735,10 +1735,16 @@ export function SurveyView() {
               </h3>
             </div>
 
-            {/* 3. Khung nội dung giải thích (Căn chỉnh cân bằng, typography mạch lạc) */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed text-center space-y-2">
-              <p>
-                Theo quy định bảo mật khảo sát nội bộ của iSSAC, các phiếu đánh giá chéo giữa các thành viên, chi tiết góp ý sau sự kiện và bảng xếp hạng Core Team chỉ mở cho tài khoản <strong className="text-[#0284C7] dark:text-sky-400 font-bold">Ban Chủ nhiệm (BCN)</strong> nhằm đảm bảo tính khách quan và an tâm khi góp ý.
+            {/* 3. Khung nội dung giải thích (4 dòng cân đối chuẩn đẹp) */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed text-center">
+              <p className="text-balance max-w-sm mx-auto">
+                Theo quy định bảo mật khảo sát nội bộ của iSSAC,
+                <br className="hidden sm:inline" />
+                {' '}phiếu đánh giá chéo, chi tiết góp ý và bảng xếp hạng
+                <br className="hidden sm:inline" />
+                {' '}Core Team chỉ mở cho tài khoản <strong className="text-[#0284C7] dark:text-sky-400 font-bold">Ban Chủ nhiệm (BCN)</strong>
+                <br className="hidden sm:inline" />
+                {' '}nhằm đảm bảo tính khách quan và an tâm khi góp ý.
               </p>
             </div>
 
