@@ -1717,28 +1717,49 @@ export function SurveyView() {
 
       {/* BCN ACCESS LOCK MODAL */}
       {showBcnLockModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-800">
-              <Lock className="w-8 h-8" />
+        <div className="fixed inset-0 z-50 bg-[#061651]/50 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200/90 dark:border-slate-800 text-center animate-in zoom-in-95 duration-200 space-y-4">
+            {/* 1. Icon Khóa bảo mật */}
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 dark:text-amber-400 flex items-center justify-center mx-auto shadow-xs border border-amber-200/60 dark:border-amber-800/60">
+              <Lock className="w-7 h-7" />
             </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 text-xs font-black mb-3 border border-sky-200/80">
-              <span>ĐẶC QUYỀN BAN CHỦ NHIỆM</span>
+
+            {/* 2. Tiêu đề & Nhãn Đặc quyền */}
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/50 text-[#0284C7] dark:text-sky-300 text-[11px] font-black tracking-wide border border-sky-200/80 dark:border-sky-800/60 shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>ĐẶC QUYỀN BAN CHỦ NHIỆM</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-[#061651] dark:text-white tracking-tight">
+                Quyền truy cập bị giới hạn
+              </h3>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-[#061651] dark:text-white mb-2">
-              Quyền truy cập bị giới hạn
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 text-left bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
-              Theo quy định bảo mật khảo sát nội bộ của iSSAC, các phiếu đánh giá chéo giữa các thành viên, chi tiết góp ý sau sự kiện và biểu đồ xếp hạng hoạt động Core Team chỉ mở cho tài khoản <strong className="text-[#0284C7]">Ban Chủ nhiệm (BCN)</strong> nhằm đảm bảo tính khách quan và an tâm khi góp ý.
-            </p>
-            <div className="text-xs text-slate-500 dark:text-slate-400 mb-5 text-left">
-              Tài khoản hiện tại: <strong className="text-slate-800 dark:text-slate-200">{currentUser?.name}</strong> ({currentUser?.roleTitle || 'Thành viên'}).
+
+            {/* 3. Khung nội dung giải thích (Căn chỉnh cân bằng, typography mạch lạc) */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed text-center space-y-2">
+              <p>
+                Theo quy định bảo mật khảo sát nội bộ của iSSAC, các phiếu đánh giá chéo giữa các thành viên, chi tiết góp ý sau sự kiện và bảng xếp hạng Core Team chỉ mở cho tài khoản <strong className="text-[#0284C7] dark:text-sky-400 font-bold">Ban Chủ nhiệm (BCN)</strong> nhằm đảm bảo tính khách quan và an tâm khi góp ý.
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+
+            {/* 4. Thẻ tài khoản đang đăng nhập (Thiết kế chip cân đối, không rớt dòng) */}
+            <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 max-w-full">
+              <span className="text-slate-400 dark:text-slate-400 font-normal shrink-0">Tài khoản:</span>
+              <strong className="text-[#061651] dark:text-white font-bold truncate">
+                {currentUser?.name || 'Thành viên'}
+              </strong>
+              <span className="text-slate-300 dark:text-slate-600 select-none">•</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                {currentUser?.roleTitle || 'Thành viên'}
+              </span>
+            </div>
+
+            {/* 5. Nút bấm thao tác */}
+            <div className="flex items-center gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={() => setShowBcnLockModal(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="flex-1 h-10 sm:h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
               >
                 Đã hiểu
               </button>
@@ -1750,9 +1771,9 @@ export function SurveyView() {
                     setShowBcnLockModal(false)
                     setViewMode('bcn_report')
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 h-10 sm:h-11 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-sm hover:shadow-md shadow-sky-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
                   <span>Xem quyền BCN</span>
                 </button>
               )}
