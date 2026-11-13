@@ -787,9 +787,12 @@ export function SurveyView() {
                   <span className="w-2 h-2 rounded-full bg-rose-500"></span>
                   <span>Hết hạn</span>
                   {currentEventItem?.endDate && (
-                    <span className="text-[11px] font-normal opacity-85">
-                      ({currentEventItem.endDate})
-                    </span>
+                    <>
+                      <span className="opacity-40 font-normal select-none text-[11px]">|</span>
+                      <span className="text-[11px] font-normal opacity-85">
+                        {currentEventItem.endDate}
+                      </span>
+                    </>
                   )}
                 </span>
               ) : (
@@ -797,9 +800,12 @@ export function SurveyView() {
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Đang mở</span>
                   {currentEventItem?.endDate && (
-                    <span className="text-[11px] font-normal text-emerald-800/85 dark:text-emerald-300/85">
-                      • Hạn: {currentEventItem.endDate}
-                    </span>
+                    <>
+                      <span className="opacity-40 font-normal select-none text-[11px]">|</span>
+                      <span className="text-[11px] font-normal text-emerald-800/85 dark:text-emerald-300/85">
+                        Hạn: {currentEventItem.endDate}
+                      </span>
+                    </>
                   )}
                 </span>
               )}
