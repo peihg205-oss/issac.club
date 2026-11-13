@@ -94,9 +94,8 @@ export function canUserManageAccounts(user: AuthUser | null): boolean {
  * 1. Ban Chủ nhiệm (BCN): Có toàn quyền cho điểm trực tiếp hoặc đề xuất cho TẤT CẢ thành viên mọi ban.
  * 2. Ban Nhân sự (HR): Toàn bộ tài khoản Ban Nhân sự (Trưởng ban, Phó ban và THÀNH VIÊN BAN NHÂN SỰ)
  *    đều có quyền gửi đề xuất cho điểm cho TẤT CẢ thành viên ở MỌI BAN trong CLB (Ban Chủ nhiệm duyệt cuối).
- * 3. Trưởng ban / Phó ban Ban Truyền thông: Có quyền gửi đề xuất cho điểm THÀNH VIÊN CỦA BAN TRUYỀN THÔNG (BCN duyệt cuối).
- * 4. Trưởng ban / Phó ban Ban Tư vấn: Có quyền gửi đề xuất cho điểm THÀNH VIÊN CỦA BAN TƯ VẤN (BCN duyệt cuối).
- * 5. Thành viên thường các ban khác: Không có quyền cho điểm.
+ * 3. Ban Truyền thông (B01), Ban Tư vấn (B02) và các ban chuyên môn khác:
+ *    TUYỆT ĐỐI KHÔNG CÓ QUYỀN CHO ĐIỂM HOẶC ĐỀ XUẤT ĐIỂM! CHỈ CÓ QUYỀN GỬI KHIẾU NẠI (Q06).
  */
 export function canUserAddOrProposeScore(user: AuthUser | null | undefined): boolean {
   if (!user) return false
@@ -122,14 +121,7 @@ export function canUserAddOrProposeScore(user: AuthUser | null | undefined): boo
     return true
   }
 
-  // 3. Trưởng ban, Phó ban của các ban khác (Ban Truyền thông B01, Ban Tư vấn B02)
-  if (
-    user.role === 'dept_head' ||
-    (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó')))
-  ) {
-    return true
-  }
-
+  // 3. Ban Truyền thông (B01), Ban Tư vấn (B02) và các thành viên khác: Tuyệt đối không có quyền cho điểm/đề xuất điểm
   return false
 }
 
@@ -140,7 +132,7 @@ export function canUserScoreMember(
   if (!user) {
     return {
       allowed: false,
-      reason: 'Bạn cần đăng nhập tài khoản để thực hiện đề xuất cho điểm!',
+      reason: 'Bạn cần đăng nhập tài khoản để thực hiện thao tác!',
     }
   }
 
@@ -172,47 +164,11 @@ export function canUserScoreMember(
     return { allowed: true }
   }
 
-  // 3. Trưởng ban / Phó ban Ban Truyền thông (B01): Có quyền đề xuất cho điểm thành viên của Ban Truyền thông
-  const isCommLeader =
-    (user.departmentCode === 'B01' || user.departmentName?.toLowerCase().includes('truyền thông')) &&
-    (user.role === 'dept_head' ||
-      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
-  if (isCommLeader) {
-    if (targetMember.department_code === 'B01' || targetMember.department_slug === 'truyen-thong') {
-      return { allowed: true }
-    }
-    return {
-      allowed: false,
-      reason: 'Trưởng/Phó ban Ban Truyền thông chỉ có quyền đề xuất cho điểm thành viên thuộc Ban Truyền thông!',
-    }
-  }
-
-  // 4. Trưởng ban / Phó ban Ban Tư vấn (B02): Có quyền đề xuất cho điểm thành viên của Ban Tư vấn
-  const isAdvLeader =
-    (user.departmentCode === 'B02' || user.departmentName?.toLowerCase().includes('tư vấn')) &&
-    (user.role === 'dept_head' ||
-      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
-  if (isAdvLeader) {
-    if (targetMember.department_code === 'B02' || targetMember.department_slug === 'tu-van') {
-      return { allowed: true }
-    }
-    return {
-      allowed: false,
-      reason: 'Trưởng/Phó ban Ban Tư vấn chỉ có quyền đề xuất cho điểm thành viên thuộc Ban Tư vấn!',
-    }
-  }
-
-  // 5. Cán bộ quản lý ban khác
-  const isOtherLeader =
-    user.role === 'dept_head' ||
-    (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó')))
-  if (isOtherLeader && user.departmentCode && targetMember.department_code === user.departmentCode) {
-    return { allowed: true }
-  }
-
+  // 3. Ban Truyền thông (B01), Ban Tư vấn (B02) và các ban khác: Tuyệt đối không có quyền cho điểm
   return {
     allowed: false,
-    reason: 'Tài khoản của bạn không có quyền đề xuất cho điểm thành viên này!',
+    reason:
+      'Tài khoản của bạn không thuộc Ban Chủ nhiệm hoặc Ban Nhân sự nên không có quyền cho điểm! Bạn chỉ có quyền gửi khiếu nại (Q06) nếu có thắc mắc về điểm.',
   }
 }
 
@@ -239,31 +195,6 @@ export function getAllowedScoringMembers(
     return members
   }
 
-  // 2. Trưởng ban / Phó ban Ban Truyền thông: Cho điểm thành viên Ban Truyền thông
-  const isCommLeader =
-    (user.departmentCode === 'B01' || user.departmentName?.toLowerCase().includes('truyền thông')) &&
-    (user.role === 'dept_head' ||
-      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
-  if (isCommLeader) {
-    return members.filter((m) => m.department_code === 'B01' || m.department_slug === 'truyen-thong')
-  }
-
-  // 3. Trưởng ban / Phó ban Ban Tư vấn: Cho điểm thành viên Ban Tư vấn
-  const isAdvLeader =
-    (user.departmentCode === 'B02' || user.departmentName?.toLowerCase().includes('tư vấn')) &&
-    (user.role === 'dept_head' ||
-      (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó'))))
-  if (isAdvLeader) {
-    return members.filter((m) => m.department_code === 'B02' || m.department_slug === 'tu-van')
-  }
-
-  // 4. Cán bộ quản lý ban khác
-  const isOtherLeader =
-    user.role === 'dept_head' ||
-    (user.roleTitle && (user.roleTitle.includes('Trưởng') || user.roleTitle.includes('Phó')))
-  if (isOtherLeader && user.departmentCode) {
-    return members.filter((m) => m.department_code === user.departmentCode)
-  }
-
+  // 2. Ban Truyền thông, Ban Tư vấn và các vai trò khác: Không có quyền cho điểm ai
   return []
 }

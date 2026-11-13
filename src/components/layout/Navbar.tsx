@@ -168,23 +168,25 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Admin Hub Link */}
-            <Link
-              href="/admin"
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
-                isBCN
-                  ? 'bg-gradient-to-r from-amber-500 to-[#1E63D6] text-white border border-amber-500/30'
-                  : 'bg-[#1E63D6] text-white hover:bg-[#1E63D6]/90'
-              }`}
-            >
-              {isBCN ? <Crown className="w-3.5 h-3.5 text-[#F5B301]" /> : <KeyRound className="w-3.5 h-3.5" />}
-              <span>{isBCN ? 'Quản trị BCN' : isHR ? 'Nhân sự chấm điểm' : 'Quản trị'}</span>
-              {pendingCount > 0 && isBCN && (
-                <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
-                  {pendingCount}
-                </span>
-              )}
-            </Link>
+            {/* Admin Hub Link - Chỉ hiển thị cho Ban Chủ nhiệm và Ban Nhân sự */}
+            {(isBCN || isHR) && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
+                  isBCN
+                    ? 'bg-gradient-to-r from-amber-500 to-[#1E63D6] text-white border border-amber-500/30'
+                    : 'bg-[#1E63D6] text-white hover:bg-[#1E63D6]/90'
+                }`}
+              >
+                {isBCN ? <Crown className="w-3.5 h-3.5 text-[#F5B301]" /> : <KeyRound className="w-3.5 h-3.5" />}
+                <span>{isBCN ? 'Quản trị BCN' : 'Nhân sự chấm điểm'}</span>
+                {pendingCount > 0 && isBCN && (
+                  <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -268,16 +270,18 @@ export function Navbar() {
             </Link>
           </div>
 
-          <div className="pt-2 border-t border-white/10">
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-bold bg-[#1E63D6] text-white hover:bg-[#1E63D6]/90 shadow-md"
-            >
-              <KeyRound className="w-4 h-4 text-[#F5B301]" />
-              <span>Vào khu vực Quản trị & Duyệt điểm</span>
-            </Link>
-          </div>
+          {(isBCN || isHR) && (
+            <div className="pt-2 border-t border-white/10">
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-bold bg-[#1E63D6] text-white hover:bg-[#1E63D6]/90 shadow-md"
+              >
+                <KeyRound className="w-4 h-4 text-[#F5B301]" />
+                <span>Vào khu vực Quản trị & Duyệt điểm</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

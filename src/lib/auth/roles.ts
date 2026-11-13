@@ -19,7 +19,7 @@ export function canImportMembers(role?: UserRole): boolean {
 }
 
 export function canProposeScore(role?: UserRole): boolean {
-  return role === 'admin' || role === 'bcn' || role === 'dept_head'
+  return role === 'admin' || role === 'bcn' || role === 'hr'
 }
 
 export function canApproveSevereViolation(role?: UserRole): boolean {
@@ -31,5 +31,5 @@ export function canViewSensitiveInfo(role?: UserRole): boolean {
 }
 
 export function canReviewDispute(role?: UserRole): boolean {
-  return role === 'admin' || role === 'bcn' || role === 'dept_head' || role === 'hr'
+  return role === 'admin' || role === 'bcn' || role === 'hr'
 }
