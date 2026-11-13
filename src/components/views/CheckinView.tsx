@@ -578,56 +578,15 @@ export function CheckinView() {
           <div className="space-y-6">
             {/* Card Thông tin Phiên Điểm Danh Tích Hợp Selector Hiện Đại */}
             <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
-              {/* Hàng 1: Trạng thái phiên bên trái + Dropdown chuyển phiên gọn gàng bên phải */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1.5 border ${currentEvt.isFinalized
-                        ? 'bg-slate-100 text-slate-700 border-slate-200'
-                        : 'bg-emerald-50 text-emerald-700 border-emerald-200/90'
-                      }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${currentEvt.isFinalized ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'}`} />
-                    <span>{currentEvt.isFinalized ? t('checkin.status_finalized', 'ĐÃ CHỐT SỔ ĐIỂM DANH') : t('checkin.status_live', 'PHIÊN ĐIỂM DANH ĐANG DIỄN RA')}</span>
+              {/* Tầng 1: Thanh điều khiển phiên sự kiện (trái) và Thao tác tạo mới (phải) - Cân đối tuyệt đối */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                {/* Vế trái: Selector phiên sự kiện */}
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#0284C7] shrink-0" />
+                    <span>{t('checkin.switch_session', 'Đổi phiên:')}</span>
                   </span>
-                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/90">
-                    {currentEvt.category === 'workshop'
-                      ? t('checkin.cat_workshop', 'Workshop chuyên đề')
-                      : currentEvt.category === 'teambuilding'
-                        ? t('checkin.cat_teambuilding', 'Teambuilding')
-                        : currentEvt.category === 'external'
-                          ? t('checkin.cat_external', 'Sự kiện ĐHQG')
-                          : t('checkin.cat_meeting', 'Sinh hoạt định kỳ CLB')}
-                  </span>
-                  {currentEvt.isRequired ? (
-                    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200/80">
-                      {t('checkin.required_badge', 'Bắt buộc tham gia')}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                      {t('checkin.optional_badge', 'Mở đăng ký')} (+{currentEvt.pointBonus || 2}{language === 'vi' ? 'đ' : ' pts'})
-                    </span>
-                  )}
-                  {currentEvt.allowRegistration && (
-                    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-50 text-purple-700 border border-purple-200/80 flex items-center gap-1">
-                      <Ticket className="w-3 h-3 text-purple-600" />
-                      <span>{t('checkin.registered_badge', 'Đã đăng ký trước')}: {currentEvt.registeredMemberCodes?.length || 0} / {currentEvt.maxAttendees || 50}</span>
-                    </span>
-                  )}
-                  {getEventPeriodId(currentEvt) !== currentActivePeriodId && (
-                    <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-amber-700" />
-                      <span>{language === 'vi' ? 'Đang xem lại sự kiện kỳ trước' : 'Viewing previous period session'}</span>
-                    </span>
-                  )}
-                </div>
-
-                {/* Dropdown chuyển phiên tích hợp tinh tế & nút tạo sự kiện mới */}
-                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                  <span className="text-xs font-bold text-slate-500 whitespace-nowrap hidden md:inline">
-                    {t('checkin.switch_session', 'Đổi phiên:')}
-                  </span>
-                  <div className="relative">
+                  <div className="relative min-w-0">
                     <select
                       suppressHydrationWarning
                       value={currentEvt.id}
@@ -641,7 +600,7 @@ export function CheckinView() {
                           setViewingEventId(selectedId)
                         }
                       }}
-                      className="appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer max-w-[240px] sm:max-w-xs truncate"
+                      className="appearance-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200/90 dark:border-slate-700 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7]/20 transition shadow-2xs cursor-pointer max-w-[260px] sm:max-w-md truncate"
                     >
                       {events.map((e) => (
                         <option key={e.id} value={e.id} suppressHydrationWarning>
@@ -659,26 +618,70 @@ export function CheckinView() {
                         setViewingEventId(null)
                         setActiveEventId('')
                       }}
-                      className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
                       title={language === 'vi' ? 'Quay lại chu kỳ hiện tại' : 'Return to current period'}
                     >
                       <ArrowRight className="w-3 h-3 rotate-180" />
                       <span>{language === 'vi' ? `Về ${currentActiveMonth || 'T11'}` : 'Back'}</span>
                     </button>
                   )}
-
-                  {(isBCN || isHR) && (
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95"
-                      title={t('checkin.create_event', 'Khởi tạo phiên điểm danh / sự kiện mới')}
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>{t('checkin.create_event', 'Tạo sự kiện mới')}</span>
-                    </button>
-                  )}
                 </div>
+
+                {/* Vế phải: Nút tạo sự kiện mới cho BCN / HR */}
+                {(isBCN || isHR) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 self-start sm:self-auto shrink-0"
+                    title={t('checkin.create_event', 'Khởi tạo phiên điểm danh / sự kiện mới')}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{t('checkin.create_event', 'Tạo sự kiện mới')}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Tầng 2: Toàn bộ dải huy hiệu trạng thái của phiên đang chọn (rộng rãi 100%, không bị chèn ép hay rớt dòng đơn lẻ) */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <span
+                  className={`px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1.5 border ${currentEvt.isFinalized
+                      ? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200/90 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                    }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${currentEvt.isFinalized ? 'bg-slate-400' : 'bg-emerald-500 animate-pulse'}`} />
+                  <span>{currentEvt.isFinalized ? t('checkin.status_finalized', 'ĐÃ CHỐT SỔ ĐIỂM DANH') : t('checkin.status_live', 'PHIÊN ĐIỂM DANH ĐANG DIỄN RA')}</span>
+                </span>
+                <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-[#F0F9FF] text-[#0284C7] border border-sky-200/90 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800">
+                  {currentEvt.category === 'workshop'
+                    ? t('checkin.cat_workshop', 'Workshop chuyên đề')
+                    : currentEvt.category === 'teambuilding'
+                      ? t('checkin.cat_teambuilding', 'Teambuilding')
+                      : currentEvt.category === 'external'
+                        ? t('checkin.cat_external', 'Sự kiện ĐHQG')
+                        : t('checkin.cat_meeting', 'Sinh hoạt định kỳ CLB')}
+                </span>
+                {currentEvt.isRequired ? (
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                    {t('checkin.required_badge', 'Bắt buộc tham gia')}
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                    {t('checkin.optional_badge', 'Mở đăng ký')} (+{currentEvt.pointBonus || 2}{language === 'vi' ? 'đ' : ' pts'})
+                  </span>
+                )}
+                {currentEvt.allowRegistration && (
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 flex items-center gap-1">
+                    <Ticket className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                    <span>{t('checkin.registered_badge', 'Đã đăng ký trước')}: {currentEvt.registeredMemberCodes?.length || 0} / {currentEvt.maxAttendees || 50}</span>
+                  </span>
+                )}
+                {getEventPeriodId(currentEvt) !== currentActivePeriodId && (
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-700 flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-700 dark:text-amber-300" />
+                    <span>{language === 'vi' ? 'Đang xem lại sự kiện kỳ trước' : 'Viewing previous period session'}</span>
+                  </span>
+                )}
               </div>
 
               {/* Hàng 2: Grid 12 cột cân đối hoàn hảo giữa Thông tin sự kiện và Trạm Chiếu PIN */}
