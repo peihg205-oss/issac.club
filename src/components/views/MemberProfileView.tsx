@@ -1314,8 +1314,9 @@ export function MemberProfileView({ member, onBack }: MemberProfileViewProps) {
                                           ? 'bg-[#F0FDF4] text-emerald-700 border-emerald-200/80'
                                           : 'bg-[#FFF1F2] text-rose-700 border-rose-200/80'
                                       }`}
+                                      title={item.code}
                                     >
-                                      {item.code}
+                                      {item.code.startsWith('CUSTOM_POINT') ? 'CUSTOM' : item.code}
                                     </span>
                                     <span className="font-bold text-xs sm:text-[13.5px] text-[#061651] group-hover:text-[#0284C7] transition-colors">
                                       {item.title}

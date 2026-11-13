@@ -1172,8 +1172,11 @@ export function HistoryView() {
                     </div>
 
                     <div className="p-2 bg-slate-50/70 rounded-xl border border-slate-200/60 text-xs text-slate-700 flex items-start gap-1.5">
-                      <span className="font-mono font-bold text-[10px] text-[#0284C7] bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200 shrink-0">
-                        {item.code}
+                      <span
+                        className="font-mono font-bold text-[10px] text-[#0284C7] bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200 shrink-0"
+                        title={item.code}
+                      >
+                        {item.code.startsWith('CUSTOM_POINT') ? 'CUSTOM' : item.code}
                       </span>
                       <span className="leading-snug">{item.title}</span>
                     </div>
@@ -1223,9 +1226,9 @@ export function HistoryView() {
             <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border-collapse table-fixed min-w-[1020px]">
               <colgroup>
-                <col className="w-[145px]" style={{ width: '145px' }} />
-                <col className="w-[220px]" style={{ width: '220px' }} />
-                <col className="w-[55px]" style={{ width: '55px' }} />
+                <col className="w-[140px]" style={{ width: '140px' }} />
+                <col className="w-[200px]" style={{ width: '200px' }} />
+                <col className="w-[90px]" style={{ width: '90px' }} />
                 <col />
                 <col className="w-[60px]" style={{ width: '60px' }} />
                 <col className="w-[64px]" style={{ width: '64px' }} />
@@ -1234,13 +1237,13 @@ export function HistoryView() {
               </colgroup>
               <thead className="bg-[#0284C7] text-xs font-bold text-white uppercase tracking-wider select-none shadow-xs">
                 <tr className="divide-x divide-white/15">
-                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-sky-100 w-[145px]">
+                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-sky-100 w-[140px]">
                     {t('history.th_time')}
                   </th>
-                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-white w-[220px]">
+                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-white w-[200px]">
                     {t('history.th_member')}
                   </th>
-                  <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-sky-100 w-[55px]">
+                  <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-sky-100 w-[90px]">
                     {t('history.th_code')}
                   </th>
                   <th className="py-3 px-4 text-left font-bold text-white min-w-[280px]">
@@ -1306,10 +1309,13 @@ export function HistoryView() {
                           </div>
                         </td>
 
-                        {/* Mã tiêu chí (căn giữa, vừa vặn) */}
-                        <td className="py-3.5 px-1 text-center whitespace-nowrap">
-                          <span className="font-mono font-bold text-xs text-[#0284C7] inline-block">
-                            {item.code}
+                        {/* Mã tiêu chí (căn giữa, vừa vặn, không tràn lấn) */}
+                        <td className="py-3.5 px-2 text-center whitespace-nowrap overflow-hidden">
+                          <span
+                            className="font-mono font-bold text-xs text-[#0284C7] bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200/80 dark:border-sky-800 inline-block max-w-[80px] truncate align-middle"
+                            title={item.code}
+                          >
+                            {item.code.startsWith('CUSTOM_POINT') ? 'CUSTOM' : item.code}
                           </span>
                         </td>
 
