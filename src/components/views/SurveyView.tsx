@@ -1820,7 +1820,7 @@ export function SurveyView() {
               <strong className="text-[#061651] dark:text-white font-bold whitespace-nowrap">
                 {currentUser?.name || 'Thành viên'}
               </strong>
-              <span className="text-slate-300 dark:text-slate-600 select-none">•</span>
+              <span className="text-slate-300 dark:text-slate-600 select-none opacity-60 text-[11px] font-light">|</span>
               <span className="text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                 {currentUser?.roleTitle || 'Thành viên'}
               </span>
