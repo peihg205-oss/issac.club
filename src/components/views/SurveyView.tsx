@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import {
   Users,
@@ -124,7 +124,7 @@ const RATING_OPTIONS = [
 ]
 
 export function SurveyView() {
-  const { currentUser, isBCN, switchUser } = useAuth()
+  const { currentUser, isBCN } = useAuth()
   const { members } = useClub()
   const { language } = useLanguage()
 
@@ -138,6 +138,14 @@ export function SurveyView() {
     }
     return 'survey'
   })
+
+  // Bảo vệ phân quyền tuyệt đối: Thành viên không phải BCN không bao giờ được phép vào 'bcn_report'
+  useEffect(() => {
+    if (!isBCN && viewMode === 'bcn_report') {
+      setViewMode('survey')
+    }
+  }, [isBCN, viewMode])
+
   const [showBcnLockModal, setShowBcnLockModal] = useState<boolean>(false)
 
   // Mascot interaction when clicked
@@ -363,6 +371,51 @@ export function SurveyView() {
     }
   }, [currentEventStorageKey, selectedEvent])
 
+  // Tự động khôi phục / đồng bộ evaluations của người dùng hiện tại từ Cloud (storedFeedbacks)
+  // Giúp trạng thái đánh giá, số lượng hoàn thành và tích xanh ăn khớp 100% real-time trên mọi thiết bị
+  useEffect(() => {
+    if (!currentUser?.memberCode || !selectedEvent) return
+
+    const userEventFeedbacks = storedFeedbacks.filter(
+      (f) => f.event === selectedEvent && f.evaluatorMemberCode === currentUser.memberCode
+    )
+
+    if (userEventFeedbacks.length > 0) {
+      setEvaluations((prev) => {
+        let updated = { ...prev }
+        let hasDiff = false
+
+        userEventFeedbacks.forEach((fb) => {
+          if (prev[fb.targetMemberCode]?.status !== 'completed') {
+            hasDiff = true
+            updated[fb.targetMemberCode] = {
+              targetMemberCode: fb.targetMemberCode,
+              targetMemberName: fb.targetMemberName,
+              targetMemberDept: fb.targetDepartment,
+              targetMemberRole: fb.targetPosition,
+              avatarUrl: fb.targetAvatarUrl,
+              rating: fb.rating,
+              feedback: fb.feedback,
+              improvement: fb.improvement,
+              status: 'completed',
+              updatedAt: fb.submittedAt,
+            }
+          }
+        })
+
+        if (hasDiff) {
+          try {
+            localStorage.setItem(currentEventStorageKey, JSON.stringify(updated))
+          } catch (e) {
+            console.error(e)
+          }
+          return updated
+        }
+        return prev
+      })
+    }
+  }, [storedFeedbacks, selectedEvent, currentUser?.memberCode, currentEventStorageKey])
+
   // Set default selected member: prefer Trần Đức Thắng to match mockup if exists, else first target
   useEffect(() => {
     if (targetMembers.length > 0) {
@@ -411,18 +464,38 @@ export function SurveyView() {
     }
   }, [selectedMemberCode, evaluations, selectedMember])
 
-  // Trạng thái thành viên đang chọn đã nộp đánh giá hay chưa
-  const isSelectedMemberCompleted = Boolean(
-    selectedMember && evaluations[selectedMember.memberCode]?.status === 'completed'
+  // Kiểm tra thành viên đã được currentUser đánh giá trong sự kiện này chưa (đồng bộ real-time Cloud giữa mọi thiết bị)
+  const isMemberEvaluatedByCurrentUser = useCallback(
+    (targetCode: string) => {
+      if (!targetCode) return false
+      // 1. Kiểm tra từ feedback đã nộp lưu trên Cloud / localStorage
+      if (currentUser?.memberCode) {
+        const hasFeedback = storedFeedbacks.some(
+          (f) =>
+            f.event === selectedEvent &&
+            f.targetMemberCode === targetCode &&
+            f.evaluatorMemberCode === currentUser.memberCode
+        )
+        if (hasFeedback) return true
+      }
+      // 2. Kiểm tra từ evaluations cache của trình duyệt
+      return evaluations[targetCode]?.status === 'completed'
+    },
+    [evaluations, currentUser?.memberCode, storedFeedbacks, selectedEvent]
   )
 
-  // Completion calculation
+  // Trạng thái thành viên đang chọn đã nộp đánh giá hay chưa
+  const isSelectedMemberCompleted = Boolean(
+    selectedMember && isMemberEvaluatedByCurrentUser(selectedMember.memberCode)
+  )
+
+  // Completion calculation (ăn khớp 100% real-time giữa các thiết bị)
   const totalTargetCount = targetMembers.length
   const completedCount = useMemo(() => {
     return targetMembers.filter(
-      (m) => evaluations[m.memberCode]?.status === 'completed'
+      (m) => isMemberEvaluatedByCurrentUser(m.memberCode)
     ).length
-  }, [targetMembers, evaluations])
+  }, [targetMembers, isMemberEvaluatedByCurrentUser])
 
   // Extract first name (tên gọi)
   const memberFirstName = useMemo(() => {
@@ -721,7 +794,7 @@ export function SurveyView() {
         </div>
       </div>
 
-      {viewMode === 'bcn_report' ? (
+      {viewMode === 'bcn_report' && isBCN ? (
         <BcnSurveyReportView
           selectedEvent={selectedEvent}
           onSelectEvent={(evt) => setSelectedEvent(evt)}
@@ -973,8 +1046,7 @@ export function SurveyView() {
             >
               {targetMembers.map((member) => {
                 const isSelected = member.memberCode === selectedMember?.memberCode
-                const isEvaluated =
-                  evaluations[member.memberCode]?.status === 'completed'
+                const isEvaluated = isMemberEvaluatedByCurrentUser(member.memberCode)
 
                 return (
                   <button
@@ -1163,12 +1235,12 @@ export function SurveyView() {
               <div className="flex items-center gap-2.5">
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    evaluations[selectedMember.memberCode]?.status === 'completed'
+                    isSelectedMemberCompleted
                       ? 'bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
                       : 'bg-amber-100/70 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400'
                   }`}
                 >
-                  {evaluations[selectedMember.memberCode]?.status === 'completed' ? (
+                  {isSelectedMemberCompleted ? (
                     <CheckCircle2 className="w-4 h-4" />
                   ) : (
                     <Clock className="w-4 h-4" />
@@ -1180,12 +1252,12 @@ export function SurveyView() {
                   </span>
                   <span
                     className={`font-bold block truncate ${
-                      evaluations[selectedMember.memberCode]?.status === 'completed'
+                      isSelectedMemberCompleted
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-amber-600 dark:text-amber-400'
                     }`}
                   >
-                    {evaluations[selectedMember.memberCode]?.status === 'completed'
+                    {isSelectedMemberCompleted
                       ? 'Đã nộp đánh giá'
                       : 'Chưa đánh giá'}
                   </span>
@@ -1371,7 +1443,7 @@ export function SurveyView() {
                 {/* If next unevaluated member exists, show button to jump to them */}
                 {(() => {
                   const nextUnevaluated = targetMembers.find(
-                    (m) => evaluations[m.memberCode]?.status !== 'completed'
+                    (m) => !isMemberEvaluatedByCurrentUser(m.memberCode)
                   )
                   if (nextUnevaluated) {
                     return (
@@ -1760,29 +1832,15 @@ export function SurveyView() {
               </span>
             </div>
 
-            {/* 5. Nút bấm thao tác */}
-            <div className="flex items-center gap-2.5 pt-1">
+            {/* 5. Nút bấm thao tác: Nút "Đã hiểu" toàn chiều rộng, chuẩn nhận diện dự án */}
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={() => setShowBcnLockModal(false)}
-                className="flex-1 h-10 sm:h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-[13px] transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+                className="w-full h-11 px-5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-sm hover:shadow-md shadow-sky-500/20 transition-all cursor-pointer flex items-center justify-center active:scale-95"
               >
                 Đã hiểu
               </button>
-              {switchUser && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    switchUser('user-hiep')
-                    setShowBcnLockModal(false)
-                    setViewMode('bcn_report')
-                  }}
-                  className="flex-1 h-10 sm:h-11 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs sm:text-[13px] shadow-sm hover:shadow-md shadow-sky-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span>Xem quyền BCN</span>
-                </button>
-              )}
             </div>
           </div>
         </div>
