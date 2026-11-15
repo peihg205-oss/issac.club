@@ -1224,26 +1224,26 @@ export function HistoryView() {
           {/* Regular Table: Signature iSSAC Blue Header (Desktop >= md) */}
           <div className="hidden md:block bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
             <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 border-collapse table-fixed min-w-[1020px]">
+            <table className="w-full text-left text-xs text-slate-700 border-collapse table-fixed min-w-[1100px]">
               <colgroup>
-                <col className="w-[140px]" style={{ width: '140px' }} />
-                <col className="w-[200px]" style={{ width: '200px' }} />
-                <col className="w-[90px]" style={{ width: '90px' }} />
+                <col className="w-[135px]" style={{ width: '135px' }} />
+                <col className="w-[260px]" style={{ width: '260px' }} />
+                <col className="w-[85px]" style={{ width: '85px' }} />
                 <col />
                 <col className="w-[60px]" style={{ width: '60px' }} />
-                <col className="w-[64px]" style={{ width: '64px' }} />
-                <col className="w-[155px]" style={{ width: '155px' }} />
+                <col className="w-[72px]" style={{ width: '72px' }} />
+                <col className="w-[150px]" style={{ width: '150px' }} />
                 {isBCN && <col className="w-[86px]" style={{ width: '86px' }} />}
               </colgroup>
               <thead className="bg-[#0284C7] text-xs font-bold text-white uppercase tracking-wider select-none shadow-xs">
                 <tr className="divide-x divide-white/15">
-                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-sky-100 w-[140px]">
+                  <th className="py-3 px-3.5 whitespace-nowrap text-left font-bold text-sky-100 w-[135px]">
                     {t('history.th_time')}
                   </th>
-                  <th className="py-3 px-4 whitespace-nowrap text-left font-bold text-white w-[200px]">
+                  <th className="py-3 px-3.5 whitespace-nowrap text-left font-bold text-white w-[260px]">
                     {t('history.th_member')}
                   </th>
-                  <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-sky-100 w-[90px]">
+                  <th className="py-3 px-2 text-center whitespace-nowrap font-bold text-sky-100 w-[85px]">
                     {t('history.th_code')}
                   </th>
                   <th className="py-3 px-4 text-left font-bold text-white min-w-[280px]">
@@ -1252,10 +1252,10 @@ export function HistoryView() {
                   <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-white w-[60px]">
                     {t('history.th_points')}
                   </th>
-                  <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-sky-100 w-[64px]">
+                  <th className="py-3 px-1 text-center whitespace-nowrap font-bold text-sky-100 w-[72px]">
                     {t('history.th_type')}
                   </th>
-                  <th className="py-3 px-3.5 text-left whitespace-nowrap font-bold text-sky-100 w-[155px]">
+                  <th className="py-3 px-3 text-left whitespace-nowrap font-bold text-sky-100 w-[150px]">
                     {t('history.th_scorer')}
                   </th>
                   {isBCN && (
@@ -1278,12 +1278,12 @@ export function HistoryView() {
                     return (
                       <tr key={item.id || index} className="hover:bg-slate-50/70 transition-colors group divide-x divide-slate-100">
                         {/* Thời gian (Rộng rãi, có đệm thoáng, không bị sát viền) */}
-                        <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap text-xs">
+                        <td className="py-3.5 px-3.5 font-mono text-slate-500 whitespace-nowrap text-xs overflow-hidden">
                           {item.time}
                         </td>
 
-                        {/* Thành viên + avatar (Đầy đủ họ tên, không bị cắt dấu ...) */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        {/* Thành viên + avatar (Rộng 260px, đầy đủ họ tên, không bao giờ tràn/chèn sang cột khác) */}
+                        <td className="py-3.5 px-3.5 overflow-hidden">
                           <div className="flex items-center gap-2.5 min-w-0">
                             {avatar ? (
                               <img
@@ -1296,12 +1296,18 @@ export function HistoryView() {
                                 {item.name.charAt(0)}
                               </div>
                             )}
-                            <div className="min-w-0">
-                              <span className="font-bold text-[#061651] group-hover:text-[#0284C7] transition-colors whitespace-nowrap block text-[13px]">
+                            <div className="min-w-0 flex-1 overflow-hidden">
+                              <span
+                                className="font-bold text-[#061651] group-hover:text-[#0284C7] transition-colors block text-[13px] truncate"
+                                title={item.name}
+                              >
                                 {item.name}
                               </span>
                               {item.dept && (
-                                <span className="text-[10.5px] text-slate-400 font-medium block whitespace-nowrap">
+                                <span
+                                  className="text-[10.5px] text-slate-400 font-medium block truncate"
+                                  title={translateDept(item.dept)}
+                                >
                                   {translateDept(item.dept)}
                                 </span>
                               )}
@@ -1312,7 +1318,7 @@ export function HistoryView() {
                         {/* Mã tiêu chí (căn giữa, vừa vặn, không tràn lấn) */}
                         <td className="py-3.5 px-2 text-center whitespace-nowrap overflow-hidden">
                           <span
-                            className="font-mono font-bold text-xs text-[#0284C7] bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200/80 dark:border-sky-800 inline-block max-w-[80px] truncate align-middle"
+                            className="font-mono font-bold text-xs text-[#0284C7] bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200/80 dark:border-sky-800 inline-block max-w-[76px] truncate align-middle"
                             title={item.code}
                           >
                             {item.code.startsWith('CUSTOM_POINT') ? 'CUSTOM' : item.code}
@@ -1347,7 +1353,7 @@ export function HistoryView() {
                         </td>
 
                         {/* Người chấm (Định dạng gọn gàng 2 dòng nếu có ghi chú, không bị tràn chèn ô thao tác) */}
-                        <td className="py-3.5 px-3.5 text-slate-600 font-medium text-xs overflow-hidden">
+                        <td className="py-3.5 px-3 text-slate-600 font-medium text-xs overflow-hidden">
                           {item.scorer.includes('(') ? (
                             <div className="leading-snug min-w-0">
                               <span className="font-bold text-slate-800 block truncate text-[12px]">
