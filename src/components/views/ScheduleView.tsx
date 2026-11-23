@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
@@ -194,8 +195,8 @@ export function parseTimeRange(
     defaultSession === 'morning'
       ? { startTime: '08:00', endTime: '12:00' }
       : defaultSession === 'afternoon'
-      ? { startTime: '13:30', endTime: '17:30' }
-      : { startTime: '18:30', endTime: '21:30' }
+        ? { startTime: '13:30', endTime: '17:30' }
+        : { startTime: '18:30', endTime: '21:30' }
 
   if (!timeStr) return fallback
 
@@ -345,7 +346,7 @@ export function ScheduleView() {
         try {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed)) return parsed
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     return []
@@ -433,13 +434,13 @@ export function ScheduleView() {
         try {
           const parsed = JSON.parse(e.newValue)
           if (Array.isArray(parsed)) setPendingRequests(parsed)
-        } catch {}
+        } catch { }
       }
       if (e.key === 'issac_activities_data' && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue)
           if (Array.isArray(parsed)) setActivities(parsed.map(normalizeActivity))
-        } catch {}
+        } catch { }
       }
     }
 
@@ -852,10 +853,10 @@ export function ScheduleView() {
         editCategory === 'training'
           ? 'blue'
           : editCategory === 'meeting'
-          ? 'rose'
-          : editCategory === 'recruitment'
-          ? 'amber'
-          : 'emerald',
+            ? 'rose'
+            : editCategory === 'recruitment'
+              ? 'amber'
+              : 'emerald',
     }
 
     if (isBCN) {
@@ -974,10 +975,10 @@ export function ScheduleView() {
       newCategory === 'training'
         ? 'WS'
         : newCategory === 'meeting'
-        ? 'MT'
-        : newCategory === 'recruitment'
-        ? 'REC'
-        : 'EV'
+          ? 'MT'
+          : newCategory === 'recruitment'
+            ? 'REC'
+            : 'EV'
     const num = Math.floor(10 + Math.random() * 90)
     setNewCode(`iSSAC-${prefix}${num}`)
   }, [newCategory])
@@ -1114,10 +1115,10 @@ export function ScheduleView() {
         newCategory === 'training'
           ? 'blue'
           : newCategory === 'meeting'
-          ? 'rose'
-          : newCategory === 'recruitment'
-          ? 'amber'
-          : 'emerald',
+            ? 'rose'
+            : newCategory === 'recruitment'
+              ? 'amber'
+              : 'emerald',
     }
 
     if (isBCN) {
@@ -1358,9 +1359,8 @@ export function ScheduleView() {
             setCategoryFilter('all')
             setStatusFilter('all')
           }}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#F0F9FF] dark:bg-sky-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
-            statusFilter === 'all' && categoryFilter === 'all' ? '' : 'hover:opacity-90'
-          }`}
+          className={`p-4 sm:p-5 rounded-2xl bg-[#F0F9FF] dark:bg-sky-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${statusFilter === 'all' && categoryFilter === 'all' ? '' : 'hover:opacity-90'
+            }`}
           title="Bấm để xem tất cả hoạt động"
         >
           <div className="space-y-1">
@@ -1398,9 +1398,8 @@ export function ScheduleView() {
         {/* Card 3: Đã hoàn thành (Pastel xanh lá #F0FDF4 - #16A34A) */}
         <div
           onClick={() => setStatusFilter((prev) => (prev === 'done' ? 'all' : 'done'))}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#F0FDF4] dark:bg-emerald-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
-            statusFilter === 'done' ? 'ring-2 ring-emerald-500 shadow-[0_4px_14px_rgba(22,163,74,0.2)]' : ''
-          }`}
+          className={`p-4 sm:p-5 rounded-2xl bg-[#F0FDF4] dark:bg-emerald-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${statusFilter === 'done' ? 'ring-2 ring-emerald-500 shadow-[0_4px_14px_rgba(22,163,74,0.2)]' : ''
+            }`}
           title="Bấm để lọc hoạt động đã hoàn thành"
         >
           <div className="space-y-1">
@@ -1419,9 +1418,8 @@ export function ScheduleView() {
         {/* Card 4: Chưa hoàn thành (Pastel tím #FAF5FF - #9333EA) */}
         <div
           onClick={() => setStatusFilter((prev) => (prev === 'pending' ? 'all' : 'pending'))}
-          className={`p-4 sm:p-5 rounded-2xl bg-[#FAF5FF] dark:bg-purple-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${
-            statusFilter === 'pending' ? 'ring-2 ring-purple-500 shadow-[0_4px_14px_rgba(147,51,234,0.2)]' : ''
-          }`}
+          className={`p-4 sm:p-5 rounded-2xl bg-[#FAF5FF] dark:bg-purple-950/30 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 ${statusFilter === 'pending' ? 'ring-2 ring-purple-500 shadow-[0_4px_14px_rgba(147,51,234,0.2)]' : ''
+            }`}
           title="Bấm để lọc hoạt động chưa hoàn thành"
         >
           <div className="space-y-1">
@@ -1448,11 +1446,10 @@ export function ScheduleView() {
             <button
               type="button"
               onClick={() => setViewMode('week')}
-              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
-                viewMode === 'week'
+              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${viewMode === 'week'
                   ? 'bg-[#0284C7] text-white font-bold shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 font-medium'
-              }`}
+                }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
               <span>Thời khóa biểu theo tuần</span>
@@ -1464,11 +1461,10 @@ export function ScheduleView() {
                 setViewMode('plan')
                 setSelectedQuarter('Quý 1')
               }}
-              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
-                viewMode === 'plan' && selectedQuarter === 'Quý 1'
+              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${viewMode === 'plan' && selectedQuarter === 'Quý 1'
                   ? 'bg-[#0284C7] text-white font-bold shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 font-medium'
-              }`}
+                }`}
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span>Kế hoạch Quý 1</span>
@@ -1480,11 +1476,10 @@ export function ScheduleView() {
                 setViewMode('plan')
                 setSelectedQuarter('Quý 2')
               }}
-              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
-                viewMode === 'plan' && selectedQuarter === 'Quý 2'
+              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${viewMode === 'plan' && selectedQuarter === 'Quý 2'
                   ? 'bg-[#0284C7] text-white font-bold shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 font-medium'
-              }`}
+                }`}
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span>Kế hoạch Quý 2</span>
@@ -1496,11 +1491,10 @@ export function ScheduleView() {
                 setViewMode('plan')
                 setSelectedQuarter('Quý 3')
               }}
-              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
-                viewMode === 'plan' && selectedQuarter === 'Quý 3'
+              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${viewMode === 'plan' && selectedQuarter === 'Quý 3'
                   ? 'bg-[#0284C7] text-white font-bold shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 font-medium'
-              }`}
+                }`}
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span>Kế hoạch Quý 3</span>
@@ -1512,11 +1506,10 @@ export function ScheduleView() {
                 setViewMode('plan')
                 setSelectedQuarter('all')
               }}
-              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
-                viewMode === 'plan' && selectedQuarter === 'all'
+              className={`px-3.5 sm:px-4 py-2 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${viewMode === 'plan' && selectedQuarter === 'all'
                   ? 'bg-[#0284C7] text-white font-bold shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 font-medium'
-              }`}
+                }`}
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span>Toàn bộ kế hoạch</span>
@@ -1591,11 +1584,10 @@ export function ScheduleView() {
                   key={chip.id}
                   type="button"
                   onClick={() => setCategoryFilter(chip.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                    isSelected
+                  className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs ${isSelected
                       ? 'bg-[#0284C7] text-white font-bold'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 font-medium'
-                  }`}
+                    }`}
                 >
                   <span>{chip.label}</span>
                 </button>
@@ -1709,9 +1701,8 @@ export function ScheduleView() {
                         return (
                           <td
                             key={`morning-${w.isoDate}`}
-                            className={`p-2 align-top transition-colors min-h-[140px] w-[13.5%] ${
-                              w.isToday ? 'bg-sky-50/20 dark:bg-sky-950/10' : 'bg-white dark:bg-slate-900'
-                            }`}
+                            className={`p-2 align-top transition-colors min-h-[140px] w-[13.5%] ${w.isToday ? 'bg-sky-50/20 dark:bg-sky-950/10' : 'bg-white dark:bg-slate-900'
+                              }`}
                           >
                             <div className="space-y-2">
                               {items.map((item) => (
@@ -1740,9 +1731,8 @@ export function ScheduleView() {
                         return (
                           <td
                             key={`afternoon-${w.isoDate}`}
-                            className={`p-2 align-top transition-colors min-h-[140px] w-[13.5%] ${
-                              w.isToday ? 'bg-sky-50/20 dark:bg-sky-950/10' : 'bg-white dark:bg-slate-900'
-                            }`}
+                            className={`p-2 align-top transition-colors min-h-[140px] w-[13.5%] ${w.isToday ? 'bg-sky-50/20 dark:bg-sky-950/10' : 'bg-white dark:bg-slate-900'
+                              }`}
                           >
                             <div className="space-y-2">
                               {items.map((item) => (
@@ -1771,9 +1761,8 @@ export function ScheduleView() {
                         return (
                           <td
                             key={`evening-${w.isoDate}`}
-                            className={`p-2 align-top transition-colors min-h-[120px] w-[13.5%] ${
-                              w.isToday ? 'bg-sky-50/20 dark:bg-sky-950/10' : 'bg-white dark:bg-slate-900'
-                            }`}
+                            className={`p-2 align-top transition-colors min-h-[120px] w-[13.5%] ${w.isToday ? 'bg-sky-50/20 dark:bg-sky-950/10' : 'bg-white dark:bg-slate-900'
+                              }`}
                           >
                             <div className="space-y-2">
                               {items.map((item) => (
@@ -1881,9 +1870,8 @@ export function ScheduleView() {
                         <tr
                           key={act.id}
                           onClick={() => handleOpenActivity(act, false)}
-                          className={`divide-x divide-slate-100 dark:divide-slate-800 hover:bg-sky-50/50 dark:hover:bg-slate-800/60 transition cursor-pointer ${
-                            act.done ? 'bg-slate-50/40 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-900'
-                          }`}
+                          className={`divide-x divide-slate-100 dark:divide-slate-800 hover:bg-sky-50/50 dark:hover:bg-slate-800/60 transition cursor-pointer ${act.done ? 'bg-slate-50/40 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-900'
+                            }`}
                         >
                           {/* Quý / Tháng */}
                           <td className="py-3.5 px-2 font-bold text-center text-[#061651] dark:text-slate-300 align-middle">
@@ -1976,17 +1964,16 @@ export function ScheduleView() {
                                   e.stopPropagation()
                                   handleToggleDone(act.id, e)
                                 }}
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer active:scale-95 ${
-                                  !isBCN
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer active:scale-95 ${!isBCN
                                     ? 'hover:bg-rose-50 dark:hover:bg-rose-950/40 opacity-70 hover:opacity-100'
                                     : 'hover:bg-sky-100/60 dark:hover:bg-slate-800'
-                                }`}
+                                  }`}
                                 title={
                                   !isBCN
                                     ? 'Chỉ Ban Chủ nhiệm (BCN) mới có quyền tick xác nhận hoàn thành hoạt động'
                                     : act.done
-                                    ? 'Đánh dấu chưa hoàn thành'
-                                    : 'Đánh dấu đã hoàn thành (Done)'
+                                      ? 'Đánh dấu chưa hoàn thành'
+                                      : 'Đánh dấu đã hoàn thành (Done)'
                                 }
                               >
                                 {act.done ? (
@@ -2075,9 +2062,8 @@ export function ScheduleView() {
       {/* ======================================================== */}
       {selectedActivity && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className={`bg-white dark:bg-slate-900 rounded-3xl ${
-            isEditingSelected ? 'max-w-xl sm:max-w-2xl' : 'max-w-lg'
-          } w-full p-5 sm:p-6 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-150`}>
+          <div className={`bg-white dark:bg-slate-900 rounded-3xl ${isEditingSelected ? 'max-w-xl sm:max-w-2xl' : 'max-w-lg'
+            } w-full p-5 sm:p-6 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-150`}>
             {!isEditingSelected ? (
               /* CHẾ ĐỘ XEM CHI TIẾT - GỌN GÀNG TINH TẾ (BÉ GỌN CHUẨN YÊU CẦU) */
               <div className="space-y-2.5 sm:space-y-3">
@@ -2085,9 +2071,8 @@ export function ScheduleView() {
                 <div className="flex items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
                     <div
-                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-2xs ${
-                        CATEGORY_STYLES[getActivityCategory(selectedActivity)].cardBg
-                      } ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].border}`}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-2xs ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].cardBg
+                        } ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].border}`}
                     >
                       {getActivityCategory(selectedActivity) === 'training' && (
                         <Award className="w-5 h-5 text-[#0284C7]" />
@@ -2106,16 +2091,14 @@ export function ScheduleView() {
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-black rounded-md border tracking-wide uppercase leading-none ${
-                            CATEGORY_STYLES[getActivityCategory(selectedActivity)].codeBadge
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-black rounded-md border tracking-wide uppercase leading-none ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].codeBadge
+                            }`}
                         >
                           {selectedActivity.code}
                         </span>
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded-md border leading-none ${
-                            CATEGORY_STYLES[getActivityCategory(selectedActivity)].cardBg
-                          } ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].border}`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded-md border leading-none ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].cardBg
+                            } ${CATEGORY_STYLES[getActivityCategory(selectedActivity)].border}`}
                         >
                           {CATEGORY_STYLES[getActivityCategory(selectedActivity)].label}
                         </span>
@@ -2198,22 +2181,20 @@ export function ScheduleView() {
 
                   {/* Ô 4: Trạng thái tiến độ (Pastel vàng #FFFBEB / Xanh #F0FDF4, Không viền) */}
                   <div
-                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${
-                      selectedActivity.done
+                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)] ${selectedActivity.done
                         ? 'bg-[#F0FDF4] dark:bg-emerald-950/30'
                         : 'bg-[#FFFBEB] dark:bg-amber-950/30'
-                    }`}
+                      }`}
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 block leading-tight">
                         Trạng thái tiến độ
                       </span>
                       <span
-                        className={`text-sm sm:text-[15px] font-black block tracking-tight leading-tight py-0.5 ${
-                          selectedActivity.done
+                        className={`text-sm sm:text-[15px] font-black block tracking-tight leading-tight py-0.5 ${selectedActivity.done
                             ? 'text-[#16A34A] dark:text-emerald-300'
                             : 'text-[#D97706] dark:text-amber-300'
-                        }`}
+                          }`}
                       >
                         {selectedActivity.done ? 'Đã hoàn thành' : 'Sắp diễn ra'}
                       </span>
@@ -2224,11 +2205,10 @@ export function ScheduleView() {
                       </span>
                     </div>
                     <div
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center shrink-0 shadow-2xs ${
-                        selectedActivity.done
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center shrink-0 shadow-2xs ${selectedActivity.done
                           ? 'border-emerald-300/70 bg-white/70 dark:bg-slate-900 text-[#16A34A]'
                           : 'border-amber-300/70 bg-white/70 dark:bg-slate-900 text-[#D97706]'
-                      }`}
+                        }`}
                     >
                       {selectedActivity.done ? (
                         <CheckCircle2 className="w-4 h-4 stroke-[2]" />
@@ -2257,19 +2237,18 @@ export function ScheduleView() {
                   <button
                     type="button"
                     onClick={() => handleToggleDone(selectedActivity.id)}
-                    className={`px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95 shadow-2xs ${
-                      !isBCN
+                    className={`px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95 shadow-2xs ${!isBCN
                         ? 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-500 border border-slate-200 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50/50'
                         : selectedActivity.done
-                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 hover:bg-slate-200/80'
-                    }`}
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 hover:bg-emerald-100'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 hover:bg-slate-200/80'
+                      }`}
                     title={
                       !isBCN
                         ? 'Chỉ Ban Chủ nhiệm (BCN) mới có quyền xác nhận hoàn thành hoạt động'
                         : selectedActivity.done
-                        ? 'Đánh dấu chưa hoàn thành'
-                        : 'Đánh dấu đã hoàn thành'
+                          ? 'Đánh dấu chưa hoàn thành'
+                          : 'Đánh dấu đã hoàn thành'
                     }
                   >
                     {selectedActivity.done ? (
@@ -2359,11 +2338,10 @@ export function ScheduleView() {
                         key={cat.key}
                         type="button"
                         onClick={() => setEditCategory(cat.key)}
-                        className={`py-2.5 px-2 rounded-2xl border-2 font-bold text-xs transition-all flex items-center justify-center text-center cursor-pointer ${
-                          isSelected
+                        className={`py-2.5 px-2 rounded-2xl border-2 font-bold text-xs transition-all flex items-center justify-center text-center cursor-pointer ${isSelected
                             ? `${style.cardBg} ${style.border} shadow-2xs scale-[1.01]`
                             : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <span className={isSelected ? 'font-black' : 'font-semibold'}>
                           {cat.label}
@@ -2729,11 +2707,10 @@ export function ScheduleView() {
                     key={cat.key}
                     type="button"
                     onClick={() => setNewCategory(cat.key)}
-                    className={`py-2.5 px-2 rounded-2xl border-2 font-bold text-xs transition-all flex items-center justify-center text-center cursor-pointer ${
-                      isSelected
+                    className={`py-2.5 px-2 rounded-2xl border-2 font-bold text-xs transition-all flex items-center justify-center text-center cursor-pointer ${isSelected
                         ? `${style.cardBg} ${style.border} shadow-2xs scale-[1.01]`
                         : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     <span className={isSelected ? 'font-black' : 'font-semibold'}>
                       {cat.label}
@@ -3355,22 +3332,20 @@ export function ScheduleView() {
       {/* Toast thông báo hệ thống (Thành công / Cảnh báo / Thông tin) */}
       {systemNotice && (
         <div
-          className={`fixed bottom-6 right-6 z-50 max-w-md bg-white dark:bg-slate-900 border-2 rounded-2xl shadow-2xl p-4 flex items-start gap-3 animate-in slide-in-from-bottom-5 duration-200 ${
-            systemNotice.type === 'success'
+          className={`fixed bottom-6 right-6 z-50 max-w-md bg-white dark:bg-slate-900 border-2 rounded-2xl shadow-2xl p-4 flex items-start gap-3 animate-in slide-in-from-bottom-5 duration-200 ${systemNotice.type === 'success'
               ? 'border-emerald-500 dark:border-emerald-600'
               : systemNotice.type === 'warning'
-              ? 'border-rose-400 dark:border-rose-500'
-              : 'border-[#0284C7] dark:border-sky-500'
-          }`}
+                ? 'border-rose-400 dark:border-rose-500'
+                : 'border-[#0284C7] dark:border-sky-500'
+            }`}
         >
           <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-              systemNotice.type === 'success'
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${systemNotice.type === 'success'
                 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60'
                 : systemNotice.type === 'warning'
-                ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60'
-                : 'bg-sky-100 text-[#0284C7] dark:bg-sky-950/60'
-            }`}
+                  ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/60'
+                  : 'bg-sky-100 text-[#0284C7] dark:bg-sky-950/60'
+              }`}
           >
             {systemNotice.type === 'success' ? (
               <CheckCircle2 className="w-5 h-5" />
@@ -3382,13 +3357,12 @@ export function ScheduleView() {
           </div>
           <div className="flex-1 pr-2">
             <div
-              className={`font-bold text-sm flex items-center gap-1.5 ${
-                systemNotice.type === 'success'
+              className={`font-bold text-sm flex items-center gap-1.5 ${systemNotice.type === 'success'
                   ? 'text-emerald-700 dark:text-emerald-400'
                   : systemNotice.type === 'warning'
-                  ? 'text-rose-700 dark:text-rose-400'
-                  : 'text-[#0284C7] dark:text-sky-400'
-              }`}
+                    ? 'text-rose-700 dark:text-rose-400'
+                    : 'text-[#0284C7] dark:text-sky-400'
+                }`}
             >
               <span>{systemNotice.title}</span>
             </div>
@@ -3513,17 +3487,16 @@ function ActivityCard({
         <button
           type="button"
           onClick={onToggleDone}
-          className={`p-1 rounded-md transition cursor-pointer ${
-            !isBCN
+          className={`p-1 rounded-md transition cursor-pointer ${!isBCN
               ? 'opacity-60 hover:opacity-100 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600'
               : 'hover:bg-black/5 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700'
-          }`}
+            }`}
           title={
             !isBCN
               ? 'Chỉ Ban Chủ nhiệm (BCN) mới có quyền tick xác nhận hoàn thành hoạt động'
               : item.done
-              ? 'Đánh dấu chưa hoàn thành'
-              : 'Đánh dấu đã hoàn thành'
+                ? 'Đánh dấu chưa hoàn thành'
+                : 'Đánh dấu đã hoàn thành'
           }
         >
           {item.done ? (

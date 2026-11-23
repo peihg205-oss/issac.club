@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iSSAC Database ERD - Entity Relationship Diagram</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body {
+      background: #070D1E;
+      color: #E2E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .badge-pk {
+      background: rgba(245, 179, 1, 0.15);
+      color: #F5B301;
+      border: 1px solid rgba(245, 179, 1, 0.35);
+    }
+    .badge-fk {
+      background: rgba(14, 165, 233, 0.15);
+      color: #38BDF8;
+      border: 1px solid rgba(14, 165, 233, 0.35);
+    }
+    .table-card {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .table-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px -10px rgba(14, 165, 233, 0.25);
+    }
+    .connection-line {
+      stroke-dasharray: 4;
+      animation: dash 30s linear infinite;
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -1000; }
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 lg:p-8">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="bg-[#0B152E]/90 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1E63D6] to-[#0284C7] p-0.5 shadow-md shadow-sky-600/20 flex items-center justify-center font-black text-white text-base">
+            🗄️
+          </div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            iSSAC<span class="text-[#F5B301]">_Database</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold">
+              20 Tables • ERD Map
+            </span>
+          </h1>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-400">
+          Sơ đồ quan hệ thực thể, ánh xạ Khóa chính (PK) & Khóa ngoại (FK) chuẩn hóa hệ thống quản lý CLB iSSAC
+        </p>
+      </div>
+
+      <!-- Quick Controls -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="window.print()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+          🖨️ In / Lưu PDF
+        </button>
+        <a href="#diagram" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-md shadow-sky-600/30 transition flex items-center gap-1.5 cursor-pointer">
+          🧭 Xem Sơ đồ luồng
+        </a>
+      </div>
+    </header>
+
+    <!-- Navigation & Filters -->
+    <div class="bg-[#0B152E]/80 border border-slate-700/60 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+      <!-- Tabs -->
+      <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0" id="filterTabs">
+        <button onclick="filterModule('all')" class="tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0284C7] text-white shadow-xs cursor-pointer whitespace-nowrap" data-mod="all">
+          Tất cả (20 Bảng)
+        </button>
+        <button onclick="filterModule('org')" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap" data-mod="org">
+          🏢 Tổ chức & Thành viên (4)
+        </button>
+        <button onclick="filterModule('act')" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap" data-mod="act">
+          📅 Sự kiện & Nhiệm vụ (4)
+        </button>
+        <button onclick="filterModule('ledger')" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap" data-mod="ledger">
+          💎 Sổ cái & Duyệt điểm (2)
+        </button>
+        <button onclick="filterModule('disp')" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap" data-mod="disp">
+          ⚖️ Kỷ luật & Khiếu nại (4)
+        </button>
+        <button onclick="filterModule('rules')" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap" data-mod="rules">
+          ⚙️ Tiêu chí & Hệ thống (6)
+        </button>
+      </div>
+
+      <!-- Search Box -->
+      <div class="w-full sm:w-64 relative shrink-0">
+        <input
+          type="text"
+          id="searchInput"
+          oninput="handleSearch()"
+          placeholder="Tìm bảng hoặc tên cột..."
+          class="w-full px-3.5 py-1.5 bg-slate-900/90 border border-slate-700 text-xs text-white rounded-xl placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+        />
+      </div>
+    </div>
+
+    <!-- SƠ ĐỒ LUỒNG ÁNH XẠ TRỰC QUAN (VISUAL FLOW MAP) -->
+    <section id="diagram" class="bg-[#0B152E]/90 border border-slate-700/60 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-bold text-white">🗺️ Sơ đồ Trục Dữ liệu Chính (Core Backbone Flow)</span>
+          <span class="text-[11px] text-slate-400 font-medium">Bấm vào bất kỳ bảng nào để xem liên kết</span>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#F5B301]"></span> Khóa chính (PK)</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#38BDF8]"></span> Khóa ngoại (FK)</span>
+        </div>
+      </div>
+
+      <!-- Visual Pipeline Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+        <!-- Node 1: GỐC (Nhiệm kỳ & Ban) -->
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">1. Tổ chức nền tảng</span>
+            <span class="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-md font-bold">Root</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white block font-mono">terms (Nhiệm kỳ)</strong>
+              <span class="text-[11px] text-slate-400">PK: <code class="text-amber-400">id</code></span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white block font-mono">departments (Ban B01-B04)</strong>
+              <span class="text-[11px] text-slate-400">PK: <code class="text-amber-400">id</code> • Code: B01..B04</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-amber-300/80 font-medium text-center">
+            ⬇️ Phân bổ thành viên & kỳ
+          </div>
+        </div>
+
+        <!-- Node 2: TRUNG TÂM (Thành viên) -->
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-sky-500/40 space-y-3 shadow-lg shadow-sky-950/50">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-sky-400 uppercase tracking-wider">2. Thực thể trung tâm</span>
+            <span class="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-bold">Core</span>
+          </div>
+          <div class="p-3 rounded-lg bg-sky-950/40 border border-sky-600/40 space-y-1.5 text-xs">
+            <strong class="text-white block text-sm font-mono text-sky-200">members (48 Thành viên)</strong>
+            <p class="text-[11px] text-slate-300">PK: <code class="text-amber-400 font-bold">id</code> • UK: <code class="text-sky-300">member_code</code></p>
+            <div class="pt-1.5 border-t border-sky-800/40 text-[11px] text-slate-400 space-y-0.5">
+              <div>🔗 <code class="text-sky-400">department_id</code> ➔ departments</div>
+              <div>🔗 <code class="text-sky-400">term_id</code> ➔ terms</div>
+              <div>📊 Điểm hiện tại: <code class="text-emerald-400 font-bold">current_score</code> (0-100)</div>
+              <div>⚠️ Vắng không phép: <code class="text-rose-400 font-bold">t02_count</code></div>
+            </div>
+          </div>
+          <div class="text-[11px] text-sky-300/80 font-medium text-center">
+            ⬇️ Sinh hoạt, nhận việc & điểm danh
+          </div>
+        </div>
+
+        <!-- Node 3: HOẠT ĐỘNG PHÁT SINH -->
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-purple-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-purple-400 uppercase tracking-wider">3. Hoạt động & Nhiệm vụ</span>
+            <span class="text-[10px] bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-md font-bold">Activity</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white font-mono block">events (Sự kiện / Họp)</strong>
+              <span class="text-[10px] text-slate-400">PK: id • Token QR điểm danh</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white font-mono block">attendance (Điểm danh)</strong>
+              <span class="text-[10px] text-slate-400">FK: event_id, member_id</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white font-mono block">tasks (Nhiệm vụ & Nghiệm thu)</strong>
+              <span class="text-[10px] text-slate-400">FK: assigned_to, department_id</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-purple-300/80 font-medium text-center">
+            ⬇️ Tính điểm theo tiêu chí
+          </div>
+        </div>
+
+        <!-- Node 4: SỔ CÁI & PHÁN QUYẾT -->
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-emerald-500/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">4. Sổ cái & Kiểm toán</span>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded-md font-bold">Append-Only</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-700/40 space-y-1">
+              <strong class="text-white font-mono block text-emerald-300">score_ledger (Sổ cái điểm)</strong>
+              <span class="text-[10.5px] text-slate-300 block">PK: id • Lưu vết bất biến</span>
+              <span class="text-[10px] text-slate-400 block">FK: member_id, event_id, task_id</span>
+              <span class="text-[10px] text-amber-300 block">🔁 reverses_ledger_id trỏ lại id cũ</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white font-mono block">disputes (Khiếu nại Q06)</strong>
+              <span class="text-[10px] text-slate-400">FK: member_id, ledger_id</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/80">
+              <strong class="text-white font-mono block">termination_cases (Dừng tư cách)</strong>
+              <span class="text-[10px] text-slate-400">Tự động kích hoạt khi 3 lần T02</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 20 BẢNG DỮ LIỆU CHI TIẾT THEO PHÂN HỆ -->
+    <section class="space-y-6">
+      <h2 class="text-lg font-black text-white flex items-center gap-2">
+        <span>📋 Chi tiết Danh mục 20 Bảng, Khóa chính (PK) & Khóa ngoại (FK)</span>
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="tableCardsContainer">
+
+        <!-- Table 1: terms -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="org">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">terms</span>
+              <p class="text-[11px] text-slate-400">Nhiệm kỳ CLB iSSAC</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Tổ chức</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>name</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>start_date / end_date</span>
+              <span class="text-slate-400 text-[11px]">DATE</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>is_active</span>
+              <span class="text-slate-400 text-[11px]">BOOLEAN</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 2: departments -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="org">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">departments</span>
+              <p class="text-[11px] text-slate-400">Các Ban (B01–B04)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Tổ chức</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>code</span>
+              <span class="text-sky-400 text-[11px] font-bold">UNIQUE B01..B04</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>name</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>scoring_notes</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 3: members -->
+        <div class="table-card bg-[#0B152E] border border-sky-500/50 rounded-xl p-4 shadow-md space-y-2.5 ring-1 ring-sky-500/20" data-mod="org">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-sky-300 font-mono">members</span>
+              <p class="text-[11px] text-slate-400">Hồ sơ 48 Thành viên CLB</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">Cốt lõi</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>member_code</span>
+              <span class="text-sky-300 text-[11px] font-bold">UNIQUE MSSV</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>full_name</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> department_id</span>
+              <span class="text-sky-400 text-[11px]">➔ departments.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> term_id</span>
+              <span class="text-sky-400 text-[11px]">➔ terms.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>current_score</span>
+              <span class="text-emerald-400 text-[11px] font-bold">NUMERIC (0-100)</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>t02_count</span>
+              <span class="text-rose-400 text-[11px] font-bold">INTEGER (Vắng)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 4: user_roles -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="org">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">user_roles</span>
+              <p class="text-[11px] text-slate-400">Phân quyền hệ thống</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Bảo mật</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>role</span>
+              <span class="text-amber-400 text-[11px]">bcn/hr/dept_head/member</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> department_id</span>
+              <span class="text-sky-400 text-[11px]">➔ departments.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> term_id</span>
+              <span class="text-sky-400 text-[11px]">➔ terms.id</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 5: events -->
+        <div class="table-card bg-[#0B152E] border border-purple-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="act">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-purple-300 font-mono">events</span>
+              <p class="text-[11px] text-slate-400">Sự kiện & Phiên họp CLB</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Hoạt động</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>name</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> department_id</span>
+              <span class="text-sky-400 text-[11px]">NULL = Toàn CLB</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>checkin_token</span>
+              <span class="text-amber-400 text-[11px]">QR CODE TOKEN</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>status</span>
+              <span class="text-slate-400 text-[11px]">draft/open/closed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 6: attendance -->
+        <div class="table-card bg-[#0B152E] border border-purple-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="act">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-purple-300 font-mono">attendance</span>
+              <p class="text-[11px] text-slate-400">Điểm danh sự kiện</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Hoạt động</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> event_id</span>
+              <span class="text-sky-400 text-[11px]">➔ events.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>status</span>
+              <span class="text-emerald-400 text-[11px]">present/late/absent</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 7: tasks -->
+        <div class="table-card bg-[#0B152E] border border-purple-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="act">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-purple-300 font-mono">tasks</span>
+              <p class="text-[11px] text-slate-400">Nhiệm vụ & Nghiệm thu (P08)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Hoạt động</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>title</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> assigned_to</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> department_id</span>
+              <span class="text-sky-400 text-[11px]">➔ departments.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>status</span>
+              <span class="text-slate-400 text-[11px]">assigned/accepted</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 8: interaction_requests -->
+        <div class="table-card bg-[#0B152E] border border-purple-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="act">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-purple-300 font-mono">interaction_requests</span>
+              <p class="text-[11px] text-slate-400">Yêu cầu tương tác bài viết (C01-C03)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Hoạt động</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>type</span>
+              <span class="text-slate-400 text-[11px]">post / announcement</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> department_id</span>
+              <span class="text-sky-400 text-[11px]">➔ departments.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>deadline_at</span>
+              <span class="text-rose-400 text-[11px]">+12h Deadline</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 9: score_ledger -->
+        <div class="table-card bg-[#0B152E] border border-emerald-500/50 rounded-xl p-4 shadow-md space-y-2.5 ring-1 ring-emerald-500/20" data-mod="ledger">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-emerald-300 font-mono">score_ledger</span>
+              <p class="text-[11px] text-slate-400">Sổ cái điểm (Append-Only)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Bất biến</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>applied_delta</span>
+              <span class="text-emerald-400 text-[11px] font-bold">+/- Điểm áp dụng</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>score_after</span>
+              <span class="text-slate-300 text-[11px]">Điểm sau giao dịch</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> reverses_ledger_id</span>
+              <span class="text-amber-400 text-[11px]">➔ score_ledger.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>status</span>
+              <span class="text-slate-400 text-[11px]">approved / reversed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 10: score_requests -->
+        <div class="table-card bg-[#0B152E] border border-emerald-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="ledger">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-emerald-300 font-mono">score_requests</span>
+              <p class="text-[11px] text-slate-400">Đề xuất điểm chờ BCN duyệt</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Duyệt điểm</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>proposed_delta</span>
+              <span class="text-slate-300 text-[11px]">NUMERIC</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>status</span>
+              <span class="text-amber-400 text-[11px]">pending/approved</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> ledger_id</span>
+              <span class="text-sky-400 text-[11px]">➔ score_ledger.id</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 11: disputes -->
+        <div class="table-card bg-[#0B152E] border border-rose-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="disp">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-rose-300 font-mono">disputes</span>
+              <p class="text-[11px] text-slate-400">Khiếu nại điểm (Q06)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">Khiếu nại</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> ledger_id</span>
+              <span class="text-sky-400 text-[11px]">➔ score_ledger.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>status</span>
+              <span class="text-slate-400 text-[11px]">pending/resolved</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 12: warnings -->
+        <div class="table-card bg-[#0B152E] border border-rose-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="disp">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-rose-300 font-mono">warnings</span>
+              <p class="text-[11px] text-slate-400">Thư cảnh cáo & Cảnh báo</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">Kỷ luật</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> related_ledger_id</span>
+              <span class="text-sky-400 text-[11px]">➔ score_ledger.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>type</span>
+              <span class="text-rose-400 text-[11px]">reminder/formal_warning</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 13: termination_cases -->
+        <div class="table-card bg-[#0B152E] border border-rose-500/40 rounded-xl p-4 shadow-md space-y-2.5" data-mod="disp">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-rose-300 font-mono">termination_cases</span>
+              <p class="text-[11px] text-slate-400">Hồ sơ dừng tư cách thành viên</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">Kỷ luật</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>t02_count_at_trigger</span>
+              <span class="text-rose-400 text-[11px] font-bold">≥ 3 lần T02</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 14: honors -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="disp">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-amber-300 font-mono">honors</span>
+              <p class="text-[11px] text-slate-400">Vinh danh thành viên tiêu biểu</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Thi đua</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> member_id</span>
+              <span class="text-sky-400 text-[11px]">➔ members.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>type</span>
+              <span class="text-amber-300 text-[11px]">monthly_top / outstanding</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 15: criteria -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="rules">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">criteria</span>
+              <p class="text-[11px] text-slate-400">Tiêu chí tính điểm (C01-C20, T01-T13)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Quy tắc</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>code</span>
+              <span class="text-sky-400 text-[11px] font-bold">UNIQUE (C01, T02..)</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>base_points</span>
+              <span class="text-emerald-400 text-[11px]">NUMERIC (+/-)</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>type</span>
+              <span class="text-slate-400 text-[11px]">add / deduct / rule</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 16: criteria_history -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="rules">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">criteria_history</span>
+              <p class="text-[11px] text-slate-400">Lịch sử thay đổi tiêu chí</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Audit</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> criteria_id</span>
+              <span class="text-sky-400 text-[11px]">➔ criteria.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>old_values / new_values</span>
+              <span class="text-slate-400 text-[11px]">JSONB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 17: rating_levels -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="rules">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">rating_levels</span>
+              <p class="text-[11px] text-slate-400">Mức phân loại thi đua</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Quy tắc</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>min_score / max_score</span>
+              <span class="text-slate-400 text-[11px]">INTEGER</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>level_name</span>
+              <span class="text-emerald-400 text-[11px]">Xuất sắc, Tốt, TB...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 18: weekly_hr_updates -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="rules">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">weekly_hr_updates</span>
+              <p class="text-[11px] text-slate-400">Tiến độ cập nhật tuần (HR)</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Giám sát</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-fk px-1.5 py-0.2 rounded text-[10px] font-bold">FK</span> term_id</span>
+              <span class="text-sky-400 text-[11px]">➔ terms.id</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>week_number / year</span>
+              <span class="text-amber-400 text-[11px]">UNIQUE Tuần</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 19: settings -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="rules">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">settings</span>
+              <p class="text-[11px] text-slate-400">Cấu hình tham số hệ thống</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Cấu hình</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>key</span>
+              <span class="text-amber-400 text-[11px] font-bold">UNIQUE KEY</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>value</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table 20: audit_log -->
+        <div class="table-card bg-[#0B152E] border border-slate-700/70 rounded-xl p-4 shadow-md space-y-2.5" data-mod="rules">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+            <div>
+              <span class="text-sm font-black text-white font-mono">audit_log</span>
+              <p class="text-[11px] text-slate-400">Nhật ký kiểm toán hệ thống</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Audit</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span class="flex items-center gap-1.5"><span class="badge-pk px-1.5 py-0.2 rounded text-[10px] font-bold">PK</span> id</span>
+              <span class="text-slate-400 text-[11px]">UUID</span>
+            </div>
+            <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+              <span>action / table_name</span>
+              <span class="text-slate-400 text-[11px]">TEXT</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span>old_values / new_values</span>
+              <span class="text-slate-400 text-[11px]">JSONB</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="pt-6 border-t border-slate-800 text-center text-xs text-slate-500">
+      iSSAC Web 2026-2027 • Hệ thống Quản trị & Tính Điểm Rèn luyện Câu lạc bộ Đại sứ Sinh viên
+    </footer>
+  </div>
+
+  <script>
+    function filterModule(mod) {
+      document.querySelectorAll('#filterTabs button').forEach(btn => {
+        if (btn.dataset.mod === mod) {
+          btn.className = 'tab-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0284C7] text-white shadow-xs cursor-pointer whitespace-nowrap';
+        } else {
+          btn.className = 'tab-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap';
+        }
+      });
+
+      const cards = document.querySelectorAll('#tableCardsContainer .table-card');
+      cards.forEach(c => {
+        if (mod === 'all' || c.dataset.mod === mod) {
+          c.style.display = 'block';
+        } else {
+          c.style.display = 'none';
+        }
+      });
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('#tableCardsContainer .table-card');
+      cards.forEach(c => {
+        const text = c.innerText.toLowerCase();
+        if (!q || text.includes(q)) {
+          c.style.display = 'block';
+        } else {
+          c.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

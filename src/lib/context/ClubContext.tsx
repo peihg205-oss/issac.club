@@ -530,7 +530,11 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       if (savedDeletedMemberCodes) {
         const parsed = JSON.parse(savedDeletedMemberCodes)
         if (Array.isArray(parsed)) {
-          parsed.forEach((code: string) => deletedMemberCodesRef.current.add(code))
+          // Bảo vệ các thành viên chính thức: Không bao giờ để mã thành viên chính thức bị xóa nhầm do thao tác xóa tài khoản
+          const protectedCodes = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
+          const validDeleted = parsed.filter((code: string) => !protectedCodes.has(code))
+          validDeleted.forEach((code: string) => deletedMemberCodesRef.current.add(code))
+          localStorage.setItem('issac_deleted_member_codes', JSON.stringify(validDeleted))
         }
       }
     } catch (e) {}
@@ -550,11 +554,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         })
 
-      // Tự động bổ sung các thành viên trong danh sách chuẩn mà thiết bị này còn thiếu do bộ nhớ đệm cũ (chưa từng bị xóa)
+      // Tự động bổ sung đầy đủ 52 thành viên trong danh sách chuẩn INITIAL_MEMBERS nếu thiết bị còn thiếu
       const existingCodes = new Set(initialMemberList.map((m) => m.member_code))
-      const missingInitial = INITIAL_MEMBERS.filter(
-        (m) => !existingCodes.has(m.member_code) && !deletedMemberCodesRef.current.has(m.member_code)
-      )
+      const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
       if (missingInitial.length > 0) {
         initialMemberList = [...initialMemberList, ...missingInitial]
       }
@@ -817,7 +819,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
 
         // Hợp nhất Danh sách Thành viên & Điểm số (Khớp 100% giữa Mobile và Desktop, Chống nhảy lại dữ liệu)
         if (data.deletedMemberCodes && Array.isArray(data.deletedMemberCodes)) {
-          data.deletedMemberCodes.forEach((code: string) => deletedMemberCodesRef.current.add(code))
+          const protectedCodes = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
+          data.deletedMemberCodes.forEach((code: string) => {
+            if (!protectedCodes.has(code)) {
+              deletedMemberCodesRef.current.add(code)
+            }
+          })
           try {
             localStorage.setItem(
               'issac_deleted_member_codes',
@@ -875,6 +882,14 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
               ...m,
               avatar_url: sanitizeMemberAvatar(m.avatar_url),
             })))
+            hasLocalNewer = true
+          }
+
+          // Bảo toàn tuyệt đối danh sách thành viên chính thức INITIAL_MEMBERS
+          const mergedCodes = new Set(merged.map((m: any) => m.member_code))
+          const missingCore = INITIAL_MEMBERS.filter((m) => !mergedCodes.has(m.member_code) && !deletedCodes.has(m.member_code))
+          if (missingCore.length > 0) {
+            merged.push(...missingCore)
             hasLocalNewer = true
           }
 

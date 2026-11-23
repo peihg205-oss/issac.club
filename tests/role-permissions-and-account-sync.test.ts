@@ -93,30 +93,30 @@ describe('Role & Scoring Permissions Matrix', () => {
     expect(canUserManageAccounts(null)).toBe(false)
   })
 
-  it('2. Ban Tư vấn chỉ có quyền cho điểm thành viên của Ban Tư vấn', () => {
-    // Chấm cho thành viên Ban Tư vấn -> Cho phép
+  it('2. Ban Tư vấn không có quyền cho điểm mà chỉ được gửi khiếu nại Q06', () => {
+    // Chấm cho thành viên Ban Tư vấn -> Bị từ chối theo Quy chế CLB
     const scoreTuVan = canUserScoreMember(userTuVan, memberTuVan)
-    expect(scoreTuVan.allowed).toBe(true)
+    expect(scoreTuVan.allowed).toBe(false)
+    expect(scoreTuVan.reason).toContain('không có quyền cho điểm')
 
     // Chấm cho thành viên Ban Truyền thông -> Bị từ chối
     const scoreTruyenThong = canUserScoreMember(userTuVan, memberTruyenThong)
     expect(scoreTruyenThong.allowed).toBe(false)
-    expect(scoreTruyenThong.reason).toContain('Ban Tư vấn chỉ có quyền cho điểm')
 
     // Chấm cho thành viên Ban Nhân sự -> Bị từ chối
     const scoreNhanSu = canUserScoreMember(userTuVan, memberNhanSu)
     expect(scoreNhanSu.allowed).toBe(false)
   })
 
-  it('3. Ban Truyền thông chỉ có quyền cho điểm thành viên của Ban Truyền thông', () => {
-    // Chấm cho thành viên Ban Truyền thông -> Cho phép
+  it('3. Ban Truyền thông không có quyền cho điểm mà chỉ được gửi khiếu nại Q06', () => {
+    // Chấm cho thành viên Ban Truyền thông -> Bị từ chối theo Quy chế CLB
     const scoreTruyenThong = canUserScoreMember(userTruyenThong, memberTruyenThong)
-    expect(scoreTruyenThong.allowed).toBe(true)
+    expect(scoreTruyenThong.allowed).toBe(false)
+    expect(scoreTruyenThong.reason).toContain('không có quyền cho điểm')
 
     // Chấm cho thành viên Ban Tư vấn -> Bị từ chối
     const scoreTuVan = canUserScoreMember(userTruyenThong, memberTuVan)
     expect(scoreTuVan.allowed).toBe(false)
-    expect(scoreTuVan.reason).toContain('Ban Truyền thông chỉ có quyền cho điểm')
 
     // Chấm cho thành viên Ban Nhân sự -> Bị từ chối
     const scoreNhanSu = canUserScoreMember(userTruyenThong, memberNhanSu)
@@ -137,12 +137,10 @@ describe('Role & Scoring Permissions Matrix', () => {
 
   it('6. getAllowedScoringMembers lọc chính xác theo ban cho Ban Truyền thông và Ban Tư vấn', () => {
     const listForTT = getAllowedScoringMembers(userTruyenThong, INITIAL_MEMBERS)
-    expect(listForTT.every((m) => m.department_code === 'B01')).toBe(true)
-    expect(listForTT.length).toBeGreaterThan(0)
+    expect(listForTT.length).toBe(0)
 
     const listForTV = getAllowedScoringMembers(userTuVan, INITIAL_MEMBERS)
-    expect(listForTV.every((m) => m.department_code === 'B02')).toBe(true)
-    expect(listForTV.length).toBeGreaterThan(0)
+    expect(listForTV.length).toBe(0)
 
     const listForHR = getAllowedScoringMembers(userHR, INITIAL_MEMBERS)
     expect(listForHR.length).toBe(INITIAL_MEMBERS.length)

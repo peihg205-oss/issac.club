@@ -13,6 +13,7 @@ import { SettingsView } from '@/components/views/SettingsView'
 import { CheckinView } from '@/components/views/CheckinView'
 import { MemberProfileView } from '@/components/views/MemberProfileView'
 import { AccountsView } from '@/components/views/AccountsView'
+import FinanceView from '@/components/views/FinanceView'
 import { SurveyView } from '@/components/views/SurveyView'
 import { ScheduleView } from '@/components/views/ScheduleView'
 import { useClub } from '@/lib/context/ClubContext'
@@ -212,6 +213,8 @@ export default function AppHome() {
             <RulesView />
           ) : activeTab === 'stats' ? (
             <StatsView onSelectMember={handleSelectMember} />
+          ) : activeTab === 'finance' ? (
+            <FinanceView />
           ) : activeTab === 'accounts' && isAccountManager ? (
             <AccountsView />
           ) : (

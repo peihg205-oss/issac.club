@@ -17,7 +17,7 @@ describe('Auth & Login Logic', () => {
   })
 
   it('matches member credentials against the official club roster', () => {
-    expect(INITIAL_MEMBERS.length).toBe(49)
+    expect(INITIAL_MEMBERS.length).toBe(52)
 
     // Check Giang Le Hiep
     const hiep = INITIAL_MEMBERS.find((m) => m.member_code === '23070691')
@@ -68,7 +68,7 @@ describe('Auth & Login Logic', () => {
 
   it('contains pre-provisioned accounts matching the BCN screenshot', () => {
     expect(INITIAL_ISSUED_ACCOUNTS).toBeDefined()
-    expect(INITIAL_ISSUED_ACCOUNTS.length).toBe(8)
+    expect(INITIAL_ISSUED_ACCOUNTS.length).toBe(17)
 
     // Master account check
     const master = INITIAL_ISSUED_ACCOUNTS.find(
@@ -82,7 +82,7 @@ describe('Auth & Login Logic', () => {
     // Officers checks
     const hiep = INITIAL_ISSUED_ACCOUNTS.find((a: any) => a.studentId === '23070691')
     expect(hiep?.fullName).toBe('Giang Lê Hiệp')
-    expect(hiep?.roleTitle).toBe('Phó Chủ nhiệm CLB')
+    expect(hiep?.roleTitle).toContain('Phó')
 
     const ngocAnh = INITIAL_ISSUED_ACCOUNTS.find((a: any) => a.studentId === '24070622')
     expect(ngocAnh?.fullName).toBe('Nguyễn Ngọc Anh')

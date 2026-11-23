@@ -17,8 +17,8 @@ import {
 import { MONTHLY_INTERACTION_QUOTA } from '@/lib/scoring/constants'
 
 describe('iSSAC Scoring Engine - 24 Canonical Spec Test Cases', () => {
-  it('1. Seed 49 người, nhóm 3/14/24/8, core 11, baseline 60', () => {
-    expect(INITIAL_MEMBERS.length).toBe(49)
+  it('1. Seed 52 người, nhóm 3/14/25/10, core 13, baseline 60', () => {
+    expect(INITIAL_MEMBERS.length).toBe(52)
     const bcn = INITIAL_MEMBERS.filter((m) => m.department_slug === 'bcn')
     const tt = INITIAL_MEMBERS.filter((m) => m.department_slug === 'truyen-thong')
     const tv = INITIAL_MEMBERS.filter((m) => m.department_slug === 'tu-van')
@@ -26,11 +26,11 @@ describe('iSSAC Scoring Engine - 24 Canonical Spec Test Cases', () => {
 
     expect(bcn.length).toBe(3)
     expect(tt.length).toBe(14)
-    expect(tv.length).toBe(24)
-    expect(ns.length).toBe(8)
+    expect(tv.length).toBe(25)
+    expect(ns.length).toBe(10)
 
     const coreList = INITIAL_MEMBERS.filter((m) => m.is_core)
-    expect(coreList.length).toBe(11)
+    expect(coreList.length).toBe(13)
 
     // Advisors STT 7 and 21 are NOT core
     const advisors = INITIAL_MEMBERS.filter((m) => m.position === 'Cố vấn')

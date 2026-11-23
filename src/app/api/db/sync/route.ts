@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AVAILABLE_PERIODS } from '@/lib/periodData'
+import { INITIAL_MEMBERS } from '@/lib/clubData'
+import { INITIAL_ISSUED_ACCOUNTS } from '@/lib/auth/accountData'
+import { INITIAL_ACTIVITIES } from '@/lib/scheduleData'
 
 // Bộ nhớ đệm tạm thời phía server để phản hồi tức thì
 let cachedEvents: any[] | null = null
@@ -320,22 +323,52 @@ export async function GET(request: Request) {
       }
       const safePeriods = Array.from(periodMap.values())
 
-      const activeDeletedAccountIds = new Set(deletedAccountIdsFromDb || cachedDeletedAccountIds || [])
-      let finalAccounts = accountsFromDb || cachedAccounts
-      if (Array.isArray(finalAccounts) && activeDeletedAccountIds.size > 0) {
-        finalAccounts = finalAccounts.filter((a: any) => a?.id && !activeDeletedAccountIds.has(a.id))
+      const activeDeletedAccountIds = new Set<string>((deletedAccountIdsFromDb || cachedDeletedAccountIds || []) as string[])
+      const rawDeletedMemberCodes = new Set<string>((deletedMemberCodesFromDb || cachedDeletedMemberCodes || []) as string[])
+      // Bảo vệ: Các thành viên chính thức trong INITIAL_MEMBERS không bao giờ bị xóa do nhầm lẫn ID tài khoản
+      const protectedMemberCodes = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
+      const activeDeletedMemberCodes = new Set<string>()
+      for (const code of rawDeletedMemberCodes) {
+        if (!protectedMemberCodes.has(code)) {
+          activeDeletedMemberCodes.add(code)
+        }
       }
 
-      const activeDeletedMemberCodes = new Set(deletedMemberCodesFromDb || cachedDeletedMemberCodes || [])
-      let finalMembers = membersFromDb || cachedMembers
+      let finalAccounts = accountsFromDb || cachedAccounts || INITIAL_ISSUED_ACCOUNTS
+      if (Array.isArray(finalAccounts) && activeDeletedAccountIds.size > 0) {
+        finalAccounts = finalAccounts.filter((a: any) =>
+          a?.id &&
+          !activeDeletedAccountIds.has(a.id) &&
+          !activeDeletedAccountIds.has(a.studentId) &&
+          !activeDeletedAccountIds.has(a.email) &&
+          !activeDeletedAccountIds.has(a.fullName)
+        )
+      }
+      cachedAccounts = finalAccounts
+
+      // Bảo toàn và phục hồi đầy đủ danh sách 52 thành viên CLB
+      let finalMembers = membersFromDb || cachedMembers || INITIAL_MEMBERS
       if (Array.isArray(finalMembers)) {
+        // Chỉ lọc thành viên nếu mã thành viên thực sự nằm trong activeDeletedMemberCodes (xóa từ MembersView)
+        // Tuyệt đối KHÔNG dùng activeDeletedAccountIds để lọc thành viên CLB!
         if (activeDeletedMemberCodes.size > 0) {
-          finalMembers = finalMembers.filter((m: any) => m?.member_code && !activeDeletedMemberCodes.has(m.member_code))
+          finalMembers = finalMembers.filter((m: any) =>
+            m?.member_code && !activeDeletedMemberCodes.has(m.member_code)
+          )
+        }
+        // Đảm bảo không bị thất lạc thành viên nào do bộ nhớ đệm hay lỗi quota Supabase
+        const existingCodes = new Set(finalMembers.map((m: any) => m.member_code))
+        const missingInitial = INITIAL_MEMBERS.filter(
+          (m) => !existingCodes.has(m.member_code) && !activeDeletedMemberCodes.has(m.member_code)
+        )
+        if (missingInitial.length > 0) {
+          finalMembers = [...finalMembers, ...missingInitial]
         }
         finalMembers = finalMembers.map((m: any) => ({
           ...m,
           avatar_url: m.avatar_url && m.avatar_url.length > 40000 ? undefined : m.avatar_url,
         }))
+        cachedMembers = finalMembers
       }
 
       return NextResponse.json(
@@ -404,10 +437,26 @@ export async function GET(request: Request) {
     const safeFallbackPeriods = Array.from(fallbackPeriodMap.values())
 
     const fallbackDeletedAccountIds = new Set(cachedDeletedAccountIds || [])
-    let fallbackAccounts = cachedAccounts || []
+    let fallbackAccounts = (cachedAccounts && cachedAccounts.length > 0) ? cachedAccounts : INITIAL_ISSUED_ACCOUNTS
     if (fallbackDeletedAccountIds.size > 0 && Array.isArray(fallbackAccounts)) {
-      fallbackAccounts = fallbackAccounts.filter((a: any) => !fallbackDeletedAccountIds.has(a.id))
+      fallbackAccounts = fallbackAccounts.filter(
+        (a: any) =>
+          !fallbackDeletedAccountIds.has(a.id) &&
+          !fallbackDeletedAccountIds.has(a.studentId) &&
+          !fallbackDeletedAccountIds.has(a.email)
+      )
     }
+
+    let fallbackMembers = cachedMembers || INITIAL_MEMBERS
+    if (Array.isArray(fallbackMembers)) {
+      const existingCodes = new Set(fallbackMembers.map((m: any) => m.member_code))
+      const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
+      if (missingInitial.length > 0) {
+        fallbackMembers = [...fallbackMembers, ...missingInitial]
+      }
+    }
+
+    const fallbackActivities = cachedActivities || INITIAL_ACTIVITIES
 
     return NextResponse.json(
       {
@@ -415,7 +464,7 @@ export async function GET(request: Request) {
         events: fallbackEvents,
         activeEventId: cachedActiveEventId || '',
         proposals: cachedProposals,
-        members: cachedMembers,
+        members: fallbackMembers,
         disputes: cachedDisputes,
         periods: safeFallbackPeriods,
         activePeriodId: cachedActivePeriodId || (safeFallbackPeriods[0]?.id || 'month-2026-11'),
@@ -426,7 +475,8 @@ export async function GET(request: Request) {
         deletedPeriodIds: cachedDeletedPeriodIds || [],
         accounts: fallbackAccounts,
         deletedAccountIds: Array.from(fallbackDeletedAccountIds),
-        activities: cachedActivities,
+        deletedMemberCodes: Array.from(cachedDeletedMemberCodes || []),
+        activities: fallbackActivities,
         schedulePendingRequests: cachedSchedulePendingRequests || [],
         surveyEvents: fallbackSurveyEvents,
         surveyFeedbacks: cachedSurveyFeedbacks || [],
@@ -450,17 +500,35 @@ export async function GET(request: Request) {
       errorFallbackEvents = errorFallbackEvents.filter((e: any) => !errorFallbackDeletedEventIds.has(e.id))
     }
 
+    let errorFallbackMembers = cachedMembers || INITIAL_MEMBERS
+    if (Array.isArray(errorFallbackMembers)) {
+      const existingCodes = new Set(errorFallbackMembers.map((m: any) => m.member_code))
+      const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
+      if (missingInitial.length > 0) {
+        errorFallbackMembers = [...errorFallbackMembers, ...missingInitial]
+      }
+    }
+
+    let errorFallbackAccounts = (cachedAccounts && cachedAccounts.length > 0) ? cachedAccounts : INITIAL_ISSUED_ACCOUNTS
+    const errorDelAccSet = new Set(cachedDeletedAccountIds || [])
+    if (errorDelAccSet.size > 0 && Array.isArray(errorFallbackAccounts)) {
+      errorFallbackAccounts = errorFallbackAccounts.filter((a: any) => !errorDelAccSet.has(a.id) && !errorDelAccSet.has(a.studentId))
+    }
+
     return NextResponse.json({
       success: true,
       events: errorFallbackEvents,
       proposals: cachedProposals,
-      members: cachedMembers,
+      members: errorFallbackMembers,
       disputes: cachedDisputes,
-      periods: cachedPeriods,
-      activePeriodId: cachedActivePeriodId,
+      periods: cachedPeriods || AVAILABLE_PERIODS,
+      activePeriodId: cachedActivePeriodId || 'month-2026-11',
       customPeriodScores: cachedPeriodScores,
       deletedProposalIds: cachedDeletedProposalIds || [],
       deletedEventIds: cachedDeletedEventIds || [],
+      accounts: errorFallbackAccounts,
+      deletedAccountIds: Array.from(errorDelAccSet),
+      activities: cachedActivities || INITIAL_ACTIVITIES,
       surveyEvents: cachedSurveyEvents,
       surveyFeedbacks: cachedSurveyFeedbacks || [],
       deletedSurveyEventIds: cachedDeletedSurveyEventIds || [],
@@ -611,10 +679,31 @@ export async function POST(request: Request) {
 
     // 0.3 Quản lý danh sách ID tài khoản đã xóa (Tombstones để đồng bộ nhất quán giữa Điện thoại và Máy tính)
     if (deletedAccountIds !== undefined || (action === 'delete_account' && accountId)) {
-      const incomingDelAcc = Array.isArray(deletedAccountIds) ? deletedAccountIds : []
+      const incomingDelAcc = Array.isArray(deletedAccountIds) ? [...deletedAccountIds] : []
       if (action === 'delete_account' && accountId && !incomingDelAcc.includes(accountId)) {
         incomingDelAcc.push(accountId)
       }
+      if (body.studentId && !incomingDelAcc.includes(body.studentId)) {
+        incomingDelAcc.push(body.studentId)
+      }
+      if (body.memberCode && !incomingDelAcc.includes(body.memberCode)) {
+        incomingDelAcc.push(body.memberCode)
+      }
+      if (body.email && !incomingDelAcc.includes(body.email)) {
+        incomingDelAcc.push(body.email)
+      }
+
+      // Tự động mở rộng bí danh cho Trần Đức Thắng nếu có thao tác xóa
+      for (const item of [...incomingDelAcc]) {
+        const clean = String(item).toLowerCase().trim()
+        if (clean === 'acc-thang' || clean === '24310088' || clean === 'tdthang@vnuis.edu.vn') {
+          if (!incomingDelAcc.includes('acc-thang')) incomingDelAcc.push('acc-thang')
+          if (!incomingDelAcc.includes('24310088')) incomingDelAcc.push('24310088')
+          if (!incomingDelAcc.includes('tdthang@vnuis.edu.vn')) incomingDelAcc.push('tdthang@vnuis.edu.vn')
+          if (!incomingDelAcc.includes('user-dept-head')) incomingDelAcc.push('user-dept-head')
+        }
+      }
+
       const combinedDelAccSet = new Set([
         ...(cachedDeletedAccountIds || []),
         ...incomingDelAcc,
@@ -622,7 +711,12 @@ export async function POST(request: Request) {
       cachedDeletedAccountIds = Array.from(combinedDelAccSet)
 
       if (Array.isArray(cachedAccounts)) {
-        cachedAccounts = cachedAccounts.filter((a: any) => !combinedDelAccSet.has(a.id))
+        cachedAccounts = cachedAccounts.filter(
+          (a: any) =>
+            !combinedDelAccSet.has(a.id) &&
+            !combinedDelAccSet.has(a.studentId) &&
+            !combinedDelAccSet.has(a.email)
+        )
       }
 
       try {
@@ -633,6 +727,17 @@ export async function POST(request: Request) {
               key: 'issac_deleted_account_ids',
               value: JSON.stringify(cachedDeletedAccountIds),
               description: 'Cloud synchronized deleted account IDs for iSSAC Web',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'key' }
+          )
+        await supabase
+          .from('settings')
+          .upsert(
+            {
+              key: 'issac_deleted_member_codes',
+              value: JSON.stringify(cachedDeletedMemberCodes),
+              description: 'Cloud synchronized deleted member codes for iSSAC Web',
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'key' }
@@ -648,11 +753,14 @@ export async function POST(request: Request) {
       if (action === 'delete_member' && memberCode && !incomingDel.includes(memberCode)) {
         incomingDel.push(memberCode)
       }
+      const protectedMemberCodes = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
       const combinedDelSet = new Set([
         ...(cachedDeletedMemberCodes || []),
         ...incomingDel,
       ])
-      cachedDeletedMemberCodes = Array.from(combinedDelSet)
+      // Tuyệt đối không để mã của thành viên chính thức rơi vào danh sách đã xóa
+      const sanitizedDel = Array.from(combinedDelSet).filter((c) => !protectedMemberCodes.has(c))
+      cachedDeletedMemberCodes = sanitizedDel
 
       try {
         await supabase
@@ -929,12 +1037,21 @@ export async function POST(request: Request) {
       }
 
       // Filter out deleted members and sanitize oversized avatars
-      const cleanMembers = baseMembers
+      let cleanMembers = baseMembers
         .filter((m: any) => m?.member_code && !activeDelMemSet.has(m.member_code))
         .map((m: any) => ({
           ...m,
           avatar_url: m.avatar_url && m.avatar_url.length > 40000 ? undefined : m.avatar_url,
         }))
+
+      // Đảm bảo không bị thất lạc thành viên chính thức
+      const existingCleanCodes = new Set(cleanMembers.map((m: any) => m.member_code))
+      const missingFromBase = INITIAL_MEMBERS.filter(
+        (m) => !existingCleanCodes.has(m.member_code) && !activeDelMemSet.has(m.member_code)
+      )
+      if (missingFromBase.length > 0) {
+        cleanMembers = [...cleanMembers, ...missingFromBase]
+      }
 
       cachedMembers = cleanMembers
       try {

@@ -491,7 +491,7 @@ export function calculatePeriodLeaderboard(
   const hasCustomDeltas = periodCustomDeltas && Object.keys(periodCustomDeltas).length > 0
   if (hasCustomDeltas) {
     const list = activeMembers.map((m) => {
-      const delta = periodCustomDeltas[m.member_code] ?? getMemberDeltaForPeriod(m.member_code, periodId)
+      const delta = periodCustomDeltas[m.member_code] ?? (isLocked ? getMemberDeltaForPeriod(m.member_code, periodId) : 0)
       const finalScore = Math.max(0, Math.min(100, STANDARD_MONTHLY_BASELINE + delta))
       return {
         member: m,

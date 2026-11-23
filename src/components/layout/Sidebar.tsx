@@ -13,6 +13,7 @@ import {
   Award,
   Calendar,
   ClipboardCheck,
+  Coins,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { canUserManageAccounts, isUserCoreTeam } from '@/lib/auth/permissions'
@@ -28,6 +29,7 @@ export type ActiveNavTab =
   | 'history'
   | 'rules'
   | 'stats'
+  | 'finance'
   | 'accounts'
   | 'settings'
 
@@ -232,6 +234,13 @@ export function Sidebar({
       icon: Trophy,
       badge: `TOP ${members.length || 48}`,
       badgeType: 'pill',
+    },
+    {
+      id: 'finance' as ActiveNavTab,
+      label: 'Sổ quỹ & Tài chính',
+      icon: Coins,
+      badge: 'MỚI',
+      badgeType: 'pill' as const,
     },
     ...(isAccountManager
       ? [

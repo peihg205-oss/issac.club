@@ -61,15 +61,15 @@ export const PRESET_USERS: AuthUser[] = [
   },
   {
     id: 'user-dept-head',
-    name: 'Trần Đức Thắng',
+    name: 'Lê Trần Thuỷ Nguyên',
     role: 'dept_head',
-    roleTitle: 'Trưởng Ban Truyền thông',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    memberCode: '24310088',
+    roleTitle: 'Trưởng Ban Tư vấn',
+    departmentCode: 'B02',
+    departmentName: 'Ban Tư vấn',
+    memberCode: '24310069',
     isCore: true,
-    avatarBg: 'bg-blue-500',
-    avatarUrl: '/duc-thang-avatar.png',
+    avatarBg: 'bg-emerald-500',
+    avatarUrl: '/thuy-nguyen-avatar.png',
   },
   {
     id: 'user-member',
@@ -135,289 +135,9 @@ export function getRoleForMember(m: RosterMember): { role: UserRole; isCore: boo
   }
 }
 
-export interface IssuedAccount {
-  id: string
-  fullName: string
-  email: string
-  studentId?: string
-  departmentCode: DepartmentCode
-  departmentName: string
-  departmentSlug: DepartmentSlug
-  role: UserRole
-  roleTitle: string
-  passwordPlain: string
-  status: 'active' | 'suspended'
-  isFixed?: boolean
-  avatarUrl?: string
-  createdAt: string
-}
-
-export const INITIAL_ISSUED_ACCOUNTS: IssuedAccount[] = [
-  {
-    id: 'acc-master',
-    fullName: 'Ban Chủ nhiệm CLB iSSAC',
-    email: 'ambassadors.club@vnuis.edu.vn',
-    studentId: 'STAFF-001',
-    departmentCode: 'B04',
-    departmentName: 'Ban Chủ nhiệm',
-    departmentSlug: 'bcn',
-    role: 'bcn',
-    roleTitle: 'Chủ nhiệm CLB iSSAC',
-    passwordPlain: 'ISSAC2026@tuyenquan',
-    status: 'active',
-    isFixed: true,
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-hiep',
-    fullName: 'Giang Lê Hiệp',
-    email: 'glhiep@vnuis.edu.vn',
-    studentId: '23070691',
-    departmentCode: 'B04',
-    departmentName: 'Ban Chủ nhiệm',
-    departmentSlug: 'bcn',
-    role: 'bcn',
-    roleTitle: 'Phó chủ nhiệm - Ban Chủ nhiệm',
-    passwordPlain: 'ISSAC2026@23070691',
-    status: 'active',
-    avatarUrl: '/giang-le-hiep-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-trang',
-    fullName: 'Nguyễn Trịnh Minh Trang',
-    email: 'ngtminhtrang3204@gmail.com',
-    studentId: '22073125',
-    departmentCode: 'B04',
-    departmentName: 'Ban Chủ nhiệm',
-    departmentSlug: 'bcn',
-    role: 'bcn',
-    roleTitle: 'Phó chủ nhiệm - Ban Chủ nhiệm',
-    passwordPlain: 'ISSAC2026@22073125',
-    status: 'active',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-hoa',
-    fullName: 'Ngô Phương Hoa',
-    email: '23070448@vnu.edu.vn',
-    studentId: '23070448',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'hr',
-    roleTitle: 'Trưởng Ban Nhân sự (HR)',
-    passwordPlain: 'ISSAC2026@23070448',
-    status: 'active',
-    avatarUrl: '/ngo-phuong-hoa-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-hien',
-    fullName: 'Trần Thanh Hiền',
-    email: 'hien.danity.k@gmail.com',
-    studentId: '24310150',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'hr',
-    roleTitle: 'Phó Ban Nhân sự (HR)',
-    passwordPlain: 'ISSAC2026@24310150',
-    status: 'active',
-    avatarUrl: '/tran-thanh-hien-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-thang',
-    fullName: 'Trần Đức Thắng',
-    email: 'tdthang@vnuis.edu.vn',
-    studentId: '24310088',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    departmentSlug: 'truyen-thong',
-    role: 'dept_head',
-    roleTitle: 'Trưởng Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@24310088',
-    status: 'active',
-    avatarUrl: '/duc-thang-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-nguyen',
-    fullName: 'Lê Trần Thuỷ Nguyên',
-    email: 'tnguyenletran@gmail.com',
-    studentId: '24310069',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'dept_head',
-    roleTitle: 'Trưởng Ban Tư vấn',
-    passwordPlain: 'ISSAC2026@24310069',
-    status: 'active',
-    avatarUrl: '/thuy-nguyen-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-hai',
-    fullName: 'Vũ Đình Hải',
-    email: 'vudinhhai542007@gmail.com',
-    studentId: '25070407',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    departmentSlug: 'truyen-thong',
-    role: 'dept_head',
-    roleTitle: 'Phó Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@25070407',
-    status: 'active',
-    avatarUrl: '/vu-dinh-hai-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-duong',
-    fullName: 'Lâm Thị Bình Dương',
-    email: 'lamduong200907@gmail.com',
-    studentId: '25070345',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    departmentSlug: 'truyen-thong',
-    role: 'dept_head',
-    roleTitle: 'Phó Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@25070345',
-    status: 'active',
-    avatarUrl: '/lam-thi-binh-duong-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-huy',
-    fullName: 'Phương Gia Huy',
-    email: '24070680@vnu.edu.vn',
-    studentId: '24070680',
-    departmentCode: 'B01',
-    departmentName: 'Ban Truyền thông',
-    departmentSlug: 'truyen-thong',
-    role: 'dept_head',
-    roleTitle: 'Cán bộ Ban Truyền thông',
-    passwordPlain: 'ISSAC2026@truyenthong',
-    status: 'active',
-    avatarUrl: '/phuong-gia-huy-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-ngocanh',
-    fullName: 'Nguyễn Ngọc Anh',
-    email: '24070622@vnu.edu.vn',
-    studentId: '24070622',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'dept_head',
-    roleTitle: 'Phó Ban Tư vấn',
-    passwordPlain: 'ISSAC2026@tuvan',
-    status: 'active',
-    avatarUrl: '/nguyen-ngoc-anh-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-thuhien',
-    fullName: 'Phùng Thị Thu Hiền',
-    email: '24070752@vnu.edu.vn',
-    studentId: '24070752',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'dept_head',
-    roleTitle: 'Phó Ban Tư vấn',
-    passwordPlain: 'ISSAC2026@tuvan2',
-    status: 'active',
-    avatarUrl: '/phung-thi-thu-hien-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-thao',
-    fullName: 'Nguyễn Thu Thảo',
-    email: 'nthuthao2011@gmail.com',
-    studentId: '23071234',
-    departmentCode: 'B02',
-    departmentName: 'Ban Tư vấn',
-    departmentSlug: 'tu-van',
-    role: 'dept_head',
-    roleTitle: 'Cố vấn Ban Tư vấn',
-    passwordPlain: 'ISSAC2026@thao',
-    status: 'active',
-    avatarUrl: '/nguyen-thu-thao-avatar.png',
-    createdAt: '15/10/2026',
-  },
-  {
-    id: 'acc-26070180',
-    fullName: 'Ngô Bảo Anh',
-    email: 'daothingan19899@gmail.com',
-    studentId: '26070180',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'member',
-    roleTitle: 'Thành viên - Ban Nhân sự',
-    passwordPlain: 'ISSAC2026@26070180',
-    status: 'active',
-    createdAt: '18/10/2026',
-  },
-  {
-    id: 'acc-26070316',
-    fullName: 'Nguyễn Mai Thanh Hương',
-    email: 'huongth484@gmail.com',
-    studentId: '26070316',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'member',
-    roleTitle: 'Thành viên - Ban Nhân sự',
-    passwordPlain: 'ISSAC2026@26070316',
-    status: 'active',
-    createdAt: '18/10/2026',
-  },
-  {
-    id: 'acc-25073039',
-    fullName: 'Trần Phương Linh',
-    email: 'tranplinh2517@gmail.com',
-    studentId: '25073039',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'member',
-    roleTitle: 'Thành viên - Ban Nhân sự',
-    passwordPlain: 'ISSAC2026@25073039',
-    status: 'active',
-    createdAt: '18/10/2026',
-  },
-  {
-    id: 'acc-26070324',
-    fullName: 'Hoàng Công Minh',
-    email: 'hoangcongminh.cm@gmail.com',
-    studentId: '26070324',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'member',
-    roleTitle: 'Thành viên - Ban Nhân sự',
-    passwordPlain: 'ISSAC2026@26070324',
-    status: 'active',
-    createdAt: '18/10/2026',
-  },
-  {
-    id: 'acc-25073044',
-    fullName: 'Đỗ Ngọc Ly',
-    email: 'dongocly150106@gmail.com',
-    studentId: '25073044',
-    departmentCode: 'B03',
-    departmentName: 'Ban Nhân sự',
-    departmentSlug: 'nhan-su',
-    role: 'member',
-    roleTitle: 'Thành viên - Ban Nhân sự',
-    passwordPlain: 'ISSAC2026@25073044',
-    status: 'active',
-    createdAt: '18/10/2026',
-  },
-]
+export type { IssuedAccount } from './accountData'
+export { INITIAL_ISSUED_ACCOUNTS } from './accountData'
+import { INITIAL_ISSUED_ACCOUNTS, type IssuedAccount } from './accountData'
 
 export interface AuthContextType {
   currentUser: AuthUser | null
@@ -443,18 +163,143 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Danh sách các định danh tài khoản đã bị Ban Chủ nhiệm xóa trên Cloud / Hệ thống
+export const DEFAULT_DELETED_ACCOUNT_IDS: string[] = [
+  'acc-thang',
+  '24310088',
+  'tdthang@vnuis.edu.vn',
+  'user-dept-head',
+  'Trần Đức Thắng',
+]
+
+/**
+ * Thu thập tất cả các định danh liên quan (ID, MSSV, Email, Họ tên, Mã thành viên)
+ * của một người dùng dựa trên bất kỳ định danh nào truyền vào.
+ */
+export function resolveAllAssociatedIdentities(
+  rawId: string,
+  extraAccounts?: IssuedAccount[]
+): string[] {
+  if (!rawId) return []
+  const clean = rawId.trim().toLowerCase()
+  const results = new Set<string>()
+  results.add(rawId.trim())
+  results.add(clean)
+
+  // Đặc tả nhận diện cán bộ Trần Đức Thắng (khóa triệt để mọi alias)
+  if (
+    clean === 'acc-thang' ||
+    clean === '24310088' ||
+    clean === 'tdthang@vnuis.edu.vn' ||
+    clean === 'trần đức thắng' ||
+    clean === 'tran duc thang' ||
+    clean === 'user-dept-head'
+  ) {
+    results.add('acc-thang')
+    results.add('24310088')
+    results.add('tdthang@vnuis.edu.vn')
+    results.add('trần đức thắng')
+    results.add('user-dept-head')
+  }
+
+  // 1. Quét trong INITIAL_ISSUED_ACCOUNTS và extraAccounts
+  const allAccs = [...INITIAL_ISSUED_ACCOUNTS, ...(extraAccounts || [])]
+  for (const acc of allAccs) {
+    const match =
+      acc.id.toLowerCase() === clean ||
+      (acc.studentId && acc.studentId.toLowerCase() === clean) ||
+      acc.email.toLowerCase() === clean ||
+      acc.fullName.toLowerCase() === clean
+    if (match) {
+      results.add(acc.id)
+      if (acc.studentId) results.add(acc.studentId)
+      if (acc.email) results.add(acc.email.toLowerCase())
+      if (acc.fullName) results.add(acc.fullName.toLowerCase())
+    }
+  }
+
+  // 2. Quét trong INITIAL_MEMBERS
+  for (const m of INITIAL_MEMBERS) {
+    const match =
+      m.member_code.toLowerCase() === clean ||
+      (m.student_id && m.student_id.toLowerCase() === clean) ||
+      m.email.toLowerCase() === clean ||
+      m.full_name.toLowerCase() === clean
+    if (match) {
+      results.add(m.member_code)
+      if (m.student_id) results.add(m.student_id)
+      if (m.email) results.add(m.email.toLowerCase())
+      if (m.full_name) results.add(m.full_name.toLowerCase())
+    }
+  }
+
+  // 3. Quét trong PRESET_USERS
+  for (const p of PRESET_USERS) {
+    const match =
+      p.id.toLowerCase() === clean ||
+      (p.memberCode && p.memberCode.toLowerCase() === clean) ||
+      p.name.toLowerCase() === clean
+    if (match) {
+      results.add(p.id)
+      if (p.memberCode) results.add(p.memberCode)
+      if (p.name) results.add(p.name.toLowerCase())
+    }
+  }
+
+  return Array.from(results)
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isAuthChecked, setIsAuthChecked] = useState(false)
-  const [issuedAccounts, setIssuedAccounts] = useState<IssuedAccount[]>(INITIAL_ISSUED_ACCOUNTS)
-  const deletedAccountIdsRef = useRef<Set<string>>(new Set())
+  const [issuedAccounts, setIssuedAccounts] = useState<IssuedAccount[]>(() => {
+    return INITIAL_ISSUED_ACCOUNTS.filter((a) => !DEFAULT_DELETED_ACCOUNT_IDS.includes(a.id))
+  })
+  const deletedAccountIdsRef = useRef<Set<string>>(new Set(DEFAULT_DELETED_ACCOUNT_IDS))
+
+  // Kiểm tra một chuỗi bất kỳ có nằm trong danh sách đã bị xóa không
+  const isIdentityDeleted = useCallback((val?: string | null): boolean => {
+    if (!val) return false
+    const clean = val.trim().toLowerCase()
+    const delSet = deletedAccountIdsRef.current
+    for (const d of delSet) {
+      if (!d) continue
+      const cleanD = d.trim().toLowerCase()
+      if (clean === cleanD) return true
+    }
+    return false
+  }, [])
+
+  // Kiểm tra một thực thể (User / Member / Account / Preset) có bị xóa không
+  const isEntityDeleted = useCallback(
+    (entity: any): boolean => {
+      if (!entity) return false
+      if (typeof entity === 'string') return isIdentityDeleted(entity)
+      return (
+        isIdentityDeleted(entity.id) ||
+        isIdentityDeleted(entity.memberCode) ||
+        isIdentityDeleted(entity.studentId) ||
+        isIdentityDeleted(entity.member_code) ||
+        isIdentityDeleted(entity.student_id) ||
+        isIdentityDeleted(entity.email) ||
+        isIdentityDeleted(entity.name) ||
+        isIdentityDeleted(entity.fullName) ||
+        isIdentityDeleted(entity.full_name)
+      )
+    },
+    [isIdentityDeleted]
+  )
 
   // Helper gửi danh sách tài khoản lên Supabase Cloud API để Máy tính và Điện thoại cùng đồng bộ
   const syncAccountsToCloud = (payload: {
     accounts?: IssuedAccount[]
     deletedAccountIds?: string[]
+    deletedMemberCodes?: string[]
     action?: string
     accountId?: string
+    studentId?: string
+    email?: string
+    fullName?: string
   }) => {
     if (typeof window !== 'undefined') {
       fetch('/api/db/sync', {
@@ -478,40 +323,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json()
 
-        // 1. Đồng bộ tombstones các tài khoản đã xóa từ cloud
+        // 1. Đồng bộ tombstones các tài khoản & thành viên đã xóa từ cloud
+        const cloudDeleted: string[] = []
         if (data.deletedAccountIds && Array.isArray(data.deletedAccountIds)) {
-          data.deletedAccountIds.forEach((id: string) => deletedAccountIdsRef.current.add(id))
-          try {
-            localStorage.setItem(
-              'issac_deleted_account_ids',
-              JSON.stringify(Array.from(deletedAccountIdsRef.current))
-            )
-          } catch (e) {}
+          cloudDeleted.push(...data.deletedAccountIds)
+        }
+        if (data.deletedMemberCodes && Array.isArray(data.deletedMemberCodes)) {
+          cloudDeleted.push(...data.deletedMemberCodes)
         }
 
-        const delSet = deletedAccountIdsRef.current
+        if (cloudDeleted.length > 0) {
+          for (const rawId of cloudDeleted) {
+            if (!rawId) continue
+            deletedAccountIdsRef.current.add(rawId)
+            deletedAccountIdsRef.current.add(rawId.toLowerCase())
+            const aliases = resolveAllAssociatedIdentities(rawId, issuedAccounts)
+            for (const a of aliases) {
+              deletedAccountIdsRef.current.add(a)
+              deletedAccountIdsRef.current.add(a.toLowerCase())
+            }
+          }
+          try {
+            const arr = Array.from(deletedAccountIdsRef.current)
+            localStorage.setItem('issac_deleted_account_ids', JSON.stringify(arr))
+            localStorage.setItem('issac_deleted_member_codes', JSON.stringify(arr))
+          } catch (e) {}
+        }
 
         // 2. Hợp nhất danh sách tài khoản
         if (data.accounts && Array.isArray(data.accounts)) {
           setIssuedAccounts((prev) => {
             const localMap = new Map(prev.map((a) => [a.id, a]))
             for (const cloudAcc of data.accounts) {
-              if (cloudAcc?.id && !delSet.has(cloudAcc.id)) {
+              if (cloudAcc?.id && !isEntityDeleted(cloudAcc)) {
                 localMap.set(cloudAcc.id, {
                   ...(localMap.get(cloudAcc.id) || {}),
                   ...cloudAcc,
                 })
               }
             }
-            const cleanList = Array.from(localMap.values()).filter((a) => !delSet.has(a.id))
+            const cleanList = Array.from(localMap.values()).filter((a) => !isEntityDeleted(a))
             try {
               localStorage.setItem('issac_issued_accounts', JSON.stringify(cleanList))
             } catch (e) {}
             return cleanList
           })
-        } else if (delSet.size > 0) {
+        } else {
           setIssuedAccounts((prev) => {
-            const clean = prev.filter((a) => !delSet.has(a.id))
+            const clean = prev.filter((a) => !isEntityDeleted(a))
             try {
               localStorage.setItem('issac_issued_accounts', JSON.stringify(clean))
             } catch (e) {}
@@ -519,12 +378,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
         }
 
-        // 3. Nếu tài khoản hiện đang đăng nhập vừa bị xóa từ thiết bị khác -> Đăng xuất ngay
+        // 3. FORCE LOGOUT REAL-TIME TRÊN TẤT CẢ CÁC THIẾT BỊ:
+        // Nếu người dùng hiện đang đăng nhập thuộc bất kỳ tài khoản/thành viên nào bị xóa -> ĐĂNG XUẤT NGAY
         setCurrentUser((current) => {
-          if (current && delSet.has(current.id)) {
+          if (current && isEntityDeleted(current)) {
             try {
               localStorage.removeItem('issac_active_user')
             } catch (e) {}
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('issac_account_deleted', { detail: { user: current } })
+              )
+              if (window.location.pathname !== '/login') {
+                window.location.href = '/login?reason=deleted'
+              }
+            }
             return null
           }
           return current
@@ -533,46 +401,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       // Offline fallback
     }
-  }, [])
+  }, [isEntityDeleted, issuedAccounts])
 
   // Load saved accounts & active user from localStorage
   useEffect(() => {
+    // Nạp tombstones từ cả 2 key lưu trữ
     try {
       const savedDelAccs = localStorage.getItem('issac_deleted_account_ids')
       if (savedDelAccs) {
         const parsed = JSON.parse(savedDelAccs)
         if (Array.isArray(parsed)) {
-          parsed.forEach((id: string) => deletedAccountIdsRef.current.add(id))
+          parsed.forEach((id: string) => {
+            deletedAccountIdsRef.current.add(id)
+            deletedAccountIdsRef.current.add(id.toLowerCase())
+          })
+        }
+      }
+      const savedDelMembers = localStorage.getItem('issac_deleted_member_codes')
+      if (savedDelMembers) {
+        const parsed = JSON.parse(savedDelMembers)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => {
+            deletedAccountIdsRef.current.add(id)
+            deletedAccountIdsRef.current.add(id.toLowerCase())
+          })
         }
       }
     } catch (e) {}
+
+    // Tự động mở rộng danh sách các bí danh liên quan cho toàn bộ ID đã xóa
+    const initialDelList = Array.from(deletedAccountIdsRef.current)
+    for (const d of initialDelList) {
+      const aliases = resolveAllAssociatedIdentities(d)
+      aliases.forEach((a) => {
+        deletedAccountIdsRef.current.add(a)
+        deletedAccountIdsRef.current.add(a.toLowerCase())
+      })
+    }
 
     try {
       const savedAccs = localStorage.getItem('issac_issued_accounts')
       if (savedAccs) {
         const parsed: IssuedAccount[] = JSON.parse(savedAccs)
-        const clean = parsed.filter((a) => !deletedAccountIdsRef.current.has(a.id))
+        const clean = parsed.filter((a) => !isEntityDeleted(a))
         setIssuedAccounts(clean)
+      } else {
+        setIssuedAccounts(INITIAL_ISSUED_ACCOUNTS.filter((a) => !isEntityDeleted(a)))
       }
     } catch (err) {
       console.error(err)
     }
 
     try {
-      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const urlParams =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
       const paramUser = urlParams?.get('user')
       const saved = paramUser || localStorage.getItem('issac_active_user')
-      if (saved && !deletedAccountIdsRef.current.has(saved)) {
+      if (saved && !isIdentityDeleted(saved)) {
         // 1. Check preset users
-        const foundPreset = PRESET_USERS.find((u) => u.id === saved)
+        const foundPreset = PRESET_USERS.find((u) => u.id === saved && !isEntityDeleted(u))
         if (foundPreset) {
           setCurrentUser(foundPreset)
           setIsAuthChecked(true)
+          fetchCloudAccounts()
           return
         }
 
         // 2. Check full roster (48 official members)
-        const foundMember = INITIAL_MEMBERS.find((m) => m.member_code === saved || m.student_id === saved)
+        const foundMember = INITIAL_MEMBERS.find(
+          (m) => (m.member_code === saved || m.student_id === saved) && !isEntityDeleted(m)
+        )
         if (foundMember) {
           const roleInfo = getRoleForMember(foundMember)
           setCurrentUser({
@@ -588,13 +486,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             avatarUrl: foundMember.avatar_url,
           })
           setIsAuthChecked(true)
+          fetchCloudAccounts()
           return
         }
 
         // 3. Check issued accounts
         const savedAccsStr = localStorage.getItem('issac_issued_accounts')
-        const accList = savedAccsStr ? JSON.parse(savedAccsStr) : INITIAL_ISSUED_ACCOUNTS
-        const foundIssued = accList.find((a: any) => (a.id === saved || a.studentId === saved || a.email === saved) && !deletedAccountIdsRef.current.has(a.id))
+        const accList: IssuedAccount[] = savedAccsStr
+          ? JSON.parse(savedAccsStr)
+          : INITIAL_ISSUED_ACCOUNTS
+        const foundIssued = accList.find(
+          (a: any) =>
+            (a.id === saved || a.studentId === saved || a.email === saved) &&
+            !isEntityDeleted(a)
+        )
         if (foundIssued) {
           setCurrentUser({
             id: foundIssued.id,
@@ -604,26 +509,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             departmentCode: foundIssued.departmentCode,
             departmentName: foundIssued.departmentName,
             memberCode: foundIssued.studentId || foundIssued.id,
-            isCore: foundIssued.role === 'bcn' || foundIssued.role === 'hr' || foundIssued.role === 'dept_head',
+            isCore:
+              foundIssued.role === 'bcn' ||
+              foundIssued.role === 'hr' ||
+              foundIssued.role === 'dept_head',
             avatarBg: 'bg-blue-600',
           })
           setIsAuthChecked(true)
+          fetchCloudAccounts()
           return
         }
+      } else if (saved && isIdentityDeleted(saved)) {
+        // Nếu user lưu trong local storage nằm trong blacklist -> Xóa ngay
+        try {
+          localStorage.removeItem('issac_active_user')
+        } catch (e) {}
       }
     } catch (e) {
       console.error(e)
     }
 
-    // Chưa đăng nhập -> Trạng thái chưa đăng nhập an toàn
     setCurrentUser(null)
     setIsAuthChecked(true)
-
-    // Đồng bộ tức thì từ Cloud
     fetchCloudAccounts()
-  }, [fetchCloudAccounts])
+  }, [fetchCloudAccounts, isEntityDeleted, isIdentityDeleted])
 
-  // Lắng nghe visibilitychange và chu kỳ polling để cập nhật tài khoản trên các thiết bị
+  // Lắng nghe visibilitychange, storage và chu kỳ polling 3 giây để cập nhật tài khoản trên mọi thiết bị
   useEffect(() => {
     const handleVisibility = () => {
       if (typeof document !== 'undefined' && !document.hidden) {
@@ -634,7 +545,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fetchCloudAccounts()
     }
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'issac_issued_accounts' || e.key === 'issac_active_user' || e.key === 'issac_deleted_account_ids') {
+      if (
+        e.key === 'issac_issued_accounts' ||
+        e.key === 'issac_active_user' ||
+        e.key === 'issac_deleted_account_ids' ||
+        e.key === 'issac_deleted_member_codes'
+      ) {
+        try {
+          if (e.key === 'issac_deleted_account_ids' || e.key === 'issac_deleted_member_codes') {
+            if (e.newValue) {
+              const parsed = JSON.parse(e.newValue)
+              if (Array.isArray(parsed)) {
+                parsed.forEach((id: string) => {
+                  deletedAccountIdsRef.current.add(id)
+                  deletedAccountIdsRef.current.add(id.toLowerCase())
+                })
+              }
+            }
+          }
+        } catch {}
         fetchCloudAccounts()
       }
     }
@@ -646,11 +575,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.addEventListener('focus', handleFocus)
       window.addEventListener('storage', handleStorage)
     }
+    // Poll mỗi 3 giây để đồng bộ real-time lập tức khi thao tác giữa các thiết bị
     const timer = setInterval(() => {
       if (typeof document !== 'undefined' && !document.hidden) {
         fetchCloudAccounts()
       }
-    }, 15000)
+    }, 3000)
 
     return () => {
       if (typeof document !== 'undefined') {
@@ -665,14 +595,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchCloudAccounts])
 
   const switchUser = (userId: string) => {
-    const foundPreset = PRESET_USERS.find((u) => u.id === userId)
+    if (isIdentityDeleted(userId)) return
+
+    const foundPreset = PRESET_USERS.find((u) => u.id === userId && !isEntityDeleted(u))
     if (foundPreset) {
       setCurrentUser(foundPreset)
       localStorage.setItem('issac_active_user', foundPreset.id)
       return
     }
 
-    const foundMember = INITIAL_MEMBERS.find((m) => m.member_code === userId || m.student_id === userId)
+    const foundMember = INITIAL_MEMBERS.find(
+      (m) => (m.member_code === userId || m.student_id === userId) && !isEntityDeleted(m)
+    )
     if (foundMember) {
       const roleInfo = getRoleForMember(foundMember)
       const mappedUser: AuthUser = {
@@ -747,20 +681,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: 'Chỉ Ban Chủ nhiệm mới có quyền xóa tài khoản cán bộ!' }
     }
 
-    const target = issuedAccounts.find((a) => a.id === id)
+    const target =
+      issuedAccounts.find((a) => a.id === id) || INITIAL_ISSUED_ACCOUNTS.find((a) => a.id === id)
     if (target?.isFixed) {
       return { success: false, message: 'Không thể xóa tài khoản cố định của Ban Chủ nhiệm!' }
     }
 
+    // 1. Mở rộng tất cả các định danh liên quan (ID, MSSV, Email, Họ tên, Mã thành viên)
+    const aliases = resolveAllAssociatedIdentities(id, issuedAccounts)
+    aliases.forEach((a) => {
+      deletedAccountIdsRef.current.add(a)
+      deletedAccountIdsRef.current.add(a.toLowerCase())
+    })
     deletedAccountIdsRef.current.add(id)
+    deletedAccountIdsRef.current.add(id.toLowerCase())
+
+    const deletedArr = Array.from(deletedAccountIdsRef.current)
     try {
-      localStorage.setItem(
-        'issac_deleted_account_ids',
-        JSON.stringify(Array.from(deletedAccountIdsRef.current))
-      )
+      localStorage.setItem('issac_deleted_account_ids', JSON.stringify(deletedArr))
     } catch (e) {}
 
-    const updated = issuedAccounts.filter((a) => a.id !== id)
+    // 2. Lọc bỏ tài khoản khỏi danh sách
+    const updated = issuedAccounts.filter((a) => !isEntityDeleted(a))
     setIssuedAccounts(updated)
     try {
       localStorage.setItem('issac_issued_accounts', JSON.stringify(updated))
@@ -768,20 +710,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error(e)
     }
 
-    // Nếu người dùng đang đăng nhập bằng chính tài khoản vừa xóa -> Đăng xuất
-    if (currentUser?.id === id) {
+    // 3. Nếu người dùng hiện tại bị xóa -> Đăng xuất ngay lập tức
+    if (currentUser && isEntityDeleted(currentUser)) {
       setCurrentUser(null)
       try {
         localStorage.removeItem('issac_active_user')
       } catch (e) {}
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login?reason=deleted'
+      }
     }
 
-    // Đồng bộ lập tức lên Cloud Supabase để Điện thoại và Laptop nhận ngay xóa bỏ
+    // 4. Đồng bộ lập tức lên Cloud Supabase để Điện thoại và Laptop nhận ngay xóa bỏ trong thời gian thực
     syncAccountsToCloud({
       accounts: updated,
-      deletedAccountIds: Array.from(deletedAccountIdsRef.current),
+      deletedAccountIds: deletedArr,
       action: 'delete_account',
       accountId: id,
+      studentId: target?.studentId,
+      email: target?.email,
+      fullName: target?.fullName,
     })
 
     return { success: true, message: 'Đã xóa tài khoản thành công!' }
@@ -798,6 +746,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const cleanPass = passwordInput.trim()
 
+    // BƯỚC 1: KIỂM TRA BLACKLIST / TOMBSTONE TRƯỚC TIÊN
+    // Nếu tài khoản, MSSV, Email hoặc Họ tên đã bị Ban Chủ nhiệm xóa -> Chặn ngay lập tức
+    if (isIdentityDeleted(clean)) {
+      return {
+        success: false,
+        message: 'Tài khoản hoặc thông tin thành viên này đã bị xóa khỏi hệ thống bởi Ban Chủ nhiệm.',
+      }
+    }
+
     // 1. Tìm kiếm trong danh sách thành viên chính thức CLB (48 thành viên)
     const member = INITIAL_MEMBERS.find(
       (m) =>
@@ -811,19 +768,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Tìm kiếm trong danh sách tài khoản được cấp (issuedAccounts)
     const issued = issuedAccounts.find(
       (a) =>
-        !deletedAccountIdsRef.current.has(a.id) &&
+        !isEntityDeleted(a) &&
         (a.email.toLowerCase() === clean ||
-        (a.studentId && a.studentId.toLowerCase() === clean) ||
-        (member && a.studentId && (a.studentId.toLowerCase() === member.student_id?.toLowerCase() || a.studentId.toLowerCase() === member.member_code.toLowerCase())) ||
-        (member && a.email && a.email.toLowerCase() === member.email.toLowerCase()) ||
-        a.fullName.toLowerCase() === clean ||
-        a.fullName.toLowerCase().includes(clean))
+          (a.studentId && a.studentId.toLowerCase() === clean) ||
+          (member &&
+            a.studentId &&
+            (a.studentId.toLowerCase() === member.student_id?.toLowerCase() ||
+              a.studentId.toLowerCase() === member.member_code.toLowerCase())) ||
+          (member && a.email && a.email.toLowerCase() === member.email.toLowerCase()) ||
+          a.fullName.toLowerCase() === clean ||
+          a.fullName.toLowerCase().includes(clean))
     )
 
-    if (issued && deletedAccountIdsRef.current.has(issued.id)) {
+    // 3. Tìm kiếm trong tài khoản cài sẵn (preset)
+    const preset = PRESET_USERS.find(
+      (u) =>
+        !isEntityDeleted(u) &&
+        (u.id.toLowerCase() === clean ||
+          u.memberCode?.toLowerCase() === clean ||
+          (member && u.memberCode?.toLowerCase() === member.member_code.toLowerCase()) ||
+          u.name.toLowerCase() === clean ||
+          u.name.toLowerCase().includes(clean))
+    )
+
+    // BƯỚC 2: KIỂM TRA THỰC THỂ TÌM THẤY CÓ BỊ XÓA KHÔNG
+    if (
+      (issued && isEntityDeleted(issued)) ||
+      (member && isEntityDeleted(member)) ||
+      (preset && isEntityDeleted(preset))
+    ) {
       return {
         success: false,
-        message: 'Tài khoản này đã bị xóa khỏi hệ thống bởi Ban Chủ nhiệm.',
+        message: 'Tài khoản hoặc thông tin thành viên này đã bị xóa khỏi hệ thống bởi Ban Chủ nhiệm.',
       }
     }
 
@@ -833,16 +809,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         message: 'Tài khoản của bạn hiện đang bị tạm khóa bởi Ban Chủ nhiệm. Vui lòng liên hệ BCN.',
       }
     }
-
-    // 3. Tìm kiếm trong tài khoản cài sẵn (preset)
-    const preset = PRESET_USERS.find(
-      (u) =>
-        u.id.toLowerCase() === clean ||
-        u.memberCode?.toLowerCase() === clean ||
-        (member && u.memberCode?.toLowerCase() === member.member_code.toLowerCase()) ||
-        u.name.toLowerCase() === clean ||
-        u.name.toLowerCase().includes(clean)
-    )
 
     if (!issued && !preset && !member) {
       return {
@@ -900,7 +866,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       finalRole = issued.role
       finalRoleTitle = issued.roleTitle
       isCore = issued.role === 'bcn' || issued.role === 'hr' || issued.role === 'dept_head'
-      if (issued.departmentSlug === 'nhan-su' && (issued.roleTitle.includes('Trưởng') || issued.roleTitle.includes('Phó'))) {
+      if (
+        issued.departmentSlug === 'nhan-su' &&
+        (issued.roleTitle.includes('Trưởng') || issued.roleTitle.includes('Phó'))
+      ) {
         finalRole = 'hr'
         isCore = true
       }
@@ -914,9 +883,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: issued?.id || member?.member_code || preset?.id || `user-${Date.now()}`,
       name: member?.full_name || issued?.fullName || preset?.name || 'Thành viên iSSAC',
       role: finalRole,
-      roleTitle: finalRoleTitle || (issued?.roleTitle ?? `${member?.position || 'Thành viên'} - ${member?.department_name || 'CLB iSSAC'}`),
-      departmentCode: member?.department_code || issued?.departmentCode || preset?.departmentCode,
-      departmentName: member?.department_name || issued?.departmentName || preset?.departmentName,
+      roleTitle:
+        finalRoleTitle ||
+        (issued?.roleTitle ??
+          `${member?.position || 'Thành viên'} - ${member?.department_name || 'CLB iSSAC'}`),
+      departmentCode:
+        member?.department_code || issued?.departmentCode || preset?.departmentCode,
+      departmentName:
+        member?.department_name || issued?.departmentName || preset?.departmentName,
       memberCode: member?.member_code || issued?.studentId || preset?.memberCode,
       isCore,
       avatarBg: 'bg-blue-600',

@@ -131,7 +131,7 @@ export function BcnSurveyReportView({
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all')
   const [selectedRatingFilter, setSelectedRatingFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [selectedMemberCode, setSelectedMemberCode] = useState<string>('24310088') // Default: Trần Đức Thắng
+  const [selectedMemberCode, setSelectedMemberCode] = useState<string>('23070691') // Default: Giang Lê Hiệp
   const [bcnNotes, setBcnNotes] = useState<Record<string, string>>(() => {
     if (typeof window === 'undefined') return {}
     try {

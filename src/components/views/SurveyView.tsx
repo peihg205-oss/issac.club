@@ -423,9 +423,7 @@ export function SurveyView() {
         !selectedMemberCode ||
         !targetMembers.some((m) => m.memberCode === selectedMemberCode)
       ) {
-        const defaultMember =
-          targetMembers.find((m) => m.fullName.includes('Trần Đức Thắng')) ||
-          targetMembers[0]
+        const defaultMember = targetMembers[0]
         setSelectedMemberCode(defaultMember.memberCode)
       }
     }
