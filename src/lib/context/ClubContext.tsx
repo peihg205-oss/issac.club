@@ -542,10 +542,28 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedMembers = localStorage.getItem('issac_members_clean_v1')
       const savedProposals = localStorage.getItem('issac_proposals_clean_v1')
-      let initialMemberList: RosterMember[] = savedMembers ? JSON.parse(savedMembers) : getActiveRosterMembers(INITIAL_MEMBERS)
-      // Loại bỏ các thành viên đã xóa và nén/làm sạch avatar quá lớn
+      const validInitialCodeSet = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
+      let initialMemberList: RosterMember[] = getActiveRosterMembers(INITIAL_MEMBERS)
+      if (savedMembers) {
+        try {
+          const parsed = JSON.parse(savedMembers)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Chuẩn hóa chỉ giữ lại các thành viên trong danh sách 47 thành viên chuẩn
+            const sanitized = parsed.filter((m: any) => m?.member_code && validInitialCodeSet.has(m.member_code))
+            if (sanitized.length === INITIAL_MEMBERS.length) {
+              initialMemberList = sanitized
+            } else if (sanitized.length > 0) {
+              const existingCodes = new Set(sanitized.map((m: any) => m.member_code))
+              const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
+              initialMemberList = [...sanitized, ...missingInitial]
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Loại bỏ các thành viên ngoài danh sách hoặc đã xóa và nén/làm sạch avatar quá lớn
       initialMemberList = initialMemberList
-        .filter((m) => !deletedMemberCodesRef.current.has(m.member_code))
+        .filter((m) => validInitialCodeSet.has(m.member_code) && !deletedMemberCodesRef.current.has(m.member_code))
         .map((m) => {
           let avt = sanitizeMemberAvatar(m.avatar_url) || getMemberAvatarUrl(m) || undefined
           return {
@@ -554,7 +572,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
           }
         })
 
-      // Tự động bổ sung đầy đủ 52 thành viên trong danh sách chuẩn INITIAL_MEMBERS nếu thiết bị còn thiếu
+      // Tự động bổ sung đầy đủ 47 thành viên trong danh sách chuẩn INITIAL_MEMBERS nếu thiết bị còn thiếu
       const existingCodes = new Set(initialMemberList.map((m) => m.member_code))
       const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
       if (missingInitial.length > 0) {
@@ -834,11 +852,12 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
+          const validInitialCodeSet = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
           const deletedCodes = deletedMemberCodesRef.current
-          // Lọc bỏ thành viên đã xóa khỏi cloud list
-          const safeCloudMembers = data.members.filter((m: any) => m?.member_code && !deletedCodes.has(m.member_code))
+          // Lọc bỏ thành viên đã xóa khỏi cloud list và chuẩn hóa đúng 47 thành viên chuẩn
+          const safeCloudMembers = data.members.filter((m: any) => m?.member_code && validInitialCodeSet.has(m.member_code) && !deletedCodes.has(m.member_code))
 
-          const currentMembers = membersRef.current.filter((m) => !deletedCodes.has(m.member_code))
+          const currentMembers = membersRef.current.filter((m) => validInitialCodeSet.has(m.member_code) && !deletedCodes.has(m.member_code))
           const curMap = new Map(currentMembers.map((m) => [m.member_code, m]))
           let hasLocalNewer = false
 
@@ -874,9 +893,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             }
           })
 
-          // Giữ lại các thành viên mới tạo ở local mà cloud chưa kịp có (loại trừ đã xóa)
+          // Giữ lại các thành viên mới tạo ở local mà cloud chưa kịp có (loại trừ đã xóa, nhưng phải trong danh sách chuẩn)
           const cloudCodes = new Set(safeCloudMembers.map((m: any) => m.member_code))
-          const localOnlyMembers = currentMembers.filter((m) => !cloudCodes.has(m.member_code) && !deletedCodes.has(m.member_code))
+          const localOnlyMembers = currentMembers.filter((m) => !cloudCodes.has(m.member_code) && !deletedCodes.has(m.member_code) && validInitialCodeSet.has(m.member_code))
           if (localOnlyMembers.length > 0) {
             merged.push(...localOnlyMembers.map((m) => ({
               ...m,
@@ -885,7 +904,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             hasLocalNewer = true
           }
 
-          // Bảo toàn tuyệt đối danh sách thành viên chính thức INITIAL_MEMBERS
+          // Bảo toàn tuyệt đối danh sách 47 thành viên chính thức INITIAL_MEMBERS
           const mergedCodes = new Set(merged.map((m: any) => m.member_code))
           const missingCore = INITIAL_MEMBERS.filter((m) => !mergedCodes.has(m.member_code) && !deletedCodes.has(m.member_code))
           if (missingCore.length > 0) {
@@ -913,7 +932,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             })
           }
         } else if (!data.members || data.members.length === 0) {
-          // Lưu 48 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
+          // Lưu 47 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
           syncToCloud({
             members: membersRef.current,
             deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
@@ -2432,7 +2451,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     }
 
-    // 1. Reset toàn bộ 48 thành viên về mốc xuất phát chuẩn 60 điểm cho chu kỳ mới
+    // 1. Reset toàn bộ 47 thành viên về mốc xuất phát chuẩn 60 điểm cho chu kỳ mới
     const resetMembers = getRankedMembers(
       members.map((m) => ({
         ...m,

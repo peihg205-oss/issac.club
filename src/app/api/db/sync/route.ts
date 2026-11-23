@@ -346,21 +346,15 @@ export async function GET(request: Request) {
       }
       cachedAccounts = finalAccounts
 
-      // Bảo toàn và phục hồi đầy đủ danh sách 52 thành viên CLB
+      // Bảo toàn và chuẩn hóa đúng 47 thành viên CLB
+      const validInitialCodeSet = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
       let finalMembers = membersFromDb || cachedMembers || INITIAL_MEMBERS
       if (Array.isArray(finalMembers)) {
-        // Chỉ lọc thành viên nếu mã thành viên thực sự nằm trong activeDeletedMemberCodes (xóa từ MembersView)
-        // Tuyệt đối KHÔNG dùng activeDeletedAccountIds để lọc thành viên CLB!
-        if (activeDeletedMemberCodes.size > 0) {
-          finalMembers = finalMembers.filter((m: any) =>
-            m?.member_code && !activeDeletedMemberCodes.has(m.member_code)
-          )
-        }
+        // Lọc để đảm bảo đúng 47 thành viên chuẩn, loại bỏ các bản ghi dôi dư
+        finalMembers = finalMembers.filter((m: any) => m?.member_code && validInitialCodeSet.has(m.member_code))
         // Đảm bảo không bị thất lạc thành viên nào do bộ nhớ đệm hay lỗi quota Supabase
         const existingCodes = new Set(finalMembers.map((m: any) => m.member_code))
-        const missingInitial = INITIAL_MEMBERS.filter(
-          (m) => !existingCodes.has(m.member_code) && !activeDeletedMemberCodes.has(m.member_code)
-        )
+        const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
         if (missingInitial.length > 0) {
           finalMembers = [...finalMembers, ...missingInitial]
         }
@@ -449,6 +443,8 @@ export async function GET(request: Request) {
 
     let fallbackMembers = cachedMembers || INITIAL_MEMBERS
     if (Array.isArray(fallbackMembers)) {
+      const validInitialCodeSet = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
+      fallbackMembers = fallbackMembers.filter((m: any) => m?.member_code && validInitialCodeSet.has(m.member_code))
       const existingCodes = new Set(fallbackMembers.map((m: any) => m.member_code))
       const missingInitial = INITIAL_MEMBERS.filter((m) => !existingCodes.has(m.member_code))
       if (missingInitial.length > 0) {
@@ -1037,8 +1033,9 @@ export async function POST(request: Request) {
       }
 
       // Filter out deleted members and sanitize oversized avatars
+      const validInitialCodeSet = new Set(INITIAL_MEMBERS.map((m) => m.member_code))
       let cleanMembers = baseMembers
-        .filter((m: any) => m?.member_code && !activeDelMemSet.has(m.member_code))
+        .filter((m: any) => m?.member_code && validInitialCodeSet.has(m.member_code))
         .map((m: any) => ({
           ...m,
           avatar_url: m.avatar_url && m.avatar_url.length > 40000 ? undefined : m.avatar_url,
@@ -1047,7 +1044,7 @@ export async function POST(request: Request) {
       // Đảm bảo không bị thất lạc thành viên chính thức
       const existingCleanCodes = new Set(cleanMembers.map((m: any) => m.member_code))
       const missingFromBase = INITIAL_MEMBERS.filter(
-        (m) => !existingCleanCodes.has(m.member_code) && !activeDelMemSet.has(m.member_code)
+        (m) => !existingCleanCodes.has(m.member_code)
       )
       if (missingFromBase.length > 0) {
         cleanMembers = [...cleanMembers, ...missingFromBase]

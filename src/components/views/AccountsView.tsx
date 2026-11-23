@@ -666,7 +666,7 @@ export function AccountsView() {
             )}
 
             <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
-              {/* Chọn từ 48 thành viên CLB */}
+              {/* Chọn từ 47 thành viên CLB */}
               <div className="space-y-1">
                 <label className="block font-bold text-slate-700">
                   {language === 'vi' ? 'Chọn thành viên CLB để tự điền nhanh thông tin:' : 'Select club member for quick autofill:'}

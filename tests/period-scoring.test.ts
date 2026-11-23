@@ -39,14 +39,14 @@ describe('Period Scoring & Monthly Reset Engine', () => {
     expect(rankings[0].baseScore).toBe(60)
   })
 
-  it('4. Tra cứu điểm Tháng 08/2025 (Đã chốt) - Hạng 1 Trần Đức Thắng (94đ)', () => {
+  it('4. Tra cứu điểm Tháng 08/2025 (Đã chốt) - Hạng 1 Giang Lê Hiệp (90đ)', () => {
     const active = getActiveRosterMembers(INITIAL_MEMBERS)
     const rankings = calculatePeriodLeaderboard('month-2025-08', active)
 
     expect(rankings.length).toBe(active.length)
-    expect(rankings[0].member.full_name).toBe('Trần Đức Thắng')
-    expect(rankings[0].finalScore).toBe(94)
-    expect(rankings[0].earnedDelta).toBe(34)
+    expect(rankings[0].member.full_name).toBe('Giang Lê Hiệp')
+    expect(rankings[0].finalScore).toBe(90)
+    expect(rankings[0].earnedDelta).toBe(30)
     expect(rankings[0].baseScore).toBe(60)
   })
 

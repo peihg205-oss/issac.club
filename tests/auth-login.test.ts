@@ -17,7 +17,7 @@ describe('Auth & Login Logic', () => {
   })
 
   it('matches member credentials against the official club roster', () => {
-    expect(INITIAL_MEMBERS.length).toBe(52)
+    expect(INITIAL_MEMBERS.length).toBe(47)
 
     // Check Giang Le Hiep
     const hiep = INITIAL_MEMBERS.find((m) => m.member_code === '23070691')
@@ -58,17 +58,18 @@ describe('Auth & Login Logic', () => {
     // Valid logins
     expect(validateLogin('23070691').success).toBe(true)
     expect(validateLogin('STAFF-001').success).toBe(true)
-    expect(validateLogin('24310088').success).toBe(true) // Tran Duc Thang
     expect(validateLogin('25071203').success).toBe(true) // Luc Xuan Huy
+    expect(validateLogin('24070680').success).toBe(true) // Phuong Gia Huy
 
-    // Invalid non-existent logins
+    // Invalid non-existent or deleted logins (Tran Duc Thang was revoked)
+    expect(validateLogin('24310088').success).toBe(false) // Tran Duc Thang revoked
     expect(validateLogin('stranger999').success).toBe(false)
     expect(validateLogin('guest@gmail.com').success).toBe(false)
   })
 
   it('contains pre-provisioned accounts matching the BCN screenshot', () => {
     expect(INITIAL_ISSUED_ACCOUNTS).toBeDefined()
-    expect(INITIAL_ISSUED_ACCOUNTS.length).toBe(17)
+    expect(INITIAL_ISSUED_ACCOUNTS.length).toBe(19)
 
     // Master account check
     const master = INITIAL_ISSUED_ACCOUNTS.find(
@@ -207,8 +208,12 @@ describe('Auth & Login Logic', () => {
     const resHiep = memberLoginSimulator('23070691', 'issac2025')
     expect(resHiep.success).toBe(true)
 
+    const resHai = memberLoginSimulator('24070680', 'issac2026')
+    expect(resHai.success).toBe(true)
+
+    // Thắng đã bị xóa tài khoản và xóa khỏi danh sách thành viên
     const resThang = memberLoginSimulator('24310088', 'issac2026')
-    expect(resThang.success).toBe(true)
+    expect(resThang.success).toBe(false)
 
     // 2. Failure with empty password
     const resNoPass = memberLoginSimulator('23070691', '')

@@ -63,7 +63,7 @@ describe('Member Profile & Avatar Update Logic', () => {
   })
 
   it('4. Khôi phục avatar về mặc định (chữ cái đầu)', () => {
-    const member: RosterMember = { ...INITIAL_MEMBERS[3], avatar_url: '/avatars/duc-thang.jpg' }
+    const member: RosterMember = { ...INITIAL_MEMBERS[3], avatar_url: '/avatars/hai.jpg' }
     expect(member.avatar_url).toBeDefined()
 
     // Xóa avatar
@@ -73,20 +73,21 @@ describe('Member Profile & Avatar Update Logic', () => {
     }
 
     expect(resetMember.avatar_url).toBeUndefined()
-    expect(resetMember.full_name.charAt(0)).toBe('T')
+    expect(resetMember.full_name.charAt(0)).toBe('V')
   })
 
   it('5. Chống nhảy lại dữ liệu: Local vừa đổi lớp (DC2024A) có timestamp mới hơn không bị snapshot cũ (DC2024B) ghi đè', () => {
+    const xuan = INITIAL_MEMBERS.find((m) => m.member_code === '24310108')!
     // Member Hoàng Triều Xuân (24310108)
     const localMember: RosterMember = {
-      ...INITIAL_MEMBERS[11],
+      ...xuan,
       class_name: 'DC2024A',
       updated_at: new Date('2026-10-18T20:10:00Z').toISOString(),
     }
 
     // Cloud snapshot trả về dữ liệu cũ (DC2024B) với timestamp cũ hơn hoặc rỗng
     const staleCloudMember: RosterMember = {
-      ...INITIAL_MEMBERS[11],
+      ...xuan,
       class_name: 'DC2024B',
       updated_at: new Date('2026-10-18T19:00:00Z').toISOString(),
     }
