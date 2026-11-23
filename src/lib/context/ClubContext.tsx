@@ -716,18 +716,23 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Đồng bộ đám mây Supabase (PC <-> Điện thoại) - Tích hợp Hợp Nhất 2 Chiều Chống Mất Dữ Liệu & Chống Lag
-  const fetchCloudSync = async () => {
+  // Đồng bộ đám mây Supabase (PC <-> Điện thoại) - Nhận dữ liệu một chiều chống lặp vòng lặp mạng
+  let lastSyncFailed = false
+  const fetchCloudSync = async (): Promise<void> => {
     try {
-      const res = await fetch(`/api/db/sync?t=${Date.now()}`, {
+      const res = await fetch('/api/db/sync', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           Pragma: 'no-cache',
         },
       })
-      if (res.ok) {
-        const data = await res.json()
+      if (!res.ok) {
+        lastSyncFailed = true
+        return
+      }
+      lastSyncFailed = false
+      const data = await res.json()
 
         // 1. Đồng bộ danh sách ID đề xuất đã xóa
         if (data.deletedProposalIds && Array.isArray(data.deletedProposalIds)) {
@@ -805,15 +810,6 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             try {
               localStorage.setItem('issac_proposals_clean_v1', JSON.stringify(latestMergedProposals))
             } catch (e) {}
-          }
-
-          // Nếu có bất kỳ sự khác biệt nào giữa local và cloud (bản ghi mới, đổi trạng thái duyệt approved/rejected, cập nhật reviewedAt), đẩy ngay lên cloud!
-          const isDifferentFromCloud = JSON.stringify(latestMergedProposals) !== JSON.stringify(data.proposals)
-          if (isDifferentFromCloud) {
-            syncToCloud({
-              proposals: latestMergedProposals,
-              deletedProposalIds: Array.from(deletedProposalIdsRef.current),
-            })
           }
         }
 
@@ -922,21 +918,6 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem('issac_members_clean_v1', JSON.stringify(reconciled))
             } catch (e) {}
           }
-
-          // Đẩy ngay bản cập nhật mới nhất lên cloud nếu local có sửa đổi mới hơn HOẶC cloud đang chứa điểm số cũ chưa chuẩn hóa
-          const isDifferentFromCloudMembers = JSON.stringify(reconciled) !== JSON.stringify(safeCloudMembers)
-          if (hasLocalNewer || isDifferentFromCloudMembers) {
-            syncToCloud({
-              members: reconciled,
-              deletedMemberCodes: Array.from(deletedCodes),
-            })
-          }
-        } else if (!data.members || data.members.length === 0) {
-          // Lưu 47 thành viên chuẩn lên Supabase Cloud lần đầu để sẵn sàng đồng bộ
-          syncToCloud({
-            members: membersRef.current,
-            deletedMemberCodes: Array.from(deletedMemberCodesRef.current),
-          })
         }
 
         if (data.disputes && Array.isArray(data.disputes)) {
@@ -998,10 +979,6 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem('issac_disputes_clean_v1', JSON.stringify(mergedDisputes))
             } catch (e) {}
           }
-
-          if (hasNewerLocal) {
-            syncToCloud({ disputes: mergedDisputes })
-          }
         }
 
         if (data.periods !== undefined && Array.isArray(data.periods)) {
@@ -1041,9 +1018,7 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data.customRules && Array.isArray(data.customRules)) {
-          if (data.customRules.length === 0 && customRulesRef.current.length > 0) {
-            syncToCloud({ customRules: customRulesRef.current })
-          } else if (data.customRules.length > 0 && JSON.stringify(data.customRules) !== JSON.stringify(customRulesRef.current)) {
+          if (data.customRules.length > 0 && JSON.stringify(data.customRules) !== JSON.stringify(customRulesRef.current)) {
             customRulesRef.current = data.customRules
             setCustomRules(data.customRules)
             try {
@@ -1066,10 +1041,9 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
             surveyCustomQuestions: data.surveyCustomQuestions,
           })
         }
+      } catch (err) {
+        lastSyncFailed = true
       }
-    } catch (err) {
-      // Offline fallback
-    }
   }
 
   // Helper phát tín hiệu đồng bộ tức thời 0ms giữa các tabs qua BroadcastChannel
@@ -1086,18 +1060,23 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
   // Polling định kỳ mượt mà, chống lag và tự động tạm dừng khi tab ẩn
   useEffect(() => {
     let isFetching = false
+    let backoffUntil = 0
     const pollSync = async () => {
       if (isFetching || (typeof document !== 'undefined' && document.hidden)) return
+      if (Date.now() < backoffUntil) return
       isFetching = true
       try {
         await fetchCloudSync()
+        if (lastSyncFailed) {
+          backoffUntil = Date.now() + 30000
+        }
       } finally {
         isFetching = false
       }
     }
 
-    // Tần suất polling định kỳ 3.5 giây khi tab đang mở giúp nhận khiếu nại tức thì
-    const timer = setInterval(pollSync, 3500)
+    // Tần suất polling định kỳ 10 giây khi tab đang mở nhẹ nhàng và tối ưu
+    const timer = setInterval(pollSync, 10000)
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {

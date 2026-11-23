@@ -313,15 +313,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Tải và hợp nhất tài khoản đám mây (Chống hồi sinh tài khoản đã xóa khi chuyển giữa ĐT và Máy tính)
   const fetchCloudAccounts = useCallback(async () => {
     try {
-      const res = await fetch(`/api/db/sync?t=${Date.now()}`, {
+      const res = await fetch('/api/db/sync', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           Pragma: 'no-cache',
         },
       })
-      if (res.ok) {
-        const data = await res.json()
+      if (!res.ok) {
+        return
+      }
+      const data = await res.json()
 
         // 1. Đồng bộ tombstones các tài khoản & thành viên đã xóa từ cloud
         const cloudDeleted: string[] = []
@@ -397,7 +399,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           return current
         })
-      }
     } catch (err) {
       // Offline fallback
     }
@@ -575,12 +576,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.addEventListener('focus', handleFocus)
       window.addEventListener('storage', handleStorage)
     }
-    // Poll mỗi 3 giây để đồng bộ real-time lập tức khi thao tác giữa các thiết bị
-    const timer = setInterval(() => {
-      if (typeof document !== 'undefined' && !document.hidden) {
-        fetchCloudAccounts()
+    // Poll mỗi 15 giây để đồng bộ tài khoản giữa các thiết bị nhẹ nhàng, không gây nghẽn mạng
+    let backoffUntil = 0
+    const pollAccounts = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return
+      if (Date.now() < backoffUntil) return
+      try {
+        await fetchCloudAccounts()
+      } catch {
+        backoffUntil = Date.now() + 30000
       }
-    }, 3000)
+    }
+    const timer = setInterval(pollAccounts, 15000)
 
     return () => {
       if (typeof document !== 'undefined') {
