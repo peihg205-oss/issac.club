@@ -587,7 +587,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         backoffUntil = Date.now() + 30000
       }
     }
-    const timer = setInterval(pollAccounts, 15000)
+    const timer = setInterval(pollAccounts, 30000)
 
     return () => {
       if (typeof document !== 'undefined') {

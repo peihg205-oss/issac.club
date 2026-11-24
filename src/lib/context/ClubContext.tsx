@@ -1075,8 +1075,8 @@ export function ClubProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Tần suất polling định kỳ 10 giây khi tab đang mở nhẹ nhàng và tối ưu
-    const timer = setInterval(pollSync, 10000)
+    // Tần suất polling định kỳ 15 giây khi tab đang mở nhẹ nhàng và tối ưu
+    const timer = setInterval(pollSync, 15000)
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {

@@ -180,7 +180,7 @@ export default function MemberPaymentPortalClient({
       }
     }
 
-    const intervalId = setInterval(checkStatus, 3000)
+    const intervalId = setInterval(checkStatus, 5000)
     return () => {
       isSubscribed = false
       clearInterval(intervalId)

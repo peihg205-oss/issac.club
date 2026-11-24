@@ -377,7 +377,7 @@ export function ScheduleView() {
   // Nạp dữ liệu lịch và các đề xuất phê duyệt mới nhất từ server / Supabase
   const fetchCloudSchedule = useCallback(async () => {
     try {
-      const res = await fetch(`/api/db/sync?t=${Date.now()}`, {
+      const res = await fetch('/api/db/sync', {
         headers: { 'Cache-Control': 'no-cache' },
       })
       if (!res.ok) return
@@ -406,27 +406,29 @@ export function ScheduleView() {
           if (typeof window !== 'undefined') {
             localStorage.setItem('issac_activities_data', JSON.stringify(cleaned))
           }
-        } else if (!data.activities || data.activities.length === 0) {
-          // Khởi tạo hạt giống (seed) dữ liệu lịch lên cloud nếu Supabase chưa có
-          const initialClean = INITIAL_ACTIVITIES.map(normalizeActivity)
-          syncScheduleToCloud({ activities: initialClean })
         }
       }
     } catch (err) {
       console.warn('Lỗi nạp lịch hoạt động từ cloud:', err)
     }
-  }, [syncScheduleToCloud])
+  }, [])
 
   // Cơ chế Real-time đa thiết bị & đa tài khoản: Polling, Storage event & Window Focus
   useEffect(() => {
     fetchCloudSchedule()
 
-    // Polling định kỳ mỗi 5 giây khi tab đang active
-    const timer = setInterval(() => {
-      if (typeof document !== 'undefined' && !document.hidden) {
-        fetchCloudSchedule()
+    // Polling định kỳ mỗi 20 giây khi tab đang active, giảm tải tối đa cho hệ thống
+    let backoffUntil = 0
+    const pollSchedule = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return
+      if (Date.now() < backoffUntil) return
+      try {
+        await fetchCloudSchedule()
+      } catch {
+        backoffUntil = Date.now() + 30000
       }
-    }, 5000)
+    }
+    const timer = setInterval(pollSchedule, 20000)
 
     // Lắng nghe sự kiện storage từ các tab khác trong cùng trình duyệt
     const handleStorageChange = (e: StorageEvent) => {
