@@ -100,7 +100,14 @@ export default function AppHome() {
   }
 
   if (!currentUser) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC] dark:bg-[#0B1120]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-9 h-9 border-3 border-[#1351D8] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Đang chuyển hướng tới trang đăng nhập...</p>
+        </div>
+      </div>
+    )
   }
 
   // Tính tổng số lượng mục cần duyệt / khiếu nại chờ xử lý thời gian thực (Real-time):
@@ -137,18 +144,6 @@ export default function AppHome() {
 
   const handleBackFromMember = () => {
     setSelectedMember(null)
-  }
-
-  // Khi chưa xác thực xong hoặc chưa đăng nhập, không render giao diện dashboard mà chuyển hướng an toàn về /login
-  if (!isAuthChecked || !currentUser) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#FAFBFC] dark:bg-[#0B1120]">
-        <div className="w-9 h-9 border-3 border-[#0B63E5] border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-          Đang xác thực phiên đăng nhập CLB iSSAC...
-        </p>
-      </div>
-    )
   }
 
   return (
