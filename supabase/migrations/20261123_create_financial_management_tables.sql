@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS issac_fund_campaigns (
     default_amount NUMERIC(15, 2) NOT NULL DEFAULT 100000,
     start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     end_date TIMESTAMPTZ NOT NULL,
-    target_count INTEGER NOT NULL DEFAULT 48,
+    target_count INTEGER NOT NULL DEFAULT 47,
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed', 'draft')),
     is_frozen BOOLEAN NOT NULL DEFAULT FALSE,
     created_by VARCHAR(255) NOT NULL,
